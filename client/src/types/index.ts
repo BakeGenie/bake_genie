@@ -88,6 +88,8 @@ export interface DashboardStats {
 
 // Form submission types
 export interface OrderFormData {
+  userId: number;
+  orderNumber: string;
   contactId: number;
   eventType: EventType;
   eventDate: Date;
@@ -100,6 +102,8 @@ export interface OrderFormData {
   setupFee: number;
   notes?: string;
   jobSheetNotes?: string;
+  total?: number;
+  imageUrls?: string[];
   items: {
     id?: number;
     productId?: number;
@@ -110,6 +114,20 @@ export interface OrderFormData {
     unitPrice: number;
     price: number;
     notes?: string;
+    // Cake specific fields
+    isCake?: boolean;
+    portionSize?: string;
+    numberOfTiers?: number;
+    cakeTiers?: {
+      diameter: number;
+      height: number;
+      flavor: string;
+      icing: string;
+      filling: string;
+      sameFlavor?: boolean;
+      sameIcing?: boolean;
+      sameFilling?: boolean;
+    }[];
   }[];
 }
 

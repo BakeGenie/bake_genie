@@ -30,13 +30,14 @@ import {
 import { OrderFormData } from "@/types";
 import { OrderStatus, EventType, DeliveryType, eventTypes, orderStatusTypes, deliveryTypes } from "@shared/schema";
 import { Contact } from "@shared/schema";
-import { CalendarIcon, PlusIcon, XIcon } from "lucide-react";
+import { CalendarIcon, PlusCircleIcon, PlusIcon, XIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn, formatDate } from "@/lib/utils";
 import { insertOrderSchema } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { NewIngredientDialog, IngredientCategory } from "./new-ingredient-dialog";
 
 // Define cake flavors, icings, and fillings
 const cakeFlavors = [
@@ -120,6 +121,20 @@ const OrderForm: React.FC<OrderFormProps> = ({
   onCancel,
   isSubmitting = false,
 }) => {
+  // State for the new ingredient dialogs
+  const [newFlavorDialogOpen, setNewFlavorDialogOpen] = useState(false);
+  const [newIcingDialogOpen, setNewIcingDialogOpen] = useState(false);
+  const [newFillingDialogOpen, setNewFillingDialogOpen] = useState(false);
+  
+  // State to track current tier being edited for ingredient addition
+  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [currentTierIndex, setCurrentTierIndex] = useState(0);
+  
+  // State for custom ingredients that have been added
+  const [customFlavors, setCustomFlavors] = useState<string[]>([]);
+  const [customIcings, setCustomIcings] = useState<string[]>([]);
+  const [customFillings, setCustomFillings] = useState<string[]>([]);
+  
   // Load contacts for customer selection
   const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
@@ -168,6 +183,43 @@ const OrderForm: React.FC<OrderFormProps> = ({
           ],
     },
   });
+  
+  // Handlers for new ingredient types
+  const handleAddNewFlavor = (flavor: string) => {
+    setCustomFlavors(prev => [...prev, flavor]);
+    
+    // Update the current tier with the new flavor
+    if (currentItemIndex !== undefined && currentTierIndex !== undefined) {
+      form.setValue(
+        `items.${currentItemIndex}.cakeTiers.${currentTierIndex}.flavor`, 
+        flavor
+      );
+    }
+  };
+  
+  const handleAddNewIcing = (icing: string) => {
+    setCustomIcings(prev => [...prev, icing]);
+    
+    // Update the current tier with the new icing
+    if (currentItemIndex !== undefined && currentTierIndex !== undefined) {
+      form.setValue(
+        `items.${currentItemIndex}.cakeTiers.${currentTierIndex}.icing`, 
+        icing
+      );
+    }
+  };
+  
+  const handleAddNewFilling = (filling: string) => {
+    setCustomFillings(prev => [...prev, filling]);
+    
+    // Update the current tier with the new filling
+    if (currentItemIndex !== undefined && currentTierIndex !== undefined) {
+      form.setValue(
+        `items.${currentItemIndex}.cakeTiers.${currentTierIndex}.filling`, 
+        filling
+      );
+    }
+  };
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -244,791 +296,870 @@ const OrderForm: React.FC<OrderFormProps> = ({
   // Calculate the current totals
   const totals = calculateTotal();
 
+  // Get the combined lists of ingredients (static + custom)
+  const allFlavors = [...cakeFlavors, ...customFlavors];
+  const allIcings = [...icingTypes, ...customIcings];
+  const allFillings = [...fillingTypes, ...customFillings];
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="contactId"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex justify-between items-center">
-                    <FormLabel>Customer</FormLabel>
-                    <Button 
-                      type="button" 
-                      variant="default" 
-                      size="sm"
-                      className="text-xs bg-blue-600 hover:bg-blue-700"
-                      onClick={() => {
-                        // This would open the new customer form dialog
-                        console.log("New customer button clicked");
-                      }}
-                    >
-                      New Customer
-                    </Button>
-                  </div>
-                  <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {contacts.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id.toString()}>
-                          {contact.firstName} {contact.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="eventType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an event type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {eventTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="eventDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Event Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            formatDate(field.value)
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {orderStatusTypes.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="theme"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event Theme</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter event theme (optional)" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="deliveryType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Delivery Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select delivery type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {deliveryTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-            <FormField
-              control={form.control}
-              name="deliveryDetails"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Delivery Details</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter delivery details (e.g. address, time)" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="border-t border-gray-200 pt-4">
-            <div className="flex justify-between mb-4">
-              <h3 className="text-lg font-semibold">Order Items</h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addItem}
-                className="flex items-center"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </div>
-          </div>
-
+    <>
+      {/* Dialog for new cake flavor */}
+      <NewIngredientDialog 
+        open={newFlavorDialogOpen} 
+        onOpenChange={setNewFlavorDialogOpen}
+        category="cake-flavor"
+        onSuccess={handleAddNewFlavor}
+      />
+      
+      {/* Dialog for new icing type */}
+      <NewIngredientDialog 
+        open={newIcingDialogOpen} 
+        onOpenChange={setNewIcingDialogOpen}
+        category="icing-type"
+        onSuccess={handleAddNewIcing}
+      />
+      
+      {/* Dialog for new filling type */}
+      <NewIngredientDialog 
+        open={newFillingDialogOpen} 
+        onOpenChange={setNewFillingDialogOpen}
+        category="filling-type"
+        onSuccess={handleAddNewFilling}
+      />
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="space-y-4">
-            {fields.map((field, index) => (
-              <div key={field.id} className="p-4 border border-gray-200 rounded-md">
-                <div className="flex justify-between mb-4">
-                  <h4 className="font-medium">Item {index + 1}</h4>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const currentValues = form.getValues(`items.${index}`);
-                        form.setValue(`items.${index}.isCake`, !currentValues.isCake);
-                      }}
-                    >
-                      {form.watch(`items.${index}.isCake`) ? "Hide Cake Options" : "Cake Options"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(index)}
-                      disabled={fields.length === 1}
-                    >
-                      <XIcon className="h-4 w-4" />
-                    </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="contactId"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex justify-between items-center">
+                      <FormLabel>Customer</FormLabel>
+                      <Button 
+                        type="button" 
+                        variant="default" 
+                        size="sm"
+                        className="text-xs bg-blue-600 hover:bg-blue-700"
+                        onClick={() => {
+                          // This would open the new customer form dialog
+                          console.log("New customer button clicked");
+                        }}
+                      >
+                        New Customer
+                      </Button>
+                    </div>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a customer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {contacts.map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id.toString()}>
+                            {contact.firstName} {contact.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="eventType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an event type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {eventTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="eventDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Event Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              formatDate(field.value)
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {orderStatusTypes.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="theme"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Theme</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter event theme (optional)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deliveryType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Delivery Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select delivery type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {deliveryTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="deliveryDetails"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Delivery Details</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter delivery details (e.g. address, time)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex justify-between mb-4">
+                <h3 className="text-lg font-semibold">Order Items</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addItem}
+                  className="flex items-center"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="p-4 border border-gray-200 rounded-md">
+                  <div className="flex justify-between mb-4">
+                    <h4 className="font-medium">Item {index + 1}</h4>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const currentValues = form.getValues(`items.${index}`);
+                          form.setValue(`items.${index}.isCake`, !currentValues.isCake);
+                        }}
+                      >
+                        {form.watch(`items.${index}.isCake`) ? "Hide Cake Options" : "Cake Options"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(index)}
+                        disabled={fields.length === 1}
+                      >
+                        <XIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.type`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.type`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                {/* Cake configuration section - only visible when isCake is true */}
-                {form.watch(`items.${index}.isCake`) && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                    <h4 className="font-medium mb-4">Cake Configuration</h4>
-                    
-                    {/* Tier number and portion size controls */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.numberOfTiers`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Number of Tiers</FormLabel>
-                            <Select 
-                              onValueChange={(value) => {
-                                field.onChange(parseInt(value));
-                                
-                                // Current tiers
-                                const currentTiers = form.getValues(`items.${index}.cakeTiers`) || [];
-                                const newTierCount = parseInt(value);
-                                
-                                // If we need more tiers, add them
-                                if (currentTiers.length < newTierCount) {
-                                  const firstTier = currentTiers[0] || { 
-                                    diameter: 6, 
-                                    height: 4, 
-                                    flavor: "Vanilla", 
-                                    icing: "Buttercream", 
-                                    filling: "None" 
-                                  };
+                  {/* Cake configuration section - only visible when isCake is true */}
+                  {form.watch(`items.${index}.isCake`) && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                      <h4 className="font-medium mb-4">Cake Configuration</h4>
+                      
+                      {/* Tier number and portion size controls */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.numberOfTiers`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Tiers</FormLabel>
+                              <Select 
+                                onValueChange={(value) => {
+                                  field.onChange(parseInt(value));
                                   
-                                  const newTiers = [...currentTiers];
+                                  // Current tiers
+                                  const currentTiers = form.getValues(`items.${index}.cakeTiers`) || [];
+                                  const newTierCount = parseInt(value);
                                   
-                                  // Add new tiers with decreasing diameter for a tiered effect
-                                  for (let i = currentTiers.length; i < newTierCount; i++) {
-                                    const diameter = Math.max(4, firstTier.diameter - (i * 2));
-                                    newTiers.push({
-                                      diameter,
-                                      height: firstTier.height,
-                                      flavor: firstTier.flavor,
-                                      icing: firstTier.icing,
-                                      filling: firstTier.filling
-                                    });
+                                  // If we need more tiers, add them
+                                  if (currentTiers.length < newTierCount) {
+                                    const firstTier = currentTiers[0] || { 
+                                      diameter: 6, 
+                                      height: 4, 
+                                      flavor: "Vanilla", 
+                                      icing: "Buttercream", 
+                                      filling: "None" 
+                                    };
+                                    
+                                    const newTiers = [...currentTiers];
+                                    
+                                    // Add new tiers with decreasing diameter for a tiered effect
+                                    for (let i = currentTiers.length; i < newTierCount; i++) {
+                                      const diameter = Math.max(4, firstTier.diameter - (i * 2));
+                                      newTiers.push({
+                                        diameter,
+                                        height: firstTier.height,
+                                        flavor: firstTier.flavor,
+                                        icing: firstTier.icing,
+                                        filling: firstTier.filling
+                                      });
+                                    }
+                                    
+                                    form.setValue(`items.${index}.cakeTiers`, newTiers);
+                                  } 
+                                  // If we need fewer tiers, remove them
+                                  else if (currentTiers.length > newTierCount) {
+                                    form.setValue(`items.${index}.cakeTiers`, currentTiers.slice(0, newTierCount));
                                   }
-                                  
-                                  form.setValue(`items.${index}.cakeTiers`, newTiers);
-                                } 
-                                // If we need fewer tiers, remove them
-                                else if (currentTiers.length > newTierCount) {
-                                  form.setValue(`items.${index}.cakeTiers`, currentTiers.slice(0, newTierCount));
-                                }
-                              }}
-                              defaultValue={field.value?.toString()}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select number of tiers" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {[1, 2, 3, 4, 5, 6].map(num => (
-                                  <SelectItem key={num} value={num.toString()}>
-                                    {num} {num === 1 ? 'Tier' : 'Tiers'}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                }}
+                                defaultValue={field.value?.toString()}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select number of tiers" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {[1, 2, 3, 4, 5, 6].map(num => (
+                                    <SelectItem key={num} value={num.toString()}>
+                                      {num} {num === 1 ? 'Tier' : 'Tiers'}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.portionSize`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Portion Size</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select portion size" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {portionSizes.map(size => (
+                                    <SelectItem key={size.value} value={size.value}>
+                                      {size.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.portionSize`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Portion Size</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select portion size" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {portionSizes.map(size => (
-                                  <SelectItem key={size.value} value={size.value}>
-                                    {size.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    {/* Tier configuration */}
-                    <div className="space-y-4 mb-4">
-                      <h5 className="font-medium">Tier Configuration</h5>
-                      
-                      {Array.from({ length: form.watch(`items.${index}.numberOfTiers`) || 1 }).map((_, tierIndex) => (
-                        <Card key={tierIndex} className="p-4">
-                          <h6 className="font-medium mb-3">Tier {tierIndex + 1}</h6>
-                          
-                          {/* Tier dimensions */}
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.cakeTiers.${tierIndex}.diameter`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Diameter (inches)</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min={4}
-                                      max={30}
-                                      step={1}
-                                      {...field}
-                                      onChange={(e) => field.onChange(parseInt(e.target.value) || 4)}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                      {/* Tier configuration */}
+                      <div className="space-y-4 mb-4">
+                        <h5 className="font-medium">Tier Configuration</h5>
+                        
+                        {Array.from({ length: form.watch(`items.${index}.numberOfTiers`) || 1 }).map((_, tierIndex) => (
+                          <Card key={tierIndex} className="p-4">
+                            <h6 className="font-medium mb-3">Tier {tierIndex + 1}</h6>
                             
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.cakeTiers.${tierIndex}.height`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Height (inches)</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min={2}
-                                      max={12}
-                                      step={0.5}
-                                      {...field}
-                                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 2)}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
-                          {/* Flavor selection */}
-                          <div className="mb-4">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.cakeTiers.${tierIndex}.flavor`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="flex justify-between items-center">
-                                    <FormLabel>Cake Flavor</FormLabel>
-                                    {tierIndex > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <Label htmlFor={`same-flavor-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
-                                        <Switch 
-                                          id={`same-flavor-${tierIndex}`}
-                                          checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameFlavor`) || false}
-                                          onCheckedChange={(checked) => {
-                                            if (checked) {
-                                              const firstTierFlavor = form.getValues(`items.${index}.cakeTiers.0.flavor`);
-                                              form.setValue(`items.${index}.cakeTiers.${tierIndex}.flavor`, firstTierFlavor);
-                                            }
-                                          }}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <Select 
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                  >
+                            {/* Tier dimensions */}
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.cakeTiers.${tierIndex}.diameter`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Diameter (inches)</FormLabel>
                                     <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select cake flavor" />
-                                      </SelectTrigger>
+                                      <Input
+                                        type="number"
+                                        min={4}
+                                        max={30}
+                                        step={1}
+                                        {...field}
+                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 4)}
+                                      />
                                     </FormControl>
-                                    <SelectContent>
-                                      {cakeFlavors.map(flavor => (
-                                        <SelectItem key={flavor} value={flavor}>
-                                          {flavor}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
-                          {/* Icing selection */}
-                          <div className="mb-4">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.cakeTiers.${tierIndex}.icing`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="flex justify-between items-center">
-                                    <FormLabel>Icing Type</FormLabel>
-                                    {tierIndex > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <Label htmlFor={`same-icing-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
-                                        <Switch 
-                                          id={`same-icing-${tierIndex}`}
-                                          checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameIcing`) || false}
-                                          onCheckedChange={(checked) => {
-                                            if (checked) {
-                                              const firstTierIcing = form.getValues(`items.${index}.cakeTiers.0.icing`);
-                                              form.setValue(`items.${index}.cakeTiers.${tierIndex}.icing`, firstTierIcing);
-                                            }
-                                          }}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <Select 
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                  >
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.cakeTiers.${tierIndex}.height`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Height (inches)</FormLabel>
                                     <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select icing type" />
-                                      </SelectTrigger>
+                                      <Input
+                                        type="number"
+                                        min={2}
+                                        max={12}
+                                        step={0.5}
+                                        {...field}
+                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 2)}
+                                      />
                                     </FormControl>
-                                    <SelectContent>
-                                      {icingTypes.map(icing => (
-                                        <SelectItem key={icing} value={icing}>
-                                          {icing}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
-                          {/* Filling selection */}
-                          <div className="mb-4">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.cakeTiers.${tierIndex}.filling`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="flex justify-between items-center">
-                                    <FormLabel>Filling</FormLabel>
-                                    {tierIndex > 0 && (
-                                      <div className="flex items-center space-x-2">
-                                        <Label htmlFor={`same-filling-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
-                                        <Switch 
-                                          id={`same-filling-${tierIndex}`}
-                                          checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameFilling`) || false}
-                                          onCheckedChange={(checked) => {
-                                            if (checked) {
-                                              const firstTierFilling = form.getValues(`items.${index}.cakeTiers.0.filling`);
-                                              form.setValue(`items.${index}.cakeTiers.${tierIndex}.filling`, firstTierFilling);
-                                            }
-                                          }}
-                                        />
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            {/* Flavor selection */}
+                            <div className="mb-4">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.cakeTiers.${tierIndex}.flavor`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex justify-between items-center">
+                                      <FormLabel>Cake Flavor</FormLabel>
+                                      {tierIndex > 0 && (
+                                        <div className="flex items-center space-x-2">
+                                          <Label htmlFor={`same-flavor-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
+                                          <Switch 
+                                            id={`same-flavor-${tierIndex}`}
+                                            checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameFlavor`) || false}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                const firstTierFlavor = form.getValues(`items.${index}.cakeTiers.0.flavor`);
+                                                form.setValue(`items.${index}.cakeTiers.${tierIndex}.flavor`, firstTierFlavor);
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <div className="flex-1">
+                                        <Select 
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select cake flavor" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {allFlavors.map(flavor => (
+                                              <SelectItem key={flavor} value={flavor}>
+                                                {flavor}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
                                       </div>
-                                    )}
-                                  </div>
-                                  <Select 
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                  >
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select filling" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {fillingTypes.map(filling => (
-                                        <SelectItem key={filling} value={filling}>
-                                          {filling}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          
-                          {/* Show estimated servings for this tier */}
-                          <div className="flex justify-between items-center bg-gray-100 p-2 rounded">
-                            <span className="text-sm">Estimated Servings:</span>
-                            <span className="font-medium">
-                              {calculateServings(
-                                form.watch(`items.${index}.cakeTiers.${tierIndex}.diameter`) || 6,
-                                form.watch(`items.${index}.cakeTiers.${tierIndex}.height`) || 4,
-                                form.watch(`items.${index}.portionSize`)
-                              )} servings
-                            </span>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                    
-                    {/* Show total servings across all tiers */}
-                    <div className="p-3 border border-gray-200 rounded-md mb-3 bg-white">
-                      <h5 className="font-medium mb-2">Total Servings</h5>
-                      <div className="font-medium text-lg text-center">
-                        {Array.from({ length: form.watch(`items.${index}.numberOfTiers`) || 1 }).reduce((total, _, tierIndex) => {
-                          const tierServings = calculateServings(
-                            form.watch(`items.${index}.cakeTiers.${tierIndex}.diameter`) || 6,
-                            form.watch(`items.${index}.cakeTiers.${tierIndex}.height`) || 4,
-                            form.watch(`items.${index}.portionSize`)
-                          );
-                          return total + tierServings;
-                        }, 0)} servings
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="icon"
+                                        onClick={() => {
+                                          setCurrentItemIndex(index);
+                                          setCurrentTierIndex(tierIndex);
+                                          setNewFlavorDialogOpen(true);
+                                        }}
+                                      >
+                                        <PlusCircleIcon className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            {/* Icing selection */}
+                            <div className="mb-4">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.cakeTiers.${tierIndex}.icing`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex justify-between items-center">
+                                      <FormLabel>Icing Type</FormLabel>
+                                      {tierIndex > 0 && (
+                                        <div className="flex items-center space-x-2">
+                                          <Label htmlFor={`same-icing-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
+                                          <Switch 
+                                            id={`same-icing-${tierIndex}`}
+                                            checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameIcing`) || false}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                const firstTierIcing = form.getValues(`items.${index}.cakeTiers.0.icing`);
+                                                form.setValue(`items.${index}.cakeTiers.${tierIndex}.icing`, firstTierIcing);
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <div className="flex-1">
+                                        <Select 
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select icing type" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {allIcings.map(icing => (
+                                              <SelectItem key={icing} value={icing}>
+                                                {icing}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="icon"
+                                        onClick={() => {
+                                          setCurrentItemIndex(index);
+                                          setCurrentTierIndex(tierIndex);
+                                          setNewIcingDialogOpen(true);
+                                        }}
+                                      >
+                                        <PlusCircleIcon className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            {/* Filling selection */}
+                            <div className="mb-4">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.cakeTiers.${tierIndex}.filling`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex justify-between items-center">
+                                      <FormLabel>Filling</FormLabel>
+                                      {tierIndex > 0 && (
+                                        <div className="flex items-center space-x-2">
+                                          <Label htmlFor={`same-filling-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
+                                          <Switch 
+                                            id={`same-filling-${tierIndex}`}
+                                            checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameFilling`) || false}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                const firstTierFilling = form.getValues(`items.${index}.cakeTiers.0.filling`);
+                                                form.setValue(`items.${index}.cakeTiers.${tierIndex}.filling`, firstTierFilling);
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <div className="flex-1">
+                                        <Select 
+                                          onValueChange={field.onChange}
+                                          defaultValue={field.value}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select filling" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {allFillings.map(filling => (
+                                              <SelectItem key={filling} value={filling}>
+                                                {filling}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        size="icon"
+                                        onClick={() => {
+                                          setCurrentItemIndex(index);
+                                          setCurrentTierIndex(tierIndex);
+                                          setNewFillingDialogOpen(true);
+                                        }}
+                                      >
+                                        <PlusCircleIcon className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            {/* Show estimated servings for this tier */}
+                            <div className="flex justify-between items-center bg-gray-100 p-2 rounded">
+                              <span className="text-sm">Estimated Servings:</span>
+                              <span className="font-medium">
+                                {calculateServings(
+                                  form.watch(`items.${index}.cakeTiers.${tierIndex}.diameter`) || 6,
+                                  form.watch(`items.${index}.cakeTiers.${tierIndex}.height`) || 4,
+                                  form.watch(`items.${index}.portionSize`)
+                                )} servings
+                              </span>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                      
+                      {/* Show total servings across all tiers */}
+                      <div className="p-3 border border-gray-200 rounded-md mb-3 bg-white">
+                        <h5 className="font-medium mb-2">Total Servings</h5>
+                        <div className="font-medium text-lg text-center">
+                          {Array.from({ length: form.watch(`items.${index}.numberOfTiers`) || 1 }).reduce((total, _, tierIndex) => {
+                            const tierServings = calculateServings(
+                              form.watch(`items.${index}.cakeTiers.${tierIndex}.diameter`) || 6,
+                              form.watch(`items.${index}.cakeTiers.${tierIndex}.height`) || 4,
+                              form.watch(`items.${index}.portionSize`)
+                            );
+                            return total + tierServings;
+                          }, 0)} servings
+                        </div>
                       </div>
                     </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.quantity`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantity</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="1"
+                              onChange={(e) => {
+                                const quantity = parseInt(e.target.value);
+                                field.onChange(quantity);
+                                
+                                // Automatically update price based on quantity and unit price
+                                const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
+                                form.setValue(
+                                  `items.${index}.price`,
+                                  quantity * unitPrice
+                                );
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.unitPrice`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unit Price ($)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              onChange={(e) => {
+                                const unitPrice = parseFloat(e.target.value);
+                                field.onChange(unitPrice);
+                                
+                                // Automatically update price based on quantity and unit price
+                                const quantity = form.getValues(`items.${index}.quantity`) || 0;
+                                form.setValue(
+                                  `items.${index}.price`,
+                                  quantity * unitPrice
+                                );
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`items.${index}.price`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Price ($)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min="0" step="0.01" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.quantity`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantity</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            min="1"
-                            onChange={(e) => {
-                              const quantity = parseInt(e.target.value);
-                              field.onChange(quantity);
-                              
-                              // Automatically update price based on quantity and unit price
-                              const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
-                              form.setValue(
-                                `items.${index}.price`,
-                                quantity * unitPrice
-                              );
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.unitPrice`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit Price ($)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            onChange={(e) => {
-                              const unitPrice = parseFloat(e.target.value);
-                              field.onChange(unitPrice);
-                              
-                              // Automatically update price based on quantity and unit price
-                              const quantity = form.getValues(`items.${index}.quantity`) || 0;
-                              form.setValue(
-                                `items.${index}.price`,
-                                quantity * unitPrice
-                              );
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.price`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Total Price ($)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min="0" step="0.01" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+              ))}
+            </div>
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Order Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Enter any notes about the order"
+                      rows={4}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="jobSheetNotes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job Sheet Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="This information is only displayed on the Job Sheet Printout."
+                      rows={4}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Price Details - Moved to bottom as requested */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="grid grid-cols-2 gap-4 mb-2">
+              <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
+              <div>
+                <FormField
+                  control={form.control}
+                  name="setupFee"
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="number"
+                      min="0"
+                      className="w-full text-right"
+                    />
+                  )}
+                />
               </div>
-            ))}
-          </div>
-
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Order Notes</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Enter any notes about the order"
-                    rows={4}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="jobSheetNotes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job Sheet Notes</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="This information is only displayed on the Job Sheet Printout."
-                    rows={4}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Price Details - Moved to bottom as requested */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="grid grid-cols-2 gap-4 mb-2">
-            <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
-            <div>
-              <FormField
-                control={form.control}
-                name="setupFee"
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    className="w-full text-right"
-                  />
-                )}
-              />
+              <div className="text-right text-sm text-gray-500">Discount:</div>
+              <div className="flex items-center">
+                <FormField
+                  control={form.control}
+                  name="discount"
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="number"
+                      min="0"
+                      className="w-16 text-right"
+                    />
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="discountType"
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="w-16 ml-2">
+                        <SelectValue placeholder="%" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="%">%</SelectItem>
+                        <SelectItem value="$">$</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
             </div>
-            <div className="text-right text-sm text-gray-500">Discount:</div>
-            <div className="flex items-center">
-              <FormField
-                control={form.control}
-                name="discount"
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    className="w-16 text-right"
-                  />
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="discountType"
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger className="w-16 ml-2">
-                      <SelectValue placeholder="%" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="%">%</SelectItem>
-                      <SelectItem value="$">$</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-right text-sm font-medium text-gray-700">Total:</div>
+                <div className="text-right font-semibold">$ {totals.total.toFixed(2)}</div>
+              </div>
             </div>
           </div>
-          <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-right text-sm font-medium text-gray-700">Total:</div>
-              <div className="text-right font-semibold">$ {totals.total.toFixed(2)}</div>
-            </div>
-          </div>
-        </div>
 
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Order"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Order"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
   );
 };
 
