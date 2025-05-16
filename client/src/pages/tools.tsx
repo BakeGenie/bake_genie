@@ -35,6 +35,14 @@ const Tools = () => {
   const [servingStyle, setServingStyle] = React.useState("party");
   const [numberOfTiers, setNumberOfTiers] = React.useState("1");
   const [canvasColor, setCanvasColor] = React.useState("#ffffff");
+  
+  // Cake designer dimensions state
+  const [bottomTierDiameter, setBottomTierDiameter] = React.useState(10);
+  const [bottomTierHeight, setBottomTierHeight] = React.useState(5);
+  const [middleTierDiameter, setMiddleTierDiameter] = React.useState(8);
+  const [middleTierHeight, setMiddleTierHeight] = React.useState(4);
+  const [topTierDiameter, setTopTierDiameter] = React.useState(6);
+  const [topTierHeight, setTopTierHeight] = React.useState(3);
 
   // Calculate portions based on selected options
   const calculatePortions = () => {
@@ -406,15 +414,171 @@ const Tools = () => {
                     </div>
 
                     <div>
-                      <Label className="mb-2 block">Tier Width (inches)</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span>Bottom Tier: 10"</span>
-                          <Slider defaultValue={[10]} max={14} min={6} step={1} className="w-[120px]" />
+                      <Label className="mb-2 block">Tier Dimensions (inches)</Label>
+                      <div className="space-y-4">
+                        {/* Bottom Tier */}
+                        <div className="border rounded p-2 bg-gray-50">
+                          <div className="font-medium mb-1">Bottom Tier</div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Diameter: {bottomTierDiameter}"</span>
+                              <div className="flex items-center space-x-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setBottomTierDiameter(Math.max(6, bottomTierDiameter - 1))}
+                                  disabled={bottomTierDiameter <= 6}
+                                >
+                                  <MinusIcon className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center">{bottomTierDiameter}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setBottomTierDiameter(Math.min(16, bottomTierDiameter + 1))}
+                                  disabled={bottomTierDiameter >= 16}
+                                >
+                                  <PlusIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Height: {bottomTierHeight}"</span>
+                              <div className="flex items-center space-x-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setBottomTierHeight(Math.max(2, bottomTierHeight - 1))}
+                                  disabled={bottomTierHeight <= 2}
+                                >
+                                  <MinusIcon className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center">{bottomTierHeight}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setBottomTierHeight(Math.min(10, bottomTierHeight + 1))}
+                                  disabled={bottomTierHeight >= 10}
+                                >
+                                  <PlusIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span>Top Tier: 6"</span>
-                          <Slider defaultValue={[6]} max={14} min={4} step={1} className="w-[120px]" />
+                        
+                        {/* Middle Tier */}
+                        <div className="border rounded p-2 bg-gray-50">
+                          <div className="font-medium mb-1">Middle Tier</div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Diameter: {middleTierDiameter}"</span>
+                              <div className="flex items-center space-x-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setMiddleTierDiameter(Math.max(4, middleTierDiameter - 1))}
+                                  disabled={middleTierDiameter <= 4}
+                                >
+                                  <MinusIcon className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center">{middleTierDiameter}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setMiddleTierDiameter(Math.min(14, middleTierDiameter + 1))}
+                                  disabled={middleTierDiameter >= 14 || middleTierDiameter >= bottomTierDiameter}
+                                >
+                                  <PlusIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Height: {middleTierHeight}"</span>
+                              <div className="flex items-center space-x-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setMiddleTierHeight(Math.max(2, middleTierHeight - 1))}
+                                  disabled={middleTierHeight <= 2}
+                                >
+                                  <MinusIcon className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center">{middleTierHeight}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setMiddleTierHeight(Math.min(8, middleTierHeight + 1))}
+                                  disabled={middleTierHeight >= 8}
+                                >
+                                  <PlusIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Top Tier */}
+                        <div className="border rounded p-2 bg-gray-50">
+                          <div className="font-medium mb-1">Top Tier</div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Diameter: {topTierDiameter}"</span>
+                              <div className="flex items-center space-x-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setTopTierDiameter(Math.max(3, topTierDiameter - 1))}
+                                  disabled={topTierDiameter <= 3}
+                                >
+                                  <MinusIcon className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center">{topTierDiameter}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setTopTierDiameter(Math.min(12, topTierDiameter + 1))}
+                                  disabled={topTierDiameter >= 12 || topTierDiameter >= middleTierDiameter}
+                                >
+                                  <PlusIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Height: {topTierHeight}"</span>
+                              <div className="flex items-center space-x-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setTopTierHeight(Math.max(1, topTierHeight - 1))}
+                                  disabled={topTierHeight <= 1}
+                                >
+                                  <MinusIcon className="h-3 w-3" />
+                                </Button>
+                                <span className="w-8 text-center">{topTierHeight}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setTopTierHeight(Math.min(6, topTierHeight + 1))}
+                                  disabled={topTierHeight >= 6}
+                                >
+                                  <PlusIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -483,36 +647,69 @@ const Tools = () => {
                       }}
                     >
                       <div className="relative h-full flex flex-col items-center justify-center">
-                        {/* Simple cake tiers visualization matching the screenshot reference */}
+                        {/* Dynamic cake tiers visualization based on user-defined dimensions */}
                         <div className="relative flex items-center justify-center w-full h-full">
-                          {/* SVG representation of the stacked cake tiers with simple outlines */}
+                          {/* SVG representation of the stacked cake tiers with adjustable dimensions */}
                           <svg width="200" height="300" viewBox="0 0 200 300" className="absolute">
-                            {/* Bottom tier */}
-                            <g>
-                              <ellipse cx="100" cy="230" rx="90" ry="20" stroke="#333" fill="transparent" strokeWidth="1" />
-                              <rect x="10" y="150" width="180" height="80" fill="transparent" stroke="none" />
-                              <line x1="10" y1="150" x2="10" y2="230" stroke="#333" strokeWidth="1" />
-                              <line x1="190" y1="150" x2="190" y2="230" stroke="#333" strokeWidth="1" />
-                              <ellipse cx="100" cy="150" rx="90" ry="20" stroke="#333" fill="transparent" strokeWidth="1" />
-                            </g>
-                            
-                            {/* Middle tier */}
-                            <g>
-                              <ellipse cx="100" cy="150" rx="70" ry="15" stroke="#333" fill="transparent" strokeWidth="1" />
-                              <rect x="30" y="90" width="140" height="60" fill="transparent" stroke="none" />
-                              <line x1="30" y1="90" x2="30" y2="150" stroke="#333" strokeWidth="1" />
-                              <line x1="170" y1="90" x2="170" y2="150" stroke="#333" strokeWidth="1" />
-                              <ellipse cx="100" cy="90" rx="70" ry="15" stroke="#333" fill="transparent" strokeWidth="1" />
-                            </g>
-                            
-                            {/* Top tier */}
-                            <g>
-                              <ellipse cx="100" cy="90" rx="50" ry="10" stroke="#333" fill="transparent" strokeWidth="1" />
-                              <rect x="50" y="40" width="100" height="50" fill="transparent" stroke="none" />
-                              <line x1="50" y1="40" x2="50" y2="90" stroke="#333" strokeWidth="1" />
-                              <line x1="150" y1="40" x2="150" y2="90" stroke="#333" strokeWidth="1" />
-                              <ellipse cx="100" cy="40" rx="50" ry="10" stroke="#333" fill="transparent" strokeWidth="1" />
-                            </g>
+                            {/* Calculate SVG values based on tier dimensions */}
+                            {(() => {
+                              // Scale factors to convert inches to SVG units
+                              const SCALE_X = 9; // horizontal scale
+                              const SCALE_Y = 10; // vertical scale
+                              const ELLIPSE_RATIO = 0.22; // ratio for ellipse height
+                              
+                              // Calculate bottom tier
+                              const bottomRadius = bottomTierDiameter * SCALE_X / 2;
+                              const bottomHeight = bottomTierHeight * SCALE_Y;
+                              const bottomEllipseRy = bottomRadius * ELLIPSE_RATIO;
+                              const bottomY = 230;
+                              const bottomX = 100;
+                              
+                              // Calculate middle tier
+                              const middleRadius = middleTierDiameter * SCALE_X / 2;
+                              const middleHeight = middleTierHeight * SCALE_Y;
+                              const middleEllipseRy = middleRadius * ELLIPSE_RATIO;
+                              const middleY = bottomY - bottomHeight;
+                              const middleX = 100;
+                              
+                              // Calculate top tier
+                              const topRadius = topTierDiameter * SCALE_X / 2;
+                              const topHeight = topTierHeight * SCALE_Y;
+                              const topEllipseRy = topRadius * ELLIPSE_RATIO;
+                              const topY = middleY - middleHeight;
+                              const topX = 100;
+                              
+                              return (
+                                <>
+                                  {/* Bottom tier */}
+                                  <g>
+                                    <ellipse cx={bottomX} cy={bottomY} rx={bottomRadius} ry={bottomEllipseRy} stroke="#333" fill="transparent" strokeWidth="1" />
+                                    <rect x={bottomX - bottomRadius} y={bottomY - bottomHeight} width={bottomRadius * 2} height={bottomHeight} fill="transparent" stroke="none" />
+                                    <line x1={bottomX - bottomRadius} y1={bottomY - bottomHeight} x2={bottomX - bottomRadius} y2={bottomY} stroke="#333" strokeWidth="1" />
+                                    <line x1={bottomX + bottomRadius} y1={bottomY - bottomHeight} x2={bottomX + bottomRadius} y2={bottomY} stroke="#333" strokeWidth="1" />
+                                    <ellipse cx={bottomX} cy={bottomY - bottomHeight} rx={bottomRadius} ry={bottomEllipseRy} stroke="#333" fill="transparent" strokeWidth="1" />
+                                  </g>
+                                  
+                                  {/* Middle tier */}
+                                  <g>
+                                    <ellipse cx={middleX} cy={middleY} rx={middleRadius} ry={middleEllipseRy} stroke="#333" fill="transparent" strokeWidth="1" />
+                                    <rect x={middleX - middleRadius} y={middleY - middleHeight} width={middleRadius * 2} height={middleHeight} fill="transparent" stroke="none" />
+                                    <line x1={middleX - middleRadius} y1={middleY - middleHeight} x2={middleX - middleRadius} y2={middleY} stroke="#333" strokeWidth="1" />
+                                    <line x1={middleX + middleRadius} y1={middleY - middleHeight} x2={middleX + middleRadius} y2={middleY} stroke="#333" strokeWidth="1" />
+                                    <ellipse cx={middleX} cy={middleY - middleHeight} rx={middleRadius} ry={middleEllipseRy} stroke="#333" fill="transparent" strokeWidth="1" />
+                                  </g>
+                                  
+                                  {/* Top tier */}
+                                  <g>
+                                    <ellipse cx={topX} cy={topY} rx={topRadius} ry={topEllipseRy} stroke="#333" fill="transparent" strokeWidth="1" />
+                                    <rect x={topX - topRadius} y={topY - topHeight} width={topRadius * 2} height={topHeight} fill="transparent" stroke="none" />
+                                    <line x1={topX - topRadius} y1={topY - topHeight} x2={topX - topRadius} y2={topY} stroke="#333" strokeWidth="1" />
+                                    <line x1={topX + topRadius} y1={topY - topHeight} x2={topX + topRadius} y2={topY} stroke="#333" strokeWidth="1" />
+                                    <ellipse cx={topX} cy={topY - topHeight} rx={topRadius} ry={topEllipseRy} stroke="#333" fill="transparent" strokeWidth="1" />
+                                  </g>
+                                </>
+                              );
+                            })()}
                           </svg>
                         </div>
                       </div>
