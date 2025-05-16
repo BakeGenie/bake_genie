@@ -20,6 +20,7 @@ import Printables from "./pages/printables";
 import Tools from "./pages/tools";
 import Account from "./pages/account";
 import DataImportExport from "./pages/data-import-export";
+import Integrations from "./pages/integrations";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/tools" component={Tools} />
         <Route path="/account" component={Account} />
         <Route path="/data" component={DataImportExport} />
+        <Route path="/integrations" component={Integrations} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
