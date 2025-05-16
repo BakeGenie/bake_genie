@@ -318,3 +318,43 @@ export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof income.$inferSelect;
 export type Enquiry = typeof enquiries.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
+
+// Add integrations table
+export const integrations = pgTable("integrations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  provider: text("provider").notNull(), // 'square', 'stripe', etc.
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  merchantId: text("merchant_id"),
+  locationId: text("location_id"),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Add payments table
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("USD"),
+  provider: text("provider").notNull(), // 'square', 'stripe', 'manual', etc.
+  paymentId: text("payment_id"), // External payment ID
+  status: text("status").notNull(), // 'pending', 'completed', 'failed', 'refunded'
+  paymentMethod: text("payment_method"), // 'card', 'cash', 'bank_transfer', etc.
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertIntegrationSchema = createInsertSchema(integrations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
+export type Integration = typeof integrations.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
