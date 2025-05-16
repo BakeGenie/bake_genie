@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,10 +30,39 @@ import {
 import { OrderFormData } from "@/types";
 import { OrderStatus, EventType, DeliveryType, eventTypes, orderStatusTypes, deliveryTypes } from "@shared/schema";
 import { Contact } from "@shared/schema";
-import { CalendarIcon, PlusIcon, XIcon } from "lucide-react";
+import { CalendarIcon, PlusIcon, XIcon, CopyIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn, formatDate } from "@/lib/utils";
 import { insertOrderSchema } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Define cake flavors, icings, and fillings
+const cakeFlavors = [
+  "Vanilla", "Chocolate", "Red Velvet", "Lemon", "Carrot", 
+  "Coconut", "Marble", "Funfetti", "Strawberry", "Coffee"
+];
+
+const icingTypes = [
+  "Buttercream", "Cream Cheese", "Fondant", "Ganache", 
+  "Whipped Cream", "Royal Icing", "Meringue", "Naked"
+];
+
+const fillingTypes = [
+  "None", "Jam", "Buttercream", "Custard", "Ganache", 
+  "Fruit", "Mousse", "Cream Cheese"
+];
+
+// Define portion sizes for calculator
+const portionSizes = [
+  { label: "Small (1\"×1\")", value: "small", servingsMultiplier: 1.44 },
+  { label: "Regular (1\"×2\")", value: "regular", servingsMultiplier: 1 },
+  { label: "Large (2\"×2\")", value: "large", servingsMultiplier: 0.64 },
+  { label: "Extra Large (2\"×3\")", value: "xlarge", servingsMultiplier: 0.48 }
+];
 
 // Extended schema with validation rules
 const orderFormSchema = insertOrderSchema.extend({
@@ -59,6 +88,17 @@ const orderFormSchema = insertOrderSchema.extend({
       name: z.string().min(1, { message: "Name is required" }),
       description: z.string().optional(),
       quantity: z.coerce.number().int().positive(),
+      // Cake configuration for each item
+      isCake: z.boolean().optional().default(false),
+      numberOfTiers: z.coerce.number().min(1).max(6).optional(),
+      portionSize: z.string().optional(),
+      cakeTiers: z.array(z.object({
+        diameter: z.coerce.number().min(4).max(30),
+        height: z.coerce.number().min(2).max(12),
+        flavor: z.string(),
+        icing: z.string(),
+        filling: z.string(),
+      })).optional(),
       unitPrice: z.coerce.number().min(0),
       price: z.coerce.number().min(0),
       notes: z.string().optional(),
@@ -210,9 +250,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
                     <FormLabel>Customer</FormLabel>
                     <Button 
                       type="button" 
-                      variant="outline" 
+                      variant="default" 
                       size="sm"
-                      className="text-xs"
+                      className="text-xs bg-blue-600 hover:bg-blue-700"
                       onClick={() => {
                         // This would open the new customer form dialog
                         console.log("New customer button clicked");
@@ -580,6 +620,21 @@ const OrderForm: React.FC<OrderFormProps> = ({
         {/* Price Details */}
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4 mb-2">
+            <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
+            <div>
+              <FormField
+                control={form.control}
+                name="setupFee"
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    min="0"
+                    className="w-full text-right"
+                  />
+                )}
+              />
+            </div>
             <div className="text-right text-sm text-gray-500">Discount:</div>
             <div className="flex items-center">
               <FormField
@@ -610,21 +665,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
                       <SelectItem value="$">$</SelectItem>
                     </SelectContent>
                   </Select>
-                )}
-              />
-            </div>
-            <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
-            <div>
-              <FormField
-                control={form.control}
-                name="setupFee"
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    className="w-full text-right"
-                  />
                 )}
               />
             </div>
