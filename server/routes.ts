@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { router as dataRoutes } from "./routes/data";
+import { router as xeroRoutes } from "./routes/xero";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -9,6 +10,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register data import/export routes
   app.use('/api/data', dataRoutes);
+  
+  // Register Xero integration routes
+  app.use('/api/xero', xeroRoutes);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
