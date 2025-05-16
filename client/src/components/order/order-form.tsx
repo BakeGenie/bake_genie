@@ -39,6 +39,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { NewIngredientDialog, IngredientCategory } from "./new-ingredient-dialog";
 
+// Define product types
+const productTypes = [
+  "Cake", "Cupcakes", "Mini Cupcakes", "Cookies", "Macarons", "Other"
+];
+
 // Define cake flavors, icings, and fillings
 const cakeFlavors = [
   "Vanilla", "Chocolate", "Red Velvet", "Lemon", "Carrot", 
@@ -168,7 +173,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
               quantity: 1,
               unitPrice: 0,
               price: 0,
-              isCake: false,
+              isCake: true,  // Set default to true to show cake options initially
               portionSize: "regular",
               numberOfTiers: 1,
               cakeTiers: [
@@ -264,13 +269,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
   };
 
   const addItem = () => {
-    append({
+    const newItem = {
       type: "Cake",
       name: "",
       quantity: 1,
       unitPrice: 0,
       price: 0,
-      isCake: false,
+      isCake: true,
       portionSize: "regular",
       numberOfTiers: 1,
       cakeTiers: [
@@ -283,7 +288,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
           additionalFillings: []
         }
       ]
-    });
+    };
+    append(newItem);
   };
 
   // Calculate serving size
@@ -553,17 +559,20 @@ const OrderForm: React.FC<OrderFormProps> = ({
                   <div className="flex justify-between mb-4">
                     <h4 className="font-medium">Item {index + 1}</h4>
                     <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const currentValues = form.getValues(`items.${index}`);
-                          form.setValue(`items.${index}.isCake`, !currentValues.isCake);
-                        }}
-                      >
-                        {form.watch(`items.${index}.isCake`) ? "Hide Cake Options" : "Cake Options"}
-                      </Button>
+                      {/* Only show cake options button for cake products */}
+                      {form.watch(`items.${index}.type`) === "Cake" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentValues = form.getValues(`items.${index}`);
+                            form.setValue(`items.${index}.isCake`, !currentValues.isCake);
+                          }}
+                        >
+                          {form.watch(`items.${index}.isCake`) ? "Hide Cake Options" : "Show Cake Options"}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="ghost"
@@ -583,9 +592,31 @@ const OrderForm: React.FC<OrderFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Type</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Auto-toggle cake options when product type changes
+                              if (value === "Cake") {
+                                form.setValue(`items.${index}.isCake`, true);
+                              } else {
+                                form.setValue(`items.${index}.isCake`, false);
+                              }
+                            }}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select product type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {productTypes.map(type => (
+                                <SelectItem key={type} value={type}>
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
