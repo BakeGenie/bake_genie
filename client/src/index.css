@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 60 4.8% 95.9%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+
+  /* BakeDiary specific colors */
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 222.2 84% 4.9%;
+  --sidebar-primary: 207 90% 54%;
+  --sidebar-primary-foreground: 211 100% 99%;
+  --sidebar-accent: 60 4.8% 95.9%;
+  --sidebar-accent-foreground: 24 9.8% 10%;
+  --sidebar-border: 20 5.9% 90%;
+  --sidebar-ring: 222.2 84% 4.9%;
+  
+  /* Chart colors */
+  --chart-1: 207 90% 54%;
+  --chart-2: 240 5.9% 10%;
+  --chart-3: 262 83.3% 57.8%;
+  --chart-4: 27 96% 61%;
+  --chart-5: 142 71.4% 45.1%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+
+  /* BakeDiary specific dark mode colors */
+  --sidebar-background: 240 10% 3.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-primary: 207 90% 54%;
+  --sidebar-primary-foreground: 211 100% 99%;
+  --sidebar-accent: 240 3.7% 15.9%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-ring: 240 4.9% 83.9%;
+  
+  /* Chart colors - dark mode */
+  --chart-1: 207 90% 64%;
+  --chart-2: 240 5.9% 90%;
+  --chart-3: 262 83.3% 67.8%;
+  --chart-4: 27 96% 71%;
+  --chart-5: 142 71.4% 55.1%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans bg-background text-foreground;
+  }
+}
+
+/* Sidebar active link styles */
+.sidebar-link.active {
+  @apply bg-primary-50 text-primary-600 border-l-2 border-primary-600 font-medium;
+}
+
+.sidebar-link:hover:not(.active) {
+  @apply bg-gray-50;
+}
+
+/* Badge styles */
+.badge {
+  @apply text-xs px-2 py-0.5 rounded-full;
+}
+
+/* Calendar styles */
+.calendar-day {
+  @apply h-8 w-8 flex items-center justify-center mx-auto rounded-full cursor-pointer;
+}
+
+.calendar-day.today {
+  @apply bg-primary-500 text-white;
+}
+
+.calendar-day.has-events {
+  @apply border border-primary-300;
+}
+
+.calendar-day.other-month {
+  @apply text-gray-300;
+}
+
+/* Order list styles */
+.order-item {
+  @apply border-b border-gray-200 px-4 py-3 hover:bg-gray-50 cursor-pointer;
+}
+
+.order-item.selected {
+  @apply bg-gray-100;
+}
+
+/* Order status badges */
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge.draft {
+  @apply bg-gray-100 text-gray-800;
+}
+
+.status-badge.confirmed {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.status-badge.paid {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-badge.ready {
+  @apply bg-indigo-100 text-indigo-800;
+}
+
+.status-badge.delivered {
+  @apply bg-purple-100 text-purple-800;
+}
+
+.status-badge.cancelled {
+  @apply bg-gray-200 text-gray-600;
+}
+
+/* Task styles */
+.task-priority.high {
+  @apply text-red-600;
+}
+
+.task-priority.medium {
+  @apply text-amber-600;
+}
+
+.task-priority.low {
+  @apply text-green-600;
+}
+
+/* Cake designer grid */
+.design-grid {
+  background-image: radial-gradient(circle, #ddd 1px, transparent 1px);
+  background-size: 20px 20px;
+}
