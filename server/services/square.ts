@@ -1,4 +1,4 @@
-import { Client, Environment } from 'square';
+import { SquareClient as Client, SquareEnvironment as Environment, SquareError } from 'square';
 import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { integrations, payments } from '@shared/schema';
