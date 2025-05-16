@@ -1,4 +1,5 @@
-import { SquareClient as Client, SquareEnvironment as Environment, SquareError } from 'square';
+// Import Square SDK
+import { SquareClient, SquareEnvironment } from 'square';
 import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { integrations, payments } from '@shared/schema';
@@ -42,38 +43,39 @@ export class SquareService {
     
     // Exchange code for access token
     try {
-      const squareClient = new Client({
-        environment: Environment.Sandbox, // Use Environment.Production in production
+      // Initialize Square client
+      const squareClient = new Square.SquareClient({
+        environment: Square.SquareEnvironment.Sandbox // Use SquareEnvironment.Production in production
       });
       
-      const { result } = await squareClient.oAuthApi.obtainToken({
+      // Get OAuth token
+      const response = await squareClient.oAuthApi.obtainToken({
         clientId: this.SQUARE_APPLICATION_ID,
         clientSecret: this.SQUARE_APPLICATION_SECRET,
         code,
         grantType: 'authorization_code',
       });
       
-      if (!result.accessToken || !result.refreshToken || !result.merchantId) {
+      const { accessToken, refreshToken, merchantId, expiresAt } = response.result;
+      
+      if (!accessToken || !refreshToken || !merchantId) {
         throw new Error('Missing required tokens in Square response');
       }
       
       // Get first location for this merchant
       let locationId = '';
       
-      const newClient = new Client({
-        accessToken: result.accessToken,
-        environment: Environment.Sandbox, // Use Environment.Production in production
+      // Create a new client with the access token
+      const newClient = new Square.SquareClient({
+        accessToken,
+        environment: Square.SquareEnvironment.Sandbox // Use SquareEnvironment.Production in production
       });
       
       const locationsResponse = await newClient.locationsApi.listLocations();
       
       if (locationsResponse.result.locations && locationsResponse.result.locations.length > 0) {
-        locationId = locationsResponse.result.locations[0].id as string;
+        locationId = locationsResponse.result.locations[0].id;
       }
-      
-      // Store the integration details in the database
-      const expiryDate = new Date();
-      expiryDate.setSeconds(expiryDate.getSeconds() + (result.expiresIn || 0));
       
       // Check if integration already exists
       const existingIntegration = await db
@@ -89,11 +91,11 @@ export class SquareService {
         await db
           .update(integrations)
           .set({
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            merchantId: result.merchantId,
+            accessToken,
+            refreshToken,
+            merchantId,
             locationId,
-            expiresAt: expiryDate,
+            expiresAt: expiresAt ? new Date(expiresAt) : undefined,
             isActive: true,
             updatedAt: new Date(),
           })
@@ -105,11 +107,11 @@ export class SquareService {
           .values({
             userId,
             provider: 'square',
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            merchantId: result.merchantId,
+            accessToken,
+            refreshToken,
+            merchantId,
             locationId,
-            expiresAt: expiryDate,
+            expiresAt: expiresAt ? new Date(expiresAt) : undefined,
             isActive: true,
           });
       }
@@ -124,7 +126,7 @@ export class SquareService {
   /**
    * Get the Square client for a user
    */
-  async getClientForUser(userId: number): Promise<Client | null> {
+  async getClientForUser(userId: number): Promise<Square.SquareClient | null> {
     try {
       const [integration] = await db
         .select()
@@ -146,46 +148,45 @@ export class SquareService {
         }
         
         // Refresh the token
-        const squareClient = new Client({
-          environment: Environment.Sandbox, // Use Environment.Production in production
+        const squareClient = new Square.SquareClient({
+          environment: Square.SquareEnvironment.Sandbox // Use SquareEnvironment.Production in production
         });
         
-        const { result } = await squareClient.oAuthApi.obtainToken({
+        const response = await squareClient.oAuthApi.obtainToken({
           clientId: this.SQUARE_APPLICATION_ID,
           clientSecret: this.SQUARE_APPLICATION_SECRET,
           refreshToken: integration.refreshToken,
           grantType: 'refresh_token',
         });
         
-        if (!result.accessToken || !result.refreshToken) {
+        const { accessToken, refreshToken, expiresAt } = response.result;
+        
+        if (!accessToken || !refreshToken) {
           throw new Error('Failed to refresh Square access token');
         }
         
         // Update the tokens in the database
-        const expiryDate = new Date();
-        expiryDate.setSeconds(expiryDate.getSeconds() + (result.expiresIn || 0));
-        
         await db
           .update(integrations)
           .set({
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            expiresAt: expiryDate,
+            accessToken,
+            refreshToken,
+            expiresAt: expiresAt ? new Date(expiresAt) : undefined,
             updatedAt: new Date(),
           })
           .where(eq(integrations.id, integration.id));
         
         // Return client with new access token
-        return new Client({
-          accessToken: result.accessToken,
-          environment: Environment.Sandbox, // Use Environment.Production in production
+        return new Square.SquareClient({
+          accessToken,
+          environment: Square.SquareEnvironment.Sandbox // Use SquareEnvironment.Production in production
         });
       }
       
       // Return client with existing access token
-      return new Client({
+      return new Square.SquareClient({
         accessToken: integration.accessToken,
-        environment: Environment.Sandbox, // Use Environment.Production in production
+        environment: Square.SquareEnvironment.Sandbox // Use SquareEnvironment.Production in production
       });
     } catch (error) {
       console.error('Error getting Square client for user:', error);
@@ -217,12 +218,15 @@ export class SquareService {
         throw new Error('No Square location found for this user');
       }
       
+      // Convert amount to cents and handle as a BigInt for the Square API
+      const amountInCents = BigInt(Math.round(amount * 100));
+      
       // Create the payment
       const response = await client.paymentsApi.createPayment({
         sourceId,
         idempotencyKey: randomUUID(),
         amountMoney: {
-          amount: BigInt(Math.round(amount * 100)), // Convert to cents
+          amount: amountInCents,
           currency,
         },
         locationId: integration.locationId,
@@ -233,13 +237,16 @@ export class SquareService {
         throw new Error('Payment failed');
       }
       
+      // Convert the payment amount back to a number for storage
+      const paymentAmount = Number(response.result.payment.amountMoney?.amount || 0) / 100;
+      
       // Record the payment in our database
-      const paymentRecord = await db
+      const [paymentRecord] = await db
         .insert(payments)
         .values({
-          orderId,
-          userId,
-          amount,
+          orderId: orderId,
+          userId: userId,
+          amount: paymentAmount.toString(),
           currency,
           provider: 'square',
           paymentId: response.result.payment.id,
@@ -255,7 +262,7 @@ export class SquareService {
       return {
         success: true,
         payment: response.result.payment,
-        paymentRecord: paymentRecord[0],
+        paymentRecord,
       };
     } catch (error) {
       console.error('Error processing Square payment:', error);
