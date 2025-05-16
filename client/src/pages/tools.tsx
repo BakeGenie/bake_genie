@@ -483,11 +483,28 @@ const Tools = () => {
                       }}
                     >
                       <div className="relative h-full flex flex-col items-center justify-center">
-                        {/* Sample cake tiers for visualization */}
+                        {/* Sample cake tiers for visualization - cylinders instead of domes */}
                         <div className="absolute bottom-8 w-32 h-40">
-                          <div className="absolute bottom-0 w-32 h-20 bg-white rounded-t-full border border-gray-300"></div>
-                          <div className="absolute bottom-16 left-4 w-24 h-16 bg-pink-100 rounded-t-full border border-gray-300"></div>
-                          <div className="absolute bottom-28 left-8 w-16 h-12 bg-white rounded-t-full border border-gray-300"></div>
+                          {/* Bottom tier - cylinder */}
+                          <div className="absolute bottom-0 w-32 h-20 bg-white border border-gray-300 rounded-sm overflow-hidden flex flex-col">
+                            <div className="flex-grow rounded-sm"></div>
+                            <div className="h-1 w-full bg-gray-100 rounded-full"></div>
+                            <div className="h-1 w-full bg-white rounded-sm"></div>
+                          </div>
+                          
+                          {/* Middle tier - cylinder */}
+                          <div className="absolute bottom-16 left-4 w-24 h-16 bg-pink-100 border border-gray-300 rounded-sm overflow-hidden flex flex-col">
+                            <div className="flex-grow rounded-sm"></div>
+                            <div className="h-1 w-full bg-gray-100 rounded-full"></div>
+                            <div className="h-1 w-full bg-pink-100 rounded-sm"></div>
+                          </div>
+                          
+                          {/* Top tier - cylinder */}
+                          <div className="absolute bottom-28 left-8 w-16 h-12 bg-white border border-gray-300 rounded-sm overflow-hidden flex flex-col">
+                            <div className="flex-grow rounded-sm"></div>
+                            <div className="h-1 w-full bg-gray-100 rounded-full"></div>
+                            <div className="h-1 w-full bg-white rounded-sm"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
