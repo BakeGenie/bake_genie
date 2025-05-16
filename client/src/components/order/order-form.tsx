@@ -577,6 +577,66 @@ const OrderForm: React.FC<OrderFormProps> = ({
           />
         </div>
 
+        {/* Price Details */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-4 mb-2">
+            <div className="text-right text-sm text-gray-500">Discount:</div>
+            <div className="flex items-center">
+              <FormField
+                control={form.control}
+                name="discount"
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    min="0"
+                    className="w-16 text-right"
+                  />
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="discountType"
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger className="w-16 ml-2">
+                      <SelectValue placeholder="%" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="%">%</SelectItem>
+                      <SelectItem value="$">$</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
+            <div>
+              <FormField
+                control={form.control}
+                name="setupFee"
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    min="0"
+                    className="w-full text-right"
+                  />
+                )}
+              />
+            </div>
+          </div>
+          <div className="border-t border-gray-200 pt-2 mt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-right text-sm font-medium text-gray-700">Total:</div>
+              <div className="text-right font-semibold">$ {totals.total}</div>
+            </div>
+          </div>
+        </div>
+
         {/* Form Actions */}
         <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={onCancel}>
