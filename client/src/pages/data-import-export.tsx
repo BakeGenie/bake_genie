@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { AlertCircle, CheckCircle2, Download, Upload, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import AppLayout from "@/layouts/app-layout";
 
 export default function DataImportExport() {
   const [activeTab, setActiveTab] = useState("export");
@@ -28,7 +26,6 @@ export default function DataImportExport() {
   const [importError, setImportError] = useState("");
   const [exportType, setExportType] = useState("all");
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
 
   // Import options
   const [importOptions, setImportOptions] = useState({
@@ -230,7 +227,6 @@ export default function DataImportExport() {
   };
 
   return (
-    <AppLayout>
       <div className="container mx-auto py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -480,6 +476,5 @@ export default function DataImportExport() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
   );
 }
