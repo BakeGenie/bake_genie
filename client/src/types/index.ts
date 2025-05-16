@@ -124,6 +124,7 @@ export interface OrderFormData {
       flavor: string;
       icing: string;
       filling: string;
+      additionalFillings?: string[];
       sameFlavor?: boolean;
       sameIcing?: boolean;
       sameFilling?: boolean;

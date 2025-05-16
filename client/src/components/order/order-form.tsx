@@ -69,7 +69,8 @@ const cakeTierSchema = z.object({
   height: z.coerce.number().min(2).max(12),
   flavor: z.string(),
   icing: z.string(),
-  filling: z.string()
+  filling: z.string(),
+  additionalFillings: z.array(z.string()).optional().default([])
 });
 
 // Extended schema with validation rules
@@ -176,7 +177,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
                   height: 4,
                   flavor: "Vanilla",
                   icing: "Buttercream",
-                  filling: "None"
+                  filling: "None",
+                  additionalFillings: []
                 }
               ]
             },
@@ -277,7 +279,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
           height: 4,
           flavor: "Vanilla",
           icing: "Buttercream",
-          filling: "None"
+          filling: "None",
+          additionalFillings: []
         }
       ]
     });
@@ -891,7 +894,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
                                 render={({ field }) => (
                                   <FormItem>
                                     <div className="flex justify-between items-center">
-                                      <FormLabel>Filling</FormLabel>
+                                      <FormLabel>Primary Filling</FormLabel>
                                       {tierIndex > 0 && (
                                         <div className="flex items-center space-x-2">
                                           <Label htmlFor={`same-filling-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
@@ -945,6 +948,73 @@ const OrderForm: React.FC<OrderFormProps> = ({
                                   </FormItem>
                                 )}
                               />
+
+                              {/* Additional Fillings Section */}
+                              <div className="mt-4">
+                                <div className="flex justify-between items-center mb-2">
+                                  <Label className="text-sm font-medium">Additional Fillings</Label>
+                                  <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="h-8 px-2 text-xs"
+                                    onClick={() => {
+                                      const currentFillings = form.getValues(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || [];
+                                      form.setValue(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`, [...currentFillings, "None"]);
+                                    }}
+                                  >
+                                    <PlusCircleIcon className="h-3 w-3 mr-1" />
+                                    Add More Fillings
+                                  </Button>
+                                </div>
+                                
+                                {/* List of additional fillings */}
+                                {(form.watch(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || []).map((filling, fillingIndex) => (
+                                  <div key={fillingIndex} className="flex items-center gap-2 mb-2">
+                                    <div className="flex-1">
+                                      <Select 
+                                        value={filling}
+                                        onValueChange={(value) => {
+                                          const currentFillings = [...(form.getValues(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || [])];
+                                          currentFillings[fillingIndex] = value;
+                                          form.setValue(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`, currentFillings);
+                                        }}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select filling" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {allFillings.map(filling => (
+                                            <SelectItem key={filling} value={filling}>
+                                              {filling}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <Button 
+                                      type="button" 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        const currentFillings = [...(form.getValues(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || [])];
+                                        currentFillings.splice(fillingIndex, 1);
+                                        form.setValue(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`, currentFillings);
+                                      }}
+                                    >
+                                      <XIcon className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                
+                                {/* Show message if no additional fillings */}
+                                {(form.watch(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || []).length === 0 && (
+                                  <div className="text-sm text-gray-500 italic p-2 text-center border border-dashed border-gray-200 rounded-md">
+                                    No additional fillings added
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             
                             {/* Show estimated servings for this tier */}
