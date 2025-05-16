@@ -71,20 +71,19 @@ export function NewIngredientDialog({
   // Set up mutation
   const mutation = useMutation({
     mutationFn: (data: NewIngredientFormValues) => 
-      apiRequest('/api/ingredients', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
-    onSuccess: (data) => {
-      toast({
-        title: "Ingredient created",
-        description: `${data.name} has been added to your ingredients.`,
+      apiRequest('POST', '/api/ingredients', data),
+    onSuccess: (response: Response) => {
+      response.json().then(data => {
+        toast({
+          title: "Ingredient created",
+          description: `${data.name} has been added to your ingredients.`,
+        });
+        form.reset();
+        onOpenChange(false);
+        if (onSuccess) {
+          onSuccess(data.name);
+        }
       });
-      form.reset();
-      onOpenChange(false);
-      if (onSuccess) {
-        onSuccess(data.name);
-      }
     },
     onError: (error) => {
       toast({

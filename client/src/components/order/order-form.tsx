@@ -250,13 +250,15 @@ const OrderForm: React.FC<OrderFormProps> = ({
     };
   };
 
-  const handleSubmit = (values: z.infer<typeof orderFormSchema>) => {
+  const handleSubmit = (values: OrderFormData) => {
     // Calculate and add the total to the submitted data
     const totals = calculateTotal();
-    onSubmit({
+    // Ensure we pass a valid OrderFormData object
+    const orderData: OrderFormData = {
       ...values,
       total: parseFloat(totals.total.toFixed(2)),
-    });
+    };
+    onSubmit(orderData);
   };
 
   const addItem = () => {
@@ -328,7 +330,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
       />
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const formValues = form.getValues();
+          handleSubmit(formValues as OrderFormData);
+        }} className="space-y-6">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -1143,7 +1149,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             <div className="border-t border-gray-200 pt-2 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-right text-sm font-medium text-gray-700">Total:</div>
-                <div className="text-right font-semibold">$ {totals.total.toFixed(2)}</div>
+                <div className="text-right font-semibold">$ {totals.total ? totals.total.toFixed(2) : "0.00"}</div>
               </div>
             </div>
           </div>

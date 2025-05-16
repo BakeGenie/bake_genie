@@ -91,11 +91,11 @@ export interface OrderFormData {
   userId: number;
   orderNumber: string;
   contactId: number;
-  eventType: EventType;
+  eventType: string;
   eventDate: Date;
-  status: OrderStatus;
+  status: string;
   theme?: string;
-  deliveryType: DeliveryType;
+  deliveryType: string;
   deliveryDetails?: string;
   discount: number;
   discountType: "%" | "$";
