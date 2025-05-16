@@ -198,66 +198,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Price Details */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="grid grid-cols-2 gap-4 mb-2">
-            <div className="text-right text-sm text-gray-500">Discount:</div>
-            <div className="flex items-center">
-              <FormField
-                control={form.control}
-                name="discount"
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    className="w-16 text-right"
-                  />
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="discountType"
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger className="w-16 ml-2">
-                      <SelectValue placeholder="%" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="%">%</SelectItem>
-                      <SelectItem value="$">$</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
-            <div>
-              <FormField
-                control={form.control}
-                name="setupFee"
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    min="0"
-                    className="w-full text-right"
-                  />
-                )}
-              />
-            </div>
-          </div>
-          <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-right text-sm font-medium text-gray-700">Total:</div>
-              <div className="text-right font-semibold">$ {totals.total}</div>
-            </div>
-          </div>
-        </div>
-
         {/* Order Details */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -266,7 +206,21 @@ const OrderForm: React.FC<OrderFormProps> = ({
               name="contactId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Customer</FormLabel>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        // This would open the new customer form dialog
+                        console.log("New customer button clicked");
+                      }}
+                    >
+                      New Customer
+                    </Button>
+                  </div>
                   <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
                     <FormControl>
                       <SelectTrigger>
