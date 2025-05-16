@@ -18,6 +18,7 @@ import {
   UserIcon,
   XIcon,
   UtensilsIcon,
+  DatabaseIcon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -116,6 +117,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       path: "/tools",
       label: "Tools",
       icon: <Hammer className="w-5 h-5" />,
+      sublinks: true,
+    },
+    {
+      path: "/data",
+      label: "Data Import/Export",
+      icon: <DatabaseIcon className="w-5 h-5" />,
       sublinks: true,
     },
     {
