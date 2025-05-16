@@ -134,7 +134,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       contactId: initialData.contactId || 0,
       eventType: initialData.eventType || "Birthday",
       eventDate: initialData.eventDate || new Date(),
-      status: initialData.status || "Draft",
+      status: initialData.status || "Quote",
       theme: initialData.theme || "",
       deliveryType: initialData.deliveryType || "Pickup",
       deliveryDetails: initialData.deliveryDetails || "",

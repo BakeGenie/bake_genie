@@ -3,11 +3,11 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Define event types
-export const eventTypes = ['Birthday', 'Wedding', 'Corporate', 'Anniversary', 'Baby Shower', 'Gender Reveal', 'Other'] as const;
+export const eventTypes = ['Birthday', 'Wedding', 'Corporate', 'Anniversary', 'Baby Shower', 'Gender Reveal', 'Christening', 'Hen/Stag', 'Other'] as const;
 export type EventType = typeof eventTypes[number];
 
 // Define order status types
-export const orderStatusTypes = ['Draft', 'Confirmed', 'Paid', 'Ready', 'Delivered', 'Cancelled'] as const;
+export const orderStatusTypes = ['Quote', 'Confirmed', 'Paid', 'Ready', 'Delivered', 'Cancelled'] as const;
 export type OrderStatus = typeof orderStatusTypes[number];
 
 // Define quote status types
