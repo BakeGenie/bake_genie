@@ -483,27 +483,42 @@ const Tools = () => {
                       }}
                     >
                       <div className="relative h-full flex flex-col items-center justify-center">
-                        {/* Sample cake tiers for visualization - cylinders instead of domes */}
-                        <div className="absolute bottom-8 w-32 h-40">
-                          {/* Bottom tier - cylinder */}
-                          <div className="absolute bottom-0 w-32 h-20 bg-white border border-gray-300 rounded-sm overflow-hidden flex flex-col">
-                            <div className="flex-grow rounded-sm"></div>
-                            <div className="h-1 w-full bg-gray-100 rounded-full"></div>
-                            <div className="h-1 w-full bg-white rounded-sm"></div>
+                        {/* Sample cake tiers visualization - 3D cylinders stacked directly on top of each other */}
+                        <div className="absolute bottom-8 w-32 h-48">
+                          {/* Bottom tier - 3D cylinder */}
+                          <div className="absolute bottom-0 w-32 h-20 overflow-hidden">
+                            {/* Top ellipse */}
+                            <div className="absolute top-0 w-full h-4 bg-white border border-gray-300 rounded-full transform -translate-y-1/2 shadow-inner" style={{ boxShadow: 'inset 0 4px 6px -2px rgba(0, 0, 0, 0.1)' }}></div>
+                            
+                            {/* Cylinder body */}
+                            <div className="absolute top-2 w-full h-18 bg-white border-l border-r border-gray-300"></div>
+                            
+                            {/* Bottom ellipse */}
+                            <div className="absolute bottom-0 w-full h-4 bg-white border border-gray-300 rounded-full transform translate-y-1/2"></div>
                           </div>
                           
-                          {/* Middle tier - cylinder */}
-                          <div className="absolute bottom-16 left-4 w-24 h-16 bg-pink-100 border border-gray-300 rounded-sm overflow-hidden flex flex-col">
-                            <div className="flex-grow rounded-sm"></div>
-                            <div className="h-1 w-full bg-gray-100 rounded-full"></div>
-                            <div className="h-1 w-full bg-pink-100 rounded-sm"></div>
+                          {/* Middle tier - 3D cylinder */}
+                          <div className="absolute bottom-20 left-4 w-24 h-16 overflow-hidden">
+                            {/* Top ellipse */}
+                            <div className="absolute top-0 w-full h-3 bg-pink-100 border border-gray-300 rounded-full transform -translate-y-1/2 shadow-inner" style={{ boxShadow: 'inset 0 4px 6px -2px rgba(0, 0, 0, 0.1)' }}></div>
+                            
+                            {/* Cylinder body */}
+                            <div className="absolute top-1.5 w-full h-14 bg-pink-100 border-l border-r border-gray-300"></div>
+                            
+                            {/* Bottom ellipse */}
+                            <div className="absolute bottom-0 w-full h-3 bg-pink-100 border border-gray-300 rounded-full transform translate-y-1/2"></div>
                           </div>
                           
-                          {/* Top tier - cylinder */}
-                          <div className="absolute bottom-28 left-8 w-16 h-12 bg-white border border-gray-300 rounded-sm overflow-hidden flex flex-col">
-                            <div className="flex-grow rounded-sm"></div>
-                            <div className="h-1 w-full bg-gray-100 rounded-full"></div>
-                            <div className="h-1 w-full bg-white rounded-sm"></div>
+                          {/* Top tier - 3D cylinder */}
+                          <div className="absolute bottom-36 left-8 w-16 h-12 overflow-hidden">
+                            {/* Top ellipse */}
+                            <div className="absolute top-0 w-full h-3 bg-white border border-gray-300 rounded-full transform -translate-y-1/2 shadow-inner" style={{ boxShadow: 'inset 0 4px 6px -2px rgba(0, 0, 0, 0.1)' }}></div>
+                            
+                            {/* Cylinder body */}
+                            <div className="absolute top-1.5 w-full h-10 bg-white border-l border-r border-gray-300"></div>
+                            
+                            {/* Bottom ellipse */}
+                            <div className="absolute bottom-0 w-full h-3 bg-white border border-gray-300 rounded-full transform translate-y-1/2"></div>
                           </div>
                         </div>
                       </div>
