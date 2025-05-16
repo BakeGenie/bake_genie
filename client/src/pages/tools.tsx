@@ -483,43 +483,37 @@ const Tools = () => {
                       }}
                     >
                       <div className="relative h-full flex flex-col items-center justify-center">
-                        {/* Sample cake tiers visualization - 3D cylinders stacked directly on top of each other */}
-                        <div className="absolute bottom-8 w-32 h-48">
-                          {/* Bottom tier - 3D cylinder */}
-                          <div className="absolute bottom-0 w-32 h-20 overflow-hidden">
-                            {/* Top ellipse */}
-                            <div className="absolute top-0 w-full h-4 bg-white border border-gray-300 rounded-full transform -translate-y-1/2 shadow-inner" style={{ boxShadow: 'inset 0 4px 6px -2px rgba(0, 0, 0, 0.1)' }}></div>
+                        {/* Simple cake tiers visualization matching the screenshot reference */}
+                        <div className="relative flex items-center justify-center w-full h-full">
+                          {/* SVG representation of the stacked cake tiers with simple outlines */}
+                          <svg width="200" height="300" viewBox="0 0 200 300" className="absolute">
+                            {/* Bottom tier */}
+                            <g>
+                              <ellipse cx="100" cy="230" rx="90" ry="20" stroke="#333" fill="transparent" strokeWidth="1" />
+                              <rect x="10" y="150" width="180" height="80" fill="transparent" stroke="none" />
+                              <line x1="10" y1="150" x2="10" y2="230" stroke="#333" strokeWidth="1" />
+                              <line x1="190" y1="150" x2="190" y2="230" stroke="#333" strokeWidth="1" />
+                              <ellipse cx="100" cy="150" rx="90" ry="20" stroke="#333" fill="transparent" strokeWidth="1" />
+                            </g>
                             
-                            {/* Cylinder body */}
-                            <div className="absolute top-2 w-full h-18 bg-white border-l border-r border-gray-300"></div>
+                            {/* Middle tier */}
+                            <g>
+                              <ellipse cx="100" cy="150" rx="70" ry="15" stroke="#333" fill="transparent" strokeWidth="1" />
+                              <rect x="30" y="90" width="140" height="60" fill="transparent" stroke="none" />
+                              <line x1="30" y1="90" x2="30" y2="150" stroke="#333" strokeWidth="1" />
+                              <line x1="170" y1="90" x2="170" y2="150" stroke="#333" strokeWidth="1" />
+                              <ellipse cx="100" cy="90" rx="70" ry="15" stroke="#333" fill="transparent" strokeWidth="1" />
+                            </g>
                             
-                            {/* Bottom ellipse */}
-                            <div className="absolute bottom-0 w-full h-4 bg-white border border-gray-300 rounded-full transform translate-y-1/2"></div>
-                          </div>
-                          
-                          {/* Middle tier - 3D cylinder */}
-                          <div className="absolute bottom-20 left-4 w-24 h-16 overflow-hidden">
-                            {/* Top ellipse */}
-                            <div className="absolute top-0 w-full h-3 bg-pink-100 border border-gray-300 rounded-full transform -translate-y-1/2 shadow-inner" style={{ boxShadow: 'inset 0 4px 6px -2px rgba(0, 0, 0, 0.1)' }}></div>
-                            
-                            {/* Cylinder body */}
-                            <div className="absolute top-1.5 w-full h-14 bg-pink-100 border-l border-r border-gray-300"></div>
-                            
-                            {/* Bottom ellipse */}
-                            <div className="absolute bottom-0 w-full h-3 bg-pink-100 border border-gray-300 rounded-full transform translate-y-1/2"></div>
-                          </div>
-                          
-                          {/* Top tier - 3D cylinder */}
-                          <div className="absolute bottom-36 left-8 w-16 h-12 overflow-hidden">
-                            {/* Top ellipse */}
-                            <div className="absolute top-0 w-full h-3 bg-white border border-gray-300 rounded-full transform -translate-y-1/2 shadow-inner" style={{ boxShadow: 'inset 0 4px 6px -2px rgba(0, 0, 0, 0.1)' }}></div>
-                            
-                            {/* Cylinder body */}
-                            <div className="absolute top-1.5 w-full h-10 bg-white border-l border-r border-gray-300"></div>
-                            
-                            {/* Bottom ellipse */}
-                            <div className="absolute bottom-0 w-full h-3 bg-white border border-gray-300 rounded-full transform translate-y-1/2"></div>
-                          </div>
+                            {/* Top tier */}
+                            <g>
+                              <ellipse cx="100" cy="90" rx="50" ry="10" stroke="#333" fill="transparent" strokeWidth="1" />
+                              <rect x="50" y="40" width="100" height="50" fill="transparent" stroke="none" />
+                              <line x1="50" y1="40" x2="50" y2="90" stroke="#333" strokeWidth="1" />
+                              <line x1="150" y1="40" x2="150" y2="90" stroke="#333" strokeWidth="1" />
+                              <ellipse cx="100" cy="40" rx="50" ry="10" stroke="#333" fill="transparent" strokeWidth="1" />
+                            </g>
+                          </svg>
                         </div>
                       </div>
                     </div>
