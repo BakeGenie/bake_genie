@@ -523,55 +523,7 @@ const Products = () => {
                     )}
                   />
                   
-                  {/* Product image upload */}
-                  <div className="space-y-4 mt-6">
-                    <h3 className="text-lg font-medium">Product Image</h3>
-                    <div className="flex flex-col space-y-2">
-                      {imagePreview ? (
-                        <div className="relative w-full max-w-md rounded-md overflow-hidden border">
-                          <img 
-                            src={imagePreview} 
-                            alt="Product preview" 
-                            className="w-full h-48 object-cover"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2"
-                            onClick={() => {
-                              setImageFile(null);
-                              setImagePreview(null);
-                              form.setValue("imageUrl", "");
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <Upload className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
-                              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                <span className="font-semibold">Click to upload</span> or drag and drop
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                SVG, PNG, JPG or GIF (MAX. 2MB)
-                              </p>
-                            </div>
-                            <input 
-                              id="dropzone-file" 
-                              type="file" 
-                              className="hidden" 
-                              accept="image/*"
-                              onChange={handleImageChange}
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+
                 </div>
                 
                 {/* Details Card */}
