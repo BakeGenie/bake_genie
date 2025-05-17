@@ -54,6 +54,7 @@ const productFormSchema = insertProductSchema.extend({
   name: z.string().min(1, "Name is required"),
   type: z.string().min(1, "Type is required"),
   price: z.coerce.number().min(0, "Price must be a positive number"),
+  imageUrl: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -74,6 +75,8 @@ const Products = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [filterType, setFilterType] = React.useState<string | null>(null);
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
 
   // Fetch products
   const { data: products = [], isLoading } = useQuery<Product[]>({
@@ -125,11 +128,58 @@ const Products = () => {
     return (totalCost / servings).toFixed(2);
   };
 
+  // Handle image change
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Set the imageUrl field in the form
+      form.setValue("imageUrl", URL.createObjectURL(file));
+    }
+  };
+  
+  // Handle image upload
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image", file);
+    
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+      
+      const data = await response.json();
+      return data.imageUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
   // Handle new product submission
   const handleNewProductSubmit = async (data: ProductFormValues) => {
     setIsSubmitting(true);
     
     try {
+      // If there's an image file, upload it first
+      if (imageFile) {
+        const imageUrl = await uploadImage(imageFile);
+        data.imageUrl = imageUrl;
+      }
+      
       await apiRequest("POST", "/api/products", data);
       
       // Invalidate products query to refresh the list
@@ -137,6 +187,8 @@ const Products = () => {
       
       // Reset form and close dialog
       form.reset();
+      setImageFile(null);
+      setImagePreview(null);
       setIsNewProductDialogOpen(false);
       
       toast({
@@ -317,19 +369,43 @@ const Products = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select product type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Cake">Cake</SelectItem>
-                            <SelectItem value="Cupcakes">Cupcakes</SelectItem>
-                            <SelectItem value="Cookies">Cookies</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            {field.value === "custom" ? (
+                              <FormControl>
+                                <Input 
+                                  placeholder="Enter custom type" 
+                                  value={field.value === "custom" ? "" : field.value}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                />
+                              </FormControl>
+                            ) : (
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select product type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Cake">Cake</SelectItem>
+                                  <SelectItem value="Cupcakes">Cupcakes</SelectItem>
+                                  <SelectItem value="Cookies">Cookies</SelectItem>
+                                  <SelectItem value="custom">Add custom type...</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                          {field.value === "custom" && (
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => field.onChange("Cake")}
+                              className="flex-none"
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
