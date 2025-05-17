@@ -224,7 +224,7 @@ router.post("/import/cake-diary", upload.single("file"), async (req: Request, re
       return res.status(400).json({ success: false, error: "Invalid JSON file" });
     }
     
-    // Transform Cake Diary data to CakeHub format
+    // Transform Cake Diary data to BakeGenie format
     const transformedData = transformCakeDiaryData(data);
     
     // Parse import options from request body
