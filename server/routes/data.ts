@@ -270,10 +270,10 @@ router.post("/import/cake-diary", upload.single("file"), async (req: Request, re
 });
 
 /**
- * Transform Cake Diary data format to CakeHub format
+ * Transform Cake Diary data format to BakeGenie format
  */
 function transformCakeDiaryData(cakeDiaryData: any): ImportData {
-  // Map fields from Cake Diary format to CakeHub format
+  // Map fields from Cake Diary format to BakeGenie format
   // This is a placeholder implementation - the actual transformation would depend on the Cake Diary data structure
   
   const transformedData: ImportData = {
@@ -407,7 +407,7 @@ function transformCakeDiaryData(cakeDiaryData: any): ImportData {
 }
 
 /**
- * Map Cake Diary event type to CakeHub event type
+ * Map Cake Diary event type to BakeGenie event type
  */
 function mapEventType(eventType: string): string {
   const mapping: Record<string, string> = {
@@ -427,7 +427,7 @@ function mapEventType(eventType: string): string {
 }
 
 /**
- * Map Cake Diary order status to CakeHub order status
+ * Map Cake Diary order status to BakeGenie order status
  */
 function mapOrderStatus(status: string): string {
   const mapping: Record<string, string> = {
@@ -444,7 +444,7 @@ function mapOrderStatus(status: string): string {
 }
 
 /**
- * Map Cake Diary enquiry status to CakeHub enquiry status
+ * Map Cake Diary enquiry status to BakeGenie enquiry status
  */
 function mapEnquiryStatus(status: string): string {
   const mapping: Record<string, string> = {
