@@ -350,11 +350,35 @@ export const payments = pgTable("payments", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Product Bundles table
+export const productBundles = pgTable("product_bundles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Bundle Items table - links products to bundles
+export const bundleItems = pgTable("bundle_items", {
+  id: serial("id").primaryKey(),
+  bundleId: integer("bundle_id").notNull().references(() => productBundles.id),
+  productId: integer("product_id").notNull().references(() => products.id),
+  quantity: integer("quantity").default(1).notNull(),
+});
+
 export const insertIntegrationSchema = createInsertSchema(integrations).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertProductBundleSchema = createInsertSchema(productBundles).omit({ id: true, createdAt: true });
+export const insertBundleItemSchema = createInsertSchema(bundleItems).omit({ id: true });
 
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type InsertProductBundle = z.infer<typeof insertProductBundleSchema>;
+export type InsertBundleItem = z.infer<typeof insertBundleItemSchema>;
 
 export type Integration = typeof integrations.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
+export type ProductBundle = typeof productBundles.$inferSelect;
+export type BundleItem = typeof bundleItems.$inferSelect;
