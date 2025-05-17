@@ -486,7 +486,7 @@ const Products = () => {
                           <div className="flex flex-col items-center space-y-2">
                             <Upload className="h-8 w-8 text-gray-400" />
                             <p className="text-sm text-gray-500">Click to upload an image</p>
-                            <p className="text-xs text-gray-400">PNG, JPG, GIF up to 2MB</p>
+                            <p className="text-xs text-gray-400">PNG, JPG, GIF up to 3MB</p>
                           </div>
                         </div>
                       )}
