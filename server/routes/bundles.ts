@@ -1,14 +1,22 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { db } from "../db";
 import { bundleItems, productBundles, products } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
+
+// Extend the Request type to include session
+interface AuthRequest extends Express.Request {
+  session: {
+    userId: number;
+    [key: string]: any;
+  };
+}
 
 export const router = Router();
 
 /**
  * Get all bundles for the current user
  */
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.session.userId;
     const bundles = await db.query.productBundles.findMany({
@@ -33,7 +41,7 @@ router.get("/", async (req: Request, res: Response) => {
 /**
  * Get a bundle by ID
  */
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.session.userId;
     const bundleId = parseInt(req.params.id);
@@ -67,7 +75,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 /**
  * Create a new bundle
  */
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.session.userId;
     const { name, description, totalCost, items } = req.body;
@@ -104,7 +112,7 @@ router.post("/", async (req: Request, res: Response) => {
 /**
  * Update a bundle
  */
-router.put("/:id", async (req: Request, res: Response) => {
+router.put("/:id", async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.session.userId;
     const bundleId = parseInt(req.params.id);
@@ -156,7 +164,7 @@ router.put("/:id", async (req: Request, res: Response) => {
 /**
  * Delete a bundle
  */
-router.delete("/:id", async (req: Request, res: Response) => {
+router.delete("/:id", async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.session.userId;
     const bundleId = parseInt(req.params.id);
