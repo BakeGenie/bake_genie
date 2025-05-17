@@ -308,6 +308,15 @@ const Products = () => {
                   <CardDescription>{product.type}</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {product.imageUrl && (
+                    <div className="mb-3 h-32 flex items-center justify-center">
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name} 
+                        className="max-h-32 max-w-full object-contain"
+                      />
+                    </div>
+                  )}
                   {product.description && (
                     <p className="text-sm text-gray-500 line-clamp-2 mb-2">{product.description}</p>
                   )}
@@ -443,6 +452,53 @@ const Products = () => {
                       </FormItem>
                     )}
                   />
+                  
+                  {/* Image Upload Field */}
+                  <FormItem>
+                    <FormLabel>Product Image</FormLabel>
+                    <div className="flex flex-col items-center space-y-2">
+                      {imagePreview ? (
+                        <div className="relative w-full h-40 mb-2">
+                          <img 
+                            src={imagePreview} 
+                            alt="Product preview" 
+                            className="w-full h-full object-contain border rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="absolute top-2 right-2 h-8 w-8 p-0"
+                            onClick={() => {
+                              setImageFile(null);
+                              setImagePreview(null);
+                              form.setValue("imageUrl", "");
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="border-2 border-dashed border-gray-300 rounded-md w-full h-40 flex items-center justify-center cursor-pointer hover:border-primary-500"
+                          onClick={() => document.getElementById('product-image-upload')?.click()}
+                        >
+                          <div className="flex flex-col items-center space-y-2">
+                            <Upload className="h-8 w-8 text-gray-400" />
+                            <p className="text-sm text-gray-500">Click to upload an image</p>
+                            <p className="text-xs text-gray-400">PNG, JPG, GIF up to 2MB</p>
+                          </div>
+                        </div>
+                      )}
+                      <input
+                        id="product-image-upload"
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </div>
+                  </FormItem>
                   
                   <FormField
                     control={form.control}
