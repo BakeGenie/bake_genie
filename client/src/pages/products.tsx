@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Product } from "@shared/schema";
+import { Product, ProductBundle } from "@shared/schema";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +50,8 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { ProductFormData } from "@/types";
+import { BundleDialog } from "@/components/product/bundle-dialog";
+import { formatCurrency } from "@/lib/utils";
 
 // Extended schema with validation rules
 const productFormSchema = insertProductSchema.extend({
@@ -57,6 +59,7 @@ const productFormSchema = insertProductSchema.extend({
   type: z.string().min(1, "Type is required"),
   price: z.coerce.number().min(0, "Price must be a positive number"),
   imageUrl: z.string().optional(),
+  bundleId: z.number().optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -79,10 +82,18 @@ const Products = () => {
   const [filterType, setFilterType] = React.useState<string | null>(null);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [selectedBundleId, setSelectedBundleId] = React.useState<number | null>(null);
+  const [selectedBundleName, setSelectedBundleName] = React.useState<string | null>(null);
 
   // Fetch products
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+  });
+  
+  // Fetch bundle if a product has bundleId
+  const { data: bundle } = useQuery<ProductBundle>({
+    queryKey: ["/api/bundles", selectedBundleId],
+    enabled: !!selectedBundleId,
   });
 
   // Product form
@@ -100,9 +111,26 @@ const Products = () => {
       laborHours: 0,
       laborRate: 30, // Default labor rate
       overhead: 0,
+      bundleId: null,
       active: true,
     },
   });
+  
+  // Handle bundle selection
+  const handleBundleSelected = (bundleId: number) => {
+    setSelectedBundleId(bundleId);
+    form.setValue("bundleId", bundleId);
+    
+    // Fetch the bundle name to display
+    fetch(`/api/bundles/${bundleId}`)
+      .then(res => res.json())
+      .then(data => {
+        setSelectedBundleName(data.name);
+      })
+      .catch(err => {
+        console.error("Error fetching bundle", err);
+      });
+  };
 
   // Calculate profit based on form values
   const calculateProfit = () => {
