@@ -527,6 +527,43 @@ const Products = () => {
                       />
                     </div>
                   </FormItem>
+
+                  <FormItem>
+                    <FormLabel>Product Bundle</FormLabel>
+                    <div className="flex items-center gap-2">
+                      {selectedBundleName ? (
+                        <div className="flex-1 flex items-center justify-between border rounded-md p-2">
+                          <span>{selectedBundleName}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBundleId(null);
+                              setSelectedBundleName(null);
+                              form.setValue("bundleId", null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex-1">
+                          <BundleDialog 
+                            onBundleSelected={handleBundleSelected}
+                            trigger={
+                              <Button type="button" variant="outline" className="w-full gap-1">
+                                <PlusIcon className="h-4 w-4" /> Select Bundle
+                              </Button>
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Select a product bundle to include this product in
+                    </p>
+                  </FormItem>
                   
                   <FormField
                     control={form.control}
