@@ -168,6 +168,7 @@ export const products = pgTable("products", {
   laborRate: decimal("labor_rate", { precision: 10, scale: 2 }).default("0"),
   overhead: decimal("overhead", { precision: 10, scale: 2 }).default("0"),
   imageUrl: text("image_url"),
+  bundleId: integer("bundle_id"),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
