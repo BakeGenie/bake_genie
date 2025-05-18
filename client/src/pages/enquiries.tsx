@@ -26,11 +26,18 @@ const Enquiries = () => {
   const [selectedEnquiry, setSelectedEnquiry] = React.useState<Enquiry | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [statusFilter, setStatusFilter] = React.useState<string | null>(null);
 
   // Fetch enquiries
-  const { data: enquiries = [], isLoading } = useQuery<Enquiry[]>({
+  const { data: allEnquiries = [], isLoading } = useQuery<Enquiry[]>({
     queryKey: ["/api/enquiries"],
   });
+  
+  // Apply status filter if selected
+  const enquiries = React.useMemo(() => {
+    if (!statusFilter) return allEnquiries;
+    return allEnquiries.filter(enquiry => enquiry.status === statusFilter);
+  }, [allEnquiries, statusFilter]);
 
   // Handle enquiry status update
   const updateEnquiryStatus = async (id: number, status: string) => {
@@ -166,12 +173,50 @@ const Enquiries = () => {
           </Button>
         </div>
       </div>
+      
+      <div className="flex flex-wrap items-center gap-2 mt-4">
+        <div className="text-sm font-medium">Filter by status:</div>
+        <Button 
+          variant={statusFilter === null ? "default" : "outline"} 
+          className="text-xs h-8"
+          onClick={() => setStatusFilter(null)}
+        >
+          All
+        </Button>
+        <Button 
+          variant={statusFilter === "New" ? "default" : "outline"} 
+          className="text-xs h-8 bg-blue-500 hover:bg-blue-600"
+          onClick={() => setStatusFilter("New")}
+        >
+          New
+        </Button>
+        <Button 
+          variant={statusFilter === "In Progress" ? "default" : "outline"} 
+          className="text-xs h-8 bg-amber-500 hover:bg-amber-600"
+          onClick={() => setStatusFilter("In Progress")}
+        >
+          In Progress
+        </Button>
+        <Button 
+          variant={statusFilter === "Responded" ? "default" : "outline"} 
+          className="text-xs h-8 bg-green-500 hover:bg-green-600"
+          onClick={() => setStatusFilter("Responded")}
+        >
+          Responded
+        </Button>
+        <Button 
+          variant={statusFilter === "Closed" ? "default" : "outline"} 
+          className="text-xs h-8"
+          onClick={() => setStatusFilter("Closed")}
+        >
+          Closed
+        </Button>
+      </div>
 
       <div className="mt-6">
         <DataTable
           columns={columns}
           data={enquiries}
-          isLoading={isLoading}
           searchPlaceholder="Search enquiries..."
           searchKey="name"
           onRowClick={handleEnquiryClick}
