@@ -41,14 +41,18 @@ import { eventTypes } from "@shared/schema";
 // Define the event types
 const eventTypesArray = [...eventTypes, "Other"];
 
+// Define source options
+const sourceOptions = ["Phone", "Email", "In-person", "Facebook", "Instagram", "Other"];
+
 const enquiryFormSchema = insertEnquirySchema.extend({
   // Add any client-side validation rules
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Please enter a valid email address").nullable().optional(),
   phone: z.string().nullable().optional(),
   message: z.string().min(10, "Please provide more details in your message"),
   eventType: z.string().nullable().optional(),
   eventDate: z.date().nullable().optional(),
+  source: z.string().nullable().optional(),
 });
 
 type EnquiryFormValues = z.infer<typeof enquiryFormSchema>;
@@ -66,11 +70,12 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
     resolver: zodResolver(enquiryFormSchema),
     defaultValues: {
       name: "",
-      email: "",
+      email: null,
       phone: "",
       message: "",
       eventType: null,
       eventDate: null,
+      source: null,
       status: "New",
       userId: 1, // Default user ID
     },
@@ -146,9 +151,9 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email*</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="customer@example.com" {...field} />
+                      <Input type="email" placeholder="customer@example.com" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,6 +176,36 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
                 )}
               />
               
+              <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Source</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {sourceOptions.map((source) => (
+                          <SelectItem key={source} value={source}>
+                            {source}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="eventType"
@@ -198,46 +233,46 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
                   </FormItem>
                 )}
               />
+              
+              <FormField
+                control={form.control}
+                name="eventDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Event Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            
-            <FormField
-              control={form.control}
-              name="eventDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Event Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={field.value || undefined}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             
             <FormField
               control={form.control}
