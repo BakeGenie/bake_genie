@@ -171,47 +171,37 @@ const Tools = () => {
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <Label className="mb-3 block text-base font-medium">Cake Shape</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div 
-                      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  <Label className="mb-2 block">Cake Shape</Label>
+                  <div className="flex space-x-3">
+                    <button 
+                      type="button"
+                      className={`flex items-center py-1.5 px-3 rounded border ${
                         cakeShape === "round" 
-                          ? "border-primary-500 bg-primary-50" 
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          ? "border-primary-500 bg-primary-50 text-primary-700" 
+                          : "border-gray-200 text-gray-700 hover:bg-gray-50"
                       }`}
                       onClick={() => setCakeShape("round")}
                     >
-                      <div className={`w-16 h-16 rounded-full border-2 ${
-                        cakeShape === "round" ? "border-primary-500" : "border-gray-300"
-                      } flex items-center justify-center mb-2`}>
-                        <CircleIcon className={`h-8 w-8 ${
-                          cakeShape === "round" ? "text-primary-500" : "text-gray-400"
-                        }`} />
-                      </div>
-                      <span className={`font-medium ${
-                        cakeShape === "round" ? "text-primary-700" : "text-gray-700"
-                      }`}>Round</span>
-                    </div>
+                      <CircleIcon className={`h-4 w-4 mr-1.5 ${
+                        cakeShape === "round" ? "text-primary-500" : "text-gray-400"
+                      }`} />
+                      Round
+                    </button>
                     
-                    <div 
-                      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    <button 
+                      type="button"
+                      className={`flex items-center py-1.5 px-3 rounded border ${
                         cakeShape === "square" 
-                          ? "border-primary-500 bg-primary-50" 
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          ? "border-primary-500 bg-primary-50 text-primary-700" 
+                          : "border-gray-200 text-gray-700 hover:bg-gray-50"
                       }`}
                       onClick={() => setCakeShape("square")}
                     >
-                      <div className={`w-16 h-16 rounded-md border-2 ${
-                        cakeShape === "square" ? "border-primary-500" : "border-gray-300"
-                      } flex items-center justify-center mb-2`}>
-                        <SquareIcon className={`h-8 w-8 ${
-                          cakeShape === "square" ? "text-primary-500" : "text-gray-400"
-                        }`} />
-                      </div>
-                      <span className={`font-medium ${
-                        cakeShape === "square" ? "text-primary-700" : "text-gray-700"
-                      }`}>Square</span>
-                    </div>
+                      <SquareIcon className={`h-4 w-4 mr-1.5 ${
+                        cakeShape === "square" ? "text-primary-500" : "text-gray-400"
+                      }`} />
+                      Square
+                    </button>
                   </div>
                 </div>
 
