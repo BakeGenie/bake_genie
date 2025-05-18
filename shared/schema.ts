@@ -403,7 +403,59 @@ export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type InsertProductBundle = z.infer<typeof insertProductBundleSchema>;
 export type InsertBundleItem = z.infer<typeof insertBundleItemSchema>;
 
+// Payment Reminder Templates
+export const reminderTemplates = pgTable("reminder_templates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Payment Reminder Schedules
+export const reminderSchedules = pgTable("reminder_schedules", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  templateId: integer("template_id").references(() => reminderTemplates.id),
+  daysBefore: integer("days_before"), // Days before due date (null for "overdue")
+  isOverdue: boolean("is_overdue").default(false), // True for overdue reminders
+  customSubject: text("custom_subject"), // Optional custom subject, otherwise use template
+  customBody: text("custom_body"), // Optional custom body, otherwise use template
+  isEnabled: boolean("is_enabled").default(true),
+  lastSent: timestamp("last_sent"),
+  nextSend: timestamp("next_send"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Payment Reminder History - track when reminders were sent
+export const reminderHistory = pgTable("reminder_history", {
+  id: serial("id").primaryKey(),
+  scheduleId: integer("schedule_id").notNull().references(() => reminderSchedules.id),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  sentTo: text("sent_to").notNull(), // Email address
+  subject: text("subject").notNull(), 
+  body: text("body").notNull(),
+  status: text("status").notNull(), // 'sent', 'failed', etc.
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+});
+
+export const insertReminderTemplateSchema = createInsertSchema(reminderTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertReminderScheduleSchema = createInsertSchema(reminderSchedules).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertReminderHistorySchema = createInsertSchema(reminderHistory).omit({ id: true });
+
+export type InsertReminderTemplate = z.infer<typeof insertReminderTemplateSchema>;
+export type InsertReminderSchedule = z.infer<typeof insertReminderScheduleSchema>;
+export type InsertReminderHistory = z.infer<typeof insertReminderHistorySchema>;
+
 export type Integration = typeof integrations.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type ProductBundle = typeof productBundles.$inferSelect;
 export type BundleItem = typeof bundleItems.$inferSelect;
+export type ReminderTemplate = typeof reminderTemplates.$inferSelect;
+export type ReminderSchedule = typeof reminderSchedules.$inferSelect;
+export type ReminderHistory = typeof reminderHistory.$inferSelect;
