@@ -1160,40 +1160,6 @@ const Tools = () => {
 
                 <Separator className="my-4" />
 
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Total Monthly Overhead:</span>
-                        <span className="font-medium">$1,200.00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Overhead per Order:</span>
-                        <span className="font-medium">$40.00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Recommended Markup:</span>
-                        <span className="font-medium">30%</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm">Projected Monthly Revenue:</span>
-                        <span className="font-medium">$3,000.00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Projected Monthly Profit:</span>
-                        <span className="font-medium text-green-600">$900.00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Projected Annual Profit:</span>
-                        <span className="font-medium text-green-600">$10,800.00</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex justify-end">
                   <Button
                     onClick={() => {
