@@ -233,27 +233,108 @@ const Recipes = () => {
         }
       />
 
-      <Tabs
-        defaultValue="recipes"
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="mt-6"
-      >
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="recipes">Recipes</TabsTrigger>
-          <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
-        </TabsList>
-        
-        {/* Recipes Tab */}
-        <TabsContent value="recipes">
-          <div className="mb-4 mt-4 relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search recipes..."
-              className="pl-9"
-              value={searchRecipe}
-              onChange={(e) => setSearchRecipe(e.target.value)}
-            />
+      {/* New Feature Blocks Layout */}
+      <div className="mt-6 flex flex-col gap-4">
+        {/* Recipe Book */}
+        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="bg-primary-100 p-3 rounded-full">
+              <UtensilsCrossedIcon className="h-6 w-6 text-primary-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Recipe Book</CardTitle>
+              <CardDescription>Use the recipe book to add & manage all your favourite recipes.</CardDescription>
+            </div>
+            <Button className="ml-auto" onClick={() => setActiveTab("recipes")}>
+              <PlusIcon className="h-4 w-4 mr-2" /> Open
+            </Button>
+          </CardHeader>
+        </Card>
+
+        {/* Ingredients */}
+        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="bg-blue-100 p-3 rounded-full">
+              <UtensilsCrossedIcon className="h-6 w-6 text-blue-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Ingredients</CardTitle>
+              <CardDescription>Add or edit ingredients in your master list & use it to create your recipes.</CardDescription>
+            </div>
+            <Button className="ml-auto" onClick={() => setActiveTab("ingredients")}>
+              <PlusIcon className="h-4 w-4 mr-2" /> Open
+            </Button>
+          </CardHeader>
+        </Card>
+
+        {/* Supplies List */}
+        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="bg-green-100 p-3 rounded-full">
+              <ClockIcon className="h-6 w-6 text-green-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Supplies List</CardTitle>
+              <CardDescription>Add supplies such as boards, boxes & ribbons & add them in your orders.</CardDescription>
+            </div>
+            <Button className="ml-auto" variant="outline">
+              <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
+            </Button>
+          </CardHeader>
+        </Card>
+
+        {/* Master Ingredient List */}
+        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="bg-yellow-100 p-3 rounded-full">
+              <SearchIcon className="h-6 w-6 text-yellow-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Master Ingredient List</CardTitle>
+              <CardDescription>Pick from a list of pre-converted ingredients and add them to your list.</CardDescription>
+            </div>
+            <Button className="ml-auto" variant="outline">
+              <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
+            </Button>
+          </CardHeader>
+        </Card>
+
+        {/* My Bundles */}
+        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center gap-4">
+            <div className="bg-purple-100 p-3 rounded-full">
+              <PlusIcon className="h-6 w-6 text-purple-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">My Bundles</CardTitle>
+              <CardDescription>Bundle recipes & supplies together to make adding them to your order easier.</CardDescription>
+            </div>
+            <Button className="ml-auto" variant="outline">
+              <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
+            </Button>
+          </CardHeader>
+        </Card>
+      </div>
+
+      {/* Hidden Tabs - Will be shown based on the activeTab state */}
+      {activeTab === "recipes" && (
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Recipe Book</h2>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search recipes..."
+                  className="pl-9 w-60"
+                  value={searchRecipe}
+                  onChange={(e) => setSearchRecipe(e.target.value)}
+                />
+              </div>
+              <Button onClick={() => setIsNewRecipeDialogOpen(true)}>
+                <PlusIcon className="h-4 w-4 mr-2" /> New Recipe
+              </Button>
+            </div>
           </div>
           
           {isLoadingRecipes ? (
@@ -334,18 +415,27 @@ const Recipes = () => {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-        
-        {/* Ingredients Tab */}
-        <TabsContent value="ingredients">
-          <div className="mb-4 mt-4 relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search ingredients..."
-              className="pl-9"
-              value={searchIngredient}
-              onChange={(e) => setSearchIngredient(e.target.value)}
-            />
+        </div>
+      )}
+      
+      {activeTab === "ingredients" && (
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Ingredients</h2>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search ingredients..."
+                  className="pl-9 w-60"
+                  value={searchIngredient}
+                  onChange={(e) => setSearchIngredient(e.target.value)}
+                />
+              </div>
+              <Button onClick={() => setIsNewIngredientDialogOpen(true)}>
+                <PlusIcon className="h-4 w-4 mr-2" /> New Ingredient
+              </Button>
+            </div>
           </div>
           
           {isLoadingIngredients ? (
@@ -423,8 +513,8 @@ const Recipes = () => {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       {/* New Recipe Dialog */}
       <Dialog open={isNewRecipeDialogOpen} onOpenChange={setIsNewRecipeDialogOpen}>
