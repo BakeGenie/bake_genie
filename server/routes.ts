@@ -7,6 +7,7 @@ import { router as uploadRoutes } from "./routes/upload";
 import { router as bundlesRoutes } from "./routes/bundles";
 import { router as invoicesRoutes } from "./routes/invoices";
 import { router as sampleInvoiceRoutes } from "./routes/sample-invoice";
+import { router as paymentRemindersRoutes } from "./routes/payment-reminders";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -29,6 +30,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register sample invoice route for preview
   app.use('/api/sample-invoice', sampleInvoiceRoutes);
+  
+  // Register payment reminders routes
+  app.use('/api/reminders', paymentRemindersRoutes);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)

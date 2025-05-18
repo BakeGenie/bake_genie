@@ -74,6 +74,7 @@ export const orders = pgTable("orders", {
   contactId: integer("contact_id").notNull(),
   eventType: text("event_type").notNull(),
   eventDate: date("event_date").notNull(),
+  dueDate: date("due_date"), // Payment due date for invoice reminders
   status: text("status").notNull().default("Draft"),
   theme: text("theme"),
   deliveryType: text("delivery_type").notNull(),
