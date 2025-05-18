@@ -10,29 +10,13 @@ export function InvoicePreviewButton() {
   const handlePreview = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/sample-invoice');
-      if (!response.ok) {
-        throw new Error('Failed to fetch sample invoice');
-      }
-      const html = await response.text();
-      
-      // Open the invoice in a new window
-      const invoiceWindow = window.open('', '_blank');
-      if (invoiceWindow) {
-        invoiceWindow.document.write(html);
-        invoiceWindow.document.close();
-      } else {
-        toast({
-          title: 'Popup Blocked',
-          description: 'Please allow popups to view the invoice in a new window',
-          variant: 'destructive',
-        });
-      }
+      // Instead of popup that might be blocked, navigate to the invoice preview page
+      window.location.href = '/invoice-preview';
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      console.error('Error navigating to invoice preview:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load sample invoice. Please try again.',
+        description: 'Failed to navigate to invoice preview. Please try again.',
         variant: 'destructive',
       });
     } finally {
