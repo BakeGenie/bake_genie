@@ -194,69 +194,81 @@ const Reports = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="h-full flex flex-col">
       <PageHeader title="Reports & Lists" />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        {/* Report types */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Report Types</CardTitle>
-              <CardDescription>Select a report to generate</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                {reportTypes.map((report) => (
-                  <Button
-                    key={report.id}
-                    variant={activeReport === report.id ? "default" : "ghost"}
-                    className={`w-full justify-start ${activeReport === report.id ? "" : "hover:bg-gray-100"}`}
-                    onClick={() => setActiveReport(report.id)}
-                  >
-                    <div className="mr-2">{report.icon}</div>
-                    <div className="flex flex-col items-start">
-                      <span>{report.name}</span>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left sidebar - Report types */}
+        <div className="w-72 h-full border-r overflow-y-auto hidden lg:block bg-white">
+          <div className="p-4 border-b">
+            <h3 className="font-medium text-base">Report Types</h3>
+            <p className="text-sm text-muted-foreground">Select a report to generate</p>
+          </div>
+          <div className="py-2">
+            {reportTypes.map((report) => (
+              <button
+                key={report.id}
+                onClick={() => setActiveReport(report.id)}
+                className={`flex items-center w-full px-4 py-2.5 text-sm ${
+                  activeReport === report.id 
+                    ? "bg-primary-50 text-primary-600 font-medium border-l-2 border-primary-600" 
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <span className={`mr-3 ${activeReport === report.id ? "text-primary-600" : "text-gray-500"}`}>
+                  {report.icon}
+                </span>
+                <span>{report.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Report configuration and output */}
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>{getReportById(activeReport)?.name}</CardTitle>
-                  <CardDescription>{getReportById(activeReport)?.description}</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDownload("csv")}
-                  >
-                    <DownloadIcon className="h-4 w-4 mr-2" /> CSV
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDownload("pdf")}
-                  >
-                    <DownloadIcon className="h-4 w-4 mr-2" /> PDF
-                  </Button>
-                </div>
+        {/* Mobile report selector (dropdown) */}
+        <div className="lg:hidden p-4 border-b w-full bg-white">
+          <select 
+            className="w-full p-2 border rounded-md"
+            value={activeReport}
+            onChange={(e) => setActiveReport(e.target.value)}
+          >
+            {reportTypes.map(report => (
+              <option key={report.id} value={report.id}>{report.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Main content area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 md:p-6">
+            {/* Report header */}
+            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">{getReportById(activeReport)?.name}</h2>
+                <p className="text-gray-500 mt-1">{getReportById(activeReport)?.description}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              {/* Date range selector */}
-              <Form {...form}>
-                <form className="space-y-4 mb-6">
-                  <div className="flex flex-wrap gap-4">
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDownload("csv")}
+                >
+                  <DownloadIcon className="h-4 w-4 mr-2" /> CSV
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDownload("pdf")}
+                >
+                  <DownloadIcon className="h-4 w-4 mr-2" /> PDF
+                </Button>
+              </div>
+            </div>
+
+            {/* Date range selectors in a card */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <Form {...form}>
+                  <form className="flex flex-wrap gap-6 items-end">
                     <FormField
                       control={form.control}
                       name="startDate"
@@ -269,7 +281,7 @@ const Reports = () => {
                                 <Button
                                   variant={"outline"}
                                   className={cn(
-                                    "w-[200px] pl-3 text-left font-normal",
+                                    "w-[180px] pl-3 text-left font-normal",
                                     !field.value && "text-muted-foreground"
                                   )}
                                 >
@@ -307,7 +319,7 @@ const Reports = () => {
                                 <Button
                                   variant={"outline"}
                                   className={cn(
-                                    "w-[200px] pl-3 text-left font-normal",
+                                    "w-[180px] pl-3 text-left font-normal",
                                     !field.value && "text-muted-foreground"
                                   )}
                                 >
@@ -333,23 +345,24 @@ const Reports = () => {
                       )}
                     />
                     
-                    <div className="flex items-end">
-                      <Button 
-                        type="button" 
-                        onClick={handleGenerateReport}
-                        disabled={isGenerating}
-                      >
-                        {isGenerating ? "Generating..." : "Generate Report"}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </Form>
+                    <Button 
+                      type="button" 
+                      onClick={handleGenerateReport}
+                      disabled={isGenerating}
+                      className="px-6"
+                    >
+                      {isGenerating ? "Generating..." : "Generate Report"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
 
-              {/* Report content */}
-              <div className="mt-4">
+            {/* Report content */}
+            <Card>
+              <CardHeader className="p-4 border-b">
                 <Tabs defaultValue="table" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full max-w-md grid-cols-2">
                     <TabsTrigger value="table">
                       <ListIcon className="h-4 w-4 mr-2" /> Table View
                     </TabsTrigger>
@@ -357,52 +370,57 @@ const Reports = () => {
                       <BarChart2Icon className="h-4 w-4 mr-2" /> Chart View
                     </TabsTrigger>
                   </TabsList>
+                </Tabs>
+              </CardHeader>
+              <CardContent className="p-0">
+                <TabsContent value="table" className="mt-0">
+                  {activeReport === "order-list" && (
+                    <div className="rounded-md">
+                      <DataTable
+                        columns={orderColumns}
+                        data={orders}
+                        isLoading={isLoading}
+                        searchPlaceholder="Search orders..."
+                        searchKey="orderNumber"
+                      />
+                    </div>
+                  )}
                   
-                  <TabsContent value="table">
-                    {activeReport === "order-list" && (
-                      <div className="border rounded-md">
-                        <DataTable
-                          columns={orderColumns}
-                          data={orders}
-                          isLoading={isLoading}
-                          searchPlaceholder="Search orders..."
-                          searchKey="orderNumber"
-                        />
-                      </div>
-                    )}
-                    
-                    {activeReport !== "order-list" && (
-                      <div className="border rounded-md p-8 text-center">
-                        <div className="mb-4">
-                          {getReportById(activeReport)?.icon && (
-                            <div className="mx-auto w-12 h-12 flex items-center justify-center bg-gray-100 rounded-full">
+                  {activeReport !== "order-list" && (
+                    <div className="p-8 text-center">
+                      <div className="mb-4">
+                        {getReportById(activeReport)?.icon && (
+                          <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
+                            <div className="h-8 w-8 text-gray-500">
                               {getReportById(activeReport)?.icon}
                             </div>
-                          )}
-                        </div>
-                        <h3 className="text-lg font-medium mb-2">Generate your report</h3>
-                        <p className="text-gray-500 mb-4">
-                          Set your date range and click "Generate Report" to see your data here.
-                        </p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="chart">
-                    <div className="border rounded-md p-8 text-center">
-                      <div className="mb-4">
-                        <BarChart2Icon className="h-12 w-12 mx-auto text-gray-400" />
-                      </div>
-                      <h3 className="text-lg font-medium mb-2">Chart view coming soon</h3>
-                      <p className="text-gray-500 mb-4">
-                        Visualize your data with charts and graphs. This feature is coming soon.
+                      <h3 className="text-lg font-medium mb-2">Generate your report</h3>
+                      <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                        Set your date range and click "Generate Report" to see your data here.
                       </p>
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </CardContent>
-          </Card>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="chart" className="mt-0">
+                  <div className="p-8 text-center">
+                    <div className="mb-4">
+                      <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
+                        <BarChart2Icon className="h-8 w-8 text-gray-500" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">Chart view coming soon</h3>
+                    <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                      Visualize your data with charts and graphs. This feature is coming soon.
+                    </p>
+                  </div>
+                </TabsContent>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
