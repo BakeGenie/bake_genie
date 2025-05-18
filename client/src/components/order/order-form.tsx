@@ -348,6 +348,54 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
   return (
     <>
+      {/* Dialog for new custom event type */}
+      <Dialog open={newEventTypeDialogOpen} onOpenChange={setNewEventTypeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Event Type</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="eventTypeName">Event Type Name</Label>
+              <Input
+                id="eventTypeName"
+                placeholder="Enter event type name"
+                value={customEventType}
+                onChange={(e) => setCustomEventType(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="eventTypeColor">Color</Label>
+              <div className="flex items-center space-x-2">
+                <div 
+                  className="w-8 h-8 rounded-md border"
+                  style={{ backgroundColor: customEventColor }}
+                />
+                <Input
+                  id="eventTypeColor"
+                  type="color"
+                  value={customEventColor}
+                  onChange={(e) => setCustomEventColor(e.target.value)}
+                  className="w-24 h-10 p-1"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Choose a color for this event type
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewEventTypeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCustomEventTypeCreate}>
+              Add Event Type
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog for new cake flavor */}
       <NewIngredientDialog 
         open={newFlavorDialogOpen} 
@@ -425,10 +473,31 @@ const OrderForm: React.FC<OrderFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Event Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={handleEventTypeChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select an event type" />
+                          <SelectValue placeholder="Select an event type">
+                            {field.value && (
+                              <div className="flex items-center gap-2">
+                                {/* Show colored square for predefined event types */}
+                                {eventTypes.includes(field.value as EventType) ? (
+                                  <div 
+                                    className="w-3 h-3 rounded-sm" 
+                                    style={{ backgroundColor: eventTypeColors[field.value as EventType] }}
+                                  />
+                                ) : (
+                                  /* Show colored square for custom event types */
+                                  <div 
+                                    className="w-3 h-3 rounded-sm" 
+                                    style={{ 
+                                      backgroundColor: customEventTypes.find(t => t.name === field.value)?.color || "#607D8B" 
+                                    }}
+                                  />
+                                )}
+                                {field.value}
+                              </div>
+                            )}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -443,6 +512,20 @@ const OrderForm: React.FC<OrderFormProps> = ({
                             </div>
                           </SelectItem>
                         ))}
+                        
+                        {/* Custom event types added by the user */}
+                        {customEventTypes.map((type) => (
+                          <SelectItem key={type.name} value={type.name}>
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded-sm" 
+                                style={{ backgroundColor: type.color }}
+                              />
+                              {type.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                        
                         <SelectItem value="custom">
                           <div className="flex items-center gap-2">
                             <PlusIcon className="w-4 h-4 text-primary" />
