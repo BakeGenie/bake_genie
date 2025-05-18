@@ -10,6 +10,7 @@ import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { eventTypes, eventTypeColors, EventType } from "@shared/schema";
 
 const Calendar = () => {
   const [_, navigate] = useLocation();
@@ -74,20 +75,37 @@ const Calendar = () => {
     }
   };
   
-  // Get event type color
+  // Get event type color based on schema definitions
   const getEventTypeColor = (eventType: string) => {
-    switch (eventType) {
-      case "Birthday":
-        return "bg-amber-100 text-amber-800";
-      case "Wedding":
-        return "bg-pink-100 text-pink-800";
-      case "Corporate":
-        return "bg-blue-100 text-blue-800";
-      case "Anniversary":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+    // Check if it's a predefined event type
+    if (eventTypes.includes(eventType as EventType)) {
+      const color = eventTypeColors[eventType as EventType];
+      // Create a lighter background color for the event display
+      return {
+        backgroundColor: `${color}20`, // 20% opacity version of the color
+        color: color,
+        borderColor: color
+      };
     }
+    
+    // For custom event types saved in local storage
+    const customEventTypes = JSON.parse(localStorage.getItem('customEventTypes') || '[]');
+    const customType = customEventTypes.find((t: any) => t.name === eventType);
+    
+    if (customType) {
+      return {
+        backgroundColor: `${customType.color}20`, // 20% opacity version of the color
+        color: customType.color,
+        borderColor: customType.color
+      };
+    }
+    
+    // Default fallback if no color is found
+    return {
+      backgroundColor: "#F3F4F6",
+      color: "#4B5563",
+      borderColor: "#9CA3AF"
+    };
   };
   
   return (
@@ -190,15 +208,18 @@ const Calendar = () => {
                           </Badge>
                         </div>
                         <div className="flex items-center mt-0.5">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] px-1 py-0 border-0",
-                              getEventTypeColor(order.eventType)
-                            )}
-                          >
-                            {order.eventType}
-                          </Badge>
+                          {order.eventType && (
+                            <div 
+                              className="text-[10px] px-1.5 py-0.5 rounded-sm flex items-center gap-1"
+                              style={getEventTypeColor(order.eventType)}
+                            >
+                              <div 
+                                className="w-2 h-2 rounded-full"
+                                style={{backgroundColor: getEventTypeColor(order.eventType).color}}
+                              />
+                              <span>{order.eventType}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
