@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/utils";
 import OrderLog from "./order-log";
 import { Link } from "wouter";
 import EmailInvoiceButton from "./email-invoice-button";
+import PaymentReminderSettings from "./payment-reminder-settings";
 
 interface OrderDetailsProps {
   order: OrderWithItems;
@@ -195,9 +196,17 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order }) => {
         </CardFooter>
       </Card>
 
-      {/* Order Log */}
-      <div className="md:col-span-2">
+      {/* Order Log and Payment Reminders */}
+      <div className="md:col-span-2 space-y-4">
         <OrderLog logs={order.logs || []} orderId={order.id} />
+        
+        {/* Payment Reminder Settings */}
+        <PaymentReminderSettings 
+          orderId={order.id}
+          dueDate={order.dueDate}
+          contactEmail={order.contact?.email}
+          orderStatus={order.status}
+        />
       </div>
     </div>
   );

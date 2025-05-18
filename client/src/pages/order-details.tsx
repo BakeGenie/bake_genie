@@ -14,6 +14,7 @@ import { OrderFormData } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import EmailInvoiceButton from "@/components/order/email-invoice-button";
+import PaymentReminderSettings from "@/components/order/payment-reminder-settings";
 
 const OrderDetailsPage = () => {
   const params = useParams<{ id: string }>();
