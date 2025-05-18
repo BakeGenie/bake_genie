@@ -6,7 +6,8 @@ import PageHeader from "@/components/ui/page-header";
 import OrderCalendar from "@/components/order/order-calendar";
 import OrderCard from "@/components/order/order-card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { InvoicePreviewButton } from "@/components/ui/invoice-preview-button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
@@ -128,9 +129,12 @@ const Orders = () => {
       <PageHeader
         title="Orders & Quotes"
         actions={
-          <Button onClick={() => setIsNewOrderDialogOpen(true)}>
-            <PlusIcon className="h-4 w-4 mr-2" /> New Order
-          </Button>
+          <div className="flex space-x-2">
+            <InvoicePreviewButton />
+            <Button onClick={() => setIsNewOrderDialogOpen(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" /> New Order
+            </Button>
+          </div>
         }
       />
 
