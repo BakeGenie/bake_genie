@@ -204,10 +204,45 @@ const OrderActions: React.FC<OrderActionsProps> = ({ order, onEdit }) => {
     }
   };
 
+  const handleConvertToOrder = async () => {
+    try {
+      await apiRequest("PATCH", `/api/orders/${order.id}/status`, {
+        status: "Confirmed",
+      });
+      
+      // Add a log entry
+      await apiRequest("POST", `/api/orders/${order.id}/logs`, {
+        action: "Quote Converted to Order",
+        details: "Status changed from Quote to Confirmed"
+      });
+      
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${order.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: "Quote Converted",
+        description: "The quote has been converted to a confirmed order.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to convert quote to order. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <div className="flex items-center space-x-2">
-        {order.status !== "Ready" && order.status !== "Delivered" && order.status !== "Cancelled" && (
+        {/* Convert to Order button - only show for quotes */}
+        {order.status === "Quote" && (
+          <Button size="sm" onClick={handleConvertToOrder}>
+            <CheckIcon className="mr-2 h-4 w-4" /> Convert to Order
+          </Button>
+        )}
+        
+        {/* Mark as Ready button - only show for non-quote confirmed orders */}
+        {order.status !== "Quote" && order.status !== "Ready" && order.status !== "Delivered" && order.status !== "Cancelled" && (
           <Button size="sm" onClick={handleMarkAsReady}>
             <CheckIcon className="mr-2 h-4 w-4" /> Mark Order as Ready
           </Button>
