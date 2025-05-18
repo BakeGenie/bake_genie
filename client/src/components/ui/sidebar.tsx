@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
     },
     {
       path: "/tasks",
-      label: "Task List",
+      label: "Tasks",
       icon: <ListTodoIcon className="w-5 h-5" />,
       badge: taskCount || 0,
     },
