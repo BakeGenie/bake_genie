@@ -1,769 +1,689 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import {
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import { 
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { OrderFormData } from "@/types";
-import { OrderStatus, EventType, DeliveryType, eventTypes, eventTypeColors, orderStatusTypes, deliveryTypes } from "@shared/schema";
-import { Contact } from "@shared/schema";
-import { CalendarIcon, PlusCircleIcon, PlusIcon, XIcon } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { cn, formatDate } from "@/lib/utils";
-import { insertOrderSchema } from "@shared/schema";
-import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { NewIngredientDialog, IngredientCategory } from "./new-ingredient-dialog";
+import { format } from "date-fns";
+import { CalendarIcon, Plus, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { queryCacheKey } from "@/lib/constants";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { insertOrderSchema, orderStatusTypes, deliveryTypes, eventTypes } from "@shared/schema";
+import { eventTypeColors } from "@/lib/constants";
+import { HexColorPicker } from "react-colorful";
+import { Badge } from "@/components/ui/badge";
 
-// Define product types
-const productTypes = [
-  "Cake", "Cupcakes", "Mini Cupcakes", "Cookies", "Macarons", "Other"
-];
+// A unique key to invalidate order queries
+const ORDERS_QUERY_KEY = queryCacheKey('orders');
 
-// Define cake flavors, icings, and fillings
-const cakeFlavors = [
-  "Vanilla", "Chocolate", "Red Velvet", "Lemon", "Carrot", 
-  "Coconut", "Marble", "Funfetti", "Strawberry", "Coffee"
-];
-
-const icingTypes = [
-  "Buttercream", "Cream Cheese", "Fondant", "Ganache", 
-  "Whipped Cream", "Royal Icing", "Meringue", "Naked"
-];
-
-const fillingTypes = [
-  "None", "Jam", "Buttercream", "Custard", "Ganache", 
-  "Fruit", "Mousse", "Cream Cheese"
-];
-
-// Define portion sizes for calculator
-const portionSizes = [
-  { label: "Small (1\"×1\")", value: "small", servingsMultiplier: 1.44 },
-  { label: "Regular (1\"×2\")", value: "regular", servingsMultiplier: 1 },
-  { label: "Large (2\"×2\")", value: "large", servingsMultiplier: 0.64 },
-  { label: "Extra Large (2\"×3\")", value: "xlarge", servingsMultiplier: 0.48 }
-];
-
-// Define cake tier schema
-const cakeTierSchema = z.object({
-  diameter: z.coerce.number().min(4).max(30),
-  height: z.coerce.number().min(2).max(12),
-  flavor: z.string(),
-  icing: z.string(),
-  filling: z.string(),
-  additionalFillings: z.array(z.string()).optional().default([])
+// Define the schema for customer selection
+const customerSchema = z.object({
+  id: z.number().optional(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  businessName: z.string().optional().nullable(),
+  email: z.string().email("Invalid email").optional().nullable(),
+  phone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  userId: z.number(),
 });
 
-// Extended schema with validation rules
+// Extend the insert order schema with necessary fields for form validation
 const orderFormSchema = insertOrderSchema.extend({
-  contactId: z.number().int().positive({ message: "Please select a contact" }),
-  eventType: z.string().refine((value) => eventTypes.includes(value as EventType), {
-    message: "Please select a valid event type",
-  }),
-  eventDate: z.coerce.date(),
-  status: z.string().refine((value) => orderStatusTypes.includes(value as OrderStatus), {
-    message: "Please select a valid status",
-  }),
-  deliveryType: z.string().refine((value) => deliveryTypes.includes(value as DeliveryType), {
-    message: "Please select a valid delivery type",
-  }),
-  discount: z.coerce.number().min(0),
-  discountType: z.enum(["%", "$"]),
-  setupFee: z.coerce.number().min(0),
+  customer: customerSchema,
   items: z.array(
     z.object({
       id: z.number().optional(),
       productId: z.number().optional(),
-      type: z.string().min(1, { message: "Type is required" }),
-      name: z.string().min(1, { message: "Name is required" }),
-      description: z.string().optional(),
-      quantity: z.coerce.number().int().positive(),
-      unitPrice: z.coerce.number().min(0),
-      price: z.coerce.number().min(0),
-      notes: z.string().optional(),
-      // Cake specific fields
-      isCake: z.boolean().optional().default(false),
-      portionSize: z.string().optional(),
-      numberOfTiers: z.coerce.number().int().min(1).max(6).optional(),
-      cakeTiers: z.array(cakeTierSchema).optional()
+      description: z.string().min(1, "Description is required"),
+      quantity: z.number().min(1, "Quantity is required"),
+      price: z.number().min(0, "Price is required"),
+      total: z.number(),
     })
   ),
+  // Make these fields required
+  orderDate: z.date({ required_error: "Order date is required" }),
+  customerName: z.string(),
+  status: z.string().min(1, "Status is required"),
+  eventType: z.string().min(1, "Event type is required"),
 });
 
-interface OrderFormProps {
-  initialData?: Partial<OrderFormData>;
-  onSubmit: (data: OrderFormData) => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
+// Define the form value types
+type OrderFormValues = z.infer<typeof orderFormSchema>;
+
+// Custom event type dialog state
+interface CustomEventTypeState {
+  name: string;
+  color: string;
 }
 
-const OrderForm: React.FC<OrderFormProps> = ({
-  initialData = {},
-  onSubmit,
-  onCancel,
-  isSubmitting = false,
-}) => {
-  // State for the new ingredient dialogs
-  const [newFlavorDialogOpen, setNewFlavorDialogOpen] = useState(false);
-  const [newIcingDialogOpen, setNewIcingDialogOpen] = useState(false);
-  const [newFillingDialogOpen, setNewFillingDialogOpen] = useState(false);
-  
-  // State for custom event type dialog
-  const [newEventTypeDialogOpen, setNewEventTypeDialogOpen] = useState(false);
+// Custom event types in local storage
+interface CustomEventType {
+  name: string;
+  color: string;
+}
+
+// Initial form values
+const defaultValues: Partial<OrderFormValues> = {
+  orderDate: new Date(),
+  deliveryDate: new Date(),
+  status: "Quote",
+  deliveryType: "Pickup",
+  eventType: "Birthday",
+  items: [
+    {
+      description: "",
+      quantity: 1,
+      price: 0,
+      total: 0,
+    },
+  ],
+  customer: {
+    firstName: "",
+    lastName: "",
+    userId: 1, // Default user ID
+  },
+  userId: 1, // Default user ID
+};
+
+// OrderForm component
+export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data: OrderFormValues) => void, initialValues?: Partial<OrderFormValues> }) {
+  const { toast } = useToast();
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [isCustomEventDialogOpen, setIsCustomEventDialogOpen] = useState(false);
   const [customEventType, setCustomEventType] = useState("");
-  const [customEventColor, setCustomEventColor] = useState("#6D28D9"); // Default color
-  
-  // State to track current tier being edited for ingredient addition
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const [currentTierIndex, setCurrentTierIndex] = useState(0);
-  
-  // State for custom ingredients that have been added
-  const [customFlavors, setCustomFlavors] = useState<string[]>([]);
-  const [customIcings, setCustomIcings] = useState<string[]>([]);
-  const [customFillings, setCustomFillings] = useState<string[]>([]);
-  
-  // Custom event types with their colors
-  const [customEventTypes, setCustomEventTypes] = useState<{ name: string, color: string }[]>([]);
-  
-  // Handle event type field change
-  const handleEventTypeChange = (value: string) => {
-    if (value === "custom") {
-      setNewEventTypeDialogOpen(true);
-    } else {
-      form.setValue("eventType", value);
-    }
-  };
-  
-  // Handle custom event type creation
-  const handleCustomEventTypeCreate = () => {
-    if (customEventType.trim() !== "") {
-      // Store the new event type and color in app state
-      const newEventType = {
-        name: customEventType,
-        color: customEventColor
-      };
-      setCustomEventTypes([...customEventTypes, newEventType]);
-      
-      // Update the form value
-      form.setValue("eventType", customEventType);
-      setNewEventTypeDialogOpen(false);
-      setCustomEventType("");
-    }
-  };
-  
-  // Load contacts for customer selection
-  const { data: contacts = [] } = useQuery<Contact[]>({
-    queryKey: ["/api/contacts"],
+  const [customEventColor, setCustomEventColor] = useState("#ff0000");
+  const [customEventTypes, setCustomEventTypes] = useState<CustomEventType[]>(() => {
+    // Get custom event types from local storage
+    const savedCustomEventTypes = localStorage.getItem("customEventTypes");
+    return savedCustomEventTypes ? JSON.parse(savedCustomEventTypes) : [];
   });
 
-  // Form setup
-  const form = useForm<OrderFormData>({
+  // Initialize form with default or initial values
+  const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      userId: initialData.userId || 1,
-      orderNumber: initialData.orderNumber || "",
-      contactId: initialData.contactId || 0,
-      eventType: initialData.eventType || "Birthday",
-      eventDate: initialData.eventDate || new Date(),
-      status: initialData.status || "Quote",
-      theme: initialData.theme || "",
-      deliveryType: initialData.deliveryType || "Pickup",
-      deliveryDetails: initialData.deliveryDetails || "",
-      discount: initialData.discount || 0,
-      discountType: initialData.discountType || "%",
-      setupFee: initialData.setupFee || 0,
-      notes: initialData.notes || "",
-      jobSheetNotes: initialData.jobSheetNotes || "",
-      items: initialData.items?.length
-        ? initialData.items
-        : [
-            {
-              type: "Cake",
-              name: "",
-              quantity: 1,
-              unitPrice: 0,
-              price: 0,
-              isCake: true,  // Set default to true to show cake options initially
-              portionSize: "regular",
-              numberOfTiers: 1,
-              cakeTiers: [
-                {
-                  diameter: 6,
-                  height: 4,
-                  flavor: "Vanilla",
-                  icing: "Buttercream",
-                  filling: "None",
-                  additionalFillings: []
-                }
-              ]
-            },
-          ],
+      ...defaultValues,
+      ...initialValues,
     },
   });
-  
-  // Handlers for new ingredient types
-  const handleAddNewFlavor = (flavor: string) => {
-    setCustomFlavors(prev => [...prev, flavor]);
-    
-    // Update the current tier with the new flavor
-    if (currentItemIndex !== undefined && currentTierIndex !== undefined) {
-      form.setValue(
-        `items.${currentItemIndex}.cakeTiers.${currentTierIndex}.flavor`, 
-        flavor
-      );
-    }
-  };
-  
-  const handleAddNewIcing = (icing: string) => {
-    setCustomIcings(prev => [...prev, icing]);
-    
-    // Update the current tier with the new icing
-    if (currentItemIndex !== undefined && currentTierIndex !== undefined) {
-      form.setValue(
-        `items.${currentItemIndex}.cakeTiers.${currentTierIndex}.icing`, 
-        icing
-      );
-    }
-  };
-  
-  const handleAddNewFilling = (filling: string) => {
-    setCustomFillings(prev => [...prev, filling]);
-    
-    // Update the current tier with the new filling
-    if (currentItemIndex !== undefined && currentTierIndex !== undefined) {
-      form.setValue(
-        `items.${currentItemIndex}.cakeTiers.${currentTierIndex}.filling`, 
-        filling
-      );
-    }
-  };
 
+  // Destructure form methods
+  const { control, watch, setValue, getValues, formState: { isSubmitting } } = form;
+
+  // Initialize items field array
   const { fields, append, remove } = useFieldArray({
-    control: form.control,
+    control,
     name: "items",
   });
 
-  // Helper function to calculate total price
-  const calculateTotal = () => {
-    const items = form.getValues("items") || [];
-    const subtotal = items.reduce((acc, item) => acc + item.price, 0);
-    const discount = form.getValues("discount") || 0;
-    const discountType = form.getValues("discountType") || "%";
-    const setupFee = form.getValues("setupFee") || 0;
+  // Watch form values for calculations
+  const items = watch("items");
+  const totalAmount = items?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
 
-    let discountAmount = 0;
-    if (discountType === "%") {
-      discountAmount = subtotal * (discount / 100);
-    } else {
-      discountAmount = discount;
+  // Create a new custom event type
+  const handleCustomEventTypeCreate = () => {
+    if (!customEventType.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an event type name",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const total = subtotal - discountAmount + setupFee;
-    return {
-      subtotal,
-      discountAmount,
-      setupFee,
-      total,
+    const newCustomEventType = {
+      name: customEventType.trim(),
+      color: customEventColor,
     };
-  };
 
-  const handleSubmit = (values: OrderFormData) => {
-    // Calculate and add the total to the submitted data
-    const totals = calculateTotal();
-    // Ensure we pass a valid OrderFormData object
-    const orderData: OrderFormData = {
-      ...values,
-      total: parseFloat(totals.total.toFixed(2)),
-    };
-    onSubmit(orderData);
-  };
-
-  const addItem = () => {
-    const newItem = {
-      type: "Cake",
-      name: "",
-      quantity: 1,
-      unitPrice: 0,
-      price: 0,
-      isCake: true,
-      portionSize: "regular",
-      numberOfTiers: 1,
-      cakeTiers: [
-        {
-          diameter: 6,
-          height: 4,
-          flavor: "Vanilla",
-          icing: "Buttercream",
-          filling: "None",
-          additionalFillings: []
-        }
-      ]
-    };
-    append(newItem);
-  };
-
-  // Calculate serving size
-  const calculateServings = (diameter: number, height: number, portionSizeValue: string = "regular") => {
-    const portionSizeObj = portionSizes.find(p => p.value === portionSizeValue);
-    const multiplier = portionSizeObj ? portionSizeObj.servingsMultiplier : 1;
+    // Add to state
+    const updatedCustomEventTypes = [...customEventTypes, newCustomEventType];
+    setCustomEventTypes(updatedCustomEventTypes);
     
-    // Formula: (diameter/2)^2 * π * height / portion volume
-    // For a standard 1"x2" portion, we divide by 2 cubic inches
-    const radius = diameter / 2;
-    const volume = Math.PI * radius * radius * height;
-    return Math.round(volume / 2 * multiplier);
+    // Save to local storage
+    localStorage.setItem("customEventTypes", JSON.stringify(updatedCustomEventTypes));
+    
+    // Set the form value
+    setValue("eventType", newCustomEventType.name);
+    
+    // Reset the dialog
+    setCustomEventType("");
+    setCustomEventColor("#ff0000");
+    setIsCustomEventDialogOpen(false);
+    
+    toast({
+      title: "Success",
+      description: `Custom event type "${newCustomEventType.name}" created`,
+    });
   };
 
-  // Calculate the current totals
-  const totals = calculateTotal();
+  // Handle adding a new line item
+  const handleAddItem = () => {
+    append({
+      description: "",
+      quantity: 1,
+      price: 0,
+      total: 0,
+    });
+  };
 
-  // Get the combined lists of ingredients (static + custom)
-  const allFlavors = [...cakeFlavors, ...customFlavors];
-  const allIcings = [...icingTypes, ...customIcings];
-  const allFillings = [...fillingTypes, ...customFillings];
+  // Handle item changes and calculate totals
+  const handleItemChange = (index: number, field: "quantity" | "price", value: number) => {
+    const currentItems = getValues("items");
+    const item = currentItems[index];
+    
+    if (field === "quantity") {
+      item.quantity = value;
+    } else if (field === "price") {
+      item.price = value;
+    }
+    
+    // Calculate the total for this item
+    item.total = item.quantity * item.price;
+    
+    // Update the entire items array
+    setValue("items", currentItems);
+  };
+
+  // Form submission handler
+  const onSubmitForm = async (data: OrderFormValues) => {
+    try {
+      // Extract customer data if needed
+      const formattedData = {
+        ...data,
+        total: totalAmount,
+      };
+      
+      // Send data to parent component for submission
+      onSubmit(formattedData);
+      
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Order saved successfully",
+      });
+    } catch (error) {
+      console.error("Order submission error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save order",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Get the current color for an event type
+  const getEventTypeColor = (eventType: string) => {
+    // Check if it's a standard event type
+    if (eventType in eventTypeColors) {
+      return eventTypeColors[eventType as keyof typeof eventTypeColors];
+    }
+    
+    // Check if it's a custom event type
+    const customEvent = customEventTypes.find(e => e.name === eventType);
+    return customEvent ? customEvent.color : "#808080"; // Default to gray if not found
+  };
+
+  // Render color badge for event type selection
+  const renderEventTypeOption = (eventType: string) => {
+    const color = getEventTypeColor(eventType);
+    return (
+      <div className="flex items-center">
+        <div 
+          className="w-4 h-4 rounded-full mr-2" 
+          style={{ backgroundColor: color }}
+        />
+        {eventType}
+      </div>
+    );
+  };
 
   return (
-    <>
-      {/* Dialog for new custom event type */}
-      <Dialog open={newEventTypeDialogOpen} onOpenChange={setNewEventTypeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Event Type</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="eventTypeName">Event Type Name</Label>
-              <Input
-                id="eventTypeName"
-                placeholder="Enter event type name"
-                value={customEventType}
-                onChange={(e) => setCustomEventType(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="eventTypeColor">Color</Label>
-              <div className="flex items-center space-x-2">
-                <div 
-                  className="w-8 h-8 rounded-md border"
-                  style={{ backgroundColor: customEventColor }}
-                />
-                <Input
-                  id="eventTypeColor"
-                  type="color"
-                  value={customEventColor}
-                  onChange={(e) => setCustomEventColor(e.target.value)}
-                  className="w-24 h-10 p-1"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Choose a color for this event type
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNewEventTypeDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCustomEventTypeCreate}>
-              Add Event Type
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Order Date */}
+          <FormField
+            control={control}
+            name="orderDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Order Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      {/* Dialog for new cake flavor */}
-      <NewIngredientDialog 
-        open={newFlavorDialogOpen} 
-        onOpenChange={setNewFlavorDialogOpen}
-        category="cake-flavor"
-        onSuccess={handleAddNewFlavor}
-      />
-      
-      {/* Dialog for new icing type */}
-      <NewIngredientDialog 
-        open={newIcingDialogOpen} 
-        onOpenChange={setNewIcingDialogOpen}
-        category="icing-type"
-        onSuccess={handleAddNewIcing}
-      />
-      
-      {/* Dialog for new filling type */}
-      <NewIngredientDialog 
-        open={newFillingDialogOpen} 
-        onOpenChange={setNewFillingDialogOpen}
-        category="filling-type"
-        onSuccess={handleAddNewFilling}
-      />
-      
-      <Form {...form}>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const formValues = form.getValues();
-          handleSubmit(formValues as OrderFormData);
-        }} className="space-y-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="contactId"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex justify-between items-center">
-                      <FormLabel>Customer</FormLabel>
+          {/* Delivery Date */}
+          <FormField
+            control={control}
+            name="deliveryDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Delivery Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date < new Date()
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Event Type */}
+          <FormField
+            control={control}
+            name="eventType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Event Type</FormLabel>
+                <div className="flex space-x-2">
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue>
+                          {field.value && (
+                            <div className="flex items-center">
+                              <div 
+                                className="w-4 h-4 rounded-full mr-2" 
+                                style={{ backgroundColor: getEventTypeColor(field.value) }}
+                              />
+                              {field.value}
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {/* Standard event types */}
+                      {eventTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {renderEventTypeOption(type)}
+                        </SelectItem>
+                      ))}
+                      
+                      {/* Custom event types */}
+                      {customEventTypes.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-sm font-medium">
+                            Custom Event Types
+                          </div>
+                          {customEventTypes.map((type) => (
+                            <SelectItem key={type.name} value={type.name}>
+                              <div className="flex items-center">
+                                <div 
+                                  className="w-4 h-4 rounded-full mr-2" 
+                                  style={{ backgroundColor: type.color }}
+                                />
+                                {type.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Dialog to add custom event type */}
+                  <Dialog open={isCustomEventDialogOpen} onOpenChange={setIsCustomEventDialogOpen}>
+                    <DialogTrigger asChild>
                       <Button 
                         type="button" 
-                        variant="default" 
-                        size="sm"
-                        className="text-xs bg-blue-600 hover:bg-blue-700"
-                        onClick={() => {
-                          // This would open the new customer form dialog
-                          console.log("New customer button clicked");
-                        }}
+                        size="icon" 
+                        variant="outline"
                       >
-                        New Customer
+                        <Plus className="h-4 w-4" />
                       </Button>
-                    </div>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a customer" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {contacts.map((contact) => (
-                          <SelectItem key={contact.id} value={contact.id.toString()}>
-                            {contact.firstName} {contact.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="eventType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Event Type</FormLabel>
-                    <Select onValueChange={handleEventTypeChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an event type">
-                            {field.value && (
-                              <div className="flex items-center gap-2">
-                                {/* Show colored square for predefined event types */}
-                                {eventTypes.includes(field.value as EventType) ? (
-                                  <div 
-                                    className="w-3 h-3 rounded-sm" 
-                                    style={{ backgroundColor: eventTypeColors[field.value as EventType] }}
-                                  />
-                                ) : (
-                                  /* Show colored square for custom event types */
-                                  <div 
-                                    className="w-3 h-3 rounded-sm" 
-                                    style={{ 
-                                      backgroundColor: customEventTypes.find(t => t.name === field.value)?.color || "#607D8B" 
-                                    }}
-                                  />
-                                )}
-                                {field.value}
-                              </div>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {eventTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded-sm" 
-                                style={{ backgroundColor: eventTypeColors[type] }}
-                              />
-                              {type}
-                            </div>
-                          </SelectItem>
-                        ))}
-                        
-                        {/* Custom event types added by the user */}
-                        {customEventTypes.map((type) => (
-                          <SelectItem key={type.name} value={type.name}>
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className="w-4 h-4 rounded-sm" 
-                                style={{ backgroundColor: type.color }}
-                              />
-                              {type.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                        
-                        <SelectItem value="custom">
-                          <div className="flex items-center gap-2">
-                            <PlusIcon className="w-4 h-4 text-primary" />
-                            Add new
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Add Custom Event Type</DialogTitle>
+                        <DialogDescription>
+                          Create a new custom event type with a color.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="customEventType">Event Type Name</Label>
+                          <Input
+                            id="customEventType"
+                            value={customEventType}
+                            onChange={(e) => setCustomEventType(e.target.value)}
+                            placeholder="Enter event type name"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Event Color</Label>
+                          <div className="flex justify-center p-2">
+                            <HexColorPicker 
+                              color={customEventColor} 
+                              onChange={setCustomEventColor} 
+                            />
                           </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="eventDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Event Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              formatDate(field.value)
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date(new Date().setHours(0, 0, 0, 0))
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {orderStatusTypes.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="theme"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Event Theme</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter event theme (optional)" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="deliveryType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Delivery Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select delivery type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {deliveryTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-              <FormField
-                control={form.control}
-                name="deliveryDetails"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Delivery Details</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter delivery details (e.g. address, time)" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between mb-4">
-                <h3 className="text-lg font-semibold">Order Items</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addItem}
-                  className="flex items-center"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {fields.map((field, index) => (
-                <div key={field.id} className="p-4 border border-gray-200 rounded-md">
-                  <div className="flex justify-between mb-4">
-                    <h4 className="font-medium">Item {index + 1}</h4>
-                    <div className="flex gap-2">
-                      {/* Only show cake options button for cake products */}
-                      {form.watch(`items.${index}.type`) === "Cake" && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const currentValues = form.getValues(`items.${index}`);
-                            form.setValue(`items.${index}.isCake`, !currentValues.isCake);
-                          }}
+                          <div className="flex items-center justify-between mt-2">
+                            <div 
+                              className="w-8 h-8 rounded-full" 
+                              style={{ backgroundColor: customEventColor }}
+                            />
+                            <Input
+                              value={customEventColor}
+                              onChange={(e) => setCustomEventColor(e.target.value)}
+                              className="w-36 ml-2"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setIsCustomEventDialogOpen(false)}
                         >
-                          {form.watch(`items.${index}.isCake`) ? "Hide Cake Options" : "Show Cake Options"}
+                          Cancel
                         </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove(index)}
-                        disabled={fields.length === 1}
-                      >
-                        <XIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                        <Button 
+                          type="button" 
+                          onClick={handleCustomEventTypeCreate}
+                        >
+                          Create
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Status */}
+          <FormField
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {orderStatusTypes.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Delivery Type */}
+          <FormField
+            control={control}
+            name="deliveryType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Delivery Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select delivery type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {deliveryTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Customer Section */}
+          <div className="col-span-1 md:col-span-2 border rounded-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Customer Details</h3>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsNewCustomer(!isNewCustomer)}
+              >
+                {isNewCustomer ? "Select Existing" : "New Customer"}
+              </Button>
+            </div>
+
+            {isNewCustomer ? (
+              /* New Customer Form */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={control}
+                  name="customer.firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="customer.lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="customer.businessName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="customer.email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="customer.phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="customer.address"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ) : (
+              /* Existing Customer Selection */
+              <div>
+                <FormField
+                  control={control}
+                  name="customerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Customer</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="Search for customer..."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Line Items Section */}
+          <div className="col-span-1 md:col-span-2 border rounded-lg p-4">
+            <h3 className="text-lg font-medium mb-4">Order Items</h3>
+            
+            <div className="space-y-4">
+              {/* Headers */}
+              <div className="grid grid-cols-12 gap-2 font-medium">
+                <div className="col-span-6">Description</div>
+                <div className="col-span-2">Quantity</div>
+                <div className="col-span-2">Price</div>
+                <div className="col-span-2">Total</div>
+              </div>
+              
+              {/* Items */}
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-6">
                     <FormField
-                      control={form.control}
-                      name={`items.${index}.type`}
+                      control={control}
+                      name={`items.${index}.description`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              // Auto-toggle cake options when product type changes
-                              if (value === "Cake") {
-                                form.setValue(`items.${index}.isCake`, true);
-                              } else {
-                                form.setValue(`items.${index}.isCake`, false);
-                              }
-                            }}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select product type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {productTypes.map(type => (
-                                <SelectItem key={type} value={type}>
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.name`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -772,556 +692,118 @@ const OrderForm: React.FC<OrderFormProps> = ({
                       )}
                     />
                   </div>
-
-                  {/* Cake configuration section - only visible when isCake is true */}
-                  {form.watch(`items.${index}.isCake`) && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                      <h4 className="font-medium mb-4">Cake Configuration</h4>
-                      
-                      {/* Tier number and portion size controls */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.numberOfTiers`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Number of Tiers</FormLabel>
-                              <Select 
-                                onValueChange={(value) => {
-                                  field.onChange(parseInt(value));
-                                  
-                                  // Current tiers
-                                  const currentTiers = form.getValues(`items.${index}.cakeTiers`) || [];
-                                  const newTierCount = parseInt(value);
-                                  
-                                  // If we need more tiers, add them
-                                  if (currentTiers.length < newTierCount) {
-                                    const firstTier = currentTiers[0] || { 
-                                      diameter: 6, 
-                                      height: 4, 
-                                      flavor: "Vanilla", 
-                                      icing: "Buttercream", 
-                                      filling: "None" 
-                                    };
-                                    
-                                    const newTiers = [...currentTiers];
-                                    
-                                    // Add new tiers with decreasing diameter for a tiered effect
-                                    for (let i = currentTiers.length; i < newTierCount; i++) {
-                                      const diameter = Math.max(4, firstTier.diameter - (i * 2));
-                                      newTiers.push({
-                                        diameter,
-                                        height: firstTier.height,
-                                        flavor: firstTier.flavor,
-                                        icing: firstTier.icing,
-                                        filling: firstTier.filling
-                                      });
-                                    }
-                                    
-                                    form.setValue(`items.${index}.cakeTiers`, newTiers);
-                                  } 
-                                  // If we need fewer tiers, remove them
-                                  else if (currentTiers.length > newTierCount) {
-                                    form.setValue(`items.${index}.cakeTiers`, currentTiers.slice(0, newTierCount));
-                                  }
-                                }}
-                                defaultValue={field.value?.toString()}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select number of tiers" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {[1, 2, 3, 4, 5, 6].map(num => (
-                                    <SelectItem key={num} value={num.toString()}>
-                                      {num} {num === 1 ? 'Tier' : 'Tiers'}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.portionSize`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Portion Size</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select portion size" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {portionSizes.map(size => (
-                                    <SelectItem key={size.value} value={size.value}>
-                                      {size.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      {/* Tier configuration */}
-                      <div className="space-y-4 mb-4">
-                        <h5 className="font-medium">Tier Configuration</h5>
-                        
-                        {Array.from({ length: form.watch(`items.${index}.numberOfTiers`) || 1 }).map((_, tierIndex) => (
-                          <Card key={tierIndex} className="p-4">
-                            <h6 className="font-medium mb-3">Tier {tierIndex + 1}</h6>
-                            
-                            {/* Tier dimensions */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.cakeTiers.${tierIndex}.diameter`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Diameter (inches)</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        min={4}
-                                        max={30}
-                                        step={1}
-                                        {...field}
-                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 4)}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.cakeTiers.${tierIndex}.height`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Height (inches)</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        min={2}
-                                        max={12}
-                                        step={0.5}
-                                        {...field}
-                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 2)}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Flavor selection */}
-                            <div className="mb-4">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.cakeTiers.${tierIndex}.flavor`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="flex justify-between items-center">
-                                      <FormLabel>Cake Flavor</FormLabel>
-                                      {tierIndex > 0 && (
-                                        <div className="flex items-center space-x-2">
-                                          <Label htmlFor={`same-flavor-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
-                                          <Switch 
-                                            id={`same-flavor-${tierIndex}`}
-                                            checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameFlavor`) || false}
-                                            onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                const firstTierFlavor = form.getValues(`items.${index}.cakeTiers.0.flavor`);
-                                                form.setValue(`items.${index}.cakeTiers.${tierIndex}.flavor`, firstTierFlavor);
-                                              }
-                                            }}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <div className="flex-1">
-                                        <Select 
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select cake flavor" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            {allFlavors.map(flavor => (
-                                              <SelectItem key={flavor} value={flavor}>
-                                                {flavor}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        size="icon"
-                                        onClick={() => {
-                                          setCurrentItemIndex(index);
-                                          setCurrentTierIndex(tierIndex);
-                                          setNewFlavorDialogOpen(true);
-                                        }}
-                                      >
-                                        <PlusCircleIcon className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Icing selection */}
-                            <div className="mb-4">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.cakeTiers.${tierIndex}.icing`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="flex justify-between items-center">
-                                      <FormLabel>Icing Type</FormLabel>
-                                      {tierIndex > 0 && (
-                                        <div className="flex items-center space-x-2">
-                                          <Label htmlFor={`same-icing-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
-                                          <Switch 
-                                            id={`same-icing-${tierIndex}`}
-                                            checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameIcing`) || false}
-                                            onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                const firstTierIcing = form.getValues(`items.${index}.cakeTiers.0.icing`);
-                                                form.setValue(`items.${index}.cakeTiers.${tierIndex}.icing`, firstTierIcing);
-                                              }
-                                            }}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <div className="flex-1">
-                                        <Select 
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select icing type" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            {allIcings.map(icing => (
-                                              <SelectItem key={icing} value={icing}>
-                                                {icing}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        size="icon"
-                                        onClick={() => {
-                                          setCurrentItemIndex(index);
-                                          setCurrentTierIndex(tierIndex);
-                                          setNewIcingDialogOpen(true);
-                                        }}
-                                      >
-                                        <PlusCircleIcon className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Filling selection */}
-                            <div className="mb-4">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.cakeTiers.${tierIndex}.filling`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="flex justify-between items-center">
-                                      <FormLabel>Primary Filling</FormLabel>
-                                      {tierIndex > 0 && (
-                                        <div className="flex items-center space-x-2">
-                                          <Label htmlFor={`same-filling-${tierIndex}`} className="text-xs">Same as Tier 1</Label>
-                                          <Switch 
-                                            id={`same-filling-${tierIndex}`}
-                                            checked={form.watch(`items.${index}.cakeTiers.${tierIndex}.sameFilling`) || false}
-                                            onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                const firstTierFilling = form.getValues(`items.${index}.cakeTiers.0.filling`);
-                                                form.setValue(`items.${index}.cakeTiers.${tierIndex}.filling`, firstTierFilling);
-                                              }
-                                            }}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <div className="flex-1">
-                                        <Select 
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select filling" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            {allFillings.map(filling => (
-                                              <SelectItem key={filling} value={filling}>
-                                                {filling}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        size="icon"
-                                        onClick={() => {
-                                          setCurrentItemIndex(index);
-                                          setCurrentTierIndex(tierIndex);
-                                          setNewFillingDialogOpen(true);
-                                        }}
-                                      >
-                                        <PlusCircleIcon className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              {/* Additional Fillings Section */}
-                              <div className="mt-4">
-                                <div className="flex justify-between items-center mb-2">
-                                  <Label className="text-sm font-medium">Additional Fillings</Label>
-                                  <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-8 px-2 text-xs"
-                                    onClick={() => {
-                                      const currentFillings = form.getValues(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || [];
-                                      form.setValue(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`, [...currentFillings, "None"]);
-                                    }}
-                                  >
-                                    <PlusCircleIcon className="h-3 w-3 mr-1" />
-                                    Add More Fillings
-                                  </Button>
-                                </div>
-                                
-                                {/* List of additional fillings */}
-                                {(form.watch(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || []).map((filling, fillingIndex) => (
-                                  <div key={fillingIndex} className="flex items-center gap-2 mb-2">
-                                    <div className="flex-1">
-                                      <Select 
-                                        value={filling}
-                                        onValueChange={(value) => {
-                                          const currentFillings = [...(form.getValues(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || [])];
-                                          currentFillings[fillingIndex] = value;
-                                          form.setValue(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`, currentFillings);
-                                        }}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select filling" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {allFillings.map(filling => (
-                                            <SelectItem key={filling} value={filling}>
-                                              {filling}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <Button 
-                                      type="button" 
-                                      variant="ghost" 
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => {
-                                        const currentFillings = [...(form.getValues(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || [])];
-                                        currentFillings.splice(fillingIndex, 1);
-                                        form.setValue(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`, currentFillings);
-                                      }}
-                                    >
-                                      <XIcon className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
-                                
-                                {/* Show message if no additional fillings */}
-                                {(form.watch(`items.${index}.cakeTiers.${tierIndex}.additionalFillings`) || []).length === 0 && (
-                                  <div className="text-sm text-gray-500 italic p-2 text-center border border-dashed border-gray-200 rounded-md">
-                                    No additional fillings added
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Show estimated servings for this tier */}
-                            <div className="flex justify-between items-center bg-gray-100 p-2 rounded">
-                              <span className="text-sm">Estimated Servings:</span>
-                              <span className="font-medium">
-                                {calculateServings(
-                                  form.watch(`items.${index}.cakeTiers.${tierIndex}.diameter`) || 6,
-                                  form.watch(`items.${index}.cakeTiers.${tierIndex}.height`) || 4,
-                                  form.watch(`items.${index}.portionSize`)
-                                )} servings
-                              </span>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                      
-                      {/* Show total servings across all tiers */}
-                      <div className="p-3 border border-gray-200 rounded-md mb-3 bg-white">
-                        <h5 className="font-medium mb-2">Total Servings</h5>
-                        <div className="font-medium text-lg text-center">
-                          {Array.from({ length: form.watch(`items.${index}.numberOfTiers`) || 1 }).reduce((total, _, tierIndex) => {
-                            const tierServings = calculateServings(
-                              form.watch(`items.${index}.cakeTiers.${tierIndex}.diameter`) || 6,
-                              form.watch(`items.${index}.cakeTiers.${tierIndex}.height`) || 4,
-                              form.watch(`items.${index}.portionSize`)
-                            );
-                            return total + tierServings;
-                          }, 0)} servings
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  
+                  <div className="col-span-2">
                     <FormField
-                      control={form.control}
+                      control={control}
                       name={`items.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Quantity</FormLabel>
                           <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
+                            <Input 
+                              {...field} 
+                              type="number" 
+                              min="1" 
                               onChange={(e) => {
-                                const quantity = parseInt(e.target.value);
-                                field.onChange(quantity);
-                                
-                                // Automatically update price based on quantity and unit price
-                                const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
-                                form.setValue(
-                                  `items.${index}.price`,
-                                  quantity * unitPrice
-                                );
+                                const value = parseInt(e.target.value) || 0;
+                                field.onChange(value);
+                                handleItemChange(index, "quantity", value);
                               }}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.unitPrice`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Unit Price ($)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              onChange={(e) => {
-                                const unitPrice = parseFloat(e.target.value);
-                                field.onChange(unitPrice);
-                                
-                                // Automatically update price based on quantity and unit price
-                                const quantity = form.getValues(`items.${index}.quantity`) || 0;
-                                form.setValue(
-                                  `items.${index}.price`,
-                                  quantity * unitPrice
-                                );
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.price`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Price ($)</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" min="0" step="0.01" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+                  
+                  <div className="col-span-2">
+                    <FormField
+                      control={control}
+                      name={`items.${index}.price`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              type="number" 
+                              min="0" 
+                              step="0.01"
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                field.onChange(value);
+                                handleItemChange(index, "price", value);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="col-span-1">
+                    <FormField
+                      control={control}
+                      name={`items.${index}.total`}
+                      render={({ field }) => (
+                        <div className="font-medium">
+                          ${field.value.toFixed(2)}
+                        </div>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="col-span-1 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(index)}
+                      disabled={fields.length === 1}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
+              
+              {/* Add item button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={handleAddItem}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Item
+              </Button>
+              
+              {/* Order Totals */}
+              <div className="flex justify-end pt-4 border-t mt-6">
+                <div className="w-64">
+                  <div className="flex justify-between py-2">
+                    <span>Total:</span>
+                    <span className="font-bold">${totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-
+          </div>
+          
+          {/* Notes */}
+          <div className="col-span-1 md:col-span-2">
             <FormField
-              control={form.control}
+              control={control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Order Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Enter any notes about the order"
-                      rows={4}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="jobSheetNotes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Sheet Notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="This information is only displayed on the Job Sheet Printout."
+                    <Textarea 
+                      {...field} 
+                      placeholder="Enter any special instructions or notes for this order"
                       rows={4}
                     />
                   </FormControl>
@@ -1330,80 +812,22 @@ const OrderForm: React.FC<OrderFormProps> = ({
               )}
             />
           </div>
-
-          {/* Price Details - Moved to bottom as requested */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="grid grid-cols-2 gap-4 mb-2">
-              <div className="text-right text-sm text-gray-500">Setup / Delivery:</div>
-              <div>
-                <FormField
-                  control={form.control}
-                  name="setupFee"
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      min="0"
-                      className="w-full text-right"
-                    />
-                  )}
-                />
-              </div>
-              <div className="text-right text-sm text-gray-500">Discount:</div>
-              <div className="flex items-center">
-                <FormField
-                  control={form.control}
-                  name="discount"
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="number"
-                      min="0"
-                      className="w-16 text-right"
-                    />
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="discountType"
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <SelectTrigger className="w-16 ml-2">
-                        <SelectValue placeholder="%" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="%">%</SelectItem>
-                        <SelectItem value="$">$</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            </div>
-            <div className="border-t border-gray-200 pt-2 mt-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-right text-sm font-medium text-gray-700">Total:</div>
-                <div className="text-right font-semibold">$ {totals.total ? totals.total.toFixed(2) : "0.00"}</div>
-              </div>
-            </div>
-          </div>
-
+          
           {/* Form Actions */}
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <div className="col-span-1 md:col-span-2 flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => window.history.back()}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Order"}
             </Button>
           </div>
-        </form>
-      </Form>
-    </>
+        </div>
+      </form>
+    </Form>
   );
-};
-
-export default OrderForm;
+}

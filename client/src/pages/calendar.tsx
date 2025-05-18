@@ -10,7 +10,8 @@ import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { eventTypes, eventTypeColors, EventType } from "@shared/schema";
+import { eventTypes } from "@shared/schema";
+import { eventTypeColors } from "@/lib/constants";
 
 const Calendar = () => {
   const [_, navigate] = useLocation();
