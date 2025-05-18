@@ -110,7 +110,13 @@ const NewOrderPage = () => {
     // If we have a preselected date from the calendar, use it
     if (preselectedDate) {
       try {
-        values.eventDate = new Date(preselectedDate);
+        const selectedDate = new Date(preselectedDate);
+        // Set both the event date and order date
+        values.eventDate = selectedDate;
+        // Also set order date to today
+        values.orderDate = new Date();
+        
+        console.log("Pre-populating date:", selectedDate);
       } catch (e) {
         console.error("Invalid date format:", preselectedDate);
       }
