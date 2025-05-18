@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { OrderWithItems } from "@/types";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths, isWithinInterval, parse, parseISO } from "date-fns";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,8 @@ const calendarEventTypes = [
 
 interface CalendarEvent {
   id: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   type: string;
   description: string;
 }
@@ -94,7 +95,13 @@ const Calendar = () => {
   // Get calendar events for a specific day
   const getEventsForDay = (day: Date) => {
     return calendarEvents.filter(event => {
-      return event.date === format(day, "yyyy-MM-dd");
+      // Check if the day is within the date range of the event
+      const formattedDay = format(day, "yyyy-MM-dd");
+      const startDate = event.startDate;
+      const endDate = event.endDate || event.startDate; // If no end date, use start date
+      
+      // If the day matches the start date or is between start and end date
+      return (formattedDay >= startDate && formattedDay <= endDate);
     });
   };
   
@@ -348,7 +355,8 @@ const Calendar = () => {
                 if (selectedDate) {
                   setNewEvent({
                     ...newEvent,
-                    date: format(selectedDate, "yyyy-MM-dd")
+                    startDate: format(selectedDate, "yyyy-MM-dd"),
+                    endDate: format(selectedDate, "yyyy-MM-dd")
                   });
                   setIsNewEventDialogOpen(true);
                 }
@@ -440,18 +448,41 @@ const Calendar = () => {
           
           <div className="grid grid-cols-1 gap-4 py-4">
             <div className="space-y-2">
-              <label htmlFor="event-date" className="text-sm font-medium">Date:</label>
+              <label htmlFor="event-start-date" className="text-sm font-medium">From Date:</label>
               <div className="flex relative">
                 <input
-                  id="event-date"
-                  type="text"
+                  id="event-start-date"
+                  type="date"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  value={selectedDate ? format(selectedDate, "EEE, dd MMM yyyy") : ""}
-                  readOnly
+                  value={newEvent.startDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")}
+                  onChange={(e) => {
+                    setNewEvent({
+                      ...newEvent,
+                      startDate: e.target.value,
+                      // If end date is before start date, update it to match start date
+                      endDate: e.target.value > (newEvent.endDate || "") ? e.target.value : newEvent.endDate
+                    });
+                  }}
                 />
-                <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full">
-                  <CalendarIcon className="h-4 w-4" />
-                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="event-end-date" className="text-sm font-medium">To Date:</label>
+              <div className="flex relative">
+                <input
+                  id="event-end-date"
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  value={newEvent.endDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")}
+                  min={newEvent.startDate || (selectedDate ? format(selectedDate, "yyyy-MM-dd") : "")}
+                  onChange={(e) => {
+                    setNewEvent({
+                      ...newEvent,
+                      endDate: e.target.value
+                    });
+                  }}
+                />
               </div>
             </div>
             
@@ -497,8 +528,9 @@ const Calendar = () => {
                 if (selectedDate) {
                   const newCalendarEvent: CalendarEvent = {
                     id: Date.now().toString(),
-                    date: format(selectedDate, "yyyy-MM-dd"),
-                    type: newEvent.type || 'Baking',
+                    startDate: newEvent.startDate || format(selectedDate, "yyyy-MM-dd"),
+                    endDate: newEvent.endDate || newEvent.startDate || format(selectedDate, "yyyy-MM-dd"),
+                    type: newEvent.type || 'Admin',
                     description: newEvent.description || ''
                   };
                   
