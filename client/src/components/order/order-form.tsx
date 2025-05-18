@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OrderFormData } from "@/types";
-import { OrderStatus, EventType, DeliveryType, eventTypes, orderStatusTypes, deliveryTypes } from "@shared/schema";
+import { OrderStatus, EventType, DeliveryType, eventTypes, eventTypeColors, orderStatusTypes, deliveryTypes } from "@shared/schema";
 import { Contact } from "@shared/schema";
 import { CalendarIcon, PlusCircleIcon, PlusIcon, XIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -132,6 +132,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [newIcingDialogOpen, setNewIcingDialogOpen] = useState(false);
   const [newFillingDialogOpen, setNewFillingDialogOpen] = useState(false);
   
+  // State for custom event type dialog
+  const [newEventTypeDialogOpen, setNewEventTypeDialogOpen] = useState(false);
+  const [customEventType, setCustomEventType] = useState("");
+  const [customEventColor, setCustomEventColor] = useState("#6D28D9"); // Default color
+  
   // State to track current tier being edited for ingredient addition
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [currentTierIndex, setCurrentTierIndex] = useState(0);
@@ -140,6 +145,35 @@ const OrderForm: React.FC<OrderFormProps> = ({
   const [customFlavors, setCustomFlavors] = useState<string[]>([]);
   const [customIcings, setCustomIcings] = useState<string[]>([]);
   const [customFillings, setCustomFillings] = useState<string[]>([]);
+  
+  // Custom event types with their colors
+  const [customEventTypes, setCustomEventTypes] = useState<{ name: string, color: string }[]>([]);
+  
+  // Handle event type field change
+  const handleEventTypeChange = (value: string) => {
+    if (value === "custom") {
+      setNewEventTypeDialogOpen(true);
+    } else {
+      form.setValue("eventType", value);
+    }
+  };
+  
+  // Handle custom event type creation
+  const handleCustomEventTypeCreate = () => {
+    if (customEventType.trim() !== "") {
+      // Store the new event type and color in app state
+      const newEventType = {
+        name: customEventType,
+        color: customEventColor
+      };
+      setCustomEventTypes([...customEventTypes, newEventType]);
+      
+      // Update the form value
+      form.setValue("eventType", customEventType);
+      setNewEventTypeDialogOpen(false);
+      setCustomEventType("");
+    }
+  };
   
   // Load contacts for customer selection
   const { data: contacts = [] } = useQuery<Contact[]>({
@@ -400,9 +434,21 @@ const OrderForm: React.FC<OrderFormProps> = ({
                       <SelectContent>
                         {eventTypes.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {type}
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-4 h-4 rounded-sm" 
+                                style={{ backgroundColor: eventTypeColors[type] }}
+                              />
+                              {type}
+                            </div>
                           </SelectItem>
                         ))}
+                        <SelectItem value="custom">
+                          <div className="flex items-center gap-2">
+                            <PlusIcon className="w-4 h-4 text-primary" />
+                            Add new
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -3,8 +3,20 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Define event types
-export const eventTypes = ['Birthday', 'Wedding', 'Corporate', 'Anniversary', 'Baby Shower', 'Gender Reveal', 'Christening', 'Hen/Stag', 'Other'] as const;
+export const eventTypes = ['Birthday', 'Wedding', 'Anniversary', 'Baby Shower', 'Christening / Baptism', 'Hen/Bux/Stag', 'Corporate', 'Other'] as const;
 export type EventType = typeof eventTypes[number];
+
+// Define event type colors for calendar display
+export const eventTypeColors: Record<EventType, string> = {
+  'Birthday': '#FF5252', // red
+  'Wedding': '#4CAF50', // green
+  'Anniversary': '#FFAB91', // peach
+  'Baby Shower': '#FFF176', // yellow
+  'Christening / Baptism': '#81D4FA', // light blue
+  'Hen/Bux/Stag': '#9C27B0', // purple
+  'Corporate': '#9E9E9E', // grey
+  'Other': '#607D8B', // blue grey
+};
 
 // Define order status types
 export const orderStatusTypes = ['Quote', 'Confirmed', 'Paid', 'Ready', 'Delivered', 'Cancelled'] as const;
