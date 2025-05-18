@@ -56,18 +56,25 @@ const Orders = () => {
   };
 
   // Handle new order submission
-  const handleNewOrderSubmit = async (data: OrderFormData) => {
+  const handleNewOrderSubmit = async (data: any) => { // Use any temporarily to work around type issues
     setIsSubmitting(true);
     
     try {
       // Generate order number (normally this would be done on the server)
       const orderNumber = `O${Math.floor(Math.random() * 10000)}`;
       
-      const response = await apiRequest("POST", "/api/orders", {
+      // Convert Date objects to strings to avoid type issues
+      const formattedData = {
         ...data,
         orderNumber,
         userId: 1, // In a real app, this would be the current user's ID
-      });
+        // Convert Date objects to ISO strings
+        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : data.eventDate,
+        orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : data.orderDate,
+        deliveryDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : data.deliveryDate,
+      };
+      
+      const response = await apiRequest("POST", "/api/orders", formattedData);
       
       const newOrder = await response.json();
       
@@ -85,6 +92,7 @@ const Orders = () => {
       // Navigate to the new order details page
       navigate(`/orders/${newOrder.id}`);
     } catch (error) {
+      console.error("Order creation error:", error);
       toast({
         title: "Error",
         description: "There was an error creating the order. Please try again.",
