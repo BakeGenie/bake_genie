@@ -171,25 +171,48 @@ const Tools = () => {
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <Label className="mb-2 block">Cake Shape</Label>
-                  <RadioGroup 
-                    className="flex space-x-4"
-                    value={cakeShape}
-                    onValueChange={setCakeShape}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="round" id="round" />
-                      <Label htmlFor="round" className="flex items-center">
-                        <CircleIcon className="h-4 w-4 mr-2" /> Round
-                      </Label>
+                  <Label className="mb-3 block text-base font-medium">Cake Shape</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div 
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        cakeShape === "round" 
+                          ? "border-primary-500 bg-primary-50" 
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setCakeShape("round")}
+                    >
+                      <div className={`w-16 h-16 rounded-full border-2 ${
+                        cakeShape === "round" ? "border-primary-500" : "border-gray-300"
+                      } flex items-center justify-center mb-2`}>
+                        <CircleIcon className={`h-8 w-8 ${
+                          cakeShape === "round" ? "text-primary-500" : "text-gray-400"
+                        }`} />
+                      </div>
+                      <span className={`font-medium ${
+                        cakeShape === "round" ? "text-primary-700" : "text-gray-700"
+                      }`}>Round</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="square" id="square" />
-                      <Label htmlFor="square" className="flex items-center">
-                        <SquareIcon className="h-4 w-4 mr-2" /> Square
-                      </Label>
+                    
+                    <div 
+                      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        cakeShape === "square" 
+                          ? "border-primary-500 bg-primary-50" 
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setCakeShape("square")}
+                    >
+                      <div className={`w-16 h-16 rounded-md border-2 ${
+                        cakeShape === "square" ? "border-primary-500" : "border-gray-300"
+                      } flex items-center justify-center mb-2`}>
+                        <SquareIcon className={`h-8 w-8 ${
+                          cakeShape === "square" ? "text-primary-500" : "text-gray-400"
+                        }`} />
+                      </div>
+                      <span className={`font-medium ${
+                        cakeShape === "square" ? "text-primary-700" : "text-gray-700"
+                      }`}>Square</span>
                     </div>
-                  </RadioGroup>
+                  </div>
                 </div>
 
                 <div>
