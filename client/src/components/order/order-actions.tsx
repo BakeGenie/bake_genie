@@ -21,7 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVerticalIcon, CalendarRange, ClipboardCopy, FileText, ExternalLink, Copy, Download, MailIcon, CheckIcon } from "lucide-react";
+import { MoreVerticalIcon, CalendarRange, ClipboardCopy, FileText, ExternalLink, Copy, Download, MailIcon, CheckIcon, FileTextIcon } from "lucide-react";
+import EmailInvoiceButton from "./email-invoice-button";
 import { OrderWithItems } from "@/types";
 
 interface OrderActionsProps {

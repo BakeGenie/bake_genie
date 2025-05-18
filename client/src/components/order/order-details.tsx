@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/utils";
 import OrderLog from "./order-log";
 import { Link } from "wouter";
+import EmailInvoiceButton from "./email-invoice-button";
 
 interface OrderDetailsProps {
   order: OrderWithItems;

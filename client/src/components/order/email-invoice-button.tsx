@@ -15,11 +15,9 @@ const EmailInvoiceButton: React.FC<EmailInvoiceButtonProps> = ({ orderId }) => {
 
   // Mutation for sending invoice email
   const emailInvoiceMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       setIsLoading(true);
-      return apiRequest(`/api/invoices/${orderId}/send`, {
-        method: "POST",
-      });
+      return await apiRequest(`/api/invoices/${orderId}/send`, { method: "POST" });
     },
     onSuccess: () => {
       toast({
