@@ -26,6 +26,19 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 
+// Define event types for calendar events
+const calendarEventTypes = [
+  'Baking', 'Decorating', 'Delivery', 'Personal', 'Appointment', 
+  'Market', 'Class', 'Workshop', 'Admin', 'Other'
+];
+
+interface CalendarEvent {
+  id: string;
+  date: string;
+  type: string;
+  description: string;
+}
+
 const Calendar = () => {
   const [_, navigate] = useLocation();
   const [currentDate, setCurrentDate] = React.useState(new Date());
@@ -33,6 +46,12 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   const [isActionDialogOpen, setIsActionDialogOpen] = React.useState(false);
   const [isBlockoutDialogOpen, setIsBlockoutDialogOpen] = React.useState(false);
+  const [isNewEventDialogOpen, setIsNewEventDialogOpen] = React.useState(false);
+  const [calendarEvents, setCalendarEvents] = React.useState<CalendarEvent[]>([]);
+  const [newEvent, setNewEvent] = React.useState<Partial<CalendarEvent>>({
+    type: 'Baking',
+    description: ''
+  });
   
   // Get the first and last day of the current month
   const firstDayOfMonth = startOfMonth(currentDate);
@@ -69,6 +88,13 @@ const Calendar = () => {
     return orders.filter(order => {
       const orderDate = new Date(order.eventDate);
       return isSameDay(orderDate, day);
+    });
+  };
+  
+  // Get calendar events for a specific day
+  const getEventsForDay = (day: Date) => {
+    return calendarEvents.filter(event => {
+      return event.date === format(day, "yyyy-MM-dd");
     });
   };
   
@@ -211,6 +237,7 @@ const Calendar = () => {
                   </div>
                   
                   <div className="space-y-1">
+                    {/* Display orders */}
                     {dayOrders.map((order) => (
                       <div
                         key={order.id}
@@ -244,6 +271,28 @@ const Calendar = () => {
                               <span>{order.eventType}</span>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Display calendar events */}
+                    {getEventsForDay(day).map((event) => (
+                      <div
+                        key={event.id}
+                        className="text-xs p-1 rounded bg-gray-50 border border-gray-200 cursor-pointer hover:bg-gray-100"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering the parent div's onClick
+                          // Show event details (could be implemented later)
+                          alert(`Event: ${event.type}\nDescription: ${event.description}`);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium truncate">{event.type}</span>
+                        </div>
+                        <div className="flex items-center mt-0.5">
+                          <div className="text-xs text-gray-600 truncate">
+                            {event.description}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -294,10 +343,15 @@ const Calendar = () => {
               className="flex items-center justify-start h-auto py-6 px-4"
               variant="outline"
               onClick={() => {
-                // Add an event - Currently this would navigate to a hypothetical events page
-                // In a future implementation, we could create a separate events entity
                 setIsActionDialogOpen(false);
-                navigate(`/task-list?date=${selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}`);
+                // Set the selected date for the new event and open the new event dialog
+                if (selectedDate) {
+                  setNewEvent({
+                    ...newEvent,
+                    date: format(selectedDate, "yyyy-MM-dd")
+                  });
+                  setIsNewEventDialogOpen(true);
+                }
               }}
             >
               <div className="flex items-center">
@@ -372,6 +426,95 @@ const Calendar = () => {
               onClick={() => setIsBlockoutDialogOpen(false)}
             >
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* New Event Dialog */}
+      <Dialog open={isNewEventDialogOpen} onOpenChange={setIsNewEventDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>New Event</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="event-date" className="text-sm font-medium">Date:</label>
+              <div className="flex relative">
+                <input
+                  id="event-date"
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  value={selectedDate ? format(selectedDate, "EEE, dd MMM yyyy") : ""}
+                  readOnly
+                />
+                <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full">
+                  <CalendarIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="event-type" className="text-sm font-medium">Event Type:</label>
+              <Select
+                value={newEvent.type}
+                onValueChange={(value) => setNewEvent({...newEvent, type: value})}
+              >
+                <SelectTrigger id="event-type">
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {calendarEventTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="event-description" className="text-sm font-medium">Event Description:</label>
+              <textarea
+                id="event-description"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md h-24"
+                placeholder="Enter Event Description"
+                value={newEvent.description}
+                onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsNewEventDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                // Add the new event to the calendar events
+                if (selectedDate) {
+                  const newCalendarEvent: CalendarEvent = {
+                    id: Date.now().toString(),
+                    date: format(selectedDate, "yyyy-MM-dd"),
+                    type: newEvent.type || 'Baking',
+                    description: newEvent.description || ''
+                  };
+                  
+                  // Add to calendar events (in a real app, this would be saved to a database)
+                  setCalendarEvents([...calendarEvents, newCalendarEvent]);
+                  
+                  // Reset form and close dialog
+                  setNewEvent({
+                    type: 'Baking',
+                    description: ''
+                  });
+                  setIsNewEventDialogOpen(false);
+                }
+              }}
+            >
+              Add Event
             </Button>
           </DialogFooter>
         </DialogContent>
