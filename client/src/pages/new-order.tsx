@@ -74,7 +74,6 @@ const NewOrderPage = () => {
         // Convert Date objects to ISO strings for API
         eventDate: data.eventDate ? data.eventDate.toISOString() : new Date().toISOString(),
         orderDate: data.orderDate ? data.orderDate.toISOString() : new Date().toISOString(),
-        deliveryDate: data.deliveryDate ? data.deliveryDate.toISOString() : undefined,
       };
       
       const response = await apiRequest("POST", "/api/orders", formattedData);

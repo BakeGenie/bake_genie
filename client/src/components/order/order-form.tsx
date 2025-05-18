@@ -102,7 +102,6 @@ interface CustomEventType {
 // Initial form values
 const defaultValues: Partial<OrderFormValues> = {
   orderDate: new Date(),
-  deliveryDate: new Date(),
   status: "Quote",
   deliveryType: "Pickup",
   eventType: "Birthday",
@@ -277,8 +276,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         total: totalAmount,
         // Ensure dates are properly formatted for API submission
         orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : new Date().toISOString(),
-        deliveryDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : new Date().toISOString(),
-        eventDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : new Date().toISOString(),
+        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
         // Generate a customer name for display
         customerName: `${data.customer.firstName} ${data.customer.lastName}`,
         // Add additional defaults
@@ -342,7 +340,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             name="orderDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Order Date</FormLabel>
+                <FormLabel>Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -422,48 +420,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             )}
           />
 
-          {/* Delivery Date */}
-          <FormField
-            control={control}
-            name="deliveryDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Delivery Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date < new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          
 
           {/* Event Type */}
           <FormField
