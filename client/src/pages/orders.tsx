@@ -40,19 +40,63 @@ const Orders = () => {
     queryKey: ["/api/orders", { month, year, search }],
   });
 
-  // Filter orders based on selected date if any
+  // Enhanced filtering: Combine date filtering with search term filtering
   const filteredOrders = React.useMemo(() => {
-    if (!selectedDate) return orders;
+    // Start with all orders
+    let filtered = orders;
     
-    return orders.filter(order => {
-      const orderDate = new Date(order.eventDate);
-      return (
-        orderDate.getDate() === selectedDate.getDate() &&
-        orderDate.getMonth() === selectedDate.getMonth() &&
-        orderDate.getFullYear() === selectedDate.getFullYear()
-      );
-    });
-  }, [orders, selectedDate]);
+    // Apply date filter if a date is selected
+    if (selectedDate) {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.eventDate);
+        return (
+          orderDate.getDate() === selectedDate.getDate() &&
+          orderDate.getMonth() === selectedDate.getMonth() &&
+          orderDate.getFullYear() === selectedDate.getFullYear()
+        );
+      });
+    }
+    
+    // Apply search term filter if search is entered
+    if (search && search.trim() !== '') {
+      const searchLower = search.toLowerCase().trim();
+      filtered = filtered.filter(order => {
+        // Search in order number
+        if (order.orderNumber.toLowerCase().includes(searchLower)) return true;
+        
+        // Search in customer name
+        const customerName = `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.toLowerCase();
+        if (customerName.includes(searchLower)) return true;
+        
+        // Search in event type
+        if (order.eventType?.toLowerCase().includes(searchLower)) return true;
+        
+        // Search in theme
+        if (order.theme?.toLowerCase().includes(searchLower)) return true;
+        
+        // Search in delivery details
+        if (order.deliveryDetails?.toLowerCase().includes(searchLower)) return true;
+        
+        // Search in order status
+        if (order.status.toLowerCase().includes(searchLower)) return true;
+        
+        // Search in order notes
+        if (order.notes?.toLowerCase().includes(searchLower)) return true;
+        
+        // Search in order items
+        if (order.items && order.items.length > 0) {
+          return order.items.some(item => 
+            item.description?.toLowerCase().includes(searchLower) ||
+            item.productName?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        return false;
+      });
+    }
+    
+    return filtered;
+  }, [orders, selectedDate, search]);
 
   // Handle date selection from calendar
   const handleDateSelect = (date: Date) => {
