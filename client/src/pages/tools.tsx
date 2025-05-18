@@ -193,8 +193,8 @@ const Tools = () => {
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
-            <CardDescription className="text-xs">Calculate cake servings with tier options</CardDescription>
-            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+            <CardDescription className="text-xs h-8">Calculate cake servings with tier options</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border">
               <CalculatorIcon className="h-6 w-6 text-gray-400" />
             </div>
           </CardContent>
@@ -209,8 +209,8 @@ const Tools = () => {
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
-            <CardDescription className="text-xs">Scale recipes for different tin sizes</CardDescription>
-            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+            <CardDescription className="text-xs h-8">Scale recipes for different tin sizes</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border">
               <div className="flex flex-col items-center">
                 <CircleIcon className="h-4 w-4 text-gray-400" />
                 <PlusIcon className="h-3 w-3 text-gray-400 my-1" />
@@ -229,8 +229,8 @@ const Tools = () => {
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
-            <CardDescription className="text-xs">Design multi-tier cakes with decorations</CardDescription>
-            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+            <CardDescription className="text-xs h-8">Design multi-tier cakes with decorations</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border">
               <CakeIcon className="h-6 w-6 text-gray-400" />
             </div>
           </CardContent>
@@ -245,8 +245,8 @@ const Tools = () => {
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
-            <CardDescription className="text-xs">Calculate your business overhead costs</CardDescription>
-            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+            <CardDescription className="text-xs h-8">Calculate your business overhead costs</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border">
               <Drill className="h-6 w-6 text-gray-400" />
             </div>
           </CardContent>
