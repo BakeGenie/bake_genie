@@ -243,7 +243,7 @@ const Recipes = () => {
             </div>
             <div>
               <CardTitle className="text-lg">Recipes</CardTitle>
-              <CardDescription>Use the recipes to add & manage all your favourite recipes.</CardDescription>
+
             </div>
             <Button className="ml-auto" onClick={() => setActiveTab("recipes")}>
               <PlusIcon className="h-4 w-4 mr-2" /> Open
@@ -259,7 +259,7 @@ const Recipes = () => {
             </div>
             <div>
               <CardTitle className="text-lg">Ingredients</CardTitle>
-              <CardDescription>Add or edit ingredients in your master list & use it to create your recipes.</CardDescription>
+
             </div>
             <Button className="ml-auto" onClick={() => setActiveTab("ingredients")}>
               <PlusIcon className="h-4 w-4 mr-2" /> Open
@@ -275,7 +275,7 @@ const Recipes = () => {
             </div>
             <div>
               <CardTitle className="text-lg">Supplies List</CardTitle>
-              <CardDescription>Add supplies such as boards, boxes & ribbons & add them in your orders.</CardDescription>
+
             </div>
             <Button className="ml-auto" variant="outline">
               <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
@@ -291,7 +291,7 @@ const Recipes = () => {
             </div>
             <div>
               <CardTitle className="text-lg">Master Ingredient List</CardTitle>
-              <CardDescription>Pick from a list of pre-converted ingredients and add them to your list.</CardDescription>
+
             </div>
             <Button className="ml-auto" variant="outline">
               <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
@@ -307,7 +307,7 @@ const Recipes = () => {
             </div>
             <div>
               <CardTitle className="text-lg">My Bundles</CardTitle>
-              <CardDescription>Bundle recipes & supplies together to make adding them to your order easier.</CardDescription>
+
             </div>
             <Button className="ml-auto" variant="outline">
               <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
