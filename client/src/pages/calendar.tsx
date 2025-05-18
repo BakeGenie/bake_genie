@@ -332,8 +332,8 @@ const Calendar = () => {
               onClick={() => {
                 setIsActionDialogOpen(false);
                 if (selectedDate) {
-                  // Navigate to orders page with a query parameter to open new order dialog
-                  navigate(`/orders?newOrder=true&date=${format(selectedDate, "yyyy-MM-dd")}`);
+                  // Navigate directly to the new order page with the date parameter
+                  navigate(`/orders/new?date=${format(selectedDate, "yyyy-MM-dd")}`);
                 }
               }}
             >

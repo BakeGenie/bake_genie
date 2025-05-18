@@ -23,14 +23,16 @@ import Tools from "./pages/tools";
 import Account from "./pages/account";
 import DataImportExport from "./pages/data-import-export";
 import Integrations from "./pages/integrations";
+import NewOrder from "./pages/new-order";
 
 function Router() {
   return (
     <AppLayout>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/orders" component={Orders} />
+        <Route path="/orders/new" component={NewOrder} />
         <Route path="/orders/:id" component={OrderDetails} />
+        <Route path="/orders" component={Orders} />
         <Route path="/contacts" component={Contacts} />
         <Route path="/enquiries" component={Enquiries} />
         <Route path="/tasks" component={TaskList} />
