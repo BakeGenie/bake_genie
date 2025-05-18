@@ -24,6 +24,27 @@ export class InvoiceService {
       // Fetch order items
       const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
       
+      // Fetch associated products for images
+      const productItems = await Promise.all(
+        items.map(async (item) => {
+          if (item.productId) {
+            try {
+              const [product] = await db.select().from(products).where(eq(products.id, item.productId));
+              if (product) {
+                return { 
+                  ...item, 
+                  imageUrl: product.imageUrl,
+                  productName: product.name
+                };
+              }
+            } catch (error) {
+              console.log(`Error fetching product details for item ${item.id}:`, error);
+            }
+          }
+          return item;
+        })
+      );
+      
       // Fetch contact
       const [contact] = await db.select().from(contacts).where(eq(contacts.id, order.contactId));
       
@@ -31,7 +52,7 @@ export class InvoiceService {
       const [userSettings] = await db.select().from(settings).where(eq(settings.userId, userId));
       
       // Calculate totals
-      const subtotal = items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
+      const subtotal = productItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
       const taxRate = order.taxRate ? parseFloat(order.taxRate) : 0;
       const taxAmount = subtotal * (taxRate / 100);
       const total = subtotal + taxAmount;
@@ -146,9 +167,19 @@ export class InvoiceService {
               </tr>
             </thead>
             <tbody>
-              ${items.map(item => `
+              ${productItems.map(item => `
                 <tr>
-                  <td>${item.description}</td>
+                  <td>
+                    <div style="display: flex; align-items: center;">
+                      ${item.productId && 'imageUrl' in item && item.imageUrl ? `
+                        <div style="margin-right: 10px; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                          <img src="${item.imageUrl}" alt="${item.description || ''}" 
+                            style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                      ` : ''}
+                      <div>${item.description || item.name}</div>
+                    </div>
+                  </td>
                   <td>${item.quantity}</td>
                   <td>${userSettings?.currency || '$'}${parseFloat(item.price).toFixed(2)}</td>
                   <td>${userSettings?.currency || '$'}${(parseFloat(item.price) * item.quantity).toFixed(2)}</td>
