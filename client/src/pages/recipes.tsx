@@ -242,8 +242,8 @@ const Recipes = () => {
               <UtensilsCrossedIcon className="h-6 w-6 text-primary-500" />
             </div>
             <div>
-              <CardTitle className="text-lg">Recipe Book</CardTitle>
-              <CardDescription>Use the recipe book to add & manage all your favourite recipes.</CardDescription>
+              <CardTitle className="text-lg">Recipes</CardTitle>
+              <CardDescription>Use the recipes to add & manage all your favourite recipes.</CardDescription>
             </div>
             <Button className="ml-auto" onClick={() => setActiveTab("recipes")}>
               <PlusIcon className="h-4 w-4 mr-2" /> Open
@@ -320,7 +320,7 @@ const Recipes = () => {
       {activeTab === "recipes" && (
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Recipe Book</h2>
+            <h2 className="text-xl font-bold">Recipes</h2>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
