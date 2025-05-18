@@ -3,6 +3,9 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { Product } from "@shared/schema";
+import ProductSelector from "./product-selector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,19 +60,23 @@ const customerSchema = z.object({
   userId: z.number(),
 });
 
+// Define schema for order item with product details
+const orderItemSchema = z.object({
+  id: z.number().optional(),
+  productId: z.number().optional(),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().min(1, "Quantity is required"),
+  price: z.number().min(0, "Price is required"),
+  total: z.number(),
+  // Additional fields for product information
+  imageUrl: z.string().optional().nullable(),
+  productName: z.string().optional().nullable(),
+});
+
 // Extend the insert order schema with necessary fields for form validation
 const orderFormSchema = insertOrderSchema.extend({
   customer: customerSchema,
-  items: z.array(
-    z.object({
-      id: z.number().optional(),
-      productId: z.number().optional(),
-      description: z.string().min(1, "Description is required"),
-      quantity: z.number().min(1, "Quantity is required"),
-      price: z.number().min(0, "Price is required"),
-      total: z.number(),
-    })
-  ),
+  items: z.array(orderItemSchema),
   // Make these fields required
   orderDate: z.date({ required_error: "Order date is required" }),
   customerName: z.string(),
@@ -194,7 +201,32 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       quantity: 1,
       price: 0,
       total: 0,
+      productId: undefined,
+      imageUrl: null,
+      productName: null
     });
+  };
+
+  // Handle product selection for an item
+  const handleProductSelect = (index: number, product: Product) => {
+    const currentItems = getValues("items");
+    const item = currentItems[index];
+    
+    // Update item with product details
+    item.productId = product.id;
+    item.description = product.name;
+    item.productName = product.name;
+    item.price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+    item.imageUrl = product.imageUrl || null;
+    
+    // Calculate the total
+    item.total = item.quantity * item.price;
+    
+    // Update the entire items array
+    setValue("items", currentItems);
+    
+    // Trigger form validation
+    form.trigger(`items.${index}`);
   };
 
   // Handle item changes and calculate totals
@@ -669,7 +701,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             <div className="space-y-4">
               {/* Headers */}
               <div className="grid grid-cols-12 gap-2 font-medium">
-                <div className="col-span-6">Description</div>
+                <div className="col-span-3">Product</div>
+                <div className="col-span-3">Description</div>
                 <div className="col-span-2">Quantity</div>
                 <div className="col-span-2">Price</div>
                 <div className="col-span-2">Total</div>
@@ -678,7 +711,41 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               {/* Items */}
               {fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                  <div className="col-span-6">
+                  {/* Product Selection */}
+                  <div className="col-span-3">
+                    <FormField
+                      control={control}
+                      name={`items.${index}.productId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex flex-col space-y-1">
+                            <ProductSelector 
+                              value={field.value as number} 
+                              onSelect={(product) => {
+                                handleProductSelect(index, product);
+                              }}
+                            />
+                            {watch(`items.${index}.imageUrl`) && (
+                              <div className="w-12 h-12 border rounded overflow-hidden mt-1">
+                                <img 
+                                  src={watch(`items.${index}.imageUrl`) || ''} 
+                                  alt={watch(`items.${index}.description`) || 'Product'}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Description */}
+                  <div className="col-span-3">
                     <FormField
                       control={control}
                       name={`items.${index}.description`}
@@ -693,6 +760,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     />
                   </div>
                   
+                  {/* Quantity */}
                   <div className="col-span-2">
                     <FormField
                       control={control}
@@ -717,6 +785,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     />
                   </div>
                   
+                  {/* Price */}
                   <div className="col-span-2">
                     <FormField
                       control={control}
@@ -742,6 +811,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     />
                   </div>
                   
+                  {/* Total */}
                   <div className="col-span-1">
                     <FormField
                       control={control}
@@ -754,6 +824,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     />
                   </div>
                   
+                  {/* Remove button */}
                   <div className="col-span-1 flex justify-end">
                     <Button
                       type="button"
