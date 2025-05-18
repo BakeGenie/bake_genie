@@ -32,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertRecipeSchema, insertIngredientSchema } from "@shared/schema";
@@ -122,8 +122,9 @@ const Recipes = () => {
   });
 
   // Handle recipe ingredient fields
-  const { fields, append, remove } = recipeForm.useFieldArray({
-    name: "ingredients",
+  const { fields, append, remove } = useFieldArray({
+    control: recipeForm.control,
+    name: "ingredients"
   });
 
   // Handle new recipe submission
