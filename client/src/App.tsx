@@ -14,7 +14,7 @@ import Enquiries from "./pages/enquiries";
 import EnquiryForm from "./pages/enquiry-form";
 import TaskList from "./pages/task-list";
 import Calendar from "./pages/calendar";
-import Recipes from "./pages/recipes";
+import Recipes from "./pages/recipes-new";
 import Products from "./pages/products";
 import Reports from "./pages/reports";
 import Expenses from "./pages/expenses";

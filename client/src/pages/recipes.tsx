@@ -1,55 +1,14 @@
 import React from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Recipe, Ingredient } from "@shared/schema";
-import { RecipeWithIngredients } from "@/types";
+import { useLocation } from "wouter";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { insertRecipeSchema, insertIngredientSchema } from "@shared/schema";
-import { 
-  PlusIcon, 
-  ClockIcon, 
-  UtensilsCrossedIcon, 
-  XIcon, 
-  SearchIcon, 
-  ArrowLeftIcon,
-  Loader2
-} from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
-import { useLocation, useRoute } from "wouter";
-
-// Extended schema with validation rules for recipe
-const recipeFormSchema = insertRecipeSchema.extend({
-  name: z.string().min(1, "Name is required"),
+import { PlusIcon, ClockIcon, UtensilsCrossedIcon, SearchIcon } from "lucide-react";
   servings: z.coerce.number().int().positive("Servings must be a positive number"),
   ingredients: z.array(
     z.object({
