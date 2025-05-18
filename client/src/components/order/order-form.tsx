@@ -214,6 +214,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     
     // Update item with product details
     item.productId = product.id;
+    item.recipeId = undefined; // Clear recipe ID if previously selected
+    item.itemType = 'product';
     item.description = product.name;
     item.productName = product.name;
     
@@ -229,6 +231,46 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     
     item.price = productPrice;
     item.imageUrl = product.imageUrl || null;
+    
+    // Calculate the total
+    item.total = item.quantity * item.price;
+    
+    // Update the entire items array
+    setValue("items", currentItems);
+    
+    // Trigger form validation
+    form.trigger(`items.${index}`);
+  };
+  
+  // Handle recipe selection for an item
+  const handleRecipeSelect = (index: number, recipe: Recipe) => {
+    const currentItems = getValues("items");
+    const item = currentItems[index];
+    
+    // Update item with recipe details
+    item.recipeId = recipe.id;
+    item.productId = undefined; // Clear product ID if previously selected
+    item.itemType = 'recipe';
+    item.description = recipe.name;
+    item.productName = recipe.name;
+    
+    // Handle price conversion safely for any type
+    let recipePrice = 0;
+    if (recipe.totalCost) {
+      recipePrice = typeof recipe.totalCost === 'string' 
+        ? parseFloat(recipe.totalCost) 
+        : typeof recipe.totalCost === 'number'
+          ? recipe.totalCost
+          : parseFloat(String(recipe.totalCost)); // Handle decimal type
+    }
+    
+    item.price = recipePrice;
+    item.imageUrl = recipe.imageUrl || null;
+    
+    // Include recipe servings in description if available
+    if (recipe.servings) {
+      item.description += ` (${recipe.servings} servings)`;
+    }
     
     // Calculate the total
     item.total = item.quantity * item.price;
@@ -744,37 +786,81 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               {/* Items */}
               {fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                  {/* Product Selection */}
+                  {/* Product/Recipe Selection */}
                   <div className="col-span-3">
-                    <FormField
-                      control={control}
-                      name={`items.${index}.productId`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex flex-col space-y-1">
-                            <ProductSelector 
-                              value={field.value as number} 
-                              onSelect={(product) => {
-                                handleProductSelect(index, product);
-                              }}
-                            />
-                            {watch(`items.${index}.imageUrl`) && (
-                              <div className="w-12 h-12 border rounded overflow-hidden mt-1">
-                                <img 
-                                  src={watch(`items.${index}.imageUrl`) || ''} 
-                                  alt={watch(`items.${index}.description`) || 'Product'}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="mb-2">
+                      <Select
+                        value={watch(`items.${index}.itemType`) || 'product'} 
+                        onValueChange={(value) => {
+                          setValue(`items.${index}.itemType`, value);
+                          // Clear existing selections when changing type
+                          setValue(`items.${index}.productId`, undefined);
+                          setValue(`items.${index}.recipeId`, undefined);
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="product">Product</SelectItem>
+                          <SelectItem value="recipe">Recipe</SelectItem>
+                          <SelectItem value="custom">Custom Item</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {(watch(`items.${index}.itemType`) === 'product' || !watch(`items.${index}.itemType`)) && (
+                      <FormField
+                        control={control}
+                        name={`items.${index}.productId`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex flex-col space-y-1">
+                              <ProductSelector 
+                                value={field.value as number} 
+                                onSelect={(product) => {
+                                  handleProductSelect(index, product);
+                                }}
+                              />
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {watch(`items.${index}.itemType`) === 'recipe' && (
+                      <FormField
+                        control={control}
+                        name={`items.${index}.recipeId`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex flex-col space-y-1">
+                              <RecipeSelector 
+                                value={field.value as number} 
+                                onSelect={(recipe) => {
+                                  handleRecipeSelect(index, recipe);
+                                }}
+                              />
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {watch(`items.${index}.imageUrl`) && (
+                      <div className="w-12 h-12 border rounded overflow-hidden mt-1">
+                        <img 
+                          src={watch(`items.${index}.imageUrl`) || ''} 
+                          alt={watch(`items.${index}.description`) || 'Item'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   {/* Description */}
