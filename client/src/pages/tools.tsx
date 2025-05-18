@@ -39,6 +39,19 @@ const Tools = () => {
   const [cakeHeight, setCakeHeight] = React.useState("standard");
   const [canvasColor, setCanvasColor] = React.useState("#ffffff");
   
+  // Tin conversion calculator state
+  const [tinOriginalShape, setTinOriginalShape] = React.useState("round");
+  const [tinNewShape, setTinNewShape] = React.useState("round");
+  const [tinOriginalDiameter, setTinOriginalDiameter] = React.useState("");
+  const [tinOriginalHeight, setTinOriginalHeight] = React.useState("");
+  const [tinNewDiameter, setTinNewDiameter] = React.useState("");
+  const [tinNewHeight, setTinNewHeight] = React.useState("");
+  const [tinMeasurementUnit, setTinMeasurementUnit] = React.useState("cm");
+  const [tinIngredients, setTinIngredients] = React.useState<Array<{name: string; quantity: string; unit: string}>>([]);
+  const [tinIngredientName, setTinIngredientName] = React.useState("");
+  const [tinIngredientQuantity, setTinIngredientQuantity] = React.useState("");
+  const [tinIngredientUnit, setTinIngredientUnit] = React.useState("each");
+  
   // Cake designer dimensions state
   const [bottomTierDiameter, setBottomTierDiameter] = React.useState(10);
   const [bottomTierHeight, setBottomTierHeight] = React.useState(5);
