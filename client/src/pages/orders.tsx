@@ -308,7 +308,7 @@ const Orders = () => {
             <h2 className="text-lg font-semibold text-gray-800 mb-6">New Order</h2>
             <OrderForm
               onSubmit={handleNewOrderSubmit}
-              initialData={preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined}
+              initialValues={preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined}
             />
           </div>
         </DialogContent>

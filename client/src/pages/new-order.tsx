@@ -5,7 +5,50 @@ import PageHeader from "@/components/ui/page-header";
 import OrderForm from "@/components/order/order-form";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { OrderFormData } from "@/types";
+
+// Import type from the form component 
+// We'll use the type from the actual form to ensure compatibility
+import { insertOrderSchema } from "@shared/schema";
+import { z } from "zod";
+
+// Define customer schema (simplified version of what's in order-form.tsx)
+const customerSchema = z.object({
+  userId: z.number(),
+  firstName: z.string(),
+  lastName: z.string(),
+  businessName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+// Define schema for order item with product details
+const orderItemSchema = z.object({
+  id: z.number().optional(),
+  productId: z.number().optional(),
+  description: z.string(),
+  quantity: z.number(),
+  price: z.number(),
+  total: z.number(),
+  // Additional fields for product information
+  imageUrl: z.string().optional().nullable(),
+  productName: z.string().optional().nullable(),
+});
+
+// Extend the insert order schema with necessary fields for form validation
+const orderFormSchema = insertOrderSchema.extend({
+  customer: customerSchema,
+  items: z.array(orderItemSchema),
+  // Make these fields required
+  orderDate: z.date({ required_error: "Order date is required" }),
+  customerName: z.string(),
+  status: z.string(),
+  eventType: z.string(),
+});
+
+// Define the form value types
+type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 const NewOrderPage = () => {
   const [location, navigate] = useLocation();
@@ -13,26 +56,25 @@ const NewOrderPage = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   // Parse URL parameters to get pre-selected date if any
-  const searchParams = new URLSearchParams(location.split('?')[1]);
+  const searchParams = new URLSearchParams(location.split('?')[1] || '');
   const preselectedDate = searchParams.get('date');
   
   // Handle form submission for a new order
-  const handleNewOrderSubmit = async (data: OrderFormData) => {
+  const handleNewOrderSubmit = async (data: OrderFormValues) => {
     try {
       setIsSubmitting(true);
       
-      // Create a unique order number (in a real app, this would be generated server-side)
-      const orderNumber = `ORD-${Date.now().toString().substr(-6)}`;
+      // Create a unique order number
+      const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       
       // Format the form data for the API request
       const formattedData = {
         ...data,
         orderNumber,
-        userId: 1, // In a real app, this would be the current user's ID
-        // Convert Date objects to ISO strings
-        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : data.eventDate,
-        orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : data.orderDate,
-        deliveryDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : data.deliveryDate,
+        // Convert Date objects to ISO strings for API
+        eventDate: data.eventDate ? data.eventDate.toISOString() : new Date().toISOString(),
+        orderDate: data.orderDate ? data.orderDate.toISOString() : new Date().toISOString(),
+        deliveryDate: data.deliveryDate ? data.deliveryDate.toISOString() : undefined,
       };
       
       const response = await apiRequest("POST", "/api/orders", formattedData);
@@ -61,6 +103,22 @@ const NewOrderPage = () => {
     }
   };
 
+  // Create initialValues object for the form based on preselected date
+  const initialValues = React.useMemo(() => {
+    const values: Partial<OrderFormValues> = {};
+    
+    // If we have a preselected date from the calendar, use it
+    if (preselectedDate) {
+      try {
+        values.eventDate = new Date(preselectedDate);
+      } catch (e) {
+        console.error("Invalid date format:", preselectedDate);
+      }
+    }
+    
+    return values;
+  }, [preselectedDate]);
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -74,7 +132,7 @@ const NewOrderPage = () => {
           <div className="p-6">
             <OrderForm
               onSubmit={handleNewOrderSubmit}
-              initialData={preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined}
+              initialValues={initialValues}
               isSubmitting={isSubmitting}
             />
           </div>
