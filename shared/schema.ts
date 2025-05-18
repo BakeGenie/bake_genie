@@ -269,10 +269,22 @@ export const settings = pgTable("settings", {
   currency: text("currency").default("USD"),
   defaultTaxRate: decimal("default_tax_rate", { precision: 5, scale: 2 }).default("0"),
   businessHours: jsonb("business_hours"),
+  // Business details for invoices
+  businessName: text("business_name"),
+  businessEmail: text("business_email"),
+  businessPhone: text("business_phone"),
+  businessAddress: text("business_address"),
+  businessLogoUrl: text("business_logo_url"),
+  // Footer text for invoices and quotes
   invoiceFooter: text("invoice_footer"),
   quoteFooter: text("quote_footer"),
+  // Number prefixes
   orderNumberPrefix: text("order_number_prefix").default(""),
   quoteNumberPrefix: text("quote_number_prefix").default(""),
+  // Invoice template settings
+  invoiceTemplate: text("invoice_template").default("default"),
+  invoiceColors: jsonb("invoice_colors"),
+  // Labor settings
   laborRate: decimal("labor_rate", { precision: 10, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
