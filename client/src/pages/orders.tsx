@@ -18,14 +18,22 @@ import { queryClient } from "@/lib/queryClient";
 import { OrderFormData } from "@/types";
 
 const Orders = () => {
-  const [_, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = React.useState(false);
+  
+  // Check if we should open the new order dialog
+  const searchParams = new URLSearchParams(location.split('?')[1]);
+  const shouldOpenNew = searchParams.get('newOrder') === 'true';
+  const preselectedDate = searchParams.get('date');
+  
+  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = React.useState(shouldOpenNew);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [month, setMonth] = React.useState(new Date().getMonth() + 1);
   const [year, setYear] = React.useState(new Date().getFullYear());
   const [search, setSearch] = React.useState("");
-  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = React.useState<Date>(
+    preselectedDate ? new Date(preselectedDate) : new Date()
+  );
 
   // Fetch orders data
   const { data: orders = [], isLoading } = useQuery<OrderWithItems[]>({
