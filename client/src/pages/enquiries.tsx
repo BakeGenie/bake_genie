@@ -14,11 +14,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ColumnDef } from "@tanstack/react-table";
-import { MailIcon, CheckCircleIcon, XCircleIcon, PlusCircleIcon, ClockIcon } from "lucide-react";
+import { MailIcon, CheckCircleIcon, XCircleIcon, PlusCircleIcon, ClockIcon, PlusIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { formatDate } from "@/lib/utils";
+import AddEnquiryDialog from "@/components/enquiry/add-enquiry-dialog";
 
 const Enquiries = () => {
   const { toast } = useToast();
@@ -132,14 +133,16 @@ const Enquiries = () => {
     <div className="p-6">
       <div className="flex items-center justify-between">
         <PageHeader title="Enquiries" />
-        <Button 
-          variant="default" 
-          onClick={() => window.location.href = "/enquiry-form"}
-          className="ml-auto"
-        >
-          <MailIcon className="h-4 w-4 mr-2" />
-          Enquiry Form
-        </Button>
+        <div className="flex space-x-2 ml-auto">
+          <AddEnquiryDialog />
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = "/enquiry-form"}
+          >
+            <MailIcon className="h-4 w-4 mr-2" />
+            Manage Enquiry Form
+          </Button>
+        </div>
       </div>
 
       <div className="mt-6">
