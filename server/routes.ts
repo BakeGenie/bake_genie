@@ -6,6 +6,7 @@ import { router as xeroRoutes } from "./routes/xero";
 import { router as uploadRoutes } from "./routes/upload";
 import { router as bundlesRoutes } from "./routes/bundles";
 import { router as invoicesRoutes } from "./routes/invoices";
+import { router as sampleInvoiceRoutes } from "./routes/sample-invoice";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -25,6 +26,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register invoice routes
   app.use('/api/invoices', invoicesRoutes);
+  
+  // Register sample invoice route for preview
+  app.use('/api/sample-invoice', sampleInvoiceRoutes);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
