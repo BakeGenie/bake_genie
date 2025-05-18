@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +15,11 @@ import EnquiryForm from "./pages/enquiry-form";
 import TaskList from "./pages/task-list";
 import Calendar from "./pages/calendar";
 import Recipes from "./pages/recipes-new";
+import RecipesList from "./pages/recipes-list";
+import IngredientsList from "./pages/ingredients-list";
+import SuppliesList from "./pages/supplies-list";
+import MasterIngredients from "./pages/master-ingredients";
+import Bundles from "./pages/bundles";
 import Products from "./pages/products";
 import Reports from "./pages/reports";
 import Expenses from "./pages/expenses";
@@ -38,11 +43,11 @@ function Router() {
         <Route path="/tasks" component={TaskList} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/recipes" component={Recipes} />
-        <Route path="/recipes/recipes-list" component={() => import("./pages/recipes-list").then(module => module.default)} />
-        <Route path="/recipes/ingredients-list" component={() => import("./pages/ingredients-list").then(module => module.default)} />
-        <Route path="/recipes/supplies-list" component={() => import("./pages/supplies-list").then(module => module.default)} />
-        <Route path="/recipes/master-ingredients" component={() => import("./pages/master-ingredients").then(module => module.default)} />
-        <Route path="/recipes/bundles" component={() => import("./pages/bundles").then(module => module.default)} />
+        <Route path="/recipes/recipes-list" component={RecipesList} />
+        <Route path="/recipes/ingredients-list" component={IngredientsList} />
+        <Route path="/recipes/supplies-list" component={SuppliesList} />
+        <Route path="/recipes/master-ingredients" component={MasterIngredients} />
+        <Route path="/recipes/bundles" component={Bundles} />
         <Route path="/products" component={Products} />
         <Route path="/reports" component={Reports} />
         <Route path="/expenses" component={Expenses} />
