@@ -27,18 +27,10 @@ import {
   ChevronDownIcon
 } from "lucide-react";
 
-// Mock data for demonstration
-const mockRecipes = [
-  { id: 1, name: "Butterscotch Sauce", category: "Filling", servings: 15, servingSize: "$0.29", customPrice: "$4.50", costPrice: "$4.38" },
-  { id: 2, name: "Dark Chocolate Ganache", category: "Filling", servings: null, servingSize: "", customPrice: "$22.48", costPrice: "$22.48" },
-  { id: 3, name: "Dark Chocolate Mud Cake", category: "Cake", servings: 15, servingSize: "$1.08", customPrice: "$16.17", costPrice: "$16.17" },
-  { id: 4, name: "Jam Drops", category: "Cookies", servings: 20, servingSize: "$0.26", customPrice: "$5.17", costPrice: "$5.17" },
-  { id: 5, name: "Raspberry Coulis", category: "Filling", servings: 15, servingSize: "$0.20", customPrice: "$3.07", costPrice: "$3.07" },
-  { id: 6, name: "Salted Caramel", category: "Filling", servings: null, servingSize: "", customPrice: "$3.95", costPrice: "$3.95" },
-  { id: 7, name: "Signature Chocolate Cake", category: "Cake", servings: 15, servingSize: "$0.94", customPrice: "$14.10", costPrice: "$14.10" }
-];
+// Empty array for recipes - will be populated from database
+const mockRecipes = [];
 
-const categories = ["All Categories", "Cake", "Filling", "Cookies"];
+const categories = ["All Categories", "Cake", "Filling", "Cookies", "Icing", "Frosting", "Other"];
 
 const RecipesList = () => {
   const [, navigate] = useLocation();
