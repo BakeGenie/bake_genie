@@ -82,6 +82,86 @@ const Tools = () => {
     const tierMultiplier = parseInt(numberOfTiers, 10);
     return Math.floor(basePortions * servingMultiplier * tierMultiplier * heightMultiplier);
   };
+  
+  // Calculate tin conversion scale factor
+  const calculateScaleFactor = () => {
+    // Return 1 if any required measurement is missing
+    if (!tinOriginalDiameter || !tinNewDiameter) {
+      return 1;
+    }
+    
+    const origDiameter = parseFloat(tinOriginalDiameter);
+    const newDiameter = parseFloat(tinNewDiameter);
+    const origHeight = parseFloat(tinOriginalHeight || "1");
+    const newHeight = parseFloat(tinNewHeight || "1");
+    
+    // Calculate the volumes based on shape
+    let origVolume = 0;
+    let newVolume = 0;
+    
+    if (tinOriginalShape === "round") {
+      // Volume = π * r² * h
+      origVolume = Math.PI * Math.pow(origDiameter / 2, 2) * origHeight;
+    } else {
+      // Square/Rectangle: Volume = l * w * h 
+      // For square, l = w = diameter
+      origVolume = origDiameter * origDiameter * origHeight;
+    }
+    
+    if (tinNewShape === "round") {
+      newVolume = Math.PI * Math.pow(newDiameter / 2, 2) * newHeight;
+    } else {
+      newVolume = newDiameter * newDiameter * newHeight;
+    }
+    
+    // Calculate scale factor
+    return newVolume / origVolume;
+  };
+  
+  // Calculate new recipe amounts
+  const calculateNewRecipeAmounts = () => {
+    const scaleFactor = calculateScaleFactor();
+    
+    return tinIngredients.map(ingredient => {
+      const origQuantity = parseFloat(ingredient.quantity);
+      const newQuantity = (origQuantity * scaleFactor).toFixed(2);
+      
+      return {
+        name: ingredient.name,
+        origQuantity: ingredient.quantity,
+        newQuantity,
+        unit: ingredient.unit
+      };
+    });
+  };
+  
+  // Update recipe with new tin sizes
+  const calculateTinConversion = () => {
+    if (!tinOriginalDiameter || !tinNewDiameter) {
+      toast({
+        title: "Missing measurements",
+        description: "Please enter both original and new tin dimensions",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (tinIngredients.length === 0) {
+      toast({
+        title: "No ingredients added",
+        description: "Please add at least one ingredient to your recipe",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const scaleFactor = calculateScaleFactor();
+    
+    toast({
+      title: "Recipe Updated",
+      description: `Your recipe has been scaled by a factor of ${scaleFactor.toFixed(2)}`,
+    });
+  };
 
   // Handle design save
   const handleSaveDesign = () => {
@@ -340,109 +420,245 @@ const Tools = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="font-medium">Enter Details below</h3>
+                
+                {/* Existing Recipe Section */}
+                <div className="space-y-4">
                   <div>
-                    <Label className="mb-2 block">Original Tin Shape</Label>
-                    <RadioGroup defaultValue="round" className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="round" id="orig-round" />
-                        <Label htmlFor="orig-round" className="flex items-center">
-                          <CircleIcon className="h-4 w-4 mr-2" /> Round
-                        </Label>
+                    <h4 className="font-medium mb-3">Existing Recipe</h4>
+                    <div className="flex flex-wrap gap-4 mb-4">
+                      <div className="flex-1 min-w-[200px]">
+                        <Label htmlFor="ingredient-name">Ingredient</Label>
+                        <Input
+                          id="ingredient-name"
+                          value={tinIngredientName}
+                          onChange={(e) => setTinIngredientName(e.target.value)}
+                          className="mt-1"
+                        />
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="square" id="orig-square" />
-                        <Label htmlFor="orig-square" className="flex items-center">
-                          <SquareIcon className="h-4 w-4 mr-2" /> Square
-                        </Label>
+                      <div className="w-24">
+                        <Label htmlFor="ingredient-quantity">Quantity</Label>
+                        <Input
+                          id="ingredient-quantity"
+                          type="number"
+                          value={tinIngredientQuantity}
+                          onChange={(e) => setTinIngredientQuantity(e.target.value)}
+                          className="mt-1"
+                        />
                       </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div>
-                    <Label className="mb-2 block">New Tin Shape</Label>
-                    <RadioGroup defaultValue="round" className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="round" id="new-round" />
-                        <Label htmlFor="new-round" className="flex items-center">
-                          <CircleIcon className="h-4 w-4 mr-2" /> Round
-                        </Label>
+                      <div className="w-32">
+                        <Label htmlFor="ingredient-unit">Unit</Label>
+                        <Select
+                          value={tinIngredientUnit}
+                          onValueChange={setTinIngredientUnit}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="each">each</SelectItem>
+                            <SelectItem value="g">grams</SelectItem>
+                            <SelectItem value="kg">kg</SelectItem>
+                            <SelectItem value="oz">oz</SelectItem>
+                            <SelectItem value="lb">lb</SelectItem>
+                            <SelectItem value="cup">cups</SelectItem>
+                            <SelectItem value="ml">ml</SelectItem>
+                            <SelectItem value="l">liters</SelectItem>
+                            <SelectItem value="tsp">tsp</SelectItem>
+                            <SelectItem value="tbsp">tbsp</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="square" id="new-square" />
-                        <Label htmlFor="new-square" className="flex items-center">
-                          <SquareIcon className="h-4 w-4 mr-2" /> Square
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="mb-2 block">Original Tin Size (inches)</Label>
-                    <Select defaultValue="8">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6">6 inch</SelectItem>
-                        <SelectItem value="8">8 inch</SelectItem>
-                        <SelectItem value="10">10 inch</SelectItem>
-                        <SelectItem value="12">12 inch</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="mb-2 block">New Tin Size (inches)</Label>
-                    <Select defaultValue="10">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6">6 inch</SelectItem>
-                        <SelectItem value="8">8 inch</SelectItem>
-                        <SelectItem value="10">10 inch</SelectItem>
-                        <SelectItem value="12">12 inch</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Original Recipe Amount</Label>
-                  <div className="flex space-x-2">
-                    <Input type="number" defaultValue="1" className="w-20" />
-                    <Select defaultValue="g">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="g">grams</SelectItem>
-                        <SelectItem value="kg">kg</SelectItem>
-                        <SelectItem value="oz">oz</SelectItem>
-                        <SelectItem value="lb">lb</SelectItem>
-                        <SelectItem value="cup">cups</SelectItem>
-                        <SelectItem value="ml">ml</SelectItem>
-                        <SelectItem value="l">liters</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold">New Recipe Amount</h3>
-                    <div className="mt-2 text-3xl font-bold text-primary-600">
-                      1.56 grams
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Scale your ingredients by 1.56x for the new tin size
-                    </p>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        onClick={() => {
+                          if (tinIngredientName && tinIngredientQuantity) {
+                            setTinIngredients([
+                              ...tinIngredients,
+                              {
+                                name: tinIngredientName,
+                                quantity: tinIngredientQuantity,
+                                unit: tinIngredientUnit
+                              }
+                            ]);
+                            setTinIngredientName("");
+                            setTinIngredientQuantity("");
+                          }
+                        }}
+                        variant="secondary"
+                      >
+                        Add Ingredient
+                      </Button>
+                      <Button 
+                        onClick={() => setTinIngredients([])}
+                        variant="outline"
+                      >
+                        Reset All
+                      </Button>
+                    </div>
+                    
+                    {tinIngredients.length > 0 && (
+                      <div className="mt-4">
+                        <ul className="space-y-1">
+                          {tinIngredients.map((ingredient, index) => (
+                            <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <span>{ingredient.name} - {ingredient.quantity} {ingredient.unit}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  setTinIngredients(tinIngredients.filter((_, i) => i !== index));
+                                }}
+                              >
+                                <MinusIcon className="h-4 w-4" />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
+                  
+                  {/* Existing and New Baking Tin Section */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Existing Baking Tin</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-4">
+                          <Label className="whitespace-nowrap">Shape:</Label>
+                          <RadioGroup 
+                            className="flex space-x-4" 
+                            value={tinOriginalShape}
+                            onValueChange={setTinOriginalShape}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="round" id="original-round" />
+                              <Label htmlFor="original-round">Round</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="square" id="original-square" />
+                              <Label htmlFor="original-square">Square / Sheet</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <Label htmlFor="original-diameter">Diameter:</Label>
+                            <Input 
+                              id="original-diameter"
+                              value={tinOriginalDiameter}
+                              onChange={(e) => setTinOriginalDiameter(e.target.value)}
+                              type="number"
+                              className="w-20 mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="original-height">Height:</Label>
+                            <Input 
+                              id="original-height"
+                              value={tinOriginalHeight}
+                              onChange={(e) => setTinOriginalHeight(e.target.value)}
+                              type="number"
+                              className="w-20 mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Select
+                              value={tinMeasurementUnit}
+                              onValueChange={setTinMeasurementUnit}
+                            >
+                              <SelectTrigger className="w-20 mt-5">
+                                <SelectValue placeholder="Unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cm">cm</SelectItem>
+                                <SelectItem value="inches">inches</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-3">New Baking Tin</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-4">
+                          <Label className="whitespace-nowrap">Shape:</Label>
+                          <RadioGroup 
+                            className="flex space-x-4" 
+                            value={tinNewShape}
+                            onValueChange={setTinNewShape}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="round" id="new-round" />
+                              <Label htmlFor="new-round">Round</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="square" id="new-square" />
+                              <Label htmlFor="new-square">Square / Sheet</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <Label htmlFor="new-diameter">Diameter:</Label>
+                            <Input 
+                              id="new-diameter"
+                              value={tinNewDiameter}
+                              onChange={(e) => setTinNewDiameter(e.target.value)}
+                              type="number"
+                              className="w-20 mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="new-height">Height:</Label>
+                            <Input 
+                              id="new-height"
+                              value={tinNewHeight}
+                              onChange={(e) => setTinNewHeight(e.target.value)}
+                              type="number"
+                              className="w-20 mt-1"
+                            />
+                          </div>
+                          <div>
+                            <div className="w-20 mt-5 py-2 px-3 border rounded bg-gray-50 text-center">
+                              {tinMeasurementUnit}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center mt-4">
+                    <Button 
+                      onClick={calculateTinConversion}
+                      className="w-full md:w-auto"
+                    >
+                      Update Recipe
+                    </Button>
+                  </div>
+                  
+                  {tinIngredients.length > 0 && tinOriginalDiameter && tinNewDiameter && (
+                    <div className="mt-6 bg-gray-50 p-4 rounded">
+                      <h3 className="font-medium text-lg mb-4">New Recipe</h3>
+                      {calculateNewRecipeAmounts().map((ingredient, index) => (
+                        <div key={index} className="mb-2 p-2 bg-white rounded shadow-sm">
+                          <div className="font-medium">{ingredient.name}</div>
+                          <div>{ingredient.newQuantity} {ingredient.unit}</div>
+                        </div>
+                      ))}
+                      <div className="text-sm text-gray-500 mt-4 text-center">
+                        <div className="font-medium">Scale factor: {calculateScaleFactor().toFixed(2)}x</div>
+                        Your new recipe will appear here automatically!
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
