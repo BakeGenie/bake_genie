@@ -34,6 +34,7 @@ const Tools = () => {
   const [cakeSize, setCakeSize] = React.useState("8");
   const [servingStyle, setServingStyle] = React.useState("party");
   const [numberOfTiers, setNumberOfTiers] = React.useState("1");
+  const [cakeHeight, setCakeHeight] = React.useState("standard");
   const [canvasColor, setCanvasColor] = React.useState("#ffffff");
   
   // Cake designer dimensions state
@@ -48,8 +49,13 @@ const Tools = () => {
   const calculatePortions = () => {
     // Basic calculation logic (simplified for example)
     const size = parseInt(cakeSize, 10);
-    const multiplier = servingStyle === "party" ? 1.5 : 
-                      servingStyle === "wedding" ? 2 : 1;
+    const servingMultiplier = servingStyle === "party" ? 1.5 : 
+                             servingStyle === "wedding" ? 2 : 1;
+    
+    // Height multiplier based on cake height option
+    const heightMultiplier = cakeHeight === "standard" ? 1 : 
+                           cakeHeight === "extended" ? 1.5 :
+                           cakeHeight === "double" ? 2 : 2.5; // triple barrel
     
     let basePortions = 0;
     if (cakeShape === "round") {
@@ -59,7 +65,7 @@ const Tools = () => {
     }
     
     const tierMultiplier = parseInt(numberOfTiers, 10);
-    return Math.floor(basePortions * multiplier * tierMultiplier);
+    return Math.floor(basePortions * servingMultiplier * tierMultiplier * heightMultiplier);
   };
 
   // Handle design save
@@ -231,6 +237,21 @@ const Tools = () => {
                   </Select>
                 </div>
 
+                <div>
+                  <Label className="mb-2 block">Cake Height</Label>
+                  <Select value={cakeHeight} onValueChange={setCakeHeight}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select cake height" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard (4 inches)</SelectItem>
+                      <SelectItem value="extended">Extended (6 inches)</SelectItem>
+                      <SelectItem value="double">Double Barrel (8 inches)</SelectItem>
+                      <SelectItem value="triple">Triple Barrel (10 inches)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Separator className="my-4" />
 
                 <div className="bg-gray-50 p-4 rounded-md">
@@ -240,7 +261,9 @@ const Tools = () => {
                       {calculatePortions()} portions
                     </div>
                     <p className="text-sm text-gray-500 mt-2">
-                      Based on {cakeShape} {cakeSize}" cake with {numberOfTiers} tier(s) in {servingStyle} size
+                      Based on {cakeShape} {cakeSize}" cake with {numberOfTiers} tier(s), {cakeHeight === "standard" ? "4\"" : 
+                      cakeHeight === "extended" ? "6\"" : 
+                      cakeHeight === "double" ? "8\"" : "10\""} height, in {servingStyle} size
                     </p>
                   </div>
                 </div>
