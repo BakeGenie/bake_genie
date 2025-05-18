@@ -80,34 +80,50 @@ const Enquiries = () => {
     {
       accessorKey: "name",
       header: "Name",
+      enableSorting: true,
     },
     {
       accessorKey: "email",
       header: "Email",
+      enableSorting: true,
       cell: ({ row }) => {
         const email = row.getValue("email") as string;
-        return (
+        return email ? (
           <a href={`mailto:${email}`} className="text-primary-600 hover:text-primary-800">
             {email}
           </a>
-        );
+        ) : "N/A";
       },
     },
     {
       accessorKey: "eventType",
       header: "Event Type",
+      enableSorting: true,
     },
     {
       accessorKey: "eventDate",
       header: "Event Date",
+      enableSorting: true,
       cell: ({ row }) => {
         const date = row.getValue("eventDate") as string;
         return date ? formatDate(new Date(date)) : "Not specified";
+      },
+      sortingFn: (rowA, rowB, columnId) => {
+        const dateA = rowA.getValue(columnId) as string;
+        const dateB = rowB.getValue(columnId) as string;
+        
+        // Handle case where one or both dates are null/undefined
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return -1;
+        if (!dateB) return 1;
+        
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
       },
     },
     {
       accessorKey: "status",
       header: "Status",
+      enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         return getStatusBadge(status);
@@ -116,9 +132,15 @@ const Enquiries = () => {
     {
       accessorKey: "createdAt",
       header: "Received",
+      enableSorting: true,
       cell: ({ row }) => {
         const date = row.getValue("createdAt") as string;
         return formatDate(new Date(date), { withTime: true });
+      },
+      sortingFn: (rowA, rowB, columnId) => {
+        const dateA = rowA.getValue(columnId) as string;
+        const dateB = rowB.getValue(columnId) as string;
+        return new Date(dateA).getTime() - new Date(dateB).getTime();
       },
     },
   ];
