@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Recipe, Ingredient } from "@shared/schema";
 import { RecipeWithIngredients } from "@/types";
 import PageHeader from "@/components/ui/page-header";
@@ -22,20 +22,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertRecipeSchema, insertIngredientSchema } from "@shared/schema";
-import { PlusIcon, ClockIcon, UtensilsCrossedIcon, XIcon, SearchIcon, ArrowLeftIcon } from "lucide-react";
+import { 
+  PlusIcon, 
+  ClockIcon, 
+  UtensilsCrossedIcon, 
+  XIcon, 
+  SearchIcon, 
+  ArrowLeftIcon,
+  Loader2
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useLocation, useRoute } from "wouter";
@@ -70,6 +77,22 @@ const Recipes = () => {
   const [location, navigate] = useLocation();
   const [matched, params] = useRoute('/recipes/:section');
   const section = params?.section;
+  
+  // Add a state to track which section we're viewing
+  const [isRecipesPage, setIsRecipesPage] = React.useState(section === 'recipes-list');
+  const [isIngredientsPage, setIsIngredientsPage] = React.useState(section === 'ingredients-list');
+  const [isSuppliesPage, setIsSuppliesPage] = React.useState(section === 'supplies-list');
+  const [isMasterIngredientsPage, setIsMasterIngredientsPage] = React.useState(section === 'master-ingredients');
+  const [isBundlesPage, setIsBundlesPage] = React.useState(section === 'bundles');
+  
+  // Update state when section changes
+  React.useEffect(() => {
+    setIsRecipesPage(section === 'recipes-list');
+    setIsIngredientsPage(section === 'ingredients-list');
+    setIsSuppliesPage(section === 'supplies-list');
+    setIsMasterIngredientsPage(section === 'master-ingredients');
+    setIsBundlesPage(section === 'bundles');
+  }, [section]);
   
   const [isNewRecipeDialogOpen, setIsNewRecipeDialogOpen] = React.useState(false);
   const [isNewIngredientDialogOpen, setIsNewIngredientDialogOpen] = React.useState(false);
@@ -217,17 +240,360 @@ const Recipes = () => {
     }, 0);
   };
 
+  // Function to render the appropriate page based on the section parameter
+  const renderPage = () => {
+    // If we're on a specific section page, show that content
+    if (section) {
+      switch (section) {
+        case 'recipes-list':
+          return renderRecipesPage();
+        case 'ingredients-list':
+          return renderIngredientsPage();
+        case 'supplies-list':
+        case 'master-ingredients':
+        case 'bundles':
+          return renderComingSoonPage(section);
+        default:
+          // If unknown section, redirect to main page
+          navigate('/recipes');
+          return null;
+      }
+    }
+    
+    // Default: show the main category selection page
+    return renderMainCategoryPage();
+  };
+  
+  // Main category selection page with all options
+  const renderMainCategoryPage = () => (
+    <div className="mt-6 flex flex-col gap-4">
+      {/* Recipes */}
+      <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <div className="bg-primary-100 p-3 rounded-full">
+            <UtensilsCrossedIcon className="h-6 w-6 text-primary-500" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Recipes</CardTitle>
+          </div>
+          <Button className="ml-auto" onClick={() => navigate("/recipes/recipes-list")}>
+            <PlusIcon className="h-4 w-4 mr-2" /> Open
+          </Button>
+        </CardHeader>
+      </Card>
+
+      {/* Ingredients */}
+      <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <div className="bg-blue-100 p-3 rounded-full">
+            <UtensilsCrossedIcon className="h-6 w-6 text-blue-500" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Ingredients</CardTitle>
+          </div>
+          <Button className="ml-auto" onClick={() => navigate("/recipes/ingredients-list")}>
+            <PlusIcon className="h-4 w-4 mr-2" /> Open
+          </Button>
+        </CardHeader>
+      </Card>
+
+      {/* Supplies List */}
+      <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <div className="bg-green-100 p-3 rounded-full">
+            <ClockIcon className="h-6 w-6 text-green-500" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Supplies List</CardTitle>
+          </div>
+          <Button className="ml-auto" variant="outline" onClick={() => navigate("/recipes/supplies-list")}>
+            <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
+          </Button>
+        </CardHeader>
+      </Card>
+
+      {/* Master Ingredient List */}
+      <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <div className="bg-yellow-100 p-3 rounded-full">
+            <SearchIcon className="h-6 w-6 text-yellow-500" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Master Ingredient List</CardTitle>
+          </div>
+          <Button className="ml-auto" variant="outline" onClick={() => navigate("/recipes/master-ingredients")}>
+            <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
+          </Button>
+        </CardHeader>
+      </Card>
+
+      {/* My Bundles */}
+      <Card className="w-full mx-auto hover:shadow-md transition-shadow">
+        <CardHeader className="flex flex-row items-center gap-4">
+          <div className="bg-purple-100 p-3 rounded-full">
+            <PlusIcon className="h-6 w-6 text-purple-500" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">My Bundles</CardTitle>
+          </div>
+          <Button className="ml-auto" variant="outline" onClick={() => navigate("/recipes/bundles")}>
+            <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
+          </Button>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+  
+  // Recipes list page 
+  const renderRecipesPage = () => (
+    <div className="mt-6">
+      <div className="flex justify-between items-center mb-6">
+        <Button variant="outline" className="flex items-center gap-1" onClick={() => navigate("/recipes")}>
+          <ArrowLeftIcon className="h-4 w-4" /> Back
+        </Button>
+        <h2 className="text-xl font-semibold">Recipes</h2>
+        <Button onClick={() => setIsNewRecipeDialogOpen(true)}>
+          <PlusIcon className="h-4 w-4 mr-2" /> New Recipe
+        </Button>
+      </div>
+      
+      <div className="mb-6 relative">
+        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search recipes..."
+          className="pl-9"
+          value={searchRecipe}
+          onChange={(e) => setSearchRecipe(e.target.value)}
+        />
+      </div>
+      
+      {isLoadingRecipes ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, index) => (
+            <Card key={index} className="animate-pulse">
+              <CardHeader className="pb-2">
+                <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredRecipes.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredRecipes.map((recipe) => (
+            <Card
+              key={recipe.id}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleRecipeClick(recipe)}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle>{recipe.name}</CardTitle>
+                {recipe.category && (
+                  <CardDescription>{recipe.category}</CardDescription>
+                )}
+              </CardHeader>
+              <CardContent>
+                {recipe.description && (
+                  <p className="text-sm text-gray-500 line-clamp-2 mb-2">{recipe.description}</p>
+                )}
+                <div className="flex items-center text-sm text-gray-500 space-x-4">
+                  <div className="flex items-center">
+                    <UtensilsCrossedIcon className="h-4 w-4 mr-1" />
+                    <span>{recipe.servings} servings</span>
+                  </div>
+                  {(recipe.prepTime || recipe.cookTime) && (
+                    <div className="flex items-center">
+                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <span>
+                        {recipe.prepTime && `${recipe.prepTime} min prep`}
+                        {recipe.prepTime && recipe.cookTime && " + "}
+                        {recipe.cookTime && `${recipe.cookTime} min cook`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <div className="w-full flex justify-between items-center">
+                  <span className="text-sm font-medium">Cost per serving</span>
+                  <span className="font-medium">
+                    ${(calculateRecipeCost(recipe) / (recipe.servings || 1)).toFixed(2)}
+                  </span>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="mt-8">
+          <CardContent className="pt-6 text-center">
+            <div className="mb-4">
+              <UtensilsCrossedIcon className="h-12 w-12 mx-auto text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No recipes found</h3>
+            <p className="text-gray-500 mb-4">
+              {searchRecipe
+                ? "No recipes match your search criteria. Try a different search term."
+                : "You haven't created any recipes yet. Create your first recipe to get started."}
+            </p>
+            <Button onClick={() => setIsNewRecipeDialogOpen(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" /> New Recipe
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+  
+  // Ingredients list page
+  const renderIngredientsPage = () => (
+    <div className="mt-6">
+      <div className="flex justify-between items-center mb-6">
+        <Button variant="outline" className="flex items-center gap-1" onClick={() => navigate("/recipes")}>
+          <ArrowLeftIcon className="h-4 w-4" /> Back
+        </Button>
+        <h2 className="text-xl font-semibold">Ingredients</h2>
+        <Button onClick={() => setIsNewIngredientDialogOpen(true)}>
+          <PlusIcon className="h-4 w-4 mr-2" /> New Ingredient
+        </Button>
+      </div>
+      
+      <div className="mb-6 relative">
+        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search ingredients..."
+          className="pl-9"
+          value={searchIngredient}
+          onChange={(e) => setSearchIngredient(e.target.value)}
+        />
+      </div>
+      
+      {isLoadingIngredients ? (
+        <div className="animate-pulse">
+          <div className="h-10 bg-gray-200 rounded mb-2"></div>
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="h-12 bg-gray-100 rounded mb-2"></div>
+          ))}
+        </div>
+      ) : filteredIngredients.length > 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Ingredient</th>
+                    <th className="text-left p-4">Unit</th>
+                    <th className="text-right p-4">Unit Cost</th>
+                    <th className="text-right p-4">Pack Size</th>
+                    <th className="text-right p-4">Pack Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredIngredients.map((ingredient) => (
+                    <tr
+                      key={ingredient.id}
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => {
+                        toast({
+                          title: "Edit Ingredient",
+                          description: "Ingredient editing will be implemented soon.",
+                        });
+                      }}
+                    >
+                      <td className="p-4">{ingredient.name}</td>
+                      <td className="p-4">{ingredient.unit}</td>
+                      <td className="p-4 text-right">
+                        {ingredient.unitCost !== null
+                          ? `$${Number(ingredient.unitCost).toFixed(2)}`
+                          : "-"}
+                      </td>
+                      <td className="p-4 text-right">
+                        {ingredient.packSize !== null
+                          ? `${Number(ingredient.packSize).toFixed(2)}`
+                          : "-"}
+                      </td>
+                      <td className="p-4 text-right">
+                        {ingredient.packCost !== null
+                          ? `$${Number(ingredient.packCost).toFixed(2)}`
+                          : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="mt-8">
+          <CardContent className="pt-6 text-center">
+            <div className="mb-4">
+              <UtensilsCrossedIcon className="h-12 w-12 mx-auto text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No ingredients found</h3>
+            <p className="text-gray-500 mb-4">
+              {searchIngredient
+                ? "No ingredients match your search criteria. Try a different search term."
+                : "You haven't added any ingredients yet. Add your first ingredient to get started."}
+            </p>
+            <Button onClick={() => setIsNewIngredientDialogOpen(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" /> New Ingredient
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+  
+  // Generic "Coming Soon" page for features that are not yet implemented
+  const renderComingSoonPage = (sectionName: string) => {
+    // Format the section name for display (convert kebab-case to Title Case)
+    const formattedName = sectionName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+      
+    return (
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-6">
+          <Button variant="outline" className="flex items-center gap-1" onClick={() => navigate("/recipes")}>
+            <ArrowLeftIcon className="h-4 w-4" /> Back
+          </Button>
+          <h2 className="text-xl font-semibold">{formattedName}</h2>
+          <div></div> {/* Empty div to maintain flex spacing */}
+        </div>
+        
+        <Card className="mt-8">
+          <CardContent className="pt-6 text-center">
+            <div className="mb-4">
+              <ClockIcon className="h-12 w-12 mx-auto text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Coming Soon</h3>
+            <p className="text-gray-500 mb-4">
+              This feature is currently under development and will be available soon.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+  
   return (
     <div className="p-6">
       <PageHeader
         title="Recipes & Ingredients"
         actions={
           <div className="flex space-x-2">
-            {activeTab === "recipes" ? (
+            {section === 'recipes-list' && (
               <Button onClick={() => setIsNewRecipeDialogOpen(true)}>
                 <PlusIcon className="h-4 w-4 mr-2" /> New Recipe
               </Button>
-            ) : (
+            )}
+            {section === 'ingredients-list' && (
               <Button onClick={() => setIsNewIngredientDialogOpen(true)}>
                 <PlusIcon className="h-4 w-4 mr-2" /> New Ingredient
               </Button>
@@ -235,289 +601,9 @@ const Recipes = () => {
           </div>
         }
       />
-
-      {/* New Feature Blocks Layout */}
-      <div className="mt-6 flex flex-col gap-4">
-        {/* Recipe Book */}
-        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <div className="bg-primary-100 p-3 rounded-full">
-              <UtensilsCrossedIcon className="h-6 w-6 text-primary-500" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Recipes</CardTitle>
-
-            </div>
-            <Button className="ml-auto" onClick={() => navigate("/recipes/recipes-list")}>
-              <PlusIcon className="h-4 w-4 mr-2" /> Open
-            </Button>
-          </CardHeader>
-        </Card>
-
-        {/* Ingredients */}
-        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <UtensilsCrossedIcon className="h-6 w-6 text-blue-500" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Ingredients</CardTitle>
-
-            </div>
-            <Button className="ml-auto" onClick={() => setActiveTab("ingredients")}>
-              <PlusIcon className="h-4 w-4 mr-2" /> Open
-            </Button>
-          </CardHeader>
-        </Card>
-
-        {/* Supplies List */}
-        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <div className="bg-green-100 p-3 rounded-full">
-              <ClockIcon className="h-6 w-6 text-green-500" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Supplies List</CardTitle>
-
-            </div>
-            <Button className="ml-auto" variant="outline">
-              <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
-            </Button>
-          </CardHeader>
-        </Card>
-
-        {/* Master Ingredient List */}
-        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <div className="bg-yellow-100 p-3 rounded-full">
-              <SearchIcon className="h-6 w-6 text-yellow-500" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Master Ingredient List</CardTitle>
-
-            </div>
-            <Button className="ml-auto" variant="outline">
-              <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
-            </Button>
-          </CardHeader>
-        </Card>
-
-        {/* My Bundles */}
-        <Card className="w-full mx-auto hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center gap-4">
-            <div className="bg-purple-100 p-3 rounded-full">
-              <PlusIcon className="h-6 w-6 text-purple-500" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">My Bundles</CardTitle>
-
-            </div>
-            <Button className="ml-auto" variant="outline">
-              <PlusIcon className="h-4 w-4 mr-2" /> Coming Soon
-            </Button>
-          </CardHeader>
-        </Card>
-      </div>
-
-      {/* Hidden Tabs - Will be shown based on the activeTab state */}
-      {activeTab === "recipes" && (
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Recipes</h2>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search recipes..."
-                  className="pl-9 w-60"
-                  value={searchRecipe}
-                  onChange={(e) => setSearchRecipe(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => setIsNewRecipeDialogOpen(true)}>
-                <PlusIcon className="h-4 w-4 mr-2" /> New Recipe
-              </Button>
-            </div>
-          </div>
-          
-          {isLoadingRecipes ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, index) => (
-                <Card key={index} className="animate-pulse">
-                  <CardHeader className="pb-2">
-                    <div className="h-5 bg-gray-200 rounded w-1/2"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredRecipes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredRecipes.map((recipe) => (
-                <Card
-                  key={recipe.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleRecipeClick(recipe)}
-                >
-                  <CardHeader className="pb-2">
-                    <CardTitle>{recipe.name}</CardTitle>
-                    {recipe.category && (
-                      <CardDescription>{recipe.category}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {recipe.description && (
-                      <p className="text-sm text-gray-500 line-clamp-2 mb-2">{recipe.description}</p>
-                    )}
-                    <div className="flex items-center text-sm text-gray-500 space-x-4">
-                      <div className="flex items-center">
-                        <UtensilsCrossedIcon className="h-4 w-4 mr-1" />
-                        <span>{recipe.servings} servings</span>
-                      </div>
-                      {(recipe.prepTime || recipe.cookTime) && (
-                        <div className="flex items-center">
-                          <ClockIcon className="h-4 w-4 mr-1" />
-                          <span>
-                            {recipe.prepTime && `${recipe.prepTime} min prep`}
-                            {recipe.prepTime && recipe.cookTime && " + "}
-                            {recipe.cookTime && `${recipe.cookTime} min cook`}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t pt-4">
-                    <div className="w-full flex justify-between items-center">
-                      <span className="text-sm font-medium">Cost per serving</span>
-                      <span className="font-medium">
-                        ${(calculateRecipeCost(recipe) / (recipe.servings || 1)).toFixed(2)}
-                      </span>
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="mt-8">
-              <CardContent className="pt-6 text-center">
-                <div className="mb-4">
-                  <UtensilsCrossedIcon className="h-12 w-12 mx-auto text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">No recipes found</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchRecipe
-                    ? "No recipes match your search criteria. Try a different search term."
-                    : "You haven't created any recipes yet. Create your first recipe to get started."}
-                </p>
-                <Button onClick={() => setIsNewRecipeDialogOpen(true)}>
-                  <PlusIcon className="h-4 w-4 mr-2" /> New Recipe
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
       
-      {activeTab === "ingredients" && (
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Ingredients</h2>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search ingredients..."
-                  className="pl-9 w-60"
-                  value={searchIngredient}
-                  onChange={(e) => setSearchIngredient(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => setIsNewIngredientDialogOpen(true)}>
-                <PlusIcon className="h-4 w-4 mr-2" /> New Ingredient
-              </Button>
-            </div>
-          </div>
-          
-          {isLoadingIngredients ? (
-            <div className="animate-pulse">
-              <div className="h-10 bg-gray-200 rounded mb-2"></div>
-              {[...Array(5)].map((_, index) => (
-                <div key={index} className="h-12 bg-gray-100 rounded mb-2"></div>
-              ))}
-            </div>
-          ) : filteredIngredients.length > 0 ? (
-            <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-4">Ingredient</th>
-                        <th className="text-left p-4">Unit</th>
-                        <th className="text-right p-4">Unit Cost</th>
-                        <th className="text-right p-4">Pack Size</th>
-                        <th className="text-right p-4">Pack Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredIngredients.map((ingredient) => (
-                        <tr
-                          key={ingredient.id}
-                          className="border-b hover:bg-gray-50 cursor-pointer"
-                          onClick={() => {
-                            toast({
-                              title: "Edit Ingredient",
-                              description: "Ingredient editing will be implemented soon.",
-                            });
-                          }}
-                        >
-                          <td className="p-4">{ingredient.name}</td>
-                          <td className="p-4">{ingredient.unit}</td>
-                          <td className="p-4 text-right">
-                            {ingredient.unitCost !== null
-                              ? `$${Number(ingredient.unitCost).toFixed(2)}`
-                              : "-"}
-                          </td>
-                          <td className="p-4 text-right">
-                            {ingredient.packSize !== null
-                              ? `${Number(ingredient.packSize).toFixed(2)}`
-                              : "-"}
-                          </td>
-                          <td className="p-4 text-right">
-                            {ingredient.packCost !== null
-                              ? `$${Number(ingredient.packCost).toFixed(2)}`
-                              : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="mt-8">
-              <CardContent className="pt-6 text-center">
-                <div className="mb-4">
-                  <UtensilsCrossedIcon className="h-12 w-12 mx-auto text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">No ingredients found</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchIngredient
-                    ? "No ingredients match your search criteria. Try a different search term."
-                    : "You haven't added any ingredients yet. Add your first ingredient to get started."}
-                </p>
-                <Button onClick={() => setIsNewIngredientDialogOpen(true)}>
-                  <PlusIcon className="h-4 w-4 mr-2" /> New Ingredient
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+      {/* Render the appropriate page based on the current section */}
+      {renderPage()}
 
       {/* New Recipe Dialog */}
       <Dialog open={isNewRecipeDialogOpen} onOpenChange={setIsNewRecipeDialogOpen}>
