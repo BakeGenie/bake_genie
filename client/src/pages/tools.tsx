@@ -24,7 +24,9 @@ import {
   PlusIcon,
   MinusIcon,
   TextIcon,
-  ImageIcon
+  ImageIcon,
+  HeartIcon,
+  RectangleHorizontalIcon
 } from "lucide-react";
 
 const Tools = () => {
@@ -172,7 +174,7 @@ const Tools = () => {
               <div className="space-y-6">
                 <div>
                   <Label className="mb-2 block">Cake Shape</Label>
-                  <div className="flex space-x-3">
+                  <div className="flex flex-wrap gap-2">
                     <button 
                       type="button"
                       className={`flex items-center py-1.5 px-3 rounded border ${
@@ -201,6 +203,36 @@ const Tools = () => {
                         cakeShape === "square" ? "text-primary-500" : "text-gray-400"
                       }`} />
                       Square
+                    </button>
+
+                    <button 
+                      type="button"
+                      className={`flex items-center py-1.5 px-3 rounded border ${
+                        cakeShape === "heart" 
+                          ? "border-primary-500 bg-primary-50 text-primary-700" 
+                          : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setCakeShape("heart")}
+                    >
+                      <HeartIcon className={`h-4 w-4 mr-1.5 ${
+                        cakeShape === "heart" ? "text-primary-500" : "text-gray-400"
+                      }`} />
+                      Heart
+                    </button>
+                    
+                    <button 
+                      type="button"
+                      className={`flex items-center py-1.5 px-3 rounded border ${
+                        cakeShape === "rectangle" 
+                          ? "border-primary-500 bg-primary-50 text-primary-700" 
+                          : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setCakeShape("rectangle")}
+                    >
+                      <RectangleHorizontalIcon className={`h-4 w-4 mr-1.5 ${
+                        cakeShape === "rectangle" ? "text-primary-500" : "text-gray-400"
+                      }`} />
+                      Slab
                     </button>
                   </div>
                 </div>
