@@ -183,38 +183,38 @@ const Tools = () => {
     <div className="p-6">
       <PageHeader title="Tools" />
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Portion Calculator */}
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveCalculator("portion")}>
-          <CardHeader>
+          <CardHeader className="p-3">
             <div className="flex items-center">
-              <CakeIcon className="h-6 w-6 mr-2 text-primary-500" />
-              <CardTitle>Portion Calculator</CardTitle>
+              <CakeIcon className="h-4 w-4 mr-2 text-primary-500 flex-shrink-0" />
+              <CardTitle className="text-base">Portion Calculator</CardTitle>
             </div>
-            <CardDescription>Calculate cake servings with tier options</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-32 bg-gray-50 rounded-md flex items-center justify-center border">
-              <CalculatorIcon className="h-10 w-10 text-gray-400" />
+          <CardContent className="p-3 pt-0">
+            <CardDescription className="text-xs">Calculate cake servings with tier options</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+              <CalculatorIcon className="h-6 w-6 text-gray-400" />
             </div>
           </CardContent>
         </Card>
 
         {/* Tin Conversion Calculator */}
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveCalculator("tin")}>
-          <CardHeader>
+          <CardHeader className="p-3">
             <div className="flex items-center">
-              <RulerIcon className="h-6 w-6 mr-2 text-primary-500" />
-              <CardTitle>Tin Conversion</CardTitle>
+              <RulerIcon className="h-4 w-4 mr-2 text-primary-500 flex-shrink-0" />
+              <CardTitle className="text-base">Tin Conversion</CardTitle>
             </div>
-            <CardDescription>Scale recipes for different tin sizes</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-32 bg-gray-50 rounded-md flex items-center justify-center border">
+          <CardContent className="p-3 pt-0">
+            <CardDescription className="text-xs">Scale recipes for different tin sizes</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
               <div className="flex flex-col items-center">
-                <CircleIcon className="h-8 w-8 text-gray-400" />
-                <PlusIcon className="h-4 w-4 text-gray-400 my-1" />
-                <SquareIcon className="h-8 w-8 text-gray-400" />
+                <CircleIcon className="h-4 w-4 text-gray-400" />
+                <PlusIcon className="h-3 w-3 text-gray-400 my-1" />
+                <SquareIcon className="h-4 w-4 text-gray-400" />
               </div>
             </div>
           </CardContent>
@@ -222,32 +222,32 @@ const Tools = () => {
 
         {/* Cake Template Designer */}
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveCalculator("designer")}>
-          <CardHeader>
+          <CardHeader className="p-3">
             <div className="flex items-center">
-              <PencilIcon className="h-6 w-6 mr-2 text-primary-500" />
-              <CardTitle>Cake Template Designer</CardTitle>
+              <PencilIcon className="h-4 w-4 mr-2 text-primary-500 flex-shrink-0" />
+              <CardTitle className="text-base">Cake Designer</CardTitle>
             </div>
-            <CardDescription>Design multi-tier cakes with decorations</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-32 bg-gray-50 rounded-md flex items-center justify-center border">
-              <CakeIcon className="h-10 w-10 text-gray-400" />
+          <CardContent className="p-3 pt-0">
+            <CardDescription className="text-xs">Design multi-tier cakes with decorations</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+              <CakeIcon className="h-6 w-6 text-gray-400" />
             </div>
           </CardContent>
         </Card>
 
         {/* Overhead Calculator */}
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveCalculator("overhead")}>
-          <CardHeader>
+          <CardHeader className="p-3">
             <div className="flex items-center">
-              <CalculatorIcon className="h-6 w-6 mr-2 text-primary-500" />
-              <CardTitle>Overheads Calculator</CardTitle>
+              <CalculatorIcon className="h-4 w-4 mr-2 text-primary-500 flex-shrink-0" />
+              <CardTitle className="text-base">Overheads</CardTitle>
             </div>
-            <CardDescription>Calculate your business overhead costs</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-32 bg-gray-50 rounded-md flex items-center justify-center border">
-              <Drill className="h-10 w-10 text-gray-400" />
+          <CardContent className="p-3 pt-0">
+            <CardDescription className="text-xs">Calculate your business overhead costs</CardDescription>
+            <div className="h-16 bg-gray-50 rounded-md flex items-center justify-center border mt-2">
+              <Drill className="h-6 w-6 text-gray-400" />
             </div>
           </CardContent>
         </Card>
