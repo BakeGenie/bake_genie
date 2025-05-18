@@ -38,7 +38,11 @@ function Router() {
         <Route path="/tasks" component={TaskList} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/recipes" component={Recipes} />
-        <Route path="/recipes/:section" component={Recipes} />
+        <Route path="/recipes/recipes-list" component={() => import("./pages/recipes-list").then(module => module.default)} />
+        <Route path="/recipes/ingredients-list" component={() => import("./pages/ingredients-list").then(module => module.default)} />
+        <Route path="/recipes/supplies-list" component={() => import("./pages/supplies-list").then(module => module.default)} />
+        <Route path="/recipes/master-ingredients" component={() => import("./pages/master-ingredients").then(module => module.default)} />
+        <Route path="/recipes/bundles" component={() => import("./pages/bundles").then(module => module.default)} />
         <Route path="/products" component={Products} />
         <Route path="/reports" component={Reports} />
         <Route path="/expenses" component={Expenses} />
