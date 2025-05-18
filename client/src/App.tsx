@@ -44,6 +44,7 @@ function Router() {
         <Route path="/data" component={DataImportExport} />
         <Route path="/integrations" component={Integrations} />
         <Route path="/enquiry-form" component={EnquiryForm} />
+        <Route path="/invoice-preview" component={React.lazy(() => import('./pages/invoice-preview'))} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
