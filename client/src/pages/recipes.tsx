@@ -28,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -36,9 +35,10 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertRecipeSchema, insertIngredientSchema } from "@shared/schema";
-import { PlusIcon, ClockIcon, UtensilsCrossedIcon, XIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, ClockIcon, UtensilsCrossedIcon, XIcon, SearchIcon, ArrowLeftIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { useLocation, useRoute } from "wouter";
 
 // Extended schema with validation rules for recipe
 const recipeFormSchema = insertRecipeSchema.extend({
@@ -67,12 +67,15 @@ type IngredientFormValues = z.infer<typeof ingredientFormSchema>;
 
 const Recipes = () => {
   const { toast } = useToast();
+  const [location, navigate] = useLocation();
+  const [matched, params] = useRoute('/recipes/:section');
+  const section = params?.section;
+  
   const [isNewRecipeDialogOpen, setIsNewRecipeDialogOpen] = React.useState(false);
   const [isNewIngredientDialogOpen, setIsNewIngredientDialogOpen] = React.useState(false);
   const [isViewRecipeDialogOpen, setIsViewRecipeDialogOpen] = React.useState(false);
   const [selectedRecipe, setSelectedRecipe] = React.useState<RecipeWithIngredients | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState("recipes");
   const [searchRecipe, setSearchRecipe] = React.useState("");
   const [searchIngredient, setSearchIngredient] = React.useState("");
 
@@ -245,7 +248,7 @@ const Recipes = () => {
               <CardTitle className="text-lg">Recipes</CardTitle>
 
             </div>
-            <Button className="ml-auto" onClick={() => setActiveTab("recipes")}>
+            <Button className="ml-auto" onClick={() => navigate("/recipes/recipes-list")}>
               <PlusIcon className="h-4 w-4 mr-2" /> Open
             </Button>
           </CardHeader>

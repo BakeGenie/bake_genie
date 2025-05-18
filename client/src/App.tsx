@@ -38,6 +38,7 @@ function Router() {
         <Route path="/tasks" component={TaskList} />
         <Route path="/calendar" component={Calendar} />
         <Route path="/recipes" component={Recipes} />
+        <Route path="/recipes/:section" component={Recipes} />
         <Route path="/products" component={Products} />
         <Route path="/reports" component={Reports} />
         <Route path="/expenses" component={Expenses} />
