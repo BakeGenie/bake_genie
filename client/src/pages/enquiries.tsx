@@ -178,14 +178,14 @@ const Enquiries = () => {
         <div className="text-sm font-medium">Filter by status:</div>
         <Button 
           variant={statusFilter === null ? "default" : "outline"} 
-          className="text-xs h-8"
+          className="text-xs h-8 bg-yellow-500 hover:bg-yellow-600"
           onClick={() => setStatusFilter(null)}
         >
           All
         </Button>
         <Button 
           variant={statusFilter === "New" ? "default" : "outline"} 
-          className="text-xs h-8 bg-blue-500 hover:bg-blue-600"
+          className="text-xs h-8 bg-sky-500 hover:bg-sky-600"
           onClick={() => setStatusFilter("New")}
         >
           New
