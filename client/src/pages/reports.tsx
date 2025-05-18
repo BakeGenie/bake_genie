@@ -360,8 +360,8 @@ const Reports = () => {
 
             {/* Report content */}
             <Card>
-              <CardHeader className="p-4 border-b">
-                <Tabs defaultValue="table" className="w-full">
+              <Tabs defaultValue="table" className="w-full">
+                <CardHeader className="p-4 border-b">
                   <TabsList className="grid w-full max-w-md grid-cols-2">
                     <TabsTrigger value="table">
                       <ListIcon className="h-4 w-4 mr-2" /> Table View
@@ -370,55 +370,55 @@ const Reports = () => {
                       <BarChart2Icon className="h-4 w-4 mr-2" /> Chart View
                     </TabsTrigger>
                   </TabsList>
-                </Tabs>
-              </CardHeader>
-              <CardContent className="p-0">
-                <TabsContent value="table" className="mt-0">
-                  {activeReport === "order-list" && (
-                    <div className="rounded-md">
-                      <DataTable
-                        columns={orderColumns}
-                        data={orders}
-                        isLoading={isLoading}
-                        searchPlaceholder="Search orders..."
-                        searchKey="orderNumber"
-                      />
-                    </div>
-                  )}
+                </CardHeader>
+                <CardContent className="p-0">
+                  <TabsContent value="table" className="mt-0">
+                    {activeReport === "order-list" && (
+                      <div className="rounded-md">
+                        <DataTable
+                          columns={orderColumns}
+                          data={orders}
+                          isLoading={isLoading}
+                          searchPlaceholder="Search orders..."
+                          searchKey="orderNumber"
+                        />
+                      </div>
+                    )}
+                    
+                    {activeReport !== "order-list" && (
+                      <div className="p-8 text-center">
+                        <div className="mb-4">
+                          {getReportById(activeReport)?.icon && (
+                            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
+                              <div className="h-8 w-8 text-gray-500">
+                                {getReportById(activeReport)?.icon}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="text-lg font-medium mb-2">Generate your report</h3>
+                        <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                          Set your date range and click "Generate Report" to see your data here.
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
                   
-                  {activeReport !== "order-list" && (
+                  <TabsContent value="chart" className="mt-0">
                     <div className="p-8 text-center">
                       <div className="mb-4">
-                        {getReportById(activeReport)?.icon && (
-                          <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
-                            <div className="h-8 w-8 text-gray-500">
-                              {getReportById(activeReport)?.icon}
-                            </div>
-                          </div>
-                        )}
+                        <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
+                          <BarChart2Icon className="h-8 w-8 text-gray-500" />
+                        </div>
                       </div>
-                      <h3 className="text-lg font-medium mb-2">Generate your report</h3>
+                      <h3 className="text-lg font-medium mb-2">Chart view coming soon</h3>
                       <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                        Set your date range and click "Generate Report" to see your data here.
+                        Visualize your data with charts and graphs. This feature is coming soon.
                       </p>
                     </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="chart" className="mt-0">
-                  <div className="p-8 text-center">
-                    <div className="mb-4">
-                      <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
-                        <BarChart2Icon className="h-8 w-8 text-gray-500" />
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-medium mb-2">Chart view coming soon</h3>
-                    <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                      Visualize your data with charts and graphs. This feature is coming soon.
-                    </p>
-                  </div>
-                </TabsContent>
-              </CardContent>
+                  </TabsContent>
+                </CardContent>
+              </Tabs>
             </Card>
           </div>
         </div>
