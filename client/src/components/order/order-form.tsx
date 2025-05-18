@@ -216,7 +216,18 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     item.productId = product.id;
     item.description = product.name;
     item.productName = product.name;
-    item.price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+    
+    // Handle price conversion safely for any type
+    let productPrice = 0;
+    if (product.price) {
+      productPrice = typeof product.price === 'string' 
+        ? parseFloat(product.price) 
+        : typeof product.price === 'number'
+          ? product.price
+          : parseFloat(String(product.price)); // Handle decimal type
+    }
+    
+    item.price = productPrice;
     item.imageUrl = product.imageUrl || null;
     
     // Calculate the total

@@ -113,7 +113,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({ value, onSelect }) =>
                       <ImageIcon className="h-4 w-4 opacity-50" />
                     )}
                     <span className="truncate">
-                      {product.name} - ${typeof product.price === 'string' ? parseFloat(product.price).toFixed(2) : product.price.toFixed(2)}
+                      {product.name} - ${product.price ? parseFloat(String(product.price)).toFixed(2) : '0.00'}
                     </span>
                   </div>
                   <Check
