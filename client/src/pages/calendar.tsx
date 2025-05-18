@@ -28,8 +28,8 @@ import {
 
 // Define event types for calendar events
 const calendarEventTypes = [
-  'Baking', 'Decorating', 'Delivery', 'Personal', 'Appointment', 
-  'Market', 'Class', 'Workshop', 'Admin', 'Other'
+  'Admin', 'Baking', 'Decorating', 'Delivery', 'Personal', 'Appointment', 
+  'Market', 'Class', 'Workshop', 'Other'
 ];
 
 interface CalendarEvent {
@@ -49,7 +49,7 @@ const Calendar = () => {
   const [isNewEventDialogOpen, setIsNewEventDialogOpen] = React.useState(false);
   const [calendarEvents, setCalendarEvents] = React.useState<CalendarEvent[]>([]);
   const [newEvent, setNewEvent] = React.useState<Partial<CalendarEvent>>({
-    type: 'Baking',
+    type: 'Admin',
     description: ''
   });
   
@@ -458,7 +458,7 @@ const Calendar = () => {
             <div className="space-y-2">
               <label htmlFor="event-type" className="text-sm font-medium">Event Type:</label>
               <Select
-                value={newEvent.type}
+                value={newEvent.type || 'Admin'}
                 onValueChange={(value) => setNewEvent({...newEvent, type: value})}
               >
                 <SelectTrigger id="event-type">
@@ -507,7 +507,7 @@ const Calendar = () => {
                   
                   // Reset form and close dialog
                   setNewEvent({
-                    type: 'Baking',
+                    type: 'Admin',
                     description: ''
                   });
                   setIsNewEventDialogOpen(false);
