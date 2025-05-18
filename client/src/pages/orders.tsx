@@ -182,7 +182,6 @@ const Orders = () => {
         title="Orders & Quotes"
         actions={
           <div className="flex space-x-2">
-            <InvoicePreviewButton />
             <Button onClick={() => setIsNewOrderDialogOpen(true)}>
               <PlusIcon className="h-4 w-4 mr-2" /> New Order
             </Button>
