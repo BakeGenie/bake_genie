@@ -6,7 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import OrderCalendar from "@/components/order/order-calendar";
 import OrderCard from "@/components/order/order-card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
@@ -296,8 +296,6 @@ const Orders = () => {
             <h2 className="text-lg font-semibold text-gray-800 mb-6">New Order</h2>
             <OrderForm
               onSubmit={handleNewOrderSubmit}
-              onCancel={() => setIsNewOrderDialogOpen(false)}
-              isSubmitting={isSubmitting}
             />
           </div>
         </DialogContent>

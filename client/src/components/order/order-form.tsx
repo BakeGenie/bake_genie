@@ -261,25 +261,46 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   // Form submission handler
   const onSubmitForm = async (data: OrderFormValues) => {
     try {
-      // Extract customer data if needed
+      // Ensure all required fields are present
+      if (!data.customer.firstName || !data.customer.lastName) {
+        toast({
+          title: "Error",
+          description: "Customer name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Format the data for submission with date conversion
       const formattedData = {
         ...data,
         total: totalAmount,
+        // Ensure dates are properly formatted for API submission
+        orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : new Date().toISOString(),
+        deliveryDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : new Date().toISOString(),
+        eventDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : new Date().toISOString(),
+        // Generate a customer name for display
+        customerName: `${data.customer.firstName} ${data.customer.lastName}`,
+        // Add additional defaults
+        userId: 1,
       };
+      
+      // Log the data being sent (for debugging)
+      console.log("Submitting order data:", formattedData);
       
       // Send data to parent component for submission
       onSubmit(formattedData);
-      
-      // Show success message
+
+      // Show success message on form submit
       toast({
-        title: "Success",
-        description: "Order saved successfully",
+        title: "Processing Order",
+        description: "Saving order information...",
       });
     } catch (error) {
       console.error("Order submission error:", error);
       toast({
         title: "Error",
-        description: "Failed to save order",
+        description: "Failed to save order. Please check form fields and try again.",
         variant: "destructive",
       });
     }
