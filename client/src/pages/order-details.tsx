@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { OrderFormData } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Mail } from "lucide-react";
+import EmailInvoiceButton from "@/components/order/email-invoice-button";
 
 const OrderDetailsPage = () => {
   const params = useParams<{ id: string }>();

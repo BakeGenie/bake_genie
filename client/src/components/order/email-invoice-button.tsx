@@ -17,7 +17,19 @@ const EmailInvoiceButton: React.FC<EmailInvoiceButtonProps> = ({ orderId }) => {
   const emailInvoiceMutation = useMutation({
     mutationFn: async () => {
       setIsLoading(true);
-      return await apiRequest(`/api/invoices/${orderId}/send`, { method: "POST" });
+      const response = await fetch(`/api/invoices/${orderId}/send`, { 
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send invoice");
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
