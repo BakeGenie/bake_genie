@@ -10,6 +10,7 @@ import Orders from "./pages/orders";
 import OrderDetails from "./pages/order-details";
 import Contacts from "./pages/contacts";
 import Enquiries from "./pages/enquiries";
+import EnquiryForm from "./pages/enquiry-form";
 import TaskList from "./pages/task-list";
 import Calendar from "./pages/calendar";
 import Recipes from "./pages/recipes";
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/account" component={Account} />
         <Route path="/data" component={DataImportExport} />
         <Route path="/integrations" component={Integrations} />
+        <Route path="/enquiry-form" component={EnquiryForm} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

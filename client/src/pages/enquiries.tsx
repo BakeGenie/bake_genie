@@ -130,7 +130,17 @@ const Enquiries = () => {
 
   return (
     <div className="p-6">
-      <PageHeader title="Enquiries" />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Enquiries" />
+        <Button 
+          variant="default" 
+          onClick={() => window.location.href = "/enquiry-form"}
+          className="ml-auto"
+        >
+          <MailIcon className="h-4 w-4 mr-2" />
+          Enquiry Form
+        </Button>
+      </div>
 
       <div className="mt-6">
         <DataTable
