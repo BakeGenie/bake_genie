@@ -36,7 +36,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, X } from "lucide-react";
+import { CalendarIcon, Plus, X, Info as InfoIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { queryCacheKey } from "@/lib/constants";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -84,6 +84,10 @@ const orderFormSchema = insertOrderSchema.extend({
   status: z.string().min(1, "Status is required"),
   eventType: z.string().min(1, "Event type is required"),
   deliveryAddress: z.string().optional(),
+  // Add fields for price calculations
+  discount: z.number().default(0),
+  discountType: z.enum(["%", "$"]).default("%"),
+  setupFee: z.number().default(0),
 });
 
 // Define the form value types
@@ -158,6 +162,32 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   // Watch form values for calculations
   const items = watch("items");
   const totalAmount = items?.reduce((sum, item) => sum + (item.total || 0), 0) || 0;
+  
+  // Get discount from form
+  const getDiscountAmount = () => {
+    const discount = watch("discount") || 0;
+    const discountType = watch("discountType") || "%";
+    
+    if (discountType === "%") {
+      return totalAmount * (discount / 100);
+    } else {
+      return discount;
+    }
+  };
+  
+  // Calculate the final total after discount and setup fee
+  const getFinalTotal = () => {
+    const setupFee = parseFloat(watch("setupFee")?.toString() || "0");
+    return totalAmount - getDiscountAmount() + setupFee;
+  };
+  
+  // Calculate gross profit (simplified version)
+  const getGrossProfit = () => {
+    // Cost could be calculated from ingredients/recipes in a more advanced version
+    // For now, we'll use a simple 60% markup assumption
+    const estimatedCost = totalAmount * 0.4; // 40% of total is cost
+    return getFinalTotal() - estimatedCost;
+  };
 
   // Create a new custom event type
   const handleCustomEventTypeCreate = () => {
@@ -1001,10 +1031,110 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               
               {/* Order Totals */}
               <div className="flex justify-end pt-4 border-t mt-6">
-                <div className="w-64">
-                  <div className="flex justify-between py-2">
-                    <span>Total:</span>
-                    <span className="font-bold">${totalAmount.toFixed(2)}</span>
+                <div className="w-80 space-y-3">
+                  {/* Subtotal */}
+                  <div className="flex justify-between items-center">
+                    <span>Subtotal: (excl Tax)</span>
+                    <span className="font-medium">${totalAmount.toFixed(2)}</span>
+                  </div>
+                  
+                  {/* Discount */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span>Discount:</span>
+                      <div className="flex items-center">
+                        <FormField
+                          control={control}
+                          name="discount"
+                          render={({ field }) => (
+                            <FormItem className="space-y-0 flex-grow">
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  className="w-20 h-8 text-right"
+                                  defaultValue="0.00"
+                                  onChange={(e) => {
+                                    const value = parseFloat(e.target.value) || 0;
+                                    field.onChange(value);
+                                  }}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <Select
+                          defaultValue="%"
+                          onValueChange={(value) => setValue("discountType", value as "%" | "$")}
+                        >
+                          <SelectTrigger className="h-8 w-12 ml-1">
+                            <SelectValue placeholder="%" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="%">%</SelectItem>
+                            <SelectItem value="$">$</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <span>
+                      - ${getDiscountAmount().toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  {/* Setup/Delivery */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span>Setup / Delivery:</span>
+                      <FormField
+                        control={control}
+                        name="setupFee"
+                        render={({ field }) => (
+                          <FormItem className="space-y-0">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="w-20 h-8"
+                                defaultValue="0.00"
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  field.onChange(value);
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <span>${(parseFloat(watch("setupFee")?.toString() || "0")).toFixed(2)}</span>
+                  </div>
+                  
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                    <span className="font-bold text-lg">Total:</span>
+                    <span className="font-bold text-lg">
+                      ${getFinalTotal().toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  {/* Gross Profit */}
+                  <div className="bg-gray-50 p-3 rounded-lg mt-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-medium">Gross Profit:</span>
+                      <span className="font-medium">${getGrossProfit().toFixed(2)}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-start gap-1">
+                      <span className="inline-block">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Your profit amount is not included in any print outs or PDFs.</span>
+                    </div>
                   </div>
                 </div>
               </div>
