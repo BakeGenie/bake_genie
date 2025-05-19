@@ -1,16 +1,16 @@
 import React from "react";
-import { 
-  addMonths, 
-  subMonths, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
+import {
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
   endOfWeek,
-  format, 
-  isSameMonth, 
-  isSameDay, 
-  addDays, 
-  differenceInDays 
+  format,
+  isSameMonth,
+  isSameDay,
+  addDays,
+  differenceInDays,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -20,20 +20,30 @@ interface OrderCalendarProps {
   orders: OrderWithItems[];
   onDateSelect: (date: Date) => void;
   selectedDate?: Date;
+  month?: number;
+  year?: number;
 }
 
 const OrderCalendar: React.FC<OrderCalendarProps> = ({
   orders,
   onDateSelect,
   selectedDate = new Date(),
+  month,
+  year,
 }) => {
   // Use month and year from props or from the current date
   const currentDate = new Date();
   const urlParams = new URLSearchParams(window.location.search);
-  const monthParam = urlParams.get('month');
-  const yearParam = urlParams.get('year');
-  
-  const initialMonth = monthParam ? new Date(parseInt(yearParam || currentDate.getFullYear().toString()), parseInt(monthParam) - 1, 1) : new Date();
+  const monthParam = month || urlParams.get("month");
+  const yearParam = year || urlParams.get("year");
+
+  const initialMonth = monthParam
+    ? new Date(
+        parseInt(yearParam || currentDate.getFullYear().toString()),
+        parseInt(monthParam) - 1,
+        1,
+      )
+    : new Date();
   const [currentMonth, setCurrentMonth] = React.useState(initialMonth);
   const [today] = React.useState(new Date());
 
@@ -48,7 +58,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
 
   // Get days with orders
   const getOrdersForDate = (date: Date) => {
-    return orders.filter(order => {
+    return orders.filter((order) => {
       const orderDate = new Date(order.eventDate);
       return isSameDay(orderDate, date);
     });
@@ -64,7 +74,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
       days.push(
         <div key={i} className="text-center text-gray-500 text-sm py-1">
           {format(addDays(startDate, i), dateFormat)}
-        </div>
+        </div>,
       );
     }
     return <div className="grid grid-cols-7">{days}</div>;
@@ -87,22 +97,22 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
         formattedDate = format(day, "d");
         const cloneDay = day;
         const ordersForDay = getOrdersForDate(day);
-        
+
         days.push(
-          <div 
-            key={day.toString()} 
+          <div
+            key={day.toString()}
             className="py-2 relative"
             onClick={() => onDateSelect(cloneDay)}
           >
-            <div 
+            <div
               className={`calendar-day ${
                 !isSameMonth(day, monthStart) ? "other-month text-gray-300" : ""
-              } ${
-                isSameDay(day, today) ? "today" : ""
-              } ${
+              } ${isSameDay(day, today) ? "today" : ""} ${
                 ordersForDay.length > 0 ? "has-events" : ""
               } ${
-                selectedDate && isSameDay(day, selectedDate) ? "border-2 border-primary-500" : "border border-gray-200"
+                selectedDate && isSameDay(day, selectedDate)
+                  ? "border-2 border-primary-500"
+                  : "border border-gray-200"
               }`}
             >
               {formattedDate}
@@ -110,14 +120,14 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             {ordersForDay.length > 0 && (
               <div className="w-1 h-1 rounded-full bg-gray-400 absolute bottom-0 left-1/2 transform -translate-x-1/2"></div>
             )}
-          </div>
+          </div>,
         );
         day = addDays(day, 1);
       }
       rows.push(
         <div key={day.toString()} className="grid grid-cols-7">
           {days}
-        </div>
+        </div>,
       );
       days = [];
     }
@@ -125,13 +135,16 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   };
 
   return (
-    <div className="p-4 border-b border-gray-200">
-      <div className="mb-4">
+    <div className="p-3 border-b border-gray-200 w-4/5 mx-auto">
+      <div className="mb-3">
         <div className="flex justify-between items-center">
           <div>
-            <div className="text-gray-500">Today's Date</div>
+            <div className="text-gray-500 text-xs">Today's Date</div>
             <div className="flex items-center">
-              <span className="text-base font-medium">{format(today, "EEEE")}, {format(today, "d")} {format(today, "MMM")}</span>
+              <span className="text-sm font-medium">
+                {format(today, "EEEE")} {format(today, "d")}{" "}
+                {format(today, "MMM")}
+              </span>
             </div>
           </div>
           <div className="flex">
@@ -139,7 +152,9 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
               <ChevronLeftIcon className="h-5 w-5 text-gray-400" />
             </Button>
             <div className="mx-2 text-center">
-              <div className="text-lg font-medium">{format(currentMonth, "MMMM yyyy")}</div>
+              <div className="text-xl font-bold">
+                {format(currentMonth, "MMMM yyyy")}
+              </div>
             </div>
             <Button variant="ghost" size="icon" onClick={nextMonth}>
               <ChevronRightIcon className="h-5 w-5 text-gray-400" />

@@ -215,38 +215,29 @@ const Orders = () => {
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div>
               <div className="grid grid-cols-2 gap-2">
-                <Select
-                  value={month.toString()}
-                  onValueChange={(value) => setMonth(parseInt(value))}
-                >
+                <Select value={month.toString()} onValueChange={(value) => setMonth(parseInt(value))}>
                   <SelectTrigger className="w-[110px]">
                     <SelectValue placeholder="Month" />
                   </SelectTrigger>
                   <SelectContent>
                     {monthOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value.toString()}>
-                        {option.label}
-                      </SelectItem>
+                      <SelectItem key={option.value} value={option.value.toString()}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={year.toString()}
-                  onValueChange={(value) => setYear(parseInt(value))}
-                >
+                <Select value={year.toString()} onValueChange={(value) => setYear(parseInt(value))}>
                   <SelectTrigger className="w-[110px]">
                     <SelectValue placeholder="Year" />
                   </SelectTrigger>
                   <SelectContent>
                     {yearOptions.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
+            
             <div className="flex items-center">
               <div className="relative mr-2">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -257,6 +248,7 @@ const Orders = () => {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
+              {/* Add filter here */}
               <Button variant="outline" size="icon">
                 <FilterIcon className="h-4 w-4" />
               </Button>
@@ -268,6 +260,8 @@ const Orders = () => {
             orders={orders}
             onDateSelect={handleDateSelect}
             selectedDate={selectedDate}
+            month={month}
+            year={year}
           />
 
           {/* Order List */}
