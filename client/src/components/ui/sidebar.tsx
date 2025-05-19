@@ -19,7 +19,8 @@ import {
   XIcon,
   UtensilsIcon,
   DatabaseIcon,
-  LinkIcon
+  LinkIcon,
+  LogOutIcon
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -212,6 +213,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             ))}
           </ul>
         </nav>
+        
+        {/* Log Off Button */}
+        <div className="mt-auto border-t border-gray-200">
+          <button 
+            onClick={() => window.location.href = "/logout"}
+            className="w-full flex items-center px-4 py-3 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            <LogOutIcon className="h-5 w-5 text-gray-600" />
+            <span className="ml-3 font-medium">Log Off</span>
+          </button>
+        </div>
       </aside>
     </>
   );
