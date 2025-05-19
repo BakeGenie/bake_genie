@@ -404,27 +404,85 @@ const Calendar = () => {
       <Dialog open={isBlockoutDialogOpen} onOpenChange={setIsBlockoutDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Block Out Time: {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}</DialogTitle>
+            <DialogTitle>Block Out Time</DialogTitle>
             <DialogDescription>
-              Mark this date as unavailable in your calendar
+              Mark dates as unavailable in your calendar
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 gap-4 py-4">
             <p className="text-center text-sm">
-              This will mark the selected date as unavailable, allowing you to block out time for personal events, 
-              holidays, or when you're not accepting orders.
+              Block out consecutive days for vacations, holidays, or when you're not accepting orders.
             </p>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="blockout-start-date" className="text-sm font-medium">Start Date:</label>
+                <input
+                  id="blockout-start-date"
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSelectedDate(parseISO(e.target.value));
+                    }
+                  }}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="blockout-end-date" className="text-sm font-medium">End Date:</label>
+                <input
+                  id="blockout-end-date"
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  defaultValue={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                  min={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="blockout-reason" className="text-sm font-medium">Reason (optional):</label>
+                <input
+                  id="blockout-reason"
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Vacation, Holiday, etc."
+                />
+              </div>
+            </div>
             
             <Button 
               onClick={() => {
-                // Here we would implement the logic to block out the time
-                // For now, we'll just simulate it with an alert and close the dialog
-                alert(`Date ${selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""} has been blocked out`);
-                setIsBlockoutDialogOpen(false);
+                // Get the values from the inputs
+                const startDateInput = document.getElementById('blockout-start-date') as HTMLInputElement;
+                const endDateInput = document.getElementById('blockout-end-date') as HTMLInputElement;
+                const reasonInput = document.getElementById('blockout-reason') as HTMLInputElement;
+                
+                const startDate = startDateInput.value ? parseISO(startDateInput.value) : null;
+                const endDate = endDateInput.value ? parseISO(endDateInput.value) : null;
+                const reason = reasonInput.value;
+                
+                if (startDate && endDate) {
+                  // Here we would implement the logic to block out the time range
+                  // For now, we'll just simulate it with an alert
+                  const formattedStartDate = format(startDate, "MMMM d, yyyy");
+                  const formattedEndDate = format(endDate, "MMMM d, yyyy");
+                  
+                  if (reason) {
+                    alert(`Dates from ${formattedStartDate} to ${formattedEndDate} have been blocked out.\nReason: ${reason}`);
+                  } else {
+                    alert(`Dates from ${formattedStartDate} to ${formattedEndDate} have been blocked out.`);
+                  }
+                  
+                  setIsBlockoutDialogOpen(false);
+                } else {
+                  alert("Please select both start and end dates");
+                }
               }}
             >
-              Confirm Block Out
+              Block Out Dates
             </Button>
           </div>
           
