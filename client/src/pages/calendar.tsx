@@ -49,6 +49,7 @@ const Calendar = () => {
   const [isBlockoutDialogOpen, setIsBlockoutDialogOpen] = React.useState(false);
   const [isNewEventDialogOpen, setIsNewEventDialogOpen] = React.useState(false);
   const [calendarEvents, setCalendarEvents] = React.useState<CalendarEvent[]>([]);
+  const [blockedDates, setBlockedDates] = React.useState<{[key: string]: string}>({});
   const [newEvent, setNewEvent] = React.useState<Partial<CalendarEvent>>({
     type: 'Admin',
     description: ''
@@ -90,6 +91,12 @@ const Calendar = () => {
       const orderDate = new Date(order.eventDate);
       return isSameDay(orderDate, day);
     });
+  };
+  
+  // Check if a date is blocked out
+  const isDateBlocked = (day: Date) => {
+    const dateStr = format(day, "yyyy-MM-dd");
+    return dateStr in blockedDates;
   };
   
   // Get calendar events for a specific day
@@ -228,8 +235,9 @@ const Calendar = () => {
                 <div
                   key={day.toString()}
                   className={cn(
-                    "h-28 p-1 rounded-md border border-gray-200 overflow-y-auto",
-                    isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50"
+                    "h-28 p-1 rounded-md border border-gray-200 overflow-y-auto relative",
+                    isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50",
+                    isDateBlocked(day) ? "bg-gray-50" : ""
                   )}
                   onClick={() => {
                     setSelectedDate(day);
@@ -242,6 +250,12 @@ const Calendar = () => {
                   )}>
                     {format(day, "d")}
                   </div>
+                  
+                  {isDateBlocked(day) && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                      <div className="text-red-500 text-5xl font-bold opacity-40">X</div>
+                    </div>
+                  )}
                   
                   <div className="space-y-1">
                     {/* Display orders */}
@@ -406,7 +420,7 @@ const Calendar = () => {
           <DialogHeader>
             <DialogTitle>Block Out Time</DialogTitle>
             <DialogDescription>
-              Mark dates as unavailable in your calendar
+              Mark this date or date range as unavailable
             </DialogDescription>
           </DialogHeader>
           
@@ -465,8 +479,24 @@ const Calendar = () => {
                 const reason = reasonInput.value;
                 
                 if (startDate && endDate) {
-                  // Here we would implement the logic to block out the time range
-                  // For now, we'll just simulate it with an alert
+                  // Block out all dates in the range
+                  const newBlockedDates = {...blockedDates};
+                  
+                  // Get all dates between start and end (inclusive)
+                  const datesInRange = eachDayOfInterval({
+                    start: startDate,
+                    end: endDate
+                  });
+                  
+                  // Add each date to the blockedDates object
+                  datesInRange.forEach(date => {
+                    const dateStr = format(date, "yyyy-MM-dd");
+                    newBlockedDates[dateStr] = reason;
+                  });
+                  
+                  // Update state with new blocked dates
+                  setBlockedDates(newBlockedDates);
+                  
                   const formattedStartDate = format(startDate, "MMMM d, yyyy");
                   const formattedEndDate = format(endDate, "MMMM d, yyyy");
                   
