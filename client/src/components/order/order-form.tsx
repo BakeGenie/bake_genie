@@ -106,6 +106,7 @@ const defaultValues: Partial<OrderFormValues> = {
   orderDate: new Date(),
   status: "Quote",
   deliveryType: "Pickup",
+  deliveryAddress: "",
   eventType: "Birthday",
   items: [
     {
