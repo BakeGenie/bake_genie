@@ -35,6 +35,21 @@ const Orders = () => {
     preselectedDate ? new Date(preselectedDate) : new Date()
   );
 
+  // Update the calendar month when dropdown changes
+  React.useEffect(() => {
+    // Create a date object for the first day of the selected month and year
+    const calendarDate = new Date(year, month - 1, 1);
+    // We need to force rerender the calendar with the new month
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('month', month.toString());
+    urlParams.set('year', year.toString());
+    
+    // Only update URL if not already there to avoid navigation loops
+    if (location.split('?')[1] !== urlParams.toString()) {
+      navigate(`?${urlParams.toString()}`, { replace: true });
+    }
+  }, [month, year]);
+
   // Fetch orders data
   const { data: orders = [], isLoading } = useQuery<OrderWithItems[]>({
     queryKey: ["/api/orders", { month, year, search }],

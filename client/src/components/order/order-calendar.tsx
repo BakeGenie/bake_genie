@@ -27,7 +27,14 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   onDateSelect,
   selectedDate = new Date(),
 }) => {
-  const [currentMonth, setCurrentMonth] = React.useState(new Date());
+  // Use month and year from props or from the current date
+  const currentDate = new Date();
+  const urlParams = new URLSearchParams(window.location.search);
+  const monthParam = urlParams.get('month');
+  const yearParam = urlParams.get('year');
+  
+  const initialMonth = monthParam ? new Date(parseInt(yearParam || currentDate.getFullYear().toString()), parseInt(monthParam) - 1, 1) : new Date();
+  const [currentMonth, setCurrentMonth] = React.useState(initialMonth);
   const [today] = React.useState(new Date());
 
   // Navigate calendar month
@@ -123,10 +130,8 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
         <div className="flex justify-between items-center">
           <div>
             <div className="text-gray-500">Today's Date</div>
-            <div className="flex items-baseline">
-              <span className="text-4xl font-light">{format(today, "d")}</span>
-              <span className="ml-1 text-xl">{format(today, "MMM")}</span>
-              <span className="ml-1 text-sm text-gray-500">{format(today, "EEEE")}</span>
+            <div className="flex items-center">
+              <span className="text-base font-medium">{format(today, "EEEE")}, {format(today, "d")} {format(today, "MMM")}</span>
             </div>
           </div>
           <div className="flex">
