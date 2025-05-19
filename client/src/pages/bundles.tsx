@@ -24,6 +24,7 @@ import {
   Plus,
   FilterIcon
 } from "lucide-react";
+import AddBundleDialog from "@/components/bundle/add-bundle-dialog";
 
 // Define bundle type
 interface Bundle {
@@ -56,9 +57,28 @@ const Bundles = () => {
         backLink="/recipes" 
         backLabel="Back to Recipes & Ingredients"
         actions={
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" /> New Bundle
-          </Button>
+          <AddBundleDialog 
+            onSave={(bundleData) => {
+              // Here we would normally send data to API
+              // For now, just add it to the local state
+              const newBundle: Bundle = {
+                id: Date.now(), // Generate a temporary ID
+                name: bundleData.name,
+                category: bundleData.category,
+                price: parseFloat(bundleData.price)
+              };
+              setBundles([...bundles, newBundle]);
+              
+              // Show success notification
+              // This would be nicer with a toast component
+              alert("Bundle created successfully!");
+            }}
+            trigger={
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" /> New Bundle
+              </Button>
+            }
+          />
         }
       />
       
