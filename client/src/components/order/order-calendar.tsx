@@ -139,7 +139,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
               <ChevronLeftIcon className="h-5 w-5 text-gray-400" />
             </Button>
             <div className="mx-2 text-center">
-              <div className="text-sm font-medium">{format(currentMonth, "MMMM yyyy")}</div>
+              <div className="text-lg font-medium">{format(currentMonth, "MMMM yyyy")}</div>
             </div>
             <Button variant="ghost" size="icon" onClick={nextMonth}>
               <ChevronRightIcon className="h-5 w-5 text-gray-400" />
