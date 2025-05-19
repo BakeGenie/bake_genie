@@ -791,22 +791,36 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
           <div className="col-span-1 md:col-span-2 border rounded-lg p-4">
             <h3 className="text-lg font-medium mb-4">Order Items</h3>
             
-            <div className="space-y-4">
-              {/* Headers */}
-              <div className="grid grid-cols-12 gap-2 font-medium">
-                <div className="col-span-3">Product</div>
-                <div className="col-span-3">Description</div>
-                <div className="col-span-2">Quantity</div>
-                <div className="col-span-2">Price</div>
-                <div className="col-span-2">Total</div>
-              </div>
-              
+            <div className="space-y-6">
               {/* Items */}
               {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                  {/* Product/Recipe Selection */}
-                  <div className="col-span-3">
-                    <div className="mb-2">
+                <div key={field.id} className="border-b pb-5 mb-2 last:border-0 last:mb-0 last:pb-0">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-gray-100 w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </span>
+                      <h4 className="font-medium">Item Details</h4>
+                    </div>
+                    
+                    {/* Remove button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      disabled={fields.length === 1}
+                      className="h-8"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                
+                  <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                    {/* Item Type Selection */}
+                    <div className="col-span-12 md:col-span-4 lg:col-span-3">
+                      <Label className="text-xs mb-1 block">Item Type</Label>
                       <Select
                         value={watch(`items.${index}.itemType`) || 'product'} 
                         onValueChange={(value) => {
@@ -827,151 +841,148 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                       </Select>
                     </div>
                     
-                    {(watch(`items.${index}.itemType`) === 'product' || !watch(`items.${index}.itemType`)) && (
-                      <FormField
-                        control={control}
-                        name={`items.${index}.productId`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="flex flex-col space-y-1">
-                              <ProductSelector 
-                                value={field.value as number} 
-                                onSelect={(product) => {
-                                  handleProductSelect(index, product);
-                                }}
-                              />
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    
-                    {watch(`items.${index}.itemType`) === 'recipe' && (
-                      <FormField
-                        control={control}
-                        name={`items.${index}.recipeId`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="flex flex-col space-y-1">
-                              <RecipeSelector 
-                                value={field.value as number} 
-                                onSelect={(recipe) => {
-                                  handleRecipeSelect(index, recipe);
-                                }}
-                              />
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    
-                    {watch(`items.${index}.imageUrl`) && (
-                      <div className="w-12 h-12 border rounded overflow-hidden mt-1">
-                        <img 
-                          src={watch(`items.${index}.imageUrl`) || ''} 
-                          alt={watch(`items.${index}.description`) || 'Item'}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Description */}
-                  <div className="col-span-3">
-                    <FormField
-                      control={control}
-                      name={`items.${index}.description`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Quantity */}
-                  <div className="col-span-2">
-                    <FormField
-                      control={control}
-                      name={`items.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              type="number" 
-                              min="1" 
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value) || 0;
-                                field.onChange(value);
-                                handleItemChange(index, "quantity", value);
-                              }}
+                    {/* Product/Recipe Selection */}
+                    <div className="col-span-12 md:col-span-8 lg:col-span-9">
+                      <Label className="text-xs mb-1 block">
+                        {watch(`items.${index}.itemType`) === 'product' ? 'Product' : 
+                         watch(`items.${index}.itemType`) === 'recipe' ? 'Recipe' : 'Custom Item'}
+                      </Label>
+                      
+                      <div className="flex items-center gap-3">
+                        <div className="flex-grow">
+                          {(watch(`items.${index}.itemType`) === 'product' || !watch(`items.${index}.itemType`)) && (
+                            <FormField
+                              control={control}
+                              name={`items.${index}.productId`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <ProductSelector 
+                                    value={field.value as number} 
+                                    onSelect={(product) => {
+                                      handleProductSelect(index, product);
+                                    }}
+                                  />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Price */}
-                  <div className="col-span-2">
-                    <FormField
-                      control={control}
-                      name={`items.${index}.price`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              type="number" 
-                              min="0" 
-                              step="0.01"
-                              onChange={(e) => {
-                                const value = parseFloat(e.target.value) || 0;
-                                field.onChange(value);
-                                handleItemChange(index, "price", value);
-                              }}
+                          )}
+                          
+                          {watch(`items.${index}.itemType`) === 'recipe' && (
+                            <FormField
+                              control={control}
+                              name={`items.${index}.recipeId`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <RecipeSelector 
+                                    value={field.value as number} 
+                                    onSelect={(recipe) => {
+                                      handleRecipeSelect(index, recipe);
+                                    }}
+                                  />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Total */}
-                  <div className="col-span-1">
-                    <FormField
-                      control={control}
-                      name={`items.${index}.total`}
-                      render={({ field }) => (
-                        <div className="font-medium">
-                          ${field.value.toFixed(2)}
+                          )}
                         </div>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Remove button */}
-                  <div className="col-span-1 flex justify-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => remove(index)}
-                      disabled={fields.length === 1}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                        
+                        {watch(`items.${index}.imageUrl`) && (
+                          <div className="w-14 h-14 border rounded overflow-hidden flex-shrink-0">
+                            <img 
+                              src={watch(`items.${index}.imageUrl`) || ''} 
+                              alt={watch(`items.${index}.description`) || 'Item'}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Description */}
+                    <div className="col-span-12">
+                      <Label className="text-xs mb-1 block">Description</Label>
+                      <FormField
+                        control={control}
+                        name={`items.${index}.description`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {/* Bottom Row - Quantity, Price, Total */}
+                    <div className="col-span-4">
+                      <Label className="text-xs mb-1 block">Quantity</Label>
+                      <FormField
+                        control={control}
+                        name={`items.${index}.quantity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="number" 
+                                min="1" 
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  field.onChange(value);
+                                  handleItemChange(index, "quantity", value);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="col-span-4">
+                      <Label className="text-xs mb-1 block">Price ($)</Label>
+                      <FormField
+                        control={control}
+                        name={`items.${index}.price`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="number" 
+                                min="0" 
+                                step="0.01"
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  field.onChange(value);
+                                  handleItemChange(index, "price", value);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="col-span-4">
+                      <Label className="text-xs mb-1 block">Total</Label>
+                      <FormField
+                        control={control}
+                        name={`items.${index}.total`}
+                        render={({ field }) => (
+                          <div className="h-10 border rounded px-3 flex items-center font-medium">
+                            ${field.value.toFixed(2)}
+                          </div>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
