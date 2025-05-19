@@ -211,19 +211,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                 </Link>
               </li>
             ))}
+            
+            {/* Log Off Button as part of the navigation menu */}
+            <li className="mt-6 border-t border-gray-200 pt-2">
+              <button 
+                onClick={() => window.location.href = "/logout"}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <div className="flex items-center">
+                  <span className="w-5 text-gray-600">
+                    <LogOutIcon className="h-5 w-5" />
+                  </span>
+                  <span className="ml-3 font-medium">Log Off</span>
+                </div>
+              </button>
+            </li>
           </ul>
         </nav>
-        
-        {/* Log Off Button */}
-        <div className="mt-auto border-t border-gray-200">
-          <button 
-            onClick={() => window.location.href = "/logout"}
-            className="w-full flex items-center px-4 py-3 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-          >
-            <LogOutIcon className="h-5 w-5 text-gray-600" />
-            <span className="ml-3 font-medium">Log Off</span>
-          </button>
-        </div>
       </aside>
     </>
   );
