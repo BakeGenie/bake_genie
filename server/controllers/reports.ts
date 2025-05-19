@@ -39,28 +39,25 @@ export const getOrderListReport = async (req: DateRangeRequest, res: Response) =
   try {
     const { startDate, endDate } = getDateRange(req);
     
-    const ordersList = await db.select({
-      id: orders.id,
-      orderNumber: orders.orderNumber,
-      eventDate: orders.eventDate,
-      customerName: sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
-      eventType: orders.eventType,
-      status: orders.status,
-      total: orders.total,
-      createdAt: orders.createdAt
-    })
-    .from(orders)
-    .leftJoin(contacts, eq(orders.contactId, contacts.id))
-    .where(
-      and(
-        eq(orders.isQuote, false),
-        gte(orders.eventDate, startDate.toISOString()),
-        lte(orders.eventDate, endDate.toISOString())
-      )
-    )
-    .orderBy(orders.eventDate);
+    // Using direct SQL for better compatibility
+    const result = await db.execute(sql`
+      SELECT 
+        o.id,
+        o.order_number as "orderNumber", 
+        o.event_date as "eventDate",
+        CONCAT(c.first_name, ' ', c.last_name) as "customerName",
+        o.event_type as "eventType",
+        o.status,
+        o.total,
+        o.created_at as "createdAt"
+      FROM orders o
+      LEFT JOIN contacts c ON o.contact_id = c.id
+      WHERE o.event_date >= ${startDate.toISOString()}
+        AND o.event_date <= ${endDate.toISOString()}
+      ORDER BY o.event_date
+    `);
     
-    res.status(200).json(ordersList);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching order list report:", error);
     res.status(500).json({ error: "Failed to generate order list report" });
@@ -72,27 +69,25 @@ export const getQuoteListReport = async (req: DateRangeRequest, res: Response) =
   try {
     const { startDate, endDate } = getDateRange(req);
     
-    const quotesList = await db.select({
-      id: orders.id,
-      quoteNumber: orders.orderNumber,
-      createdAt: orders.createdAt,
-      customerName: sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
-      eventType: orders.eventType,
-      status: orders.status,
-      total: orders.total
-    })
-    .from(orders)
-    .leftJoin(contacts, eq(orders.contactId, contacts.id))
-    .where(
-      and(
-        eq(orders.isQuote, true),
-        gte(orders.createdAt, startDate.toISOString()),
-        lte(orders.createdAt, endDate.toISOString())
-      )
-    )
-    .orderBy(orders.createdAt);
+    // Using direct SQL for better compatibility
+    const result = await db.execute(sql`
+      SELECT 
+        o.id,
+        o.order_number as "quoteNumber",
+        o.created_at as "createdAt",
+        CONCAT(c.first_name, ' ', c.last_name) as "customerName",
+        o.event_type as "eventType",
+        o.status,
+        o.total
+      FROM orders o
+      LEFT JOIN contacts c ON o.contact_id = c.id
+      WHERE o.status = 'Quote'
+        AND o.created_at >= ${startDate.toISOString()}
+        AND o.created_at <= ${endDate.toISOString()}
+      ORDER BY o.created_at
+    `);
     
-    res.status(200).json(quotesList);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching quote list report:", error);
     res.status(500).json({ error: "Failed to generate quote list report" });
@@ -105,28 +100,25 @@ export const getBakingListReport = async (req: DateRangeRequest, res: Response) 
     const { startDate, endDate } = getDateRange(req);
     
     // Get all order items with recipe or product info for upcoming orders
-    const bakingList = await db.select({
-      id: orderItems.id,
-      orderNumber: orders.orderNumber,
-      eventDate: orders.eventDate,
-      customerName: sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
-      itemName: orderItems.name,
-      quantity: orderItems.quantity,
-      notes: orderItems.notes
-    })
-    .from(orderItems)
-    .leftJoin(orders, eq(orderItems.orderId, orders.id))
-    .leftJoin(contacts, eq(orders.contactId, contacts.id))
-    .where(
-      and(
-        eq(orders.isQuote, false),
-        gte(orders.eventDate, startDate.toISOString()),
-        lte(orders.eventDate, endDate.toISOString())
-      )
-    )
-    .orderBy(orders.eventDate);
+    // Using direct SQL for better compatibility
+    const result = await db.execute(sql`
+      SELECT 
+        oi.id,
+        o.order_number as "orderNumber",
+        o.event_date as "eventDate",
+        CONCAT(c.first_name, ' ', c.last_name) as "customerName",
+        oi.name as "itemName",
+        oi.quantity as quantity,
+        oi.notes as notes
+      FROM order_items oi
+      LEFT JOIN orders o ON oi.order_id = o.id
+      LEFT JOIN contacts c ON o.contact_id = c.id
+      WHERE o.event_date >= ${startDate.toISOString()}
+        AND o.event_date <= ${endDate.toISOString()}
+      ORDER BY o.event_date
+    `);
     
-    res.status(200).json(bakingList);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching baking list report:", error);
     res.status(500).json({ error: "Failed to generate baking list report" });
@@ -173,46 +165,27 @@ export const getShoppingListReport = async (req: DateRangeRequest, res: Response
   try {
     const { startDate, endDate } = getDateRange(req);
     
-    // This would join orders, order items, recipes, and ingredients
-    // to get a complete shopping list for upcoming orders
+    // Using direct SQL for shopping list report
+    const result = await db.execute(sql`
+      SELECT 
+        i.id,
+        i.name as ingredient,
+        SUM(ri.quantity) as quantity,
+        i.unit,
+        i.notes as supplier
+      FROM ingredients i
+      JOIN recipe_ingredients ri ON i.id = ri.ingredient_id
+      JOIN recipes r ON ri.recipe_id = r.id
+      JOIN order_items oi ON oi.name ILIKE CONCAT('%', r.name, '%')
+      JOIN orders o ON oi.order_id = o.id
+      WHERE o.status != 'Quote'
+        AND o.event_date >= ${startDate.toISOString()}
+        AND o.event_date <= ${endDate.toISOString()}
+      GROUP BY i.id, i.name, i.unit, i.notes
+      ORDER BY i.name
+    `);
     
-    // For this implementation, we'll return a basic version that directly queries the tables
-    const shoppingList = await db.select({
-      id: ingredients.id,
-      ingredient: ingredients.name,
-      quantity: recipeIngredients.quantity,
-      unit: ingredients.unit,
-      supplier: ingredients.supplier
-    })
-    .from(orderItems)
-    .leftJoin(orders, eq(orderItems.orderId, orders.id))
-    .leftJoin(recipes, eq(orderItems.recipeId, recipes.id))
-    .leftJoin(recipeIngredients, eq(recipes.id, recipeIngredients.recipeId))
-    .leftJoin(ingredients, eq(recipeIngredients.ingredientId, ingredients.id))
-    .where(
-      and(
-        eq(orders.isQuote, false),
-        gte(orders.eventDate, startDate.toISOString()),
-        lte(orders.eventDate, endDate.toISOString()),
-        sql`${ingredients.id} IS NOT NULL`
-      )
-    )
-    .orderBy(ingredients.name);
-    
-    // Process the ingredients to sum quantities and group by ingredient
-    const ingredientMap = new Map();
-    for (const item of shoppingList) {
-      const key = item.id;
-      if (ingredientMap.has(key)) {
-        ingredientMap.get(key).quantity += item.quantity;
-      } else {
-        ingredientMap.set(key, { ...item, usedInRecipes: [] });
-      }
-    }
-    
-    const result = Array.from(ingredientMap.values());
-    
-    res.status(200).json(result);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching shopping list report:", error);
     res.status(500).json({ error: "Failed to generate shopping list report" });
