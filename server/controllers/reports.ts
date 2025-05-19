@@ -130,30 +130,27 @@ export const getBakingListByTypeReport = async (req: DateRangeRequest, res: Resp
   try {
     const { startDate, endDate } = getDateRange(req);
     
-    // Get all order items grouped by type
-    const bakingListByType = await db.select({
-      id: orderItems.id,
-      orderNumber: orders.orderNumber,
-      eventDate: orders.eventDate,
-      customerName: sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
-      itemName: orderItems.name,
-      quantity: orderItems.quantity,
-      notes: orderItems.notes,
-      productType: sql`CASE WHEN ${orderItems.recipeId} IS NOT NULL THEN 'Recipe' ELSE 'Product' END`
-    })
-    .from(orderItems)
-    .leftJoin(orders, eq(orderItems.orderId, orders.id))
-    .leftJoin(contacts, eq(orders.contactId, contacts.id))
-    .where(
-      and(
-        eq(orders.isQuote, false),
-        gte(orders.eventDate, startDate.toISOString()),
-        lte(orders.eventDate, endDate.toISOString())
-      )
-    )
-    .orderBy(sql`productType`, orders.eventDate);
+    // Using direct SQL for better compatibility
+    const result = await db.execute(sql`
+      SELECT 
+        oi.id,
+        o.order_number as "orderNumber",
+        o.event_date as "eventDate",
+        CONCAT(c.first_name, ' ', c.last_name) as "customerName",
+        oi.name as "itemName",
+        oi.quantity,
+        oi.notes,
+        oi.type as "productType"
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      LEFT JOIN contacts c ON o.contact_id = c.id
+      WHERE o.status != 'Quote'
+        AND o.event_date >= ${startDate.toISOString()}
+        AND o.event_date <= ${endDate.toISOString()}
+      ORDER BY oi.type, o.event_date
+    `);
     
-    res.status(200).json(bakingListByType);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching baking list by type report:", error);
     res.status(500).json({ error: "Failed to generate baking list by type report" });
@@ -254,47 +251,35 @@ export const getIncomeStatementReport = async (req: DateRangeRequest, res: Respo
   try {
     const { startDate, endDate } = getDateRange(req);
     
-    // Get income from orders (completed orders)
-    const ordersResult = await db.select({
-      totalIncome: sql`SUM(${orders.total})`
-    })
-    .from(orders)
-    .where(
-      and(
-        eq(orders.isQuote, false),
-        gte(orders.createdAt, startDate.toISOString()),
-        lte(orders.createdAt, endDate.toISOString())
-      )
-    );
+    // Using direct SQL to get income from orders
+    const ordersResult = await db.execute(sql`
+      SELECT SUM(total) as "orderIncome"
+      FROM orders
+      WHERE status != 'Quote'
+        AND created_at >= ${startDate.toISOString()}
+        AND created_at <= ${endDate.toISOString()}
+    `);
     
-    // Get additional income
-    const additionalIncomeResult = await db.select({
-      totalAdditionalIncome: sql`SUM(${income.amount})`
-    })
-    .from(income)
-    .where(
-      and(
-        gte(income.date, startDate.toISOString()),
-        lte(income.date, endDate.toISOString())
-      )
-    );
+    // Using direct SQL to get additional income
+    const additionalIncomeResult = await db.execute(sql`
+      SELECT SUM(amount) as "additionalIncome"
+      FROM income
+      WHERE date >= ${startDate.toISOString()}
+        AND date <= ${endDate.toISOString()}
+    `);
     
-    // Get expenses
-    const expensesResult = await db.select({
-      totalExpenses: sql`SUM(${expenses.amount})`
-    })
-    .from(expenses)
-    .where(
-      and(
-        gte(expenses.date, startDate.toISOString()),
-        lte(expenses.date, endDate.toISOString())
-      )
-    );
+    // Using direct SQL to get expenses
+    const expensesResult = await db.execute(sql`
+      SELECT SUM(amount) as "totalExpenses"
+      FROM expenses
+      WHERE date >= ${startDate.toISOString()}
+        AND date <= ${endDate.toISOString()}
+    `);
     
     // Extract values, handling null cases
-    const orderIncome = Number(ordersResult[0]?.totalIncome || 0);
-    const additionalIncome = Number(additionalIncomeResult[0]?.totalAdditionalIncome || 0);
-    const totalExpenses = Number(expensesResult[0]?.totalExpenses || 0);
+    const orderIncome = Number(ordersResult.rows[0]?.orderIncome || 0);
+    const additionalIncome = Number(additionalIncomeResult.rows[0]?.additionalIncome || 0);
+    const totalExpenses = Number(expensesResult.rows[0]?.totalExpenses || 0);
     
     // Calculate total income and net profit
     const totalIncome = orderIncome + additionalIncome;
