@@ -1,39 +1,36 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
+import { Card, CardContent } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn, formatDate } from "@/lib/utils";
-import {
-  CalendarIcon,
-  FileTextIcon,
-  DownloadIcon,
-  ListIcon,
-  BarChart2Icon,
-  ShoppingCartIcon,
-  ReceiptIcon,
-  ClipboardListIcon,
-  UsersIcon,
-  TruckIcon,
-  FileIcon
-} from "lucide-react";
-import { OrderWithItems } from "@/types";
+import { ChevronRight } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { useToast } from "@/hooks/use-toast";
+import { OrderWithItems } from "@/types";
+import {
+  CalendarIcon,
+  FileTextIcon,
+  ClipboardListIcon,
+  BarChart2Icon,
+  ShoppingCartIcon,
+  ReceiptIcon,
+  TruckIcon,
+  UsersIcon,
+  FileIcon,
+  DollarSignIcon,
+  PieChartIcon,
+  CreditCardIcon,
+  CarIcon,
+  CheckSquareIcon
+} from "lucide-react";
 
 // Date range form schema
 const dateRangeSchema = z.object({
@@ -43,68 +40,179 @@ const dateRangeSchema = z.object({
 
 type DateRangeValues = z.infer<typeof dateRangeSchema>;
 
-// Report types
-const reportTypes = [
-  {
-    id: "baking-list",
-    name: "Baking List",
-    icon: <ClipboardListIcon className="h-5 w-5" />,
-    description: "List of all items to be baked in a given time period",
-  },
-  {
-    id: "performance",
-    name: "Business Performance",
-    icon: <BarChart2Icon className="h-5 w-5" />,
-    description: "Financial performance reports and statistics",
-  },
-  {
-    id: "customer-analytics",
-    name: "Customer Analytics",
-    icon: <UsersIcon className="h-5 w-5" />,
-    description: "Analytics based on customer data and orders",
-  },
-  {
-    id: "delivery-list",
-    name: "Delivery List",
-    icon: <TruckIcon className="h-5 w-5" />,
-    description: "List of deliveries for a specific time period",
-  },
-  {
-    id: "expense-reports",
-    name: "Expense Reports",
-    icon: <ReceiptIcon className="h-5 w-5" />,
-    description: "Breakdown of business expenses",
-  },
+// Define List types
+const listTypes = [
   {
     id: "order-list",
     name: "Order List",
     icon: <FileTextIcon className="h-5 w-5" />,
-    description: "List of all orders within a specific date range",
+    description: "Use this report to view all your orders between a specified period",
+    category: "lists"
   },
   {
     id: "quote-list",
     name: "Quote List",
     icon: <FileIcon className="h-5 w-5" />,
-    description: "List of all quotes within a specific date range",
+    description: "Use this report to view all your quotes between a specified period",
+    category: "lists"
+  },
+  {
+    id: "baking-list",
+    name: "Baking List",
+    icon: <ClipboardListIcon className="h-5 w-5" />,
+    description: "Use this report to view what you need to bake between a specified period",
+    category: "lists"
+  },
+  {
+    id: "baking-list-by-type",
+    name: "Baking List by Type",
+    icon: <ClipboardListIcon className="h-5 w-5" />,
+    description: "Use this report to view what you need to bake between a specified period",
+    category: "lists"
+  },
+  {
+    id: "baking-list-by-customer",
+    name: "Baking List by Type Excl Customer",
+    icon: <ClipboardListIcon className="h-5 w-5" />,
+    description: "Use this report to view what you need to bake between a specified period",
+    category: "lists"
   },
   {
     id: "shopping-list",
     name: "Shopping List",
     icon: <ShoppingCartIcon className="h-5 w-5" />,
-    description: "List of ingredients needed for upcoming orders",
+    description: "View a list of your required ingredients for all orders in a specified period",
+    category: "lists"
   },
+  {
+    id: "shopping-list-by-recipe",
+    name: "Shopping List by Recipe",
+    icon: <ShoppingCartIcon className="h-5 w-5" />,
+    description: "View a list of your required ingredients by recipe for all orders in a specified period",
+    category: "lists"
+  },
+  {
+    id: "task-list",
+    name: "Task List",
+    icon: <CheckSquareIcon className="h-5 w-5" />,
+    description: "View a list of your tasks that you currently have open",
+    category: "lists"
+  },
+  {
+    id: "deliveries-list",
+    name: "Deliveries List",
+    icon: <TruckIcon className="h-5 w-5" />,
+    description: "View a list of your orders and their delivery details",
+    category: "lists"
+  }
+];
+
+// Define Report types
+const reportTypes = [
   {
     id: "income-statement",
     name: "Income Statement",
-    icon: <BarChart2Icon className="h-5 w-5" />,
-    description: "Financial statement showing profit or loss",
+    icon: <DollarSignIcon className="h-5 w-5" />,
+    description: "Use this report to view your income statement report for a period",
+    category: "reports"
   },
+  {
+    id: "order-item-breakdown",
+    name: "Detailed Order Item Breakdown",
+    icon: <FileTextIcon className="h-5 w-5" />,
+    description: "Use this report to view the cost breakdown of each item in your orders",
+    category: "reports"
+  },
+  {
+    id: "breakdown-order-type",
+    name: "Breakdown by Order Type",
+    icon: <PieChartIcon className="h-5 w-5" />,
+    description: "Use this report to view a breakdown of your orders by order type",
+    category: "reports"
+  },
+  {
+    id: "breakdown-event-type",
+    name: "Breakdown by Event Type",
+    icon: <PieChartIcon className="h-5 w-5" />,
+    description: "Use this report to view a breakdown of your orders by event type",
+    category: "reports"
+  },
+  {
+    id: "payments-by-period",
+    name: "Payments by Period",
+    icon: <CreditCardIcon className="h-5 w-5" />,
+    description: "Use this report to view all payments made for a period",
+    category: "reports"
+  },
+  {
+    id: "expense-summary",
+    name: "Summary Expense Report",
+    icon: <ReceiptIcon className="h-5 w-5" />,
+    description: "Use this report for a summarized view of your expenses",
+    category: "reports"
+  },
+  {
+    id: "expense-detailed",
+    name: "Detailed Expense Report",
+    icon: <ReceiptIcon className="h-5 w-5" />,
+    description: "Use this report for a detailed view of your expenses",
+    category: "reports"
+  },
+  {
+    id: "expense-by-category",
+    name: "Expenses By Category Report",
+    icon: <ReceiptIcon className="h-5 w-5" />,
+    description: "Use this report for a detailed view of your expenses by category",
+    category: "reports"
+  },
+  {
+    id: "income-detailed",
+    name: "Detailed Additional Income Report",
+    icon: <DollarSignIcon className="h-5 w-5" />,
+    description: "Use this report for a detailed view of your additional income",
+    category: "reports"
+  },
+  {
+    id: "income-by-category",
+    name: "Additional Income By Category Report",
+    icon: <DollarSignIcon className="h-5 w-5" />,
+    description: "Use this report for a detailed view of your additional income by category",
+    category: "reports"
+  },
+  {
+    id: "mileage-report",
+    name: "Mileage Report",
+    icon: <CarIcon className="h-5 w-5" />,
+    description: "Use this report to view a breakdown of your mileage for a period",
+    category: "reports"
+  }
 ];
+
+// Define Analytics types
+const analyticsTypes = [
+  {
+    id: "business-performance",
+    name: "Business Performance",
+    icon: <BarChart2Icon className="h-5 w-5" />,
+    description: "Use this to view a breakdown of how your business is performing",
+    category: "analytics"
+  },
+  {
+    id: "customer-analytics",
+    name: "Customer Analytics",
+    icon: <UsersIcon className="h-5 w-5" />,
+    description: "Use this to view analytical information about your customers spend",
+    category: "analytics"
+  }
+];
+
+// Combine all report and list types for display
+const allReportTypes = [...listTypes, ...reportTypes, ...analyticsTypes];
 
 const Reports = () => {
   const { toast } = useToast();
-  const [activeReport, setActiveReport] = React.useState("order-list");
-  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<string>("lists"); // 'lists', 'reports', or 'analytics'
 
   // Date range form
   const form = useForm<DateRangeValues>({
@@ -155,274 +263,231 @@ const Reports = () => {
     },
   ];
 
-  // Fetch orders for the selected date range
-  const { data: orders = [], isLoading } = useQuery<OrderWithItems[]>({
-    queryKey: ["/api/orders", {
-      startDate: form.getValues("startDate")?.toISOString(),
-      endDate: form.getValues("endDate")?.toISOString() || new Date().toISOString(),
-    }],
-    enabled: activeReport === "order-list",
-  });
-
-  // Handle report generation
-  const handleGenerateReport = () => {
-    const { startDate, endDate } = form.getValues();
+  // Handle report item click
+  const handleReportClick = (reportId: string) => {
+    setActiveReport(reportId);
     
-    setIsGenerating(true);
-    
-    setTimeout(() => {
-      setIsGenerating(false);
-      
-      toast({
-        title: "Report Generated",
-        description: `${getReportById(activeReport)?.name} for ${formatDate(startDate)} to ${endDate ? formatDate(endDate) : 'present'} is ready.`,
-      });
-    }, 1000);
-  };
-
-  // Handle download
-  const handleDownload = (format: "pdf" | "csv") => {
+    // Show a toast notification
     toast({
-      title: `Download ${format.toUpperCase()}`,
-      description: `Your ${getReportById(activeReport)?.name} is being downloaded in ${format.toUpperCase()} format.`,
+      title: "Report Selected",
+      description: `${getReportById(reportId)?.name} report is loading...`,
     });
+    
+    // In a real implementation, this would navigate to the report page
+    // For now, we'll simulate opening the report in a new tab
+    // window.open(`/reports/${reportId}`, "_blank");
   };
 
   // Get report details by ID
   const getReportById = (id: string) => {
-    return reportTypes.find(report => report.id === id);
+    return allReportTypes.find(report => report.id === id);
   };
 
-  return (
-    <div className="h-full flex flex-col">
-      <PageHeader title="Reports & Lists" />
+  // Get filtered report types based on active view
+  const getFilteredReportTypes = () => {
+    if (activeView === 'lists') {
+      return listTypes;
+    } else if (activeView === 'reports') {
+      return reportTypes;
+    } else if (activeView === 'analytics') {
+      return analyticsTypes;
+    }
+    return [];
+  };
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar - Report types */}
-        <div className="w-72 h-full border-r overflow-y-auto hidden lg:block bg-white">
-          <div className="p-4 border-b">
-            <h3 className="font-medium text-base">Report Types</h3>
-            <p className="text-sm text-muted-foreground">Select a report to generate</p>
-          </div>
-          <div className="py-2">
-            {reportTypes.map((report) => (
-              <button
-                key={report.id}
-                onClick={() => setActiveReport(report.id)}
-                className={`flex items-center w-full px-4 py-2.5 text-sm ${
-                  activeReport === report.id 
-                    ? "bg-primary-50 text-primary-600 font-medium border-l-2 border-primary-600" 
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <span className={`mr-3 ${activeReport === report.id ? "text-primary-600" : "text-gray-500"}`}>
-                  {report.icon}
-                </span>
-                <span>{report.name}</span>
-              </button>
-            ))}
-          </div>
+  // Render report item card
+  const renderReportItem = (item: any) => (
+    <div
+      key={item.id}
+      className="cursor-pointer bg-white hover:bg-gray-50 transition-colors rounded-md border shadow"
+      onClick={() => handleReportClick(item.id)}
+    >
+      <div className="p-4 flex items-center space-x-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+          {item.icon}
         </div>
-
-        {/* Mobile report selector (dropdown) */}
-        <div className="lg:hidden p-4 border-b w-full bg-white">
-          <select 
-            className="w-full p-2 border rounded-md"
-            value={activeReport}
-            onChange={(e) => setActiveReport(e.target.value)}
-          >
-            {reportTypes.map(report => (
-              <option key={report.id} value={report.id}>{report.name}</option>
-            ))}
-          </select>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+          <p className="text-xs text-gray-500 mt-1">{item.description}</p>
         </div>
-
-        {/* Main content area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-6">
-            {/* Report header */}
-            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-              <div>
-                <h2 className="text-xl font-semibold">{getReportById(activeReport)?.name}</h2>
-                <p className="text-gray-500 mt-1">{getReportById(activeReport)?.description}</p>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDownload("csv")}
-                >
-                  <DownloadIcon className="h-4 w-4 mr-2" /> CSV
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDownload("pdf")}
-                >
-                  <DownloadIcon className="h-4 w-4 mr-2" /> PDF
-                </Button>
-              </div>
-            </div>
-
-            {/* Date range selectors in a card */}
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <Form {...form}>
-                  <form className="flex flex-wrap gap-6 items-end">
-                    <FormField
-                      control={form.control}
-                      name="startDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Start Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-[180px] pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    formatDate(field.value)
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="endDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>End Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-[180px] pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    formatDate(field.value)
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value || undefined}
-                                onSelect={field.onChange}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="button" 
-                      onClick={handleGenerateReport}
-                      disabled={isGenerating}
-                      className="px-6"
-                    >
-                      {isGenerating ? "Generating..." : "Generate Report"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-
-            {/* Report content */}
-            <Card>
-              <Tabs defaultValue="table" className="w-full">
-                <CardHeader className="p-4 border-b">
-                  <TabsList className="grid w-full max-w-md grid-cols-2">
-                    <TabsTrigger value="table">
-                      <ListIcon className="h-4 w-4 mr-2" /> Table View
-                    </TabsTrigger>
-                    <TabsTrigger value="chart">
-                      <BarChart2Icon className="h-4 w-4 mr-2" /> Chart View
-                    </TabsTrigger>
-                  </TabsList>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <TabsContent value="table" className="mt-0">
-                    {activeReport === "order-list" && (
-                      <div className="rounded-md">
-                        <DataTable
-                          columns={orderColumns}
-                          data={orders}
-                          isLoading={isLoading}
-                          searchPlaceholder="Search orders..."
-                          searchKey="orderNumber"
-                        />
-                      </div>
-                    )}
-                    
-                    {activeReport !== "order-list" && (
-                      <div className="p-8 text-center">
-                        <div className="mb-4">
-                          {getReportById(activeReport)?.icon && (
-                            <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
-                              <div className="h-8 w-8 text-gray-500">
-                                {getReportById(activeReport)?.icon}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <h3 className="text-lg font-medium mb-2">Generate your report</h3>
-                        <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                          Set your date range and click "Generate Report" to see your data here.
-                        </p>
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="chart" className="mt-0">
-                    <div className="p-8 text-center">
-                      <div className="mb-4">
-                        <div className="mx-auto w-16 h-16 flex items-center justify-center bg-gray-100 rounded-full">
-                          <BarChart2Icon className="h-8 w-8 text-gray-500" />
-                        </div>
-                      </div>
-                      <h3 className="text-lg font-medium mb-2">Chart view coming soon</h3>
-                      <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                        Visualize your data with charts and graphs. This feature is coming soon.
-                      </p>
-                    </div>
-                  </TabsContent>
-                </CardContent>
-              </Tabs>
-            </Card>
-          </div>
+        <div className="flex-shrink-0">
+          <ChevronRight className="w-5 h-5 text-gray-400" />
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="container py-6">
+      <PageHeader title="Reports & Lists" />
+      
+      {/* Section Tabs */}
+      <div className="flex items-center mb-6 border-b">
+        <button
+          onClick={() => setActiveView("lists")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 ${
+            activeView === "lists" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Lists
+        </button>
+        <button
+          onClick={() => setActiveView("reports")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 ${
+            activeView === "reports" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Reports
+        </button>
+        <button
+          onClick={() => setActiveView("analytics")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 ${
+            activeView === "analytics" 
+              ? "border-blue-500 text-blue-600" 
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Analytics
+        </button>
+      </div>
+      
+      {/* Section Description */}
+      <div className="mb-6">
+        {activeView === "lists" && (
+          <div className="text-gray-600 mb-4">
+            Use these lists to help yourself keep organized and on top of your orders.
+          </div>
+        )}
+        {activeView === "reports" && (
+          <div className="text-gray-600 mb-4">
+            Use these reports to help give you better insight into how your business is performing.
+          </div>
+        )}
+        {activeView === "analytics" && (
+          <div className="text-gray-600 mb-4">
+            Gain important insight into your business and track how you're doing each month.
+          </div>
+        )}
+      </div>
+      
+      {/* Report Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {getFilteredReportTypes().map(item => renderReportItem(item))}
+      </div>
+      
+      {/* Report Viewer - would be shown when a report is selected */}
+      {activeReport && (
+        <Card className="mt-8">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">{getReportById(activeReport)?.name}</h2>
+              <Button onClick={() => setActiveReport(null)} variant="outline">
+                Back to List
+              </Button>
+            </div>
+            
+            {/* Date Range Selector */}
+            <div className="bg-gray-50 p-4 rounded-md mb-6">
+              <h3 className="text-sm font-medium mb-3">Select Date Range</h3>
+              <Form {...form}>
+                <div className="flex flex-wrap gap-4 items-end">
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Start Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-[160px] pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  formatDate(field.value)
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>End Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-[160px] pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  formatDate(field.value)
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="button" 
+                    className="px-6"
+                  >
+                    Generate Report
+                  </Button>
+                </div>
+              </Form>
+            </div>
+            
+            {/* Report Content Preview - this would be actual data in production */}
+            <div className="text-center p-10 border rounded-md">
+              <p className="text-gray-500">Select a date range and click "Generate Report" to view your data</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
