@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,10 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn, formatDate } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
-import { DataTable } from "@/components/ui/data-table";
-import { ColumnDef } from "@tanstack/react-table";
 import { useToast } from "@/hooks/use-toast";
-import { OrderWithItems } from "@/types";
+import { DateRange } from "@/types";
+import ReportView from "@/components/reports/report-view";
 import {
   CalendarIcon,
   FileTextIcon,
@@ -37,8 +35,6 @@ const dateRangeSchema = z.object({
   startDate: z.date(),
   endDate: z.date().optional(),
 });
-
-type DateRangeValues = z.infer<typeof dateRangeSchema>;
 
 // Define List types
 const listTypes = [
@@ -213,9 +209,10 @@ const Reports = () => {
   const { toast } = useToast();
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<string>("lists"); // 'lists', 'reports', or 'analytics'
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Date range form
-  const form = useForm<DateRangeValues>({
+  const form = useForm<DateRange>({
     resolver: zodResolver(dateRangeSchema),
     defaultValues: {
       startDate: new Date(new Date().setDate(1)), // First day of current month
@@ -223,59 +220,32 @@ const Reports = () => {
     },
   });
 
-  // Order list columns
-  const orderColumns: ColumnDef<OrderWithItems>[] = [
-    {
-      accessorKey: "orderNumber",
-      header: "Order #",
-    },
-    {
-      accessorKey: "eventDate",
-      header: "Date",
-      cell: ({ row }) => {
-        const date = row.getValue("eventDate") as string;
-        return date ? formatDate(new Date(date)) : "";
-      },
-    },
-    {
-      accessorKey: "contact",
-      header: "Customer",
-      cell: ({ row }) => {
-        const contact = row.original.contact;
-        return contact ? `${contact.firstName} ${contact.lastName}` : "";
-      },
-    },
-    {
-      accessorKey: "eventType",
-      header: "Event Type",
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-    },
-    {
-      accessorKey: "total",
-      header: "Total",
-      cell: ({ row }) => {
-        const total = row.getValue("total") as number;
-        return `$${Number(total).toFixed(2)}`;
-      },
-    },
-  ];
-
   // Handle report item click
   const handleReportClick = (reportId: string) => {
     setActiveReport(reportId);
     
-    // Show a toast notification
     toast({
       title: "Report Selected",
-      description: `${getReportById(reportId)?.name} report is loading...`,
+      description: `${getReportById(reportId)?.name} report is ready to view.`,
     });
+  };
+
+  // Handle generate report
+  const handleGenerateReport = () => {
+    if (!activeReport) return;
     
-    // In a real implementation, this would navigate to the report page
-    // For now, we'll simulate opening the report in a new tab
-    // window.open(`/reports/${reportId}`, "_blank");
+    setIsGeneratingReport(true);
+    
+    // In a real implementation this would fetch the report data
+    // For now, we'll just show a success message after a delay
+    setTimeout(() => {
+      setIsGeneratingReport(false);
+      
+      toast({
+        title: "Report Generated",
+        description: `${getReportById(activeReport)?.name} report for the selected date range is ready.`,
+      });
+    }, 1500);
   };
 
   // Get report details by ID
@@ -296,7 +266,7 @@ const Reports = () => {
   };
 
   // Render report item card
-  const renderReportItem = (item: any) => (
+  const renderReportItem = (item: typeof allReportTypes[0]) => (
     <div
       key={item.id}
       className="cursor-pointer bg-white hover:bg-gray-50 transition-colors rounded-md border shadow"
@@ -317,10 +287,119 @@ const Reports = () => {
     </div>
   );
 
-  return (
-    <div className="container py-6">
-      <PageHeader title="Reports & Lists" />
+  // If a report is selected, show the date range form and report view
+  const showReportView = activeReport ? (
+    <div className="space-y-6">
+      {/* Date Range Selector */}
+      <Card className="p-4 mt-6">
+        <Form {...form}>
+          <div className="flex flex-wrap gap-4 items-end mb-2">
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Start Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-[160px] pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            formatDate(field.value)
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>End Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-[160px] pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            formatDate(field.value)
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value || undefined}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </FormItem>
+              )}
+            />
+            
+            <Button 
+              type="button" 
+              onClick={handleGenerateReport}
+              disabled={isGeneratingReport}
+              className="px-6"
+            >
+              {isGeneratingReport ? "Generating..." : "Generate Report"}
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => setActiveReport(null)}
+              className="ml-auto"
+            >
+              Back to All Reports
+            </Button>
+          </div>
+        </Form>
+      </Card>
       
+      {/* Report View Component */}
+      <ReportView 
+        reportId={activeReport}
+        dateRange={form.getValues()}
+        onBack={() => setActiveReport(null)}
+      />
+    </div>
+  ) : (
+    <>
       {/* Section Tabs */}
       <div className="flex items-center mb-6 border-b">
         <button
@@ -378,116 +457,13 @@ const Reports = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {getFilteredReportTypes().map(item => renderReportItem(item))}
       </div>
-      
-      {/* Report Viewer - would be shown when a report is selected */}
-      {activeReport && (
-        <Card className="mt-8">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">{getReportById(activeReport)?.name}</h2>
-              <Button onClick={() => setActiveReport(null)} variant="outline">
-                Back to List
-              </Button>
-            </div>
-            
-            {/* Date Range Selector */}
-            <div className="bg-gray-50 p-4 rounded-md mb-6">
-              <h3 className="text-sm font-medium mb-3">Select Date Range</h3>
-              <Form {...form}>
-                <div className="flex flex-wrap gap-4 items-end">
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Start Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-[160px] pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  formatDate(field.value)
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>End Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-[160px] pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  formatDate(field.value)
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value || undefined}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="button" 
-                    className="px-6"
-                  >
-                    Generate Report
-                  </Button>
-                </div>
-              </Form>
-            </div>
-            
-            {/* Report Content Preview - this would be actual data in production */}
-            <div className="text-center p-10 border rounded-md">
-              <p className="text-gray-500">Select a date range and click "Generate Report" to view your data</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+    </>
+  );
+
+  return (
+    <div className="container py-6">
+      <PageHeader title="Reports & Lists" />
+      {showReportView}
     </div>
   );
 };

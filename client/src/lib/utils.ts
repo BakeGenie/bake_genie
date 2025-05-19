@@ -1,51 +1,54 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { format } from "date-fns"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export interface DateFormatOptions {
-  short?: boolean;
-  withTime?: boolean;
-  dayOfWeek?: boolean;
-}
-
-export function formatDate(date: Date, options: DateFormatOptions = {}) {
-  if (!date) return "";
+export function formatDate(date: string | Date): string {
+  if (!date) return '';
   
-  try {
-    const { short = false, withTime = false, dayOfWeek = false } = options;
-    
-    let formatString = "MMM d, yyyy";
-    
-    if (short) {
-      formatString = "MM/dd/yyyy";
-    }
-    
-    if (dayOfWeek) {
-      formatString = `EEE, ${formatString}`;
-    }
-    
-    if (withTime) {
-      formatString = `${formatString} h:mm a`;
-    }
-    
-    return format(new Date(date), formatString);
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return String(date);
-  }
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if the date is valid
+  if (isNaN(d.getTime())) return '';
+  
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
 }
 
-export function formatCurrency(amount: number | string): string {
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+export function formatCurrency(amount: number): string {
+  if (amount === undefined || amount === null) return '$0.00';
   
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numAmount);
+    minimumFractionDigits: 2
+  }).format(amount);
+}
+
+export function getInitials(name: string): string {
+  if (!name) return '';
+  
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}
+
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  ms = 300
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  
+  return function(this: any, ...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), ms);
+  };
 }
