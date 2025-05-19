@@ -678,16 +678,16 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             </div>
 
             {isNewCustomer ? (
-              /* New Customer Form */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              /* New Customer Form - More compact layout */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3">
                 <FormField
                   control={control}
                   name="customer.firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel className="text-xs">First Name</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="h-8" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -699,9 +699,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                   name="customer.lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel className="text-xs">Last Name</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="h-8" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -713,9 +713,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                   name="customer.businessName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Business Name</FormLabel>
+                      <FormLabel className="text-xs">Business Name</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="h-8" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -727,9 +727,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                   name="customer.email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-xs">Email</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" />
+                        <Input {...field} type="email" className="h-8" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -741,9 +741,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                   name="customer.phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel className="text-xs">Phone</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} className="h-8" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -754,10 +754,10 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                   control={control}
                   name="customer.address"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Address</FormLabel>
+                    <FormItem>
+                      <FormLabel className="text-xs">Address</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Input {...field} className="h-8" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
