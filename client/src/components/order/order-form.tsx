@@ -620,31 +620,47 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             )}
           />
 
-          {/* Delivery Type */}
-          <FormField
-            control={control}
-            name="deliveryType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Delivery Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+          {/* Delivery Type and Address */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={control}
+              name="deliveryType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select delivery type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {deliveryTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={control}
+              name="deliveryAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Address</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select delivery type" />
-                    </SelectTrigger>
+                    <Input {...field} placeholder="Enter delivery address" />
                   </FormControl>
-                  <SelectContent>
-                    {deliveryTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Customer Section */}
           <div className="col-span-1 md:col-span-2 border rounded-lg p-4">
