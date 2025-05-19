@@ -38,6 +38,10 @@ const Orders = () => {
   // Fetch orders data
   const { data: orders = [], isLoading } = useQuery<OrderWithItems[]>({
     queryKey: ["/api/orders", { month, year, search }],
+    onSuccess: () => {
+      // Reset selected date when month or year changes
+      setSelectedDate(undefined);
+    }
   });
 
   // Enhanced filtering: Combine date filtering with search term filtering
