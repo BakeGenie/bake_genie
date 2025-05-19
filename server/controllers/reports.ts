@@ -195,23 +195,23 @@ export const getShoppingListReport = async (req: DateRangeRequest, res: Response
 // Task List Report
 export const getTaskListReport = async (req: Request, res: Response) => {
   try {
-    const tasksList = await db.select({
-      id: tasks.id,
-      title: tasks.title,
-      dueDate: tasks.dueDate,
-      priority: tasks.priority,
-      status: tasks.status,
-      relatedOrderId: tasks.orderId,
-      relatedOrderNumber: orders.orderNumber
-    })
-    .from(tasks)
-    .leftJoin(orders, eq(tasks.orderId, orders.id))
-    .where(
-      sql`${tasks.status} != 'Completed'`
-    )
-    .orderBy(tasks.dueDate);
+    // Using direct SQL for better compatibility
+    const result = await db.execute(sql`
+      SELECT 
+        t.id,
+        t.title,
+        t.due_date as "dueDate",
+        t.priority,
+        t.completed as status,
+        t.order_id as "relatedOrderId",
+        o.order_number as "relatedOrderNumber"
+      FROM tasks t
+      LEFT JOIN orders o ON t.order_id = o.id
+      WHERE t.completed = false
+      ORDER BY t.due_date
+    `);
     
-    res.status(200).json(tasksList);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching task list report:", error);
     res.status(500).json({ error: "Failed to generate task list report" });
@@ -223,29 +223,26 @@ export const getDeliveriesListReport = async (req: DateRangeRequest, res: Respon
   try {
     const { startDate, endDate } = getDateRange(req);
     
-    const deliveriesList = await db.select({
-      id: orders.id,
-      orderNumber: orders.orderNumber,
-      eventDate: orders.eventDate,
-      customerName: sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
-      address: orders.deliveryAddress,
-      deliveryDate: orders.deliveryDate,
-      deliveryTime: orders.deliveryTime,
-      status: orders.status
-    })
-    .from(orders)
-    .leftJoin(contacts, eq(orders.contactId, contacts.id))
-    .where(
-      and(
-        eq(orders.isQuote, false),
-        eq(orders.deliveryType, 'Delivery'),
-        gte(orders.deliveryDate || orders.eventDate, startDate.toISOString()),
-        lte(orders.deliveryDate || orders.eventDate, endDate.toISOString())
-      )
-    )
-    .orderBy(orders.deliveryDate || orders.eventDate);
+    // Using direct SQL for better compatibility
+    const result = await db.execute(sql`
+      SELECT 
+        o.id,
+        o.order_number as "orderNumber",
+        o.event_date as "eventDate",
+        CONCAT(c.first_name, ' ', c.last_name) as "customerName",
+        o.delivery_details as address,
+        o.event_date as "deliveryDate",
+        o.status
+      FROM orders o
+      LEFT JOIN contacts c ON o.contact_id = c.id
+      WHERE o.status != 'Quote'
+        AND o.delivery_type = 'Delivery'
+        AND o.event_date >= ${startDate.toISOString()}
+        AND o.event_date <= ${endDate.toISOString()}
+      ORDER BY o.event_date
+    `);
     
-    res.status(200).json(deliveriesList);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching deliveries list report:", error);
     res.status(500).json({ error: "Failed to generate deliveries list report" });
