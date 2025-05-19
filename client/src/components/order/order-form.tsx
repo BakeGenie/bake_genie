@@ -623,7 +623,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
           />
 
           {/* Delivery Type and Address */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <FormField
               control={control}
               name="deliveryType"
@@ -653,7 +653,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               control={control}
               name="deliveryAddress"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <FormLabel>Delivery Address</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Enter delivery address" />
