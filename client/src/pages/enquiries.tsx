@@ -160,9 +160,9 @@ const Enquiries = () => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between">
-        <PageHeader title="Enquiries" />
-        <div className="flex space-x-2 ml-auto">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold mb-3">Enquiries</h1>
+        <div className="flex space-x-2">
           <AddEnquiryDialog />
           <Button 
             variant="outline" 
@@ -174,7 +174,7 @@ const Enquiries = () => {
         </div>
       </div>
       
-      <div className="flex flex-wrap items-center gap-2 mt-4">
+      <div className="flex flex-wrap items-center gap-2 mt-6">
         <div className="text-sm font-medium">Filter by status:</div>
         <Button 
           variant={statusFilter === null ? "default" : "outline"} 
