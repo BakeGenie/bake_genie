@@ -27,8 +27,19 @@ import {
   ChevronDownIcon
 } from "lucide-react";
 
+// Define recipe type
+interface Recipe {
+  id: number;
+  name: string;
+  category?: string;
+  servings?: number;
+  servingSize?: string;
+  customPrice?: string;
+  costPrice?: string;
+}
+
 // Empty array for recipes - will be populated from database
-const mockRecipes = [];
+const mockRecipes: Recipe[] = [];
 
 const categories = ["All Categories", "Cake", "Filling", "Cookies", "Icing", "Frosting", "Other"];
 
