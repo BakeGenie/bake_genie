@@ -83,6 +83,7 @@ const orderFormSchema = insertOrderSchema.extend({
   customerName: z.string(),
   status: z.string().min(1, "Status is required"),
   eventType: z.string().min(1, "Event type is required"),
+  deliveryAddress: z.string().optional(),
 });
 
 // Define the form value types
