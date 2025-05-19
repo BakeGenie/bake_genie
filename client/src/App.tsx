@@ -28,6 +28,7 @@ import Tools from "./pages/tools";
 import Account from "./pages/account";
 import DataImportExport from "./pages/data-import-export";
 import Integrations from "./pages/integrations";
+import Settings from "./pages/settings";
 import NewOrder from "./pages/new-order";
 
 function Router() {
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/expenses" component={Expenses} />
         <Route path="/printables" component={Printables} />
         <Route path="/tools" component={Tools} />
+        <Route path="/settings" component={Settings} />
         <Route path="/account" component={Account} />
         <Route path="/data" component={DataImportExport} />
         <Route path="/integrations" component={Integrations} />
