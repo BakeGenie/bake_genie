@@ -15,7 +15,8 @@ export const router = Router();
 // Get all tax rates for the current user
 router.get("/", async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.session.userId;
+    // Use session userId if available, otherwise use default user ID 1 for demo
+    const userId = req.session.userId || 1;
 
     const results = await db
       .select()
@@ -33,7 +34,8 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 // Create a new tax rate
 router.post("/", async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.session.userId;
+    // Use session userId if available, otherwise use default user ID 1 for demo
+    const userId = req.session.userId || 1;
     const { name, rate, description, isDefault } = req.body;
 
     if (isDefault) {
@@ -66,7 +68,8 @@ router.post("/", async (req: AuthRequest, res: Response) => {
 // Update a tax rate
 router.put("/:id", async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.session.userId;
+    // Use session userId if available, otherwise use default user ID 1 for demo
+    const userId = req.session.userId || 1;
     const { id } = req.params;
     const { name, rate, description, isDefault, active } = req.body;
 
@@ -105,7 +108,8 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
 // Delete a tax rate
 router.delete("/:id", async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.session.userId;
+    // Use session userId if available, otherwise use default user ID 1 for demo
+    const userId = req.session.userId || 1;
     const { id } = req.params;
 
     const [deletedTaxRate] = await db
