@@ -21,9 +21,11 @@ import {
   DatabaseIcon,
   LinkIcon,
   LogOutIcon,
-  PercentIcon
+  PercentIcon,
+  SettingsIcon
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useFeatures } from "@/contexts/features-context";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -37,9 +39,13 @@ interface SidebarLink {
   icon: React.ReactNode;
   badge?: number;
   sublinks?: boolean;
+  featureId?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
+  // Get features context to check enabled/disabled features
+  const { isFeatureEnabled } = useFeatures();
+  
   // Fetch task count
   const { data: taskCount } = useQuery<number>({
     queryKey: ["/api/tasks/count"],
@@ -50,111 +56,138 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
     queryKey: ["/api/enquiries/count"],
   });
 
-  const links: SidebarLink[] = [
+  const allLinks: SidebarLink[] = [
     {
       path: "/",
       label: "Dashboard",
       icon: <HomeIcon className="w-5 h-5" />,
+      featureId: "dashboard",
     },
     {
       path: "/orders",
       label: "Orders & Quotes",
       icon: <FileTextIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "orders",
     },
     {
       path: "/contacts",
       label: "Contacts",
       icon: <ContactIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "contacts",
     },
     {
       path: "/enquiries",
       label: "Enquiries",
       icon: <MessageSquareIcon className="w-5 h-5" />,
       badge: enquiryCount || 0,
+      featureId: "enquiries",
     },
     {
       path: "/tasks",
       label: "Tasks",
       icon: <ListTodoIcon className="w-5 h-5" />,
       badge: taskCount || 0,
+      featureId: "tasks",
     },
     {
       path: "/calendar",
       label: "Calendar",
       icon: <CalendarIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "calendar",
     },
     {
       path: "/recipes",
       label: "Recipes & Ingredients",
       icon: <BookOpenIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "recipes",
     },
     {
       path: "/products",
       label: "Products",
       icon: <TagIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "products",
     },
     {
       path: "/reports",
       label: "Reports & Lists",
       icon: <BarChartIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "reports",
     },
     {
       path: "/expenses",
       label: "Business & Expenses",
       icon: <DollarSignIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "expenses",
     },
     {
       path: "/printables",
       label: "Printables",
       icon: <PrinterIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "printables",
     },
     {
       path: "/tax-rates",
       label: "Tax Rates",
       icon: <PercentIcon className="w-5 h-5" />,
+      featureId: "tax-rates",
     },
     {
       path: "/tools",
       label: "Tools",
       icon: <Hammer className="w-5 h-5" />,
       sublinks: true,
+      featureId: "tools",
     },
     {
       path: "/integrations",
       label: "Integrations",
       icon: <LinkIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "integrations",
     },
     {
       path: "/data",
       label: "Data Import/Export",
       icon: <DatabaseIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "data",
+    },
+    {
+      path: "/manage-features",
+      label: "Manage Features",
+      icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
+      </svg>,
+      featureId: "settings",
     },
     {
       path: "/settings",
       label: "Settings",
-      icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-      </svg>,
+      icon: <SettingsIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "settings",
     },
     {
       path: "/account",
       label: "Account",
       icon: <UserIcon className="w-5 h-5" />,
       sublinks: true,
+      featureId: "account",
     },
   ];
+  
+  // Filter links based on enabled features
+  const links: SidebarLink[] = allLinks.filter(link => 
+    isFeatureEnabled(link.featureId || '')
+  );
 
   if (!isOpen) return null;
 

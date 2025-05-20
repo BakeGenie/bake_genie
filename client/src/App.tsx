@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "./contexts/settings-context";
+import { FeaturesProvider } from "./contexts/features-context";
 import NotFound from "@/pages/not-found";
 import AppLayout from "./layouts/app-layout";
 import Dashboard from "./pages/dashboard";
@@ -32,6 +33,7 @@ import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import TaxRates from "./pages/tax-rates";
 import NewOrder from "./pages/new-order";
+import ManageFeatures from "./pages/manage-features";
 
 function Router() {
   return (
@@ -72,10 +74,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <FeaturesProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </FeaturesProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );
