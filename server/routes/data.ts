@@ -225,7 +225,7 @@ router.post("/import/bake-diary", upload.single("file"), async (req: Request, re
     }
     
     // Transform Bake Diary data to BakeGenie format
-    const transformedData = transformCakeDiaryData(data);
+    const transformedData = transformBakeDiaryData(data);
     
     // Parse import options from request body
     const replaceExisting = req.body.replaceExisting === "true";
@@ -302,8 +302,8 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
   };
   
   // Transform contacts
-  if (cakeDiaryData.customers) {
-    transformedData.contacts = cakeDiaryData.customers.map((customer: any) => ({
+  if (bakeDiaryData.customers) {
+    transformedData.contacts = bakeDiaryData.customers.map((customer: any) => ({
       firstName: customer.firstName || "",
       lastName: customer.lastName || "",
       email: customer.email || null,
@@ -318,8 +318,8 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
   }
   
   // Transform orders
-  if (cakeDiaryData.orders) {
-    transformedData.orders = cakeDiaryData.orders.map((order: any) => ({
+  if (bakeDiaryData.orders) {
+    transformedData.orders = bakeDiaryData.orders.map((order: any) => ({
       orderNumber: order.orderNumber || `ORD-${Date.now()}`,
       contactId: order.customerId || 0, // Will need to map to new contact IDs
       eventType: mapEventType(order.eventType || "Other"),
@@ -345,8 +345,8 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
   }
   
   // Transform recipes
-  if (cakeDiaryData.recipes) {
-    transformedData.recipes = cakeDiaryData.recipes.map((recipe: any) => ({
+  if (bakeDiaryData.recipes) {
+    transformedData.recipes = bakeDiaryData.recipes.map((recipe: any) => ({
       name: recipe.name || "",
       servings: recipe.servings || 8,
       description: recipe.description || null,
@@ -365,8 +365,8 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
   }
   
   // Transform tasks
-  if (cakeDiaryData.tasks) {
-    transformedData.tasks = cakeDiaryData.tasks.map((task: any) => ({
+  if (bakeDiaryData.tasks) {
+    transformedData.tasks = bakeDiaryData.tasks.map((task: any) => ({
       title: task.title || "",
       description: task.description || null,
       dueDate: task.dueDate || new Date().toISOString().split("T")[0],
@@ -377,8 +377,8 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
   }
   
   // Transform enquiries
-  if (cakeDiaryData.enquiries) {
-    transformedData.enquiries = cakeDiaryData.enquiries.map((enquiry: any) => ({
+  if (bakeDiaryData.enquiries) {
+    transformedData.enquiries = bakeDiaryData.enquiries.map((enquiry: any) => ({
       contactId: enquiry.customerId || 0,
       date: enquiry.date || new Date().toISOString().split("T")[0],
       eventType: mapEventType(enquiry.eventType || "Other"),
@@ -390,16 +390,16 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
   }
   
   // Transform settings
-  if (cakeDiaryData.settings) {
+  if (bakeDiaryData.settings) {
     transformedData.settings = {
-      businessName: cakeDiaryData.settings.businessName || "",
+      businessName: bakeDiaryData.settings.businessName || "",
       businessDetails: {
-        email: cakeDiaryData.settings.email || "",
-        phone: cakeDiaryData.settings.phone || "",
-        address: cakeDiaryData.settings.address || "",
-        logo: cakeDiaryData.settings.logo || "",
+        email: bakeDiaryData.settings.email || "",
+        phone: bakeDiaryData.settings.phone || "",
+        address: bakeDiaryData.settings.address || "",
+        logo: bakeDiaryData.settings.logo || "",
       },
-      preferences: cakeDiaryData.settings.preferences || {},
+      preferences: bakeDiaryData.settings.preferences || {},
     };
   }
   

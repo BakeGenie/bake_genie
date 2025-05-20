@@ -148,7 +148,7 @@ export default function DataImportExport() {
         formData.append(key, value.toString());
       });
 
-      const response = await fetch("/api/data/import/cake-diary", {
+      const response = await fetch("/api/data/import/bake-diary", {
         method: "POST",
         body: formData,
       });
