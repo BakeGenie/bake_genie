@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { taxRates } from "@shared/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, count } from "drizzle-orm";
 
 interface AuthRequest extends Request {
   session: {
@@ -12,11 +12,51 @@ interface AuthRequest extends Request {
 
 export const router = Router();
 
+// Create default tax rates if none exist
+async function createDefaultTaxRatesIfNoneExist(userId: number) {
+  try {
+    // Check if user already has tax rates
+    const existingRates = await db
+      .select()
+      .from(taxRates)
+      .where(eq(taxRates.userId, userId));
+    
+    if (existingRates.length === 0) {
+      // Create standard rate
+      await db.insert(taxRates).values({
+        userId,
+        name: "Standard Rate",
+        rate: 10.0, // Default 10% for demo
+        description: "Standard tax rate",
+        isDefault: true,
+        active: true
+      });
+      
+      // Create zero rate
+      await db.insert(taxRates).values({
+        userId,
+        name: "Zero Rate",
+        rate: 0.0,
+        description: "No tax",
+        isDefault: false,
+        active: true
+      });
+      
+      console.log("Created default tax rates for user", userId);
+    }
+  } catch (error) {
+    console.error("Error creating default tax rates:", error);
+  }
+}
+
 // Get all tax rates for the current user
-router.get("/", async (req: AuthRequest, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     // Use session userId if available, otherwise use default user ID 1 for demo
-    const userId = req.session.userId || 1;
+    const userId = req.session?.userId || 1;
+    
+    // Ensure user has at least the default tax rates
+    await createDefaultTaxRatesIfNoneExist(userId);
 
     const results = await db
       .select()
@@ -32,10 +72,10 @@ router.get("/", async (req: AuthRequest, res: Response) => {
 });
 
 // Create a new tax rate
-router.post("/", async (req: AuthRequest, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     // Use session userId if available, otherwise use default user ID 1 for demo
-    const userId = req.session.userId || 1;
+    const userId = req.session?.userId || 1;
     const { name, rate, description, isDefault } = req.body;
 
     if (isDefault) {
@@ -66,10 +106,10 @@ router.post("/", async (req: AuthRequest, res: Response) => {
 });
 
 // Update a tax rate
-router.put("/:id", async (req: AuthRequest, res: Response) => {
+router.put("/:id", async (req: Request, res: Response) => {
   try {
     // Use session userId if available, otherwise use default user ID 1 for demo
-    const userId = req.session.userId || 1;
+    const userId = req.session?.userId || 1;
     const { id } = req.params;
     const { name, rate, description, isDefault, active } = req.body;
 
@@ -106,10 +146,10 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
 });
 
 // Delete a tax rate
-router.delete("/:id", async (req: AuthRequest, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   try {
     // Use session userId if available, otherwise use default user ID 1 for demo
-    const userId = req.session.userId || 1;
+    const userId = req.session?.userId || 1;
     const { id } = req.params;
 
     const [deletedTaxRate] = await db
