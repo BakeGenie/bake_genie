@@ -345,13 +345,15 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => window.location.hash = "tax-rates"}>
-                  <div className="flex items-center">
-                    <PercentIcon className="mr-3 h-5 w-5 text-primary-500" />
-                    <span>Tax Rates</span>
+                <Link href="/tax-rates">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center">
+                      <PercentIcon className="mr-3 h-5 w-5 text-primary-500" />
+                      <span>Tax Rates</span>
+                    </div>
+                    <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
-                </div>
+                </Link>
                 <Separator />
                 
                 <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => window.location.hash = "email-updates"}>
