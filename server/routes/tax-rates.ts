@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { taxRates } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, asc } from "drizzle-orm";
 
 interface AuthRequest extends Request {
   session: {
@@ -22,7 +22,7 @@ router.get("/", async (req: AuthRequest, res: Response) => {
       .select()
       .from(taxRates)
       .where(eq(taxRates.userId, userId))
-      .orderBy(taxRates.isDefault.desc(), taxRates.name.asc());
+      .orderBy(desc(taxRates.isDefault), asc(taxRates.name));
 
     return res.status(200).json(results);
   } catch (error) {
