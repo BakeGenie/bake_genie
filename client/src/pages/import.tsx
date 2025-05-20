@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AppLayout } from "@/layouts/app-layout";
+import AppLayout from "@/layouts/app-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,23 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, FileUp, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/query-client";
+
+// Helper function to make API requests
+async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      'Accept': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
 
 interface ImportResult {
   success: boolean;
@@ -51,10 +67,10 @@ export default function ImportPage() {
       }
       setSelectedOrderListFile(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Import failed",
-        description: `Error importing orders: ${error}`,
+        description: `Error importing orders: ${error.message}`,
         variant: "destructive",
       });
       setSelectedOrderListFile(null);

@@ -29,6 +29,7 @@ import Printables from "./pages/printables";
 import Tools from "./pages/tools";
 import Account from "./pages/account";
 import DataImportExport from "./pages/data-import-export";
+import Import from "./pages/import";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import EmailTemplates from "./pages/email-templates";
@@ -65,6 +66,7 @@ function Router() {
         <Route path="/tax-rates" component={TaxRates} />
         <Route path="/account" component={Account} />
         <Route path="/data" component={DataImportExport} />
+        <Route path="/import" component={Import} />
         <Route path="/integrations" component={Integrations} />
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/manage-features" component={ManageFeatures} />
