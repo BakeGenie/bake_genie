@@ -39,6 +39,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertExpenseSchema, insertIncomeSchema } from "@shared/schema";
 import { cn, formatDate } from "@/lib/utils";
+import { FormatCurrency } from "@/components/ui/format-currency";
 import {
   PlusIcon,
   CalendarIcon,

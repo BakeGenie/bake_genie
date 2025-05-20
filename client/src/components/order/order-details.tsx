@@ -8,6 +8,7 @@ import OrderLog from "./order-log";
 import { Link } from "wouter";
 import EmailInvoiceButton from "./email-invoice-button";
 import PaymentReminderSettings from "./payment-reminder-settings";
+import { FormatCurrency } from "@/components/ui/format-currency";
 
 interface OrderDetailsProps {
   order: OrderWithItems;
@@ -33,16 +34,16 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order }) => {
   // Create a badge for the status
   const getStatusBadge = () => {
     switch (order.status) {
-      case "Draft":
-        return <Badge variant="outline">Draft</Badge>;
+      case "Quote":
+        return <Badge variant="outline">Quote</Badge>;
       case "Confirmed":
         return <Badge variant="secondary">Confirmed</Badge>;
       case "Paid":
         return <Badge variant="default">Paid</Badge>;
       case "Ready":
-        return <Badge variant="success">Ready</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Ready</Badge>;
       case "Delivered":
-        return <Badge variant="success">Delivered</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Delivered</Badge>;
       case "Cancelled":
         return <Badge variant="destructive">Cancelled</Badge>;
       default:
@@ -164,7 +165,9 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order }) => {
                   )}
                 </div>
                 <div className="text-right">
-                  <div className="font-medium">$ {Number(item.price).toFixed(2)}</div>
+                  <div className="font-medium">
+                    <FormatCurrency amount={item.price} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -174,15 +177,15 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order }) => {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="text-right text-gray-500">Subtotal:</div>
             <div className="text-right font-medium">
-              $ {(Number(order.total) - Number(order.setupFee) + Number(order.discount)).toFixed(2)}
+              <FormatCurrency amount={(Number(order.total) - Number(order.setupFee || 0) + Number(order.discount || 0))} />
             </div>
             <div className="text-right text-gray-500">Discount:</div>
             <div className="text-right font-medium text-red-600">
-              - $ {Number(order.discount).toFixed(2)}
+              - <FormatCurrency amount={order.discount || 0} />
             </div>
             <div className="text-right text-gray-500">Setup / Delivery:</div>
             <div className="text-right font-medium">
-              $ {Number(order.setupFee).toFixed(2)}
+              <FormatCurrency amount={order.setupFee || 0} />
             </div>
           </div>
         </div>
@@ -190,7 +193,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order }) => {
           <div className="grid grid-cols-2 gap-2 text-sm w-full">
             <div className="text-right text-gray-700 font-medium">Total:</div>
             <div className="text-right font-semibold text-lg">
-              $ {Number(order.total).toFixed(2)}
+              <FormatCurrency amount={order.total} />
             </div>
           </div>
         </CardFooter>
