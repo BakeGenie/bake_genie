@@ -17,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSettings } from '@/contexts/settings-context';
 import { Loader } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
 
 // Zod schema for tax rate form validation
 const taxRateSchema = z.object({
@@ -56,7 +55,7 @@ export default function TaxRatesPage() {
     resolver: zodResolver(taxRateSchema),
     defaultValues: {
       name: '',
-      rate: '',
+      rate: '0',
       isDefault: false,
     },
   });
@@ -93,7 +92,7 @@ export default function TaxRatesPage() {
     } else {
       taxRateForm.reset({
         name: '',
-        rate: '',
+        rate: '0',
         isDefault: false,
       });
     }
@@ -103,12 +102,12 @@ export default function TaxRatesPage() {
   const taxRateMutation = useMutation({
     mutationFn: async (data: TaxRateFormValues) => {
       if (editingTaxRate) {
-        return apiRequest(`/api/tax-rates/${editingTaxRate.id}`, {
-          method: 'PATCH',
+        return await apiRequest(`/api/tax-rates/${editingTaxRate.id}`, {
+          method: 'PUT',
           body: data,
         });
       } else {
-        return apiRequest('/api/tax-rates', {
+        return await apiRequest('/api/tax-rates', {
           method: 'POST',
           body: data,
         });
@@ -126,7 +125,7 @@ export default function TaxRatesPage() {
       setIsAddTaxRateOpen(false);
       setEditingTaxRate(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
         description: `Failed to ${editingTaxRate ? 'update' : 'add'} tax rate. ${error.message}`,
@@ -138,7 +137,7 @@ export default function TaxRatesPage() {
   // Delete tax rate mutation
   const deleteTaxRateMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/tax-rates/${id}`, {
+      return await apiRequest(`/api/tax-rates/${id}`, {
         method: 'DELETE',
       });
     },
@@ -149,7 +148,7 @@ export default function TaxRatesPage() {
         description: 'The tax rate has been deleted.',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
         description: `Failed to delete tax rate. ${error.message}`,
@@ -161,7 +160,7 @@ export default function TaxRatesPage() {
   // Tax settings mutation
   const taxSettingsMutation = useMutation({
     mutationFn: async (data: TaxSettingsFormValues) => {
-      return apiRequest('/api/settings', {
+      return await apiRequest('/api/settings', {
         method: 'PATCH',
         body: {
           taxEnabled: data.taxEnabled,
@@ -177,7 +176,7 @@ export default function TaxRatesPage() {
         description: 'Your tax settings have been updated.',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
         description: `Failed to update tax settings. ${error.message}`,
@@ -219,255 +218,250 @@ export default function TaxRatesPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="container py-6 space-y-6">
-        <PageHeader title="Tax Rates" />
-        
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
-          {/* Tax Settings Card */}
-          <Card className="lg:col-span-6">
-            <CardHeader>
-              <CardTitle>Tax Settings</CardTitle>
-              <CardDescription>Configure how tax is handled across your business</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...taxSettingsForm}>
-                <form onSubmit={taxSettingsForm.handleSubmit(onTaxSettingsSubmit)} className="space-y-6">
-                  <div className="flex items-center justify-between space-x-2">
-                    <Label htmlFor="taxEnabled">Enable Tax</Label>
+    <div className="container py-6 space-y-6">
+      <PageHeader title="Tax Rates" />
+      
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
+        {/* Tax Settings Card */}
+        <Card className="lg:col-span-6">
+          <CardHeader>
+            <CardTitle>Tax Settings</CardTitle>
+            <CardDescription>Configure how tax is handled across your business</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...taxSettingsForm}>
+              <form onSubmit={taxSettingsForm.handleSubmit(onTaxSettingsSubmit)} className="space-y-6">
+                <div className="flex items-center justify-between space-x-2">
+                  <Label htmlFor="taxEnabled">Enable Tax</Label>
+                  <FormField
+                    control={taxSettingsForm.control}
+                    name="taxEnabled"
+                    render={({ field }) => (
+                      <Switch
+                        id="taxEnabled"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                </div>
+                
+                <Separator className="my-4" />
+                
+                <FormField
+                  control={taxSettingsForm.control}
+                  name="taxTerminology"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tax Terminology</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select tax term" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="GST">GST</SelectItem>
+                          <SelectItem value="VAT">VAT</SelectItem>
+                          <SelectItem value="Tax">Tax</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={taxSettingsForm.control}
+                  name="taxInvoiceTitle"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tax Invoice Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Tax Invoice" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={taxSettingsMutation.isPending}
+                  >
+                    {taxSettingsMutation.isPending ? (
+                      <>
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : 'Save Settings'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        {/* Tax Rates Card */}
+        <Card className="lg:col-span-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Tax Rates</CardTitle>
+              <CardDescription>Manage your tax rates for different products and services</CardDescription>
+            </div>
+            <Dialog open={isAddTaxRateOpen} onOpenChange={setIsAddTaxRateOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setEditingTaxRate(null)}>
+                  Add Tax Rate
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingTaxRate ? 'Edit Tax Rate' : 'Add Tax Rate'}</DialogTitle>
+                  <DialogDescription>
+                    {editingTaxRate
+                      ? 'Update the details for this tax rate'
+                      : 'Create a new tax rate with a name and percentage'}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <Form {...taxRateForm}>
+                  <form onSubmit={taxRateForm.handleSubmit(onTaxRateSubmit)} className="space-y-4">
                     <FormField
-                      control={taxSettingsForm.control}
-                      name="taxEnabled"
+                      control={taxRateForm.control}
+                      name="name"
                       render={({ field }) => (
-                        <Switch
-                          id="taxEnabled"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Standard Rate" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <FormField
-                    control={taxSettingsForm.control}
-                    name="taxTerminology"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tax Terminology</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                    
+                    <FormField
+                      control={taxRateForm.control}
+                      name="rate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rate (%)</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select tax term" />
-                            </SelectTrigger>
+                            <Input 
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              {...field}
+                            />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="GST">GST</SelectItem>
-                            <SelectItem value="VAT">VAT</SelectItem>
-                            <SelectItem value="Tax">Tax</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={taxSettingsForm.control}
-                    name="taxInvoiceTitle"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tax Invoice Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Tax Invoice" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      type="submit" 
-                      disabled={taxSettingsMutation.isPending}
-                    >
-                      {taxSettingsMutation.isPending ? (
-                        <>
-                          <Loader className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : 'Save Settings'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-
-          {/* Tax Rates Card */}
-          <Card className="lg:col-span-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Tax Rates</CardTitle>
-                <CardDescription>Manage your tax rates for different products and services</CardDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={taxRateForm.control}
+                      name="isDefault"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between gap-2 rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Default Rate</FormLabel>
+                            <FormDescription>
+                              Make this the default tax rate for new products
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <DialogFooter>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsAddTaxRateOpen(false);
+                          setEditingTaxRate(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="submit"
+                        disabled={taxRateMutation.isPending}
+                      >
+                        {taxRateMutation.isPending ? (
+                          <>
+                            <Loader className="mr-2 h-4 w-4 animate-spin" />
+                            {editingTaxRate ? 'Updating...' : 'Adding...'}
+                          </>
+                        ) : (
+                          editingTaxRate ? 'Update Tax Rate' : 'Add Tax Rate'
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            {taxRatesLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader className="h-6 w-6 animate-spin" />
               </div>
-              <Dialog open={isAddTaxRateOpen} onOpenChange={setIsAddTaxRateOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => setEditingTaxRate(null)}>
-                    Add Tax Rate
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingTaxRate ? 'Edit Tax Rate' : 'Add Tax Rate'}</DialogTitle>
-                    <DialogDescription>
-                      {editingTaxRate
-                        ? 'Update the details for this tax rate'
-                        : 'Create a new tax rate with a name and percentage'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <Form {...taxRateForm}>
-                    <form onSubmit={taxRateForm.handleSubmit(onTaxRateSubmit)} className="space-y-4">
-                      <FormField
-                        control={taxRateForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Standard Rate" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={taxRateForm.control}
-                        name="rate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Rate (%)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={taxRateForm.control}
-                        name="isDefault"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between gap-2 rounded-lg border p-3">
-                            <div className="space-y-0.5">
-                              <FormLabel>Default Rate</FormLabel>
-                              <FormDescription>
-                                Make this the default tax rate for new products
-                              </FormDescription>
-                            </div>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <DialogFooter>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => {
-                            setIsAddTaxRateOpen(false);
-                            setEditingTaxRate(null);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="submit"
-                          disabled={taxRateMutation.isPending}
-                        >
-                          {taxRateMutation.isPending ? (
-                            <>
-                              <Loader className="mr-2 h-4 w-4 animate-spin" />
-                              {editingTaxRate ? 'Updating...' : 'Adding...'}
-                            </>
-                          ) : (
-                            editingTaxRate ? 'Update Tax Rate' : 'Add Tax Rate'
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              {taxRatesLoading ? (
-                <div className="flex justify-center py-4">
-                  <Loader className="h-6 w-6 animate-spin" />
-                </div>
-              ) : taxRates.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground">No tax rates found. Add your first tax rate to get started.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {taxRates.map((taxRate: any) => (
-                    <div 
-                      key={taxRate.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div>
-                        <h3 className="font-medium">{taxRate.name}</h3>
-                        <p className="text-sm text-muted-foreground">{taxRate.rate}%</p>
+            ) : !taxRates || taxRates.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground">No tax rates found. Add your first tax rate to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {taxRates.map((taxRate: any) => (
+                  <div key={taxRate.id} className="flex justify-between items-center border p-4 rounded-md">
+                    <div>
+                      <h3 className="font-medium">{taxRate.name}</h3>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <span>{taxRate.rate}%</span>
                         {taxRate.isDefault && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary mt-1">
+                          <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-white">
                             Default
                           </span>
                         )}
                       </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditTaxRate(taxRate)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteTaxRate(taxRate)}
-                          disabled={taxRate.isDefault}
-                        >
-                          Delete
-                        </Button>
-                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleEditTaxRate(taxRate)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => handleDeleteTaxRate(taxRate)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -480,14 +474,14 @@ export default function TaxRatesPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               onClick={() => setIsDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
+            <Button 
+              variant="destructive" 
               onClick={confirmDeleteTaxRate}
               disabled={deleteTaxRateMutation.isPending}
             >
@@ -501,6 +495,6 @@ export default function TaxRatesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </div>
   );
 }
