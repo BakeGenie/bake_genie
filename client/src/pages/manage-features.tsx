@@ -37,12 +37,16 @@ const ManageFeatures = () => {
   const resetFeatures = async () => {
     setSaving(true);
     try {
-      await apiRequest("/api/settings/features/reset", {
+      const response = await fetch("/api/settings/features/reset", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`Feature reset failed: ${response.statusText}`);
+      }
       
       queryClient.invalidateQueries({ queryKey: ["/api/settings/features"] });
       toast({
@@ -64,13 +68,19 @@ const ManageFeatures = () => {
   // Mutation to update a feature
   const updateFeatureMutation = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
-      return apiRequest(`/api/settings/features/${id}`, {
+      const response = await fetch(`/api/settings/features/${id}`, {
         method: "PATCH",
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ enabled }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Feature update failed: ${response.statusText}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings/features"] });
