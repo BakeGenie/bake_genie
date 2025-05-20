@@ -82,8 +82,13 @@ const ManageFeatures = () => {
       
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/features"] });
+    onSuccess: async () => {
+      // Force an immediate refetch of the features
+      await queryClient.invalidateQueries({ queryKey: ["/api/settings/features"] });
+      
+      // Force refetch of the current URL to update sidebar visibility
+      window.location.reload();
+      
       toast({
         title: "Feature Updated",
         description: "Feature visibility has been updated",
