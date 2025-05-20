@@ -285,6 +285,12 @@ export const settings = pgTable("settings", {
   receivePaymentReminders: boolean("receive_payment_reminders").default(false),
   receiveMarketingEmails: boolean("receive_marketing_emails").default(false),
   receiveProductUpdates: boolean("receive_product_updates").default(false),
+  // Email templates
+  quoteEmailTemplate: text("quote_email_template"),
+  invoiceEmailTemplate: text("invoice_email_template"),
+  paymentReminderTemplate: text("payment_reminder_template"),
+  paymentReceiptTemplate: text("payment_receipt_template"),
+  enquiryMessageTemplate: text("enquiry_message_template"),
   // Business details for invoices
   businessName: text("business_name"),
   businessEmail: text("business_email"),

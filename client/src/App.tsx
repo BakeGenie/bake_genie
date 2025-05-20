@@ -31,6 +31,7 @@ import Account from "./pages/account";
 import DataImportExport from "./pages/data-import-export";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
+import EmailTemplates from "./pages/email-templates";
 import TaxRates from "./pages/tax-rates";
 import NewOrder from "./pages/new-order";
 import ManageFeatures from "./pages/manage-features";

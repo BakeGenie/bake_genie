@@ -21,6 +21,12 @@ export interface Settings {
   receivePaymentReminders?: boolean;
   receiveMarketingEmails?: boolean;
   receiveProductUpdates?: boolean;
+  // Email templates
+  quoteEmailTemplate?: string;
+  invoiceEmailTemplate?: string;
+  paymentReminderTemplate?: string;
+  paymentReceiptTemplate?: string;
+  enquiryMessageTemplate?: string;
   // Business details for invoices and orders
   businessName?: string;
   businessEmail?: string;
