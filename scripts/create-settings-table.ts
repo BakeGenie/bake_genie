@@ -6,14 +6,29 @@ async function createSettingsTable() {
     console.log("Creating settings table...");
     
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS settings (
+      DROP TABLE IF EXISTS settings;
+      CREATE TABLE settings (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        currency VARCHAR(10) DEFAULT 'AUD',
-        week_start_day VARCHAR(10) DEFAULT 'Monday',
-        language VARCHAR(30) DEFAULT 'English',
-        hourly_rate VARCHAR(10) DEFAULT '30.00',
-        markup_margin VARCHAR(10) DEFAULT '40',
+        user_id INTEGER NOT NULL UNIQUE,
+        currency TEXT DEFAULT 'AUD',
+        default_tax_rate DECIMAL(5,2) DEFAULT 0,
+        business_hours JSONB,
+        business_name TEXT,
+        business_email TEXT,
+        business_phone TEXT,
+        business_address TEXT,
+        business_logo_url TEXT,
+        invoice_footer TEXT,
+        quote_footer TEXT,
+        order_number_prefix TEXT DEFAULT '',
+        quote_number_prefix TEXT DEFAULT '',
+        invoice_template TEXT DEFAULT 'default',
+        invoice_colors JSONB,
+        labor_rate DECIMAL(10,2) DEFAULT 0,
+        week_start_day TEXT DEFAULT 'Monday',
+        language TEXT DEFAULT 'English',
+        hourly_rate TEXT DEFAULT '30.00',
+        markup_margin TEXT DEFAULT '40',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

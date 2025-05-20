@@ -15,22 +15,31 @@ import { useSettings } from "@/contexts/settings-context";
 
 const Settings = () => {
   const { toast } = useToast();
-  // Will use context when fully integrated
-  // const { 
-  //   currency, 
-  //   currencySymbol,
-  //   weekStartDay, 
-  //   language, 
-  //   hourlyRate, 
-  //   markupMargin,
-  //   updateSettings 
-  // } = useSettings();
+  // Get settings from context
+  const { 
+    settings, 
+    isLoading,
+    updateSettings,
+    getCurrencySymbol
+  } = useSettings();
   
-  const [currency, setCurrency] = React.useState("AUD");
-  const [weekStartDay, setWeekStartDay] = React.useState("Monday");
-  const [language, setLanguage] = React.useState("English");
-  const [hourlyRate, setHourlyRate] = React.useState("30.00");
-  const [markupMargin, setMarkupMargin] = React.useState("40");
+  // Local state for UI interaction
+  const [currency, setCurrency] = React.useState(settings.currency);
+  const [weekStartDay, setWeekStartDay] = React.useState(settings.weekStartDay || "Monday");
+  const [language, setLanguage] = React.useState(settings.language || "English");
+  const [hourlyRate, setHourlyRate] = React.useState(settings.hourlyRate || "30.00");
+  const [markupMargin, setMarkupMargin] = React.useState(settings.markupMargin || "40");
+  
+  // Update local state when settings load
+  React.useEffect(() => {
+    if (!isLoading) {
+      setCurrency(settings.currency);
+      setWeekStartDay(settings.weekStartDay || "Monday");
+      setLanguage(settings.language || "English");
+      setHourlyRate(settings.hourlyRate || "30.00");
+      setMarkupMargin(settings.markupMargin || "40");
+    }
+  }, [isLoading, settings]);
   
   // Local state for dialogs
   const [showCurrencyDialog, setShowCurrencyDialog] = React.useState(false);
@@ -106,16 +115,13 @@ const Settings = () => {
       setCurrency(selectedCurrency);
       setShowCurrencyDialog(false);
       
-      // Save the setting to the server
-      const response = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ currency: selectedCurrency }),
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        currency: selectedCurrency,
+        currencySymbol: symbol
       });
       
-      if (!response.ok) {
+      if (!success) {
         throw new Error("Failed to save currency setting");
       }
       
@@ -139,16 +145,12 @@ const Settings = () => {
       setWeekStartDay(selectedDay);
       setShowWeekStartDialog(false);
       
-      // Save the setting to the server
-      const response = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ weekStartDay: selectedDay }),
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        weekStartDay: selectedDay 
       });
       
-      if (!response.ok) {
+      if (!success) {
         throw new Error("Failed to save week start day setting");
       }
       
