@@ -13,7 +13,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import { Link } from "wouter";
-import { PercentIcon } from "lucide-react";
 import { EmailUpdatesSection } from "@/components/settings/email-updates-section";
 
 const Settings = () => {

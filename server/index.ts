@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import fs from 'fs';
 import path from 'path';
+import { startEmailScheduler } from './services/email-scheduler';
 
 const app = express();
 app.use(express.json());
@@ -75,5 +76,13 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start the email scheduler for automated notifications
+    if (process.env.SENDGRID_API_KEY) {
+      log('Starting email notification service');
+      startEmailScheduler();
+    } else {
+      log('Email service not started - SENDGRID_API_KEY not found');
+    }
   });
 })();
