@@ -256,7 +256,7 @@ const ReportView: React.FC<ReportViewProps> = ({ reportId, dateRange, onBack }) 
           {
             accessorKey: "total",
             header: "Total",
-            cell: ({ row }) => formatCurrency(row.getValue("total")),
+            cell: ({ row }) => <FormatCurrency amount={row.getValue("total")} />,
           },
         ];
 
@@ -286,7 +286,7 @@ const ReportView: React.FC<ReportViewProps> = ({ reportId, dateRange, onBack }) 
           {
             accessorKey: "total",
             header: "Total",
-            cell: ({ row }) => formatCurrency(row.getValue("total")),
+            cell: ({ row }) => <FormatCurrency amount={row.getValue("total")} />,
           },
         ];
 
@@ -474,12 +474,12 @@ const ReportView: React.FC<ReportViewProps> = ({ reportId, dateRange, onBack }) 
           {
             accessorKey: "totalSpent",
             header: "Total Spent",
-            cell: ({ row }) => formatCurrency(row.getValue("totalSpent")),
+            cell: ({ row }) => <FormatCurrency amount={row.getValue("totalSpent")} />,
           },
           {
             accessorKey: "averageOrderValue",
             header: "Average Order",
-            cell: ({ row }) => formatCurrency(row.getValue("averageOrderValue")),
+            cell: ({ row }) => <FormatCurrency amount={row.getValue("averageOrderValue")} />,
           },
           {
             accessorKey: "firstOrderDate",
