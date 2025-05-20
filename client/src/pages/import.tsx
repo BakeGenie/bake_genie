@@ -151,8 +151,19 @@ export default function ImportPage() {
 
   // Handle file selection for order list
   const handleOrderListFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    setSelectedOrderListFile(file);
+    console.log("File input change event triggered");
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      console.log("Selected file:", file.name, file.type, file.size);
+      setSelectedOrderListFile(file);
+      toast({
+        title: "File selected",
+        description: `Selected file: ${file.name}`,
+      });
+    } else {
+      console.log("No file selected");
+      setSelectedOrderListFile(null);
+    }
   };
 
   // Handle file selection for quote list
@@ -243,14 +254,24 @@ export default function ImportPage() {
                   <div className="grid gap-3">
                     <Label htmlFor="order-list-file">Select Orders CSV File</Label>
                     <div className="flex gap-3">
-                      <input 
-                        id="order-list-file" 
-                        type="file" 
-                        accept=".csv" 
-                        onChange={handleOrderListFileChange}
-                        disabled={importOrdersMutation.isPending}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
+                      <div className="relative border border-input rounded-md px-3 py-2 bg-background">
+                        <label htmlFor="order-list-file" className="cursor-pointer text-sm text-primary hover:underline">
+                          Choose CSV File
+                        </label>
+                        <input 
+                          id="order-list-file" 
+                          type="file" 
+                          accept=".csv" 
+                          onChange={handleOrderListFileChange}
+                          disabled={importOrdersMutation.isPending}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        {selectedOrderListFile && (
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {selectedOrderListFile.name}
+                          </span>
+                        )}
+                      </div>
                       <Button 
                         onClick={handleImportOrderList}
                         disabled={!selectedOrderListFile || importOrdersMutation.isPending}
@@ -326,14 +347,24 @@ export default function ImportPage() {
                   <div className="grid gap-3">
                     <Label htmlFor="quote-list-file">Select Quotes CSV File</Label>
                     <div className="flex gap-3">
-                      <input 
-                        id="quote-list-file" 
-                        type="file" 
-                        accept=".csv" 
-                        onChange={handleQuoteListFileChange}
-                        disabled={importQuotesMutation.isPending}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
+                      <div className="relative border border-input rounded-md px-3 py-2 bg-background">
+                        <label htmlFor="quote-list-file" className="cursor-pointer text-sm text-primary hover:underline">
+                          Choose CSV File
+                        </label>
+                        <input 
+                          id="quote-list-file" 
+                          type="file" 
+                          accept=".csv" 
+                          onChange={handleQuoteListFileChange}
+                          disabled={importQuotesMutation.isPending}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        {selectedQuoteListFile && (
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {selectedQuoteListFile.name}
+                          </span>
+                        )}
+                      </div>
                       <Button 
                         onClick={handleImportQuoteList}
                         disabled={!selectedQuoteListFile || importQuotesMutation.isPending}
@@ -410,14 +441,24 @@ export default function ImportPage() {
                   <div className="grid gap-3">
                     <Label htmlFor="order-items-file">Select Order Items CSV File</Label>
                     <div className="flex gap-3">
-                      <input 
-                        id="order-items-file" 
-                        type="file" 
-                        accept=".csv" 
-                        onChange={handleOrderItemsFileChange}
-                        disabled={importOrderItemsMutation.isPending}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
+                      <div className="relative border border-input rounded-md px-3 py-2 bg-background">
+                        <label htmlFor="order-items-file" className="cursor-pointer text-sm text-primary hover:underline">
+                          Choose CSV File
+                        </label>
+                        <input 
+                          id="order-items-file" 
+                          type="file" 
+                          accept=".csv" 
+                          onChange={handleOrderItemsFileChange}
+                          disabled={importOrderItemsMutation.isPending}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        {selectedOrderItemsFile && (
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            {selectedOrderItemsFile.name}
+                          </span>
+                        )}
+                      </div>
                       <Button 
                         onClick={handleImportOrderItems}
                         disabled={!selectedOrderItemsFile || importOrderItemsMutation.isPending}
