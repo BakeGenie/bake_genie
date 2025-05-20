@@ -41,6 +41,7 @@ const Settings = () => {
       setLanguage(settings.language || "English");
       setHourlyRate(settings.hourlyRate || "");
       setMarkupMargin(settings.markupMargin || "");
+      setDocumentFontSize(settings.documentFontSize || "normal");
       
       // Update edit values
       setEditHourlyRate(settings.hourlyRate || "");
@@ -61,6 +62,7 @@ const Settings = () => {
   const [showCollectionAddressDialog, setShowCollectionAddressDialog] = React.useState(false);
   const [showOrderTermsDialog, setShowOrderTermsDialog] = React.useState(false);
   const [showOrderFooterDialog, setShowOrderFooterDialog] = React.useState(false);
+  const [showDocumentFontSizeDialog, setShowDocumentFontSizeDialog] = React.useState(false);
   
   // Local state for editing values
   const [editHourlyRate, setEditHourlyRate] = React.useState(settings.hourlyRate || '');
@@ -69,6 +71,7 @@ const Settings = () => {
   const [editCollectionAddress, setEditCollectionAddress] = React.useState(settings.businessAddress || '');
   const [editOrderTerms, setEditOrderTerms] = React.useState(settings.quoteFooter || '');
   const [editOrderFooter, setEditOrderFooter] = React.useState(settings.invoiceFooter || '');
+  const [documentFontSize, setDocumentFontSize] = React.useState<'normal' | 'large'>(settings.documentFontSize || 'normal');
   
   // Currency options with top ones first, then alphabetical
   const currencyOptions = [
@@ -408,6 +411,35 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to update order footer. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleDocumentFontSizeChange = async (selectedFontSize: 'normal' | 'large') => {
+    try {
+      // Update local state
+      setDocumentFontSize(selectedFontSize);
+      setShowDocumentFontSizeDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        documentFontSize: selectedFontSize
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save document font size setting");
+      }
+      
+      toast({
+        title: "Document Font Size Updated",
+        description: `Your job sheet and invoice font size has been set to ${selectedFontSize}.`,
+      });
+    } catch (error) {
+      console.error("Error updating document font size:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update document font size. Please try again.",
         variant: "destructive",
       });
     }
@@ -1048,13 +1080,13 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowDocumentFontSizeDialog(true)}>
                   <div className="flex items-center">
                     <TypeIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Job Sheet & Invoice Font Size</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>Normal</span>
+                    <span className="capitalize">{documentFontSize || 'Normal'}</span>
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>

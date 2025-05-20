@@ -9,6 +9,8 @@ export interface Settings {
   hourlyRate: string;
   markupMargin: string;
   nextOrderNumber: number;
+  // Document settings
+  documentFontSize?: 'normal' | 'large';
   // Tax settings
   taxEnabled?: boolean;
   useGst?: boolean;
