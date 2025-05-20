@@ -11,14 +11,29 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+// Will uncomment when settings context is fully integrated
+// import { useSettings } from "@/contexts/settings-context";
 
 const Settings = () => {
   const { toast } = useToast();
+  // Will use context when fully integrated
+  // const { 
+  //   currency, 
+  //   currencySymbol,
+  //   weekStartDay, 
+  //   language, 
+  //   hourlyRate, 
+  //   markupMargin,
+  //   updateSettings 
+  // } = useSettings();
+  
   const [currency, setCurrency] = React.useState("AUD");
   const [weekStartDay, setWeekStartDay] = React.useState("Monday");
   const [language, setLanguage] = React.useState("English");
   const [hourlyRate, setHourlyRate] = React.useState("30.00");
   const [markupMargin, setMarkupMargin] = React.useState("40");
+  
+  // Local state for dialogs
   const [showCurrencyDialog, setShowCurrencyDialog] = React.useState(false);
   const [showWeekStartDialog, setShowWeekStartDialog] = React.useState(false);
   
