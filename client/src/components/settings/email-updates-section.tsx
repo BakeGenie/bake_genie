@@ -14,6 +14,9 @@ import { useSettings } from "@/contexts/settings-context";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
+// Import Settings type from the context
+import type { Settings } from "@/contexts/settings-context";
+
 // Update frequency options
 const frequencyOptions = [
   { value: "daily", label: "Daily" },
@@ -67,13 +70,11 @@ export function EmailUpdatesSection() {
 
   // Mutation for updating email settings
   const updateEmailSettings = useMutation({
-    mutationFn: (data: Partial<EmailSettings>) => {
-      return apiRequest("/api/settings", {
-        method: "PATCH",
-        data
-      });
+    mutationFn: async (data: Partial<EmailSettings>) => {
+      const response = await apiRequest("PATCH", "/api/settings", data);
+      return await response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       updateSettings(data);
       toast({
         title: "Success",
@@ -100,7 +101,8 @@ export function EmailUpdatesSection() {
       return;
     }
 
-    updateEmailSettings.mutate({ emailAddress: newEmail });
+    const updateData: Partial<Settings> = { emailAddress: newEmail };
+    updateEmailSettings.mutate(updateData);
     setEmailAddress(newEmail);
     setShowEmailDialog(false);
     setNewEmail("");
@@ -116,7 +118,8 @@ export function EmailUpdatesSection() {
       return;
     }
 
-    updateEmailSettings.mutate({ secondaryEmailAddress: newSecondaryEmail });
+    const updateData: Partial<Settings> = { secondaryEmailAddress: newSecondaryEmail };
+    updateEmailSettings.mutate(updateData);
     setSecondaryEmailAddress(newSecondaryEmail);
     setShowSecondaryEmailDialog(false);
     setNewSecondaryEmail("");
@@ -124,39 +127,45 @@ export function EmailUpdatesSection() {
 
   const handleToggleUpcomingOrders = (checked: boolean) => {
     setReceiveUpcomingOrders(checked);
-    updateEmailSettings.mutate({ 
+    const updateData: Partial<Settings> = { 
       receiveUpcomingOrders: checked 
-    });
+    };
+    updateEmailSettings.mutate(updateData);
   };
 
   const handleChangeFrequency = (value: string) => {
     if (value === "daily" || value === "weekly" || value === "monthly") {
       setUpcomingOrdersFrequency(value);
-      updateEmailSettings.mutate({ 
-        upcomingOrdersFrequency: value as "daily" | "weekly" | "monthly" 
-      });
+      const frequency = value as "daily" | "weekly" | "monthly";
+      const updateData: Partial<Settings> = { 
+        upcomingOrdersFrequency: frequency
+      };
+      updateEmailSettings.mutate(updateData);
     }
   };
 
   const handleTogglePaymentReminders = (checked: boolean) => {
     setReceivePaymentReminders(checked);
-    updateEmailSettings.mutate({ 
+    const updateData: Partial<Settings> = { 
       receivePaymentReminders: checked 
-    });
+    };
+    updateEmailSettings.mutate(updateData);
   };
 
   const handleToggleMarketingEmails = (checked: boolean) => {
     setReceiveMarketingEmails(checked);
-    updateEmailSettings.mutate({ 
+    const updateData: Partial<Settings> = { 
       receiveMarketingEmails: checked 
-    });
+    };
+    updateEmailSettings.mutate(updateData);
   };
 
   const handleToggleProductUpdates = (checked: boolean) => {
     setReceiveProductUpdates(checked);
-    updateEmailSettings.mutate({ 
+    const updateData: Partial<Settings> = { 
       receiveProductUpdates: checked 
-    });
+    };
+    updateEmailSettings.mutate(updateData);
   };
 
   return (

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Define the shape of our settings
-interface Settings {
+export interface Settings {
   currency: string;
   currencySymbol: string;
   weekStartDay: string;
