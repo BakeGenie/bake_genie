@@ -686,7 +686,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               name="deliveryTime"
               render={({ field }) => (
                 <FormItem className="col-span-3">
-                  <FormLabel>Delivery Time</FormLabel>
+                  <FormLabel>Delivery / Pick up Time</FormLabel>
                   <FormControl>
                     <Input {...field} type="time" />
                   </FormControl>
