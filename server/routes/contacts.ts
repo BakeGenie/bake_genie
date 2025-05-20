@@ -43,8 +43,17 @@ router.get("/:id", async (req: Request, res: Response) => {
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
+    // Log the incoming request body for debugging
+    console.log("Contact creation request body:", req.body);
+    
+    // Ensure userId is set if not provided in request
+    const contactData = {
+      ...req.body,
+      userId: req.body.userId || 1  // Default to user ID 1 if not provided
+    };
+    
     // Validate request body against schema
-    const validateResult = insertContactSchema.safeParse(req.body);
+    const validateResult = insertContactSchema.safeParse(contactData);
     
     if (!validateResult.success) {
       return res.status(400).json({ 
@@ -55,6 +64,7 @@ router.post("/", async (req: Request, res: Response) => {
     
     // Insert contact into database
     const [newContact] = await db.insert(contacts).values(validateResult.data).returning();
+    console.log("New contact created:", newContact);
     
     return res.status(201).json(newContact);
   } catch (error) {
