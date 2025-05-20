@@ -275,6 +275,14 @@ export const settings = pgTable("settings", {
   useGst: boolean("use_gst").default(false), // Use GST instead of VAT terminology
   useTaxInvoice: boolean("use_tax_invoice").default(false), // Use "Tax Invoice" as title instead of "Invoice"
   businessHours: jsonb("business_hours"),
+  // Email notification settings
+  emailAddress: text("email_address"),
+  secondaryEmailAddress: text("secondary_email_address"),
+  receiveUpcomingOrders: boolean("receive_upcoming_orders").default(false),
+  upcomingOrdersFrequency: text("upcoming_orders_frequency").default("weekly"), // daily, weekly, monthly
+  receivePaymentReminders: boolean("receive_payment_reminders").default(false),
+  receiveMarketingEmails: boolean("receive_marketing_emails").default(false),
+  receiveProductUpdates: boolean("receive_product_updates").default(false),
   // Business details for invoices
   businessName: text("business_name"),
   businessEmail: text("business_email"),

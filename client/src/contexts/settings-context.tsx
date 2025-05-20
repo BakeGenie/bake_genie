@@ -8,6 +8,18 @@ interface Settings {
   language: string;
   hourlyRate: string;
   markupMargin: string;
+  // Tax settings
+  taxEnabled?: boolean;
+  useGst?: boolean;
+  useTaxInvoice?: boolean;
+  // Email notification settings
+  emailAddress?: string;
+  secondaryEmailAddress?: string;
+  receiveUpcomingOrders?: boolean;
+  upcomingOrdersFrequency?: 'daily' | 'weekly' | 'monthly';
+  receivePaymentReminders?: boolean;
+  receiveMarketingEmails?: boolean;
+  receiveProductUpdates?: boolean;
 }
 
 // Define what our context provides
@@ -27,6 +39,18 @@ const SettingsContext = createContext<SettingsContextType>({
     language: 'English',
     hourlyRate: '30.00',
     markupMargin: '40',
+    // Default tax settings
+    taxEnabled: true,
+    useGst: false,
+    useTaxInvoice: false,
+    // Default email settings
+    emailAddress: '',
+    secondaryEmailAddress: '',
+    receiveUpcomingOrders: false,
+    upcomingOrdersFrequency: 'weekly',
+    receivePaymentReminders: false,
+    receiveMarketingEmails: false,
+    receiveProductUpdates: false,
   },
   isLoading: true,
   updateSettings: async () => false,

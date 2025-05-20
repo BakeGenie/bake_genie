@@ -187,24 +187,30 @@ const Settings = () => {
       )
     : currencyOptions;
 
-  // Track if we should scroll to tax rates section
-  const [scrollToTaxRates, setScrollToTaxRates] = React.useState(false);
+  // Track which section to scroll to
+  const [scrollToSection, setScrollToSection] = React.useState<string | null>(null);
   const taxRatesSectionRef = React.useRef<HTMLDivElement>(null);
+  const emailUpdatesSectionRef = React.useRef<HTMLDivElement>(null);
   
-  // Check for hash in URL and scroll to tax rates if needed
+  // Check for hash in URL and determine which section to scroll to
   useEffect(() => {
     if (window.location.hash === '#tax-rates') {
-      setScrollToTaxRates(true);
+      setScrollToSection('tax-rates');
+    } else if (window.location.hash === '#email-updates') {
+      setScrollToSection('email-updates');
     }
   }, []);
   
-  // Scroll to tax rates section if needed
+  // Scroll to the selected section if needed
   useEffect(() => {
-    if (scrollToTaxRates && taxRatesSectionRef.current) {
+    if (scrollToSection === 'tax-rates' && taxRatesSectionRef.current) {
       taxRatesSectionRef.current.scrollIntoView({ behavior: 'smooth' });
-      setScrollToTaxRates(false);
+      setScrollToSection(null);
+    } else if (scrollToSection === 'email-updates' && emailUpdatesSectionRef.current) {
+      emailUpdatesSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      setScrollToSection(null);
     }
-  }, [scrollToTaxRates, taxRatesSectionRef]);
+  }, [scrollToSection, taxRatesSectionRef, emailUpdatesSectionRef]);
 
   return (
     <div className="p-6">
@@ -348,7 +354,7 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => window.location.hash = "email-updates"}>
                   <div className="flex items-center">
                     <MailIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Email Updates</span>
@@ -669,6 +675,11 @@ const Settings = () => {
         {/* Tax Rates Section */}
         <div id="tax-rates" ref={taxRatesSectionRef} className="mt-6">
           <TaxRatesSection />
+        </div>
+
+        {/* Email Updates Section */}
+        <div id="email-updates" ref={emailUpdatesSectionRef} className="mt-6">
+          <EmailUpdatesSection />
         </div>
       </div>
     </div>

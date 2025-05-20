@@ -73,7 +73,7 @@ export function EmailUpdatesSection() {
         data
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       updateSettings(data);
       toast({
         title: "Success",
