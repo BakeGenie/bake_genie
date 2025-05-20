@@ -20,9 +20,13 @@ export function formatDate(date: string | Date): string {
   });
 }
 
+// This function is being deprecated in favor of the <FormatCurrency> component which 
+// uses the user's currency settings. Keep for backward compatibility with existing components.
 export function formatCurrency(amount: number): string {
   if (amount === undefined || amount === null) return '$0.00';
   
+  // This function is hardcoded to USD for backward compatibility
+  // New components should use the <FormatCurrency> component instead
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',

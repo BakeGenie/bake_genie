@@ -223,7 +223,7 @@ const Expenses = () => {
       header: "Amount",
       cell: ({ row }) => {
         const amount = row.getValue("amount") as number;
-        return `$${Number(amount).toFixed(2)}`;
+        return <FormatCurrency amount={amount} />;
       },
     },
     {
@@ -259,7 +259,7 @@ const Expenses = () => {
       header: "Amount",
       cell: ({ row }) => {
         const amount = row.getValue("amount") as number;
-        return `$${Number(amount).toFixed(2)}`;
+        return <FormatCurrency amount={amount} />;
       },
     },
   ];
@@ -317,7 +317,7 @@ const Expenses = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
-              ${totalExpenses.toFixed(2)}
+              <FormatCurrency amount={totalExpenses} />
             </div>
             <p className="text-xs text-muted-foreground">
               For {monthOptions.find(m => m.value === month)?.label} {year}
@@ -332,7 +332,7 @@ const Expenses = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">
-              ${totalIncome.toFixed(2)}
+              <FormatCurrency amount={totalIncome} />
             </div>
             <p className="text-xs text-muted-foreground">
               For {monthOptions.find(m => m.value === month)?.label} {year}
@@ -347,7 +347,7 @@ const Expenses = () => {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              ${profit.toFixed(2)}
+              <FormatCurrency amount={profit} />
             </div>
             <p className="text-xs text-muted-foreground">
               For {monthOptions.find(m => m.value === month)?.label} {year}
