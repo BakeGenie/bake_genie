@@ -41,7 +41,7 @@ export function InvoicePreviewButton() {
       ) : (
         <span className="flex items-center">
           <FileTextIcon className="mr-2 h-4 w-4" />
-          Preview Sample Invoice
+          Preview Invoice
         </span>
       )}
     </Button>

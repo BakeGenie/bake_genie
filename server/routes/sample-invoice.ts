@@ -27,179 +27,59 @@ router.get("/", async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Error generating sample invoice:", error);
     
-    // Create a simple sample invoice if no orders exist
-    const sampleInvoice = `
+    // Create a message indicating no invoice data is available
+    const noInvoiceData = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Sample Invoice</title>
+        <title>Invoice Preview</title>
         <style>
           body {
             font-family: Arial, sans-serif;
             color: #333;
             line-height: 1.5;
             margin: 0;
-            padding: 20px;
-          }
-          .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 40px;
-          }
-          .invoice-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #444;
-          }
-          .business-info {
-            text-align: right;
-          }
-          .customer-info {
-            margin-bottom: 30px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-          }
-          th {
-            background-color: #f2f2f2;
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-          }
-          td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-          }
-          .totals {
-            width: 300px;
-            margin-left: auto;
-          }
-          .totals td {
-            padding: 5px 10px;
-          }
-          .totals tr.total {
-            font-weight: bold;
-            font-size: 18px;
-          }
-          .footer {
-            margin-top: 40px;
-            color: #777;
-            font-size: 12px;
+            padding: 40px;
             text-align: center;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
           }
-          .product-image {
-            width: 50px;
-            height: 50px;
-            border-radius: 4px;
-            margin-right: 10px;
-            object-fit: cover;
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
           }
-          .product-row {
-            display: flex;
-            align-items: center;
+          h1 {
+            color: #555;
+            font-size: 24px;
+            margin-bottom: 20px;
+          }
+          p {
+            font-size: 16px;
+            margin-bottom: 15px;
+          }
+          .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #888;
           }
         </style>
       </head>
       <body>
-        <div class="invoice-header">
-          <div>
-            <div class="invoice-title">INVOICE</div>
-            <div>Invoice #: INV-00001</div>
-            <div>Date: May 18, 2025</div>
-          </div>
-          <div class="business-info">
-            <div><strong>BakeGenie Bakery</strong></div>
-            <div>123 Flour Street</div>
-            <div>Cake City, CA 90210</div>
-            <div>Phone: (555) 123-4567</div>
-            <div>Email: info@bakegenie.com</div>
-          </div>
-        </div>
-        
-        <div class="customer-info">
-          <div><strong>Bill To:</strong></div>
-          <div>Jane Smith</div>
-          <div>456 Sugar Avenue</div>
-          <div>Sweet Town, CA 90211</div>
-          <div>jane.smith@example.com</div>
-          <div>(555) 987-6543</div>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <div class="product-row">
-                  <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1089&q=80" alt="Birthday Cake" class="product-image" />
-                  <div>Birthday Cake - Chocolate with Vanilla Frosting</div>
-                </div>
-              </td>
-              <td>1</td>
-              <td>$45.00</td>
-              <td>$45.00</td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-row">
-                  <img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1087&q=80" alt="Cupcakes" class="product-image" />
-                  <div>Cupcakes - Assorted (Dozen)</div>
-                </div>
-              </td>
-              <td>2</td>
-              <td>$24.00</td>
-              <td>$48.00</td>
-            </tr>
-            <tr>
-              <td>
-                <div class="product-row">
-                  <div>Delivery Fee</div>
-                </div>
-              </td>
-              <td>1</td>
-              <td>$15.00</td>
-              <td>$15.00</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <table class="totals">
-          <tr>
-            <td>Subtotal:</td>
-            <td>$93.00</td>
-          </tr>
-          <tr>
-            <td>Tax (8%):</td>
-            <td>$7.44</td>
-          </tr>
-          <tr class="total">
-            <td>Total:</td>
-            <td>$100.44</td>
-          </tr>
-        </table>
-        
-        <div class="footer">
-          Thank you for your business! Payment is due within 30 days.
+        <div class="container">
+          <div class="icon">📄</div>
+          <h1>No Invoice Data Available</h1>
+          <p>You need to create orders in the system to generate invoices.</p>
+          <p>Once you have created an order, you will be able to preview and send invoices based on real order data.</p>
         </div>
       </body>
       </html>
     `;
     
     res.setHeader("Content-Type", "text/html");
-    res.send(sampleInvoice);
+    res.send(noInvoiceData);
   }
 });
 
