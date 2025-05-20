@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronRightIcon, CreditCardIcon, CurrencyIcon, DollarSignIcon, FileTextIcon, SettingsIcon, MailIcon, CalendarIcon, GlobeIcon, TypeIcon, LayersIcon, ClockIcon, PenIcon, PercentIcon, MapPinIcon, NotebookIcon, ReceiptIcon, FolderIcon, PizzaIcon, BarChartIcon, RulerIcon, SearchIcon, XIcon, CheckIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -40,9 +41,14 @@ const Settings = () => {
       setLanguage(settings.language || "English");
       setHourlyRate(settings.hourlyRate || "");
       setMarkupMargin(settings.markupMargin || "");
+      
+      // Update edit values
       setEditHourlyRate(settings.hourlyRate || "");
       setEditMarkupMargin(settings.markupMargin || "");
       setEditNextOrderNumber(settings.nextOrderNumber?.toString() || "1");
+      setEditCollectionAddress(settings.businessAddress || "");
+      setEditOrderTerms(settings.quoteFooter || "");
+      setEditOrderFooter(settings.invoiceFooter || "");
     }
   }, [isLoading, settings]);
   
@@ -52,11 +58,17 @@ const Settings = () => {
   const [showHourlyRateDialog, setShowHourlyRateDialog] = React.useState(false);
   const [showMarkupMarginDialog, setShowMarkupMarginDialog] = React.useState(false);
   const [showNextOrderNumberDialog, setShowNextOrderNumberDialog] = React.useState(false);
+  const [showCollectionAddressDialog, setShowCollectionAddressDialog] = React.useState(false);
+  const [showOrderTermsDialog, setShowOrderTermsDialog] = React.useState(false);
+  const [showOrderFooterDialog, setShowOrderFooterDialog] = React.useState(false);
   
   // Local state for editing values
   const [editHourlyRate, setEditHourlyRate] = React.useState(settings.hourlyRate || '');
   const [editMarkupMargin, setEditMarkupMargin] = React.useState(settings.markupMargin || '');
   const [editNextOrderNumber, setEditNextOrderNumber] = React.useState(settings.nextOrderNumber?.toString() || '1');
+  const [editCollectionAddress, setEditCollectionAddress] = React.useState(settings.businessAddress || '');
+  const [editOrderTerms, setEditOrderTerms] = React.useState(settings.quoteFooter || '');
+  const [editOrderFooter, setEditOrderFooter] = React.useState(settings.invoiceFooter || '');
   
   // Currency options with top ones first, then alphabetical
   const currencyOptions = [
@@ -302,6 +314,100 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to update next order number. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleCollectionAddressChange = async () => {
+    try {
+      // Validate that the address is not empty
+      if (!editCollectionAddress.trim()) {
+        toast({
+          title: "Invalid address",
+          description: "Please enter a valid collection address.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Close dialog
+      setShowCollectionAddressDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        businessAddress: editCollectionAddress 
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save collection address");
+      }
+      
+      toast({
+        title: "Collection Address Updated",
+        description: "Your default collection address has been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating collection address:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update collection address. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleOrderTermsChange = async () => {
+    try {
+      // Close dialog
+      setShowOrderTermsDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        quoteFooter: editOrderTerms 
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save order terms & conditions");
+      }
+      
+      toast({
+        title: "Terms & Conditions Updated",
+        description: "Your order terms & conditions have been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating order terms:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update terms & conditions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleOrderFooterChange = async () => {
+    try {
+      // Close dialog
+      setShowOrderFooterDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        invoiceFooter: editOrderFooter 
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save order footer");
+      }
+      
+      toast({
+        title: "Order Footer Updated",
+        description: "Your order footer has been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating order footer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update order footer. Please try again.",
         variant: "destructive",
       });
     }
@@ -585,6 +691,117 @@ const Settings = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Collection Address Dialog */}
+      <Dialog open={showCollectionAddressDialog} onOpenChange={setShowCollectionAddressDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Default Collection Address</DialogTitle>
+            <DialogDescription>
+              Enter your default collection address that will be used in orders and invoices.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="collectionAddress">Address</Label>
+              <Textarea
+                id="collectionAddress"
+                placeholder="Enter your business address"
+                className="min-h-[100px]"
+                value={editCollectionAddress}
+                onChange={(e) => setEditCollectionAddress(e.target.value)}
+              />
+              <p className="text-sm text-gray-500">
+                This address will be used as the default collection location for pickup orders.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowCollectionAddressDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCollectionAddressChange}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Order Terms & Conditions Dialog */}
+      <Dialog open={showOrderTermsDialog} onOpenChange={setShowOrderTermsDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Order Terms & Conditions</DialogTitle>
+            <DialogDescription>
+              Set the default terms and conditions that will appear on quotes and orders.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="orderTerms">Terms & Conditions</Label>
+              <Textarea
+                id="orderTerms"
+                placeholder="Enter your terms and conditions"
+                className="min-h-[150px]"
+                value={editOrderTerms}
+                onChange={(e) => setEditOrderTerms(e.target.value)}
+              />
+              <p className="text-sm text-gray-500">
+                These terms will be included in the footer section of quotes and orders.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowOrderTermsDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleOrderTermsChange}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Order Footer Dialog */}
+      <Dialog open={showOrderFooterDialog} onOpenChange={setShowOrderFooterDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Order Footer</DialogTitle>
+            <DialogDescription>
+              Set the default footer text that will appear on invoices and orders.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="orderFooter">Footer Text</Label>
+              <Textarea
+                id="orderFooter"
+                placeholder="Enter your footer text"
+                className="min-h-[150px]"
+                value={editOrderFooter}
+                onChange={(e) => setEditOrderFooter(e.target.value)}
+              />
+              <p className="text-sm text-gray-500">
+                This text will be displayed at the bottom of invoices and orders.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowOrderFooterDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleOrderFooterChange}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="mt-6 grid grid-cols-1 gap-6">
         {/* Application Settings Section */}
         <Card>
@@ -763,30 +980,51 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowCollectionAddressDialog(true)}>
                   <div className="flex items-center">
                     <MapPinIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Default Collection Address</span>
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
+                  <div className="flex items-center text-gray-600">
+                    {settings.businessAddress ? (
+                      <span className="max-w-[200px] truncate">{settings.businessAddress.split('\n')[0]}</span>
+                    ) : (
+                      <span>Set address</span>
+                    )}
+                    <ChevronRightIcon className="ml-2 h-5 w-5" />
+                  </div>
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowOrderTermsDialog(true)}>
                   <div className="flex items-center">
                     <FileTextIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Order Terms & Conditions</span>
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
+                  <div className="flex items-center text-gray-600">
+                    {settings.quoteFooter ? (
+                      <span>Configured</span>
+                    ) : (
+                      <span>Not set</span>
+                    )}
+                    <ChevronRightIcon className="ml-2 h-5 w-5" />
+                  </div>
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowOrderFooterDialog(true)}>
                   <div className="flex items-center">
                     <NotebookIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Order Footer</span>
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
+                  <div className="flex items-center text-gray-600">
+                    {settings.invoiceFooter ? (
+                      <span>Configured</span>
+                    ) : (
+                      <span>Not set</span>
+                    )}
+                    <ChevronRightIcon className="ml-2 h-5 w-5" />
+                  </div>
                 </div>
                 <Separator />
                 
