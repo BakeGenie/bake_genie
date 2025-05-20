@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import { TaxRatesSection } from "@/components/settings/tax-rates-section";
+import { EmailUpdatesSection } from "@/components/settings/email-updates-section";
 
 const Settings = () => {
   const { toast } = useToast();
