@@ -664,6 +664,11 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Tax Rates Section */}
+        <div id="tax-rates" ref={taxRatesSectionRef} className="mt-6">
+          <TaxRatesSection />
+        </div>
       </div>
     </div>
   );
