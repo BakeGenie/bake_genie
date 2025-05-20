@@ -386,14 +386,13 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4">
                   <div className="flex items-center">
                     <GlobeIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Language</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
+                  <div className="text-gray-600">
                     <span>{language}</span>
-                    <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
                 <Separator />
