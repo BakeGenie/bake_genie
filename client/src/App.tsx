@@ -30,6 +30,7 @@ import Account from "./pages/account";
 import DataImportExport from "./pages/data-import-export";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
+import TaxRates from "./pages/tax-rates";
 import NewOrder from "./pages/new-order";
 
 function Router() {
@@ -56,6 +57,7 @@ function Router() {
         <Route path="/printables" component={Printables} />
         <Route path="/tools" component={Tools} />
         <Route path="/settings" component={Settings} />
+        <Route path="/tax-rates" component={TaxRates} />
         <Route path="/account" component={Account} />
         <Route path="/data" component={DataImportExport} />
         <Route path="/integrations" component={Integrations} />
