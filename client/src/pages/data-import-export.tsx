@@ -123,7 +123,7 @@ export default function DataImportExport() {
     }
   };
 
-  // Handle import from Cake Diary
+  // Handle import from Bake Diary
   const handleImportFromCakeDiary = async () => {
     if (!importFile) {
       toast({
@@ -157,7 +157,7 @@ export default function DataImportExport() {
 
       if (result.success) {
         setImportSuccess(true);
-        setImportMessage("Data imported successfully from Cake Diary!");
+        setImportMessage("Data imported successfully from Bake Diary!");
         // Format summary message
         if (result.result && result.result.summary) {
           const summary = result.result.summary;
@@ -301,7 +301,7 @@ export default function DataImportExport() {
               <CardHeader>
                 <CardTitle>Import Data</CardTitle>
                 <CardDescription>
-                  Import data from a backup file or migrate from Cake Diary
+                  Import data from a backup file or migrate from Bake Diary
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -467,7 +467,7 @@ export default function DataImportExport() {
                   ) : (
                     <>
                       <Upload className="mr-2 h-4 w-4" />
-                      Import from Cake Diary
+                      Import from Bake Diary
                     </>
                   )}
                 </Button>

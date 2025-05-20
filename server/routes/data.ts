@@ -204,8 +204,8 @@ router.post("/import/json", async (req: Request, res: Response) => {
 });
 
 /**
- * Import from Cake Diary data format
- * Special endpoint specifically for importing from the legacy Cake Diary format
+ * Import from Bake Diary data format
+ * Special endpoint specifically for importing from the legacy Bake Diary format
  */
 router.post("/import/cake-diary", upload.single("file"), async (req: Request, res: Response) => {
   try {
