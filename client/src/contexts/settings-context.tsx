@@ -21,6 +21,15 @@ export interface Settings {
   receivePaymentReminders?: boolean;
   receiveMarketingEmails?: boolean;
   receiveProductUpdates?: boolean;
+  // Business details for invoices and orders
+  businessName?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  businessAddress?: string;
+  businessLogoUrl?: string;
+  // Footer text for invoices and quotes
+  invoiceFooter?: string;
+  quoteFooter?: string;
 }
 
 // Define what our context provides
@@ -53,6 +62,15 @@ const SettingsContext = createContext<SettingsContextType>({
     receivePaymentReminders: false,
     receiveMarketingEmails: false,
     receiveProductUpdates: false,
+    // Default business details
+    businessName: '',
+    businessEmail: '',
+    businessPhone: '',
+    businessAddress: '',
+    businessLogoUrl: '',
+    // Default footer text
+    invoiceFooter: '',
+    quoteFooter: '',
   },
   isLoading: true,
   updateSettings: async () => false,
