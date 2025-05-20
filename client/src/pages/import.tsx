@@ -103,10 +103,10 @@ export default function ImportPage() {
       }
       setSelectedQuoteListFile(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Import failed",
-        description: `Error importing quotes: ${error}`,
+        description: `Error importing quotes: ${error.message}`,
         variant: "destructive",
       });
       setSelectedQuoteListFile(null);
@@ -139,10 +139,10 @@ export default function ImportPage() {
       }
       setSelectedOrderItemsFile(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Import failed",
-        description: `Error importing order items: ${error}`,
+        description: `Error importing order items: ${error.message}`,
         variant: "destructive",
       });
       setSelectedOrderItemsFile(null);
@@ -275,7 +275,7 @@ export default function ImportPage() {
                   </div>
 
                   {importOrdersMutation.isSuccess && importOrdersMutation.data.success && (
-                    <Alert variant="success">
+                    <Alert className="border-green-500 bg-green-50 text-green-900">
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertTitle>Import Successful</AlertTitle>
                       <AlertDescription>
@@ -357,7 +357,7 @@ export default function ImportPage() {
                   </div>
 
                   {importQuotesMutation.isSuccess && importQuotesMutation.data.success && (
-                    <Alert variant="success">
+                    <Alert className="border-green-500 bg-green-50 text-green-900">
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertTitle>Import Successful</AlertTitle>
                       <AlertDescription>
@@ -440,7 +440,7 @@ export default function ImportPage() {
                   </div>
 
                   {importOrderItemsMutation.isSuccess && importOrderItemsMutation.data.success && (
-                    <Alert variant="success">
+                    <Alert className="border-green-500 bg-green-50 text-green-900">
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertTitle>Import Successful</AlertTitle>
                       <AlertDescription>
