@@ -207,7 +207,7 @@ router.post("/import/json", async (req: Request, res: Response) => {
  * Import from Bake Diary data format
  * Special endpoint specifically for importing from the legacy Bake Diary format
  */
-router.post("/import/cake-diary", upload.single("file"), async (req: Request, res: Response) => {
+router.post("/import/bake-diary", upload.single("file"), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No file uploaded" });
@@ -224,7 +224,7 @@ router.post("/import/cake-diary", upload.single("file"), async (req: Request, re
       return res.status(400).json({ success: false, error: "Invalid JSON file" });
     }
     
-    // Transform Cake Diary data to BakeGenie format
+    // Transform Bake Diary data to BakeGenie format
     const transformedData = transformCakeDiaryData(data);
     
     // Parse import options from request body
@@ -264,21 +264,21 @@ router.post("/import/cake-diary", upload.single("file"), async (req: Request, re
       result,
     });
   } catch (error) {
-    console.error("Cake Diary import error:", error);
-    res.status(500).json({ success: false, error: "Failed to import data from Cake Diary" });
+    console.error("Bake Diary import error:", error);
+    res.status(500).json({ success: false, error: "Failed to import data from Bake Diary" });
   }
 });
 
 /**
- * Transform Cake Diary data format to BakeGenie format
+ * Transform Bake Diary data format to BakeGenie format
  */
-function transformCakeDiaryData(cakeDiaryData: any): ImportData {
-  // Map fields from Cake Diary format to BakeGenie format
-  // This is a placeholder implementation - the actual transformation would depend on the Cake Diary data structure
+function transformBakeDiaryData(bakeDiaryData: any): ImportData {
+  // Map fields from Bake Diary format to BakeGenie format
+  // This is a placeholder implementation - the actual transformation would depend on the Bake Diary data structure
   
   const transformedData: ImportData = {
     version: "1.0",
-    sourceSystem: "Cake Diary",
+    sourceSystem: "Bake Diary",
     orders: [],
     contacts: [],
     recipes: [],
@@ -407,7 +407,7 @@ function transformCakeDiaryData(cakeDiaryData: any): ImportData {
 }
 
 /**
- * Map Cake Diary event type to BakeGenie event type
+ * Map Bake Diary event type to BakeGenie event type
  */
 function mapEventType(eventType: string): string {
   const mapping: Record<string, string> = {
@@ -427,7 +427,7 @@ function mapEventType(eventType: string): string {
 }
 
 /**
- * Map Cake Diary order status to BakeGenie order status
+ * Map Bake Diary order status to BakeGenie order status
  */
 function mapOrderStatus(status: string): string {
   const mapping: Record<string, string> = {
@@ -444,7 +444,7 @@ function mapOrderStatus(status: string): string {
 }
 
 /**
- * Map Cake Diary enquiry status to BakeGenie enquiry status
+ * Map Bake Diary enquiry status to BakeGenie enquiry status
  */
 function mapEnquiryStatus(status: string): string {
   const mapping: Record<string, string> = {
