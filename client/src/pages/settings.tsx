@@ -461,7 +461,7 @@ const Settings = () => {
                     <span>Hourly Rate</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>${hourlyRate}/h</span>
+                    <span>Set your rate</span>
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
@@ -473,7 +473,7 @@ const Settings = () => {
                     <span>Markup Margin %</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>{markupMargin}%</span>
+                    <span>Not set</span>
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
@@ -485,7 +485,7 @@ const Settings = () => {
                     <span>Next Order Number</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>26</span>
+                    <span>1</span>
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
