@@ -16,7 +16,9 @@ async function updateSettingsTable() {
       ALTER TABLE settings 
       ADD COLUMN IF NOT EXISTS tax_enabled BOOLEAN DEFAULT true,
       ADD COLUMN IF NOT EXISTS use_gst BOOLEAN DEFAULT false,
-      ADD COLUMN IF NOT EXISTS use_tax_invoice BOOLEAN DEFAULT false
+      ADD COLUMN IF NOT EXISTS use_tax_invoice BOOLEAN DEFAULT false,
+      ADD COLUMN IF NOT EXISTS tax_terminology TEXT DEFAULT 'Tax',
+      ADD COLUMN IF NOT EXISTS tax_invoice_title TEXT DEFAULT 'Tax Invoice'
     `);
     
     // Create tax_rates table if it doesn't exist

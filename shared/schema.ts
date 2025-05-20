@@ -274,6 +274,8 @@ export const settings = pgTable("settings", {
   taxEnabled: boolean("tax_enabled").default(true),
   useGst: boolean("use_gst").default(false), // Use GST instead of VAT terminology
   useTaxInvoice: boolean("use_tax_invoice").default(false), // Use "Tax Invoice" as title instead of "Invoice"
+  taxTerminology: text("tax_terminology").default("Tax"),
+  taxInvoiceTitle: text("tax_invoice_title").default("Tax Invoice"),
   businessHours: jsonb("business_hours"),
   // Email notification settings
   emailAddress: text("email_address"),
