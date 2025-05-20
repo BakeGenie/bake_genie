@@ -10,6 +10,7 @@ import { router as sampleInvoiceRoutes } from "./routes/sample-invoice";
 import { router as paymentRemindersRoutes } from "./routes/payment-reminders";
 import { router as reportRoutes } from "./routes/reports";
 import { router as settingsRouter } from "./routes/settings";
+import { router as taxRatesRouter } from "./routes/tax-rates";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -41,6 +42,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register settings routes
   app.use('/api/settings', settingsRouter);
+  
+  // Register tax rates routes
+  app.use('/api/tax-rates', taxRatesRouter);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
