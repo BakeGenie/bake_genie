@@ -65,6 +65,18 @@ export class InvoiceService {
         day: 'numeric'
       });
       
+      // Get document font size from settings
+      const documentFontSize = userSettings?.documentFontSize || 'normal';
+      const isLargeFontSize = documentFontSize === 'large';
+      
+      // Set font size values based on setting
+      const baseFontSize = isLargeFontSize ? '16px' : '14px';
+      const headingFontSize = isLargeFontSize ? '28px' : '24px';
+      const subheadingFontSize = isLargeFontSize ? '22px' : '18px';
+      const smallFontSize = isLargeFontSize ? '14px' : '12px';
+      const tableFontSize = isLargeFontSize ? '16px' : '14px';
+      const totalFontSize = isLargeFontSize ? '20px' : '18px';
+      
       // Generate HTML
       const html = `
         <!DOCTYPE html>
@@ -79,6 +91,7 @@ export class InvoiceService {
               line-height: 1.5;
               margin: 0;
               padding: 20px;
+              font-size: ${baseFontSize};
             }
             .invoice-header {
               display: flex;
@@ -86,7 +99,7 @@ export class InvoiceService {
               margin-bottom: 40px;
             }
             .invoice-title {
-              font-size: 24px;
+              font-size: ${headingFontSize};
               font-weight: bold;
               margin-bottom: 10px;
               color: #444;
@@ -101,6 +114,7 @@ export class InvoiceService {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 30px;
+              font-size: ${tableFontSize};
             }
             th {
               background-color: #f2f2f2;
@@ -121,12 +135,12 @@ export class InvoiceService {
             }
             .totals tr.total {
               font-weight: bold;
-              font-size: 18px;
+              font-size: ${totalFontSize};
             }
             .footer {
               margin-top: 40px;
               color: #777;
-              font-size: 12px;
+              font-size: ${smallFontSize};
               text-align: center;
               border-top: 1px solid #eee;
               padding-top: 20px;

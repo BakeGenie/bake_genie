@@ -28,6 +28,27 @@ router.get("/", async (req: Request, res: Response) => {
     console.error("Error generating sample invoice:", error);
     
     // Create a message indicating no invoice data is available
+    // Try to get the document font size setting from the user's settings
+    let documentFontSize = 'normal';
+    try {
+      const db = await import("../db").then(m => m.db);
+      const settings = await import("@shared/schema").then(m => m.settings);
+      const eq = await import("drizzle-orm").then(m => m.eq);
+      
+      // Assuming user ID 1 for the sample, in real app would be authenticated user
+      const [userSettings] = await db.select().from(settings).where(eq(settings.userId, 1));
+      if (userSettings?.documentFontSize) {
+        documentFontSize = userSettings.documentFontSize;
+      }
+    } catch (settingsError) {
+      console.error("Error fetching document font size setting:", settingsError);
+    }
+    
+    const isLargeFontSize = documentFontSize === 'large';
+    const headingFontSize = isLargeFontSize ? '28px' : '24px';
+    const paragraphFontSize = isLargeFontSize ? '18px' : '16px';
+    const iconFontSize = isLargeFontSize ? '56px' : '48px';
+    
     const noInvoiceData = `
       <!DOCTYPE html>
       <html>
@@ -53,15 +74,15 @@ router.get("/", async (req: Request, res: Response) => {
           }
           h1 {
             color: #555;
-            font-size: 24px;
+            font-size: ${headingFontSize};
             margin-bottom: 20px;
           }
           p {
-            font-size: 16px;
+            font-size: ${paragraphFontSize};
             margin-bottom: 15px;
           }
           .icon {
-            font-size: 48px;
+            font-size: ${iconFontSize};
             margin-bottom: 20px;
             color: #888;
           }
