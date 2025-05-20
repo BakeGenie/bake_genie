@@ -146,24 +146,27 @@ export default function EmailTemplates() {
 
   return (
     <div className="container mx-auto py-6 max-w-5xl">
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-4">
         <Link href="/settings" className="mr-4">
           <Button variant="ghost" size="icon">
             <ChevronLeftIcon className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">Email Templates</h1>
-        <p className="text-gray-500">Customize your email message templates</p>
+        <div>
+          <h1 className="text-2xl font-bold">Email Templates</h1>
+          <p className="text-gray-500 text-sm">Customize your email message templates</p>
+        </div>
       </div>
 
-      <div className="flex justify-between mb-6">
-        <p className="text-sm text-gray-500">
+      <div className="flex justify-between mb-8 items-center bg-gray-50 p-4 rounded-md border">
+        <p className="text-sm text-gray-600 max-w-2xl">
           These templates will be used as the default text when sending emails from the system.
           You will be able to edit the content before sending each email.
         </p>
         <Button 
           onClick={handleSaveChanges} 
           disabled={!hasChanges || isLoading}
+          className="shrink-0 ml-4"
         >
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>
