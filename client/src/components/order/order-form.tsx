@@ -814,19 +814,37 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                 />
               </div>
             ) : (
-              /* Existing Customer Selection */
+              /* Existing Customer Selection with Search */
               <div>
                 <FormField
                   control={control}
-                  name="customerName"
+                  name="contactId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Select Customer</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="Search for customer..."
-                        />
+                        <div className="relative">
+                          <CustomerSearch 
+                            onSelectContact={(contact) => {
+                              field.onChange(contact.id);
+                              setValue("customerName", `${contact.firstName} ${contact.lastName}`);
+                              
+                              // Update delivery address if the contact has one
+                              if (contact.address) {
+                                const fullAddress = [
+                                  contact.address,
+                                  contact.city,
+                                  contact.state,
+                                  contact.zip,
+                                  contact.country
+                                ].filter(Boolean).join(", ");
+                                
+                                setValue("deliveryAddress", fullAddress);
+                              }
+                            }}
+                            selectedContactId={field.value}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
