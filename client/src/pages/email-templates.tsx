@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/contexts/settings-context";
-import PageHeader from "@/components/ui/page-header";
+
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -152,7 +152,8 @@ export default function EmailTemplates() {
             <ChevronLeftIcon className="h-5 w-5" />
           </Button>
         </Link>
-        <PageHeader heading="Email Templates" text="Customize your email message templates" />
+        <h1 className="text-2xl font-bold">Email Templates</h1>
+        <p className="text-gray-500">Customize your email message templates</p>
       </div>
 
       <div className="flex justify-between mb-6">

@@ -61,6 +61,7 @@ function Router() {
         <Route path="/printables" component={Printables} />
         <Route path="/tools" component={Tools} />
         <Route path="/settings" component={Settings} />
+        <Route path="/settings/email-templates" component={EmailTemplates} />
         <Route path="/tax-rates" component={TaxRates} />
         <Route path="/account" component={Account} />
         <Route path="/data" component={DataImportExport} />
