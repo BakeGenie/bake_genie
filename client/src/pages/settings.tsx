@@ -846,6 +846,17 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
+                <Link href="/settings/email-templates">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center">
+                      <FileTextIcon className="mr-3 h-5 w-5 text-primary-500" />
+                      <span>Email Templates</span>
+                    </div>
+                    <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
+                  </div>
+                </Link>
+                <Separator />
+                
                 <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
                   <div className="flex items-center">
                     <SettingsIcon className="mr-3 h-5 w-5 text-primary-500" />
