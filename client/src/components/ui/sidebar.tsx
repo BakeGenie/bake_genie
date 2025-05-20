@@ -160,14 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       sublinks: true,
       featureId: "data",
     },
-    {
-      path: "/manage-features",
-      label: "Manage Features",
-      icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
-      </svg>,
-      featureId: "settings",
-    },
+
     {
       path: "/settings",
       label: "Settings",
