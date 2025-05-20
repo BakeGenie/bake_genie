@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { importService } from "../services/import";
+import { importService } from "../services/import-service";
 import multer from "multer";
 import path from "path";
 import fs from "fs";

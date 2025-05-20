@@ -12,6 +12,8 @@ import { router as reportRoutes } from "./routes/reports";
 import { router as settingsRouter } from "./routes/settings";
 import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
+import { Router } from "express";
+import { registerImportRoutes } from "./routes/import";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
@@ -49,6 +51,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register features routes
   app.use('/api/settings/features', featuresRouter);
+  
+  // Register import routes
+  const importRouter = Router();
+  registerImportRoutes(importRouter);
+  app.use(importRouter);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
