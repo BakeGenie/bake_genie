@@ -39,6 +39,9 @@ const ManageFeatures = () => {
     try {
       await apiRequest("/api/settings/features/reset", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       queryClient.invalidateQueries({ queryKey: ["/api/settings/features"] });
@@ -63,7 +66,10 @@ const ManageFeatures = () => {
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
       return apiRequest(`/api/settings/features/${id}`, {
         method: "PATCH",
-        body: { enabled },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ enabled }),
       });
     },
     onSuccess: () => {
