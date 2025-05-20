@@ -84,6 +84,7 @@ const orderFormSchema = insertOrderSchema.extend({
   status: z.string().min(1, "Status is required"),
   eventType: z.string().min(1, "Event type is required"),
   deliveryAddress: z.string().optional(),
+  deliveryTime: z.string().optional(),
   // Add fields for price calculations
   discount: z.number().default(0),
   discountType: z.enum(["%", "$"]).default("%"),
@@ -111,6 +112,7 @@ const defaultValues: Partial<OrderFormValues> = {
   status: "Quote",
   deliveryType: "Pickup",
   deliveryAddress: "",
+  deliveryTime: "",
   eventType: "Birthday",
   items: [
     {
@@ -652,8 +654,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             )}
           />
 
-          {/* Delivery Type and Address */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Delivery Type, Time and Address */}
+          <div className="grid grid-cols-4 gap-4">
             <FormField
               control={control}
               name="deliveryType"
@@ -674,6 +676,20 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={control}
+              name="deliveryTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Delivery Time</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="time" />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
