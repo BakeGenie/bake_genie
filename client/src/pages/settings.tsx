@@ -98,22 +98,58 @@ const Settings = () => {
     "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
   ];
   
-  const handleCurrencyChange = (selectedCurrency: string) => {
-    setCurrency(selectedCurrency);
-    setShowCurrencyDialog(false);
-    toast({
-      title: "Currency Updated",
-      description: `Your currency has been updated to ${selectedCurrency}.`,
-    });
+  const handleCurrencyChange = async (selectedCurrency: string) => {
+    try {
+      // Get the currency symbol for the selected currency
+      const symbol = currencyOptions.find(c => c.code === selectedCurrency)?.symbol || "$";
+      
+      // Update local state
+      setCurrency(selectedCurrency);
+      setShowCurrencyDialog(false);
+      
+      // In a full implementation, we would save to server here
+      // For now, we'll just show a success message
+      toast({
+        title: "Currency Updated",
+        description: `Your currency has been updated to ${symbol} ${selectedCurrency}.`,
+      });
+      
+      // This is where we would call the server API to save the setting
+      // await apiRequest("PATCH", "/api/settings", { currency: selectedCurrency });
+      
+    } catch (error) {
+      console.error("Error updating currency:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update currency. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
-  const handleWeekStartChange = (selectedDay: string) => {
-    setWeekStartDay(selectedDay);
-    setShowWeekStartDialog(false);
-    toast({
-      title: "Week Start Day Updated",
-      description: `Your week will now start on ${selectedDay}.`,
-    });
+  const handleWeekStartChange = async (selectedDay: string) => {
+    try {
+      // Update local state
+      setWeekStartDay(selectedDay);
+      setShowWeekStartDialog(false);
+      
+      // Show success message
+      toast({
+        title: "Week Start Day Updated",
+        description: `Your week will now start on ${selectedDay}.`,
+      });
+      
+      // This is where we would call the server API to save the setting
+      // await apiRequest("PATCH", "/api/settings", { weekStartDay: selectedDay });
+      
+    } catch (error) {
+      console.error("Error updating week start day:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update week start day. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleNotImplemented = () => {
@@ -167,27 +203,35 @@ const Settings = () => {
             
             <ScrollArea className="h-60">
               <div className="space-y-2">
-                {filteredCurrencies.map((option) => (
-                  <button
-                    key={option.code}
-                    className={cn(
-                      "flex items-center justify-between w-full px-3 py-2 text-left rounded-md",
-                      currency === option.code 
-                        ? "bg-primary-50 text-primary-600" 
-                        : "hover:bg-gray-100"
-                    )}
-                    onClick={() => handleCurrencyChange(option.code)}
-                  >
-                    <div className="flex items-center">
-                      <span className="mr-2 w-6 text-center font-medium">{option.symbol}</span>
-                      <span>{option.name}</span>
-                      <span className="ml-2 text-sm text-gray-500">({option.code})</span>
-                    </div>
-                    {currency === option.code && (
-                      <CheckIcon className="h-5 w-5 text-primary-600" />
-                    )}
-                  </button>
-                ))}
+                {filteredCurrencies.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">
+                    No currencies match your search
+                  </div>
+                ) : (
+                  filteredCurrencies.map((option) => (
+                    <button
+                      key={option.code}
+                      className={cn(
+                        "flex items-center justify-between w-full px-3 py-2.5 text-left rounded-md transition-colors",
+                        currency === option.code 
+                          ? "bg-primary-50 text-primary-600 font-medium" 
+                          : "hover:bg-gray-100"
+                      )}
+                      onClick={() => handleCurrencyChange(option.code)}
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-3 w-8 text-center font-medium text-lg">{option.symbol}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{option.name}</span>
+                          <span className="text-sm text-gray-500">{option.code}</span>
+                        </div>
+                      </div>
+                      {currency === option.code && (
+                        <CheckIcon className="h-5 w-5 text-primary-600" />
+                      )}
+                    </button>
+                  ))
+                )}
               </div>
             </ScrollArea>
           </div>
@@ -211,14 +255,17 @@ const Settings = () => {
                   <button
                     key={day}
                     className={cn(
-                      "flex items-center justify-between w-full px-3 py-2 text-left rounded-md",
+                      "flex items-center justify-between w-full px-4 py-3 text-left rounded-md transition-colors",
                       weekStartDay === day 
-                        ? "bg-primary-50 text-primary-600" 
+                        ? "bg-primary-50 text-primary-600 font-medium" 
                         : "hover:bg-gray-100"
                     )}
                     onClick={() => handleWeekStartChange(day)}
                   >
-                    <span>{day}</span>
+                    <div className="flex items-center">
+                      <CalendarIcon className="mr-3 h-5 w-5 text-primary-500 opacity-80" />
+                      <span className="font-medium">{day}</span>
+                    </div>
                     {weekStartDay === day && (
                       <CheckIcon className="h-5 w-5 text-primary-600" />
                     )}
