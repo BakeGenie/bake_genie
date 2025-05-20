@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronRightIcon, CreditCardIcon, CurrencyIcon, DollarSignIcon, FileTextIcon, SettingsIcon, MailIcon, CalendarIcon, GlobeIcon, TypeIcon, LayersIcon, ClockIcon, PenIcon, PercentIcon, MapPinIcon, NotebookIcon, ReceiptIcon, FolderIcon, PizzaIcon, BarChartIcon, RulerIcon } from "lucide-react";
+import { ChevronRightIcon, CreditCardIcon, CurrencyIcon, DollarSignIcon, FileTextIcon, SettingsIcon, MailIcon, CalendarIcon, GlobeIcon, TypeIcon, LayersIcon, ClockIcon, PenIcon, PercentIcon, MapPinIcon, NotebookIcon, ReceiptIcon, FolderIcon, PizzaIcon, BarChartIcon, RulerIcon, SearchIcon, XIcon, CheckIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -16,6 +19,57 @@ const Settings = () => {
   const [language, setLanguage] = React.useState("English");
   const [hourlyRate, setHourlyRate] = React.useState("30.00");
   const [markupMargin, setMarkupMargin] = React.useState("40");
+  const [showCurrencyDialog, setShowCurrencyDialog] = React.useState(false);
+  const [showWeekStartDialog, setShowWeekStartDialog] = React.useState(false);
+  
+  // Currency options with top ones first, then alphabetical
+  const currencyOptions = [
+    // Top currencies
+    { code: "AUD", symbol: "$", name: "Australian Dollar" },
+    { code: "USD", symbol: "$", name: "US Dollar" },
+    { code: "EUR", symbol: "€", name: "Euro" },
+    { code: "GBP", symbol: "£", name: "British Pound" },
+    // Other currencies alphabetically
+    { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
+    { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+    { code: "CAD", symbol: "$", name: "Canadian Dollar" },
+    { code: "CHF", symbol: "Fr", name: "Swiss Franc" },
+    { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+    { code: "HKD", symbol: "$", name: "Hong Kong Dollar" },
+    { code: "INR", symbol: "₹", name: "Indian Rupee" },
+    { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+    { code: "MXN", symbol: "$", name: "Mexican Peso" },
+    { code: "NOK", symbol: "kr", name: "Norwegian Krone" },
+    { code: "NZD", symbol: "$", name: "New Zealand Dollar" },
+    { code: "RUB", symbol: "₽", name: "Russian Ruble" },
+    { code: "SEK", symbol: "kr", name: "Swedish Krona" },
+    { code: "SGD", symbol: "$", name: "Singapore Dollar" },
+    { code: "THB", symbol: "฿", name: "Thai Baht" },
+    { code: "ZAR", symbol: "R", name: "South African Rand" },
+  ];
+  
+  // Week start day options
+  const weekStartOptions = [
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+  ];
+  
+  const handleCurrencyChange = (selectedCurrency: string) => {
+    setCurrency(selectedCurrency);
+    setShowCurrencyDialog(false);
+    toast({
+      title: "Currency Updated",
+      description: `Your currency has been updated to ${selectedCurrency}.`,
+    });
+  };
+  
+  const handleWeekStartChange = (selectedDay: string) => {
+    setWeekStartDay(selectedDay);
+    setShowWeekStartDialog(false);
+    toast({
+      title: "Week Start Day Updated",
+      description: `Your week will now start on ${selectedDay}.`,
+    });
+  };
   
   const handleNotImplemented = () => {
     toast({
@@ -24,9 +78,112 @@ const Settings = () => {
     });
   };
 
+  // For currency dialog search
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const filteredCurrencies = searchQuery 
+    ? currencyOptions.filter(option => 
+        option.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        option.code.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : currencyOptions;
+
   return (
     <div className="p-6">
       <PageHeader title="Settings" />
+      
+      {/* Currency Selection Dialog */}
+      <Dialog open={showCurrencyDialog} onOpenChange={setShowCurrencyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Currency</DialogTitle>
+            <DialogDescription>
+              Choose the currency you would like to use in your BakeGenie account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4 space-y-4">
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Input
+                className="pl-9"
+                placeholder="Search currencies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <XIcon className="h-4 w-4 text-gray-500" />
+                </button>
+              )}
+            </div>
+            
+            <ScrollArea className="h-60">
+              <div className="space-y-2">
+                {filteredCurrencies.map((option) => (
+                  <button
+                    key={option.code}
+                    className={cn(
+                      "flex items-center justify-between w-full px-3 py-2 text-left rounded-md",
+                      currency === option.code 
+                        ? "bg-primary-50 text-primary-600" 
+                        : "hover:bg-gray-100"
+                    )}
+                    onClick={() => handleCurrencyChange(option.code)}
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-2 w-6 text-center font-medium">{option.symbol}</span>
+                      <span>{option.name}</span>
+                      <span className="ml-2 text-sm text-gray-500">({option.code})</span>
+                    </div>
+                    {currency === option.code && (
+                      <CheckIcon className="h-5 w-5 text-primary-600" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Week Start Day Dialog */}
+      <Dialog open={showWeekStartDialog} onOpenChange={setShowWeekStartDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Week Start Day</DialogTitle>
+            <DialogDescription>
+              Choose which day of the week you would like to start your calendar week.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <ScrollArea className="h-60">
+              <div className="space-y-2">
+                {weekStartOptions.map((day) => (
+                  <button
+                    key={day}
+                    className={cn(
+                      "flex items-center justify-between w-full px-3 py-2 text-left rounded-md",
+                      weekStartDay === day 
+                        ? "bg-primary-50 text-primary-600" 
+                        : "hover:bg-gray-100"
+                    )}
+                    onClick={() => handleWeekStartChange(day)}
+                  >
+                    <span>{day}</span>
+                    {weekStartDay === day && (
+                      <CheckIcon className="h-5 w-5 text-primary-600" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <div className="mt-6 grid grid-cols-1 gap-6">
         {/* Application Settings Section */}
@@ -40,13 +197,13 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="border rounded-md">
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowCurrencyDialog(true)}>
                   <div className="flex items-center">
                     <CurrencyIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Currency</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>${currency}</span>
+                    <span>{currencyOptions.find(c => c.code === currency)?.symbol} {currency}</span>
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
@@ -79,7 +236,7 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowWeekStartDialog(true)}>
                   <div className="flex items-center">
                     <CalendarIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Week Start Day</span>
@@ -348,7 +505,7 @@ const Settings = () => {
               <div className="border rounded-md">
                 <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
                   <div className="flex items-center">
-                    <BarChartIcon className="mr-3 h-5 w-5 text-primary-500" />
+                    <FolderIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Expense Categories</span>
                   </div>
                   <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
@@ -357,7 +514,7 @@ const Settings = () => {
                 
                 <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
                   <div className="flex items-center">
-                    <ReceiptIcon className="mr-3 h-5 w-5 text-primary-500" />
+                    <FolderIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Additional Income Categories</span>
                   </div>
                   <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
