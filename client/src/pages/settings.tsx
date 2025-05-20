@@ -38,14 +38,25 @@ const Settings = () => {
       setCurrency(settings.currency);
       setWeekStartDay(settings.weekStartDay || "Monday");
       setLanguage(settings.language || "English");
-      setHourlyRate(settings.hourlyRate || "30.00");
-      setMarkupMargin(settings.markupMargin || "40");
+      setHourlyRate(settings.hourlyRate || "");
+      setMarkupMargin(settings.markupMargin || "");
+      setEditHourlyRate(settings.hourlyRate || "");
+      setEditMarkupMargin(settings.markupMargin || "");
+      setEditNextOrderNumber(settings.nextOrderNumber?.toString() || "1");
     }
   }, [isLoading, settings]);
   
   // Local state for dialogs
   const [showCurrencyDialog, setShowCurrencyDialog] = React.useState(false);
   const [showWeekStartDialog, setShowWeekStartDialog] = React.useState(false);
+  const [showHourlyRateDialog, setShowHourlyRateDialog] = React.useState(false);
+  const [showMarkupMarginDialog, setShowMarkupMarginDialog] = React.useState(false);
+  const [showNextOrderNumberDialog, setShowNextOrderNumberDialog] = React.useState(false);
+  
+  // Local state for editing values
+  const [editHourlyRate, setEditHourlyRate] = React.useState(settings.hourlyRate || '');
+  const [editMarkupMargin, setEditMarkupMargin] = React.useState(settings.markupMargin || '');
+  const [editNextOrderNumber, setEditNextOrderNumber] = React.useState(settings.nextOrderNumber?.toString() || '1');
   
   // Currency options with top ones first, then alphabetical
   const currencyOptions = [
@@ -166,6 +177,131 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to update week start day. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleHourlyRateChange = async () => {
+    try {
+      // Validate hourly rate (should be a valid number)
+      const hourlyRateValue = parseFloat(editHourlyRate);
+      if (isNaN(hourlyRateValue) || hourlyRateValue < 0) {
+        toast({
+          title: "Invalid hourly rate",
+          description: "Please enter a valid hourly rate.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Format the hourly rate to have 2 decimal places
+      const formattedHourlyRate = hourlyRateValue.toFixed(2);
+      
+      // Update local state
+      setHourlyRate(formattedHourlyRate);
+      setShowHourlyRateDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        hourlyRate: formattedHourlyRate 
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save hourly rate setting");
+      }
+      
+      toast({
+        title: "Hourly Rate Updated",
+        description: `Your hourly rate has been updated to ${getCurrencySymbol(currency)}${formattedHourlyRate}.`,
+      });
+    } catch (error) {
+      console.error("Error updating hourly rate:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update hourly rate. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleMarkupMarginChange = async () => {
+    try {
+      // Validate markup margin (should be a valid number)
+      const markupMarginValue = parseFloat(editMarkupMargin);
+      if (isNaN(markupMarginValue) || markupMarginValue < 0) {
+        toast({
+          title: "Invalid markup margin",
+          description: "Please enter a valid markup margin percentage.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Format the markup margin as a whole number
+      const formattedMarkupMargin = Math.round(markupMarginValue).toString();
+      
+      // Update local state
+      setMarkupMargin(formattedMarkupMargin);
+      setShowMarkupMarginDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        markupMargin: formattedMarkupMargin 
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save markup margin setting");
+      }
+      
+      toast({
+        title: "Markup Margin Updated",
+        description: `Your markup margin has been updated to ${formattedMarkupMargin}%.`,
+      });
+    } catch (error) {
+      console.error("Error updating markup margin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update markup margin. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleNextOrderNumberChange = async () => {
+    try {
+      // Validate next order number (should be a valid positive integer)
+      const nextOrderNumberValue = parseInt(editNextOrderNumber);
+      if (isNaN(nextOrderNumberValue) || nextOrderNumberValue < 1) {
+        toast({
+          title: "Invalid next order number",
+          description: "Please enter a valid order number (positive integer).",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Close dialog
+      setShowNextOrderNumberDialog(false);
+      
+      // Save the setting using our context
+      const success = await updateSettings({ 
+        nextOrderNumber: nextOrderNumberValue 
+      });
+      
+      if (!success) {
+        throw new Error("Failed to save next order number setting");
+      }
+      
+      toast({
+        title: "Next Order Number Updated",
+        description: `Your next order number has been updated to ${nextOrderNumberValue}.`,
+      });
+    } catch (error) {
+      console.error("Error updating next order number:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update next order number. Please try again.",
         variant: "destructive",
       });
     }

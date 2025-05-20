@@ -8,6 +8,7 @@ export interface Settings {
   language: string;
   hourlyRate: string;
   markupMargin: string;
+  nextOrderNumber: number;
   // Tax settings
   taxEnabled?: boolean;
   useGst?: boolean;
@@ -37,8 +38,9 @@ const SettingsContext = createContext<SettingsContextType>({
     currencySymbol: '$',
     weekStartDay: 'Monday',
     language: 'English',
-    hourlyRate: '30.00',
-    markupMargin: '40',
+    hourlyRate: '',
+    markupMargin: '',
+    nextOrderNumber: 1,
     // Default tax settings
     taxEnabled: true,
     useGst: false,
@@ -117,8 +119,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     currencySymbol: '$',
     weekStartDay: 'Monday',
     language: 'English',
-    hourlyRate: '30.00',
-    markupMargin: '40',
+    hourlyRate: '',
+    markupMargin: '',
+    nextOrderNumber: 1,
   });
   const [isLoading, setIsLoading] = useState(true);
 
