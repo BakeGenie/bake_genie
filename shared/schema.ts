@@ -300,6 +300,8 @@ export const settings = pgTable("settings", {
   // Invoice template settings
   invoiceTemplate: text("invoice_template").default("default"),
   invoiceColors: jsonb("invoice_colors"),
+  // Order settings
+  nextOrderNumber: integer("next_order_number").default(1),
   // Labor settings
   laborRate: decimal("labor_rate", { precision: 10, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

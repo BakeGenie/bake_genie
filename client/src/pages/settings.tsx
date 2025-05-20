@@ -457,6 +457,134 @@ const Settings = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Hourly Rate Dialog */}
+      <Dialog open={showHourlyRateDialog} onOpenChange={setShowHourlyRateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Hourly Rate</DialogTitle>
+            <DialogDescription>
+              Enter your hourly rate. This will be used to calculate costs for time-based services.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="hourlyRate">Hourly Rate ({getCurrencySymbol(currency)})</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  {getCurrencySymbol(currency)}
+                </span>
+                <Input
+                  id="hourlyRate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="pl-8"
+                  placeholder="Enter your hourly rate"
+                  value={editHourlyRate}
+                  onChange={(e) => setEditHourlyRate(e.target.value)}
+                />
+              </div>
+              <p className="text-sm text-gray-500">
+                This rate will be used to calculate costs in orders and quotes.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowHourlyRateDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleHourlyRateChange}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Markup Margin Dialog */}
+      <Dialog open={showMarkupMarginDialog} onOpenChange={setShowMarkupMarginDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Markup Margin</DialogTitle>
+            <DialogDescription>
+              Enter your default markup margin percentage. This will be used to calculate product markup.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="markupMargin">Markup Margin (%)</Label>
+              <div className="relative">
+                <Input
+                  id="markupMargin"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Enter markup percentage"
+                  value={editMarkupMargin}
+                  onChange={(e) => setEditMarkupMargin(e.target.value)}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  %
+                </span>
+              </div>
+              <p className="text-sm text-gray-500">
+                This percentage will be used to calculate product pricing in orders and quotes.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowMarkupMarginDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleMarkupMarginChange}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Next Order Number Dialog */}
+      <Dialog open={showNextOrderNumberDialog} onOpenChange={setShowNextOrderNumberDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Next Order Number</DialogTitle>
+            <DialogDescription>
+              Enter the next order number to be used when creating new orders.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nextOrderNumber">Next Order Number</Label>
+              <Input
+                id="nextOrderNumber"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Enter next order number"
+                value={editNextOrderNumber}
+                onChange={(e) => setEditNextOrderNumber(e.target.value)}
+              />
+              <p className="text-sm text-gray-500">
+                This number will be used for your next order and will automatically increment with each new order.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => setShowNextOrderNumberDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleNextOrderNumberChange}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="mt-6 grid grid-cols-1 gap-6">
         {/* Application Settings Section */}
         <Card>
@@ -591,37 +719,45 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowHourlyRateDialog(true)}>
                   <div className="flex items-center">
                     <ClockIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Hourly Rate</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>Set your rate</span>
+                    {hourlyRate ? (
+                      <span>{getCurrencySymbol(currency)}{hourlyRate}/h</span>
+                    ) : (
+                      <span>Set your rate</span>
+                    )}
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowMarkupMarginDialog(true)}>
                   <div className="flex items-center">
                     <PercentIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Markup Margin %</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>Not set</span>
+                    {markupMargin ? (
+                      <span>{markupMargin}%</span>
+                    ) : (
+                      <span>Set markup margin</span>
+                    )}
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowNextOrderNumberDialog(true)}>
                   <div className="flex items-center">
                     <TypeIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Next Order Number</span>
                   </div>
                   <div className="flex items-center text-gray-600">
-                    <span>1</span>
+                    <span>{settings.nextOrderNumber || 1}</span>
                     <ChevronRightIcon className="ml-2 h-5 w-5" />
                   </div>
                 </div>
