@@ -1,0 +1,4 @@
+Date,Order Number,Contact,Item,Details,Servings,Labour,Hours,Overhead,Recipes,Supplies,Cost Price,Sell Price (excl VAT)
+19 May 2025,26,Annabel Test,Macaron,"10 pk Macaron Box ",1,"15.00","0.50","2.50","6.65","1.66","25.81","30.00"
+31 May 2025,22,Chloe Young,Cake,"8"" Bubblegum Rainbow Cake",20,"90.00","3","10.00","44.62","40.13","184.75","230.00"
+Total,,,,,,"105.00","3.50","12.50","51.27","41.79","210.56","260.00"
