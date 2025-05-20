@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Product, ProductBundle } from "@shared/schema";
 import PageHeader from "@/components/ui/page-header";
+import { FormatCurrency } from "@/components/ui/format-currency";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -355,7 +356,9 @@ const Products = () => {
                 <CardFooter className="flex justify-between border-t pt-4">
                   <div className="flex items-center">
                     <DollarSignIcon className="h-4 w-4 mr-1 text-gray-500" />
-                    <span className="font-medium">${Number(product.price).toFixed(2)}</span>
+                    <span className="font-medium">
+                      <FormatCurrency amount={product.price} />
+                    </span>
                   </div>
                   {product.cost && product.price && (
                     <div className="flex items-center">
