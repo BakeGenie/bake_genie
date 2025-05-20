@@ -373,6 +373,21 @@ export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof income.$inferSelect;
 export type Enquiry = typeof enquiries.$inferSelect;
+// Feature settings table
+export const featureSettings = pgTable("feature_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  featureId: text("feature_id").notNull(),
+  name: text("name").notNull(),
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFeatureSettingSchema = createInsertSchema(featureSettings).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFeatureSetting = z.infer<typeof insertFeatureSettingSchema>;
+export type FeatureSetting = typeof featureSettings.$inferSelect;
+
 export type Settings = typeof settings.$inferSelect;
 export type TaxRate = typeof taxRates.$inferSelect;
 
