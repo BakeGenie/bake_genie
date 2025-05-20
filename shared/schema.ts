@@ -334,6 +334,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true,
 export const insertIncomeSchema = createInsertSchema(income).omit({ id: true, createdAt: true });
 export const insertEnquirySchema = createInsertSchema(enquiries).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTaxRateSchema = createInsertSchema(taxRates).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Define types using z.infer
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -352,6 +353,7 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
 export type InsertEnquiry = z.infer<typeof insertEnquirySchema>;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+export type InsertTaxRate = z.infer<typeof insertTaxRateSchema>;
 
 // Define select types
 export type User = typeof users.$inferSelect;
@@ -370,6 +372,7 @@ export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof income.$inferSelect;
 export type Enquiry = typeof enquiries.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
+export type TaxRate = typeof taxRates.$inferSelect;
 
 // Add integrations table
 export const integrations = pgTable("integrations", {
