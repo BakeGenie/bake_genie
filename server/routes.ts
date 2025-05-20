@@ -12,6 +12,7 @@ import { router as reportRoutes } from "./routes/reports";
 import { router as settingsRouter } from "./routes/settings";
 import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
+import { router as contactsRouter } from "./routes/contacts";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
@@ -51,6 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register features routes
   app.use('/api/settings/features', featuresRouter);
+  
+  // Register contacts routes
+  app.use('/api/contacts', contactsRouter);
   
   // Register import routes
   const importRouter = Router();
