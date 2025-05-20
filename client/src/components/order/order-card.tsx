@@ -4,6 +4,7 @@ import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { FileTextIcon, CircleXIcon, FileDownIcon, MailIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FormatCurrency } from "@/components/ui/format-currency";
 
 interface OrderCardProps {
   order: OrderWithItems;
@@ -41,9 +42,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
       case "Paid":
         return <Badge variant="default">Paid</Badge>;
       case "Ready":
-        return <Badge variant="success">Ready</Badge>;
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Ready</Badge>;
       case "Delivered":
-        return <Badge variant="success">Delivered</Badge>;
+        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Delivered</Badge>;
       case "Cancelled":
         return <Badge variant="destructive">Cancelled</Badge>;
       default:
@@ -96,9 +97,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
                 </span>
               )}
             </div>
-            {order.theme && (
+            {order.description && (
               <div className={`text-sm ${isCancelled ? "text-gray-400" : "text-gray-500"}`}>
-                {order.theme}
+                {order.description}
               </div>
             )}
           </div>
@@ -106,7 +107,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       </div>
       <div className="text-right">
         <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
-          $ {Number(order.total).toFixed(2)}
+          <FormatCurrency amount={order.total} />
         </div>
         {(onDownloadClick || onEmailClick) && (
           <div className="flex mt-1">
