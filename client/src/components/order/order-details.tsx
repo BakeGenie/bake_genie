@@ -116,6 +116,12 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order }) => {
               {order.deliveryDetails && `- ${order.deliveryDetails}`}
             </div>
           </div>
+          {order.deliveryTime && (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="text-sm text-gray-500">Time:</div>
+              <div className="col-span-2 text-sm">{order.deliveryTime}</div>
+            </div>
+          )}
           {order.imageUrls && order.imageUrls.length > 0 && (
             <div>
               <div className="text-sm text-gray-500 mb-2">Image Uploads</div>
