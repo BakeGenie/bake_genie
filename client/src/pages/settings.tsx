@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import PageHeader from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
+import { TaxRatesSection } from "@/components/settings/tax-rates-section";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -185,6 +186,25 @@ const Settings = () => {
       )
     : currencyOptions;
 
+  // Track if we should scroll to tax rates section
+  const [scrollToTaxRates, setScrollToTaxRates] = React.useState(false);
+  const taxRatesSectionRef = React.useRef<HTMLDivElement>(null);
+  
+  // Check for hash in URL and scroll to tax rates if needed
+  useEffect(() => {
+    if (window.location.hash === '#tax-rates') {
+      setScrollToTaxRates(true);
+    }
+  }, []);
+  
+  // Scroll to tax rates section if needed
+  useEffect(() => {
+    if (scrollToTaxRates && taxRatesSectionRef.current) {
+      taxRatesSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+      setScrollToTaxRates(false);
+    }
+  }, [scrollToTaxRates, taxRatesSectionRef]);
+
   return (
     <div className="p-6">
       <PageHeader title="Settings" />
@@ -318,9 +338,9 @@ const Settings = () => {
                 </div>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={() => window.location.hash = "tax-rates"}>
                   <div className="flex items-center">
-                    <DollarSignIcon className="mr-3 h-5 w-5 text-primary-500" />
+                    <PercentIcon className="mr-3 h-5 w-5 text-primary-500" />
                     <span>Tax Rates</span>
                   </div>
                   <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
