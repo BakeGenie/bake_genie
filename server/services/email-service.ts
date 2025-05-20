@@ -1,8 +1,19 @@
 import sgMail from '@sendgrid/mail';
+import { User, Order, Contact, Settings } from '@shared/schema';
 import { users, orders, contacts, settings as settingsTable } from '@shared/schema';
-import { formatCurrency } from '../utils/format-utils';
 import { db } from '../db';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, sql, gte, lte } from 'drizzle-orm';
+
+/**
+ * Format a number as currency
+ */
+function formatCurrency(amount: number, currencyCode: string = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currencyCode,
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
 
 // Initialize SendGrid with API key
 if (process.env.SENDGRID_API_KEY) {
@@ -122,7 +133,7 @@ export async function generateUpcomingOrdersReport(userId: number): Promise<{
         break;
     }
     
-    // Get upcoming orders
+    // Get upcoming orders using SQL date comparison
     const upcomingOrders = await db
       .select()
       .from(orders)
@@ -130,8 +141,8 @@ export async function generateUpcomingOrdersReport(userId: number): Promise<{
       .where(
         and(
           eq(orders.userId, userId),
-          gte(orders.eventDate, now),
-          lte(orders.eventDate, endDate),
+          sql`${orders.eventDate} >= ${now.toISOString()}`,
+          sql`${orders.eventDate} <= ${endDate.toISOString()}`,
           eq(orders.status, 'Confirmed')
         )
       );
