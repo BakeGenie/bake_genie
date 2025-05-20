@@ -834,6 +834,61 @@ const Settings = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Document Font Size Dialog */}
+      <Dialog open={showDocumentFontSizeDialog} onOpenChange={setShowDocumentFontSizeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Job Sheet & Invoice Font Size</DialogTitle>
+            <DialogDescription>
+              Choose the font size for your job sheets and invoices.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                className={cn(
+                  "flex items-center justify-between w-full px-4 py-3 text-left rounded-md transition-colors border",
+                  documentFontSize === "normal" 
+                    ? "bg-primary-50 border-primary-300 text-primary-600 font-medium" 
+                    : "hover:bg-gray-100 border-gray-200"
+                )}
+                onClick={() => handleDocumentFontSizeChange("normal")}
+              >
+                <div className="flex items-center">
+                  <div className="text-sm">Normal</div>
+                </div>
+                {documentFontSize === "normal" && (
+                  <CheckIcon className="h-5 w-5 text-primary-600" />
+                )}
+              </button>
+              
+              <button
+                className={cn(
+                  "flex items-center justify-between w-full px-4 py-3 text-left rounded-md transition-colors border",
+                  documentFontSize === "large" 
+                    ? "bg-primary-50 border-primary-300 text-primary-600 font-medium" 
+                    : "hover:bg-gray-100 border-gray-200"
+                )}
+                onClick={() => handleDocumentFontSizeChange("large")}
+              >
+                <div className="flex items-center">
+                  <div className="text-lg">Large</div>
+                </div>
+                {documentFontSize === "large" && (
+                  <CheckIcon className="h-5 w-5 text-primary-600" />
+                )}
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mt-2">
+              This setting affects the font size of text on job sheets and invoices.
+              Large font size (approximately 20pt) is suitable for improved readability.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="mt-6 grid grid-cols-1 gap-6">
         {/* Application Settings Section */}
         <Card>
