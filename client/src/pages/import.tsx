@@ -243,12 +243,13 @@ export default function ImportPage() {
                   <div className="grid gap-3">
                     <Label htmlFor="order-list-file">Select Orders CSV File</Label>
                     <div className="flex gap-3">
-                      <Input 
+                      <input 
                         id="order-list-file" 
                         type="file" 
                         accept=".csv" 
                         onChange={handleOrderListFileChange}
                         disabled={importOrdersMutation.isPending}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       <Button 
                         onClick={handleImportOrderList}
@@ -325,12 +326,13 @@ export default function ImportPage() {
                   <div className="grid gap-3">
                     <Label htmlFor="quote-list-file">Select Quotes CSV File</Label>
                     <div className="flex gap-3">
-                      <Input 
+                      <input 
                         id="quote-list-file" 
                         type="file" 
                         accept=".csv" 
                         onChange={handleQuoteListFileChange}
                         disabled={importQuotesMutation.isPending}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       <Button 
                         onClick={handleImportQuoteList}
@@ -408,12 +410,13 @@ export default function ImportPage() {
                   <div className="grid gap-3">
                     <Label htmlFor="order-items-file">Select Order Items CSV File</Label>
                     <div className="flex gap-3">
-                      <Input 
+                      <input 
                         id="order-items-file" 
                         type="file" 
                         accept=".csv" 
                         onChange={handleOrderItemsFileChange}
                         disabled={importOrderItemsMutation.isPending}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       <Button 
                         onClick={handleImportOrderItems}
