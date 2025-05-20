@@ -107,16 +107,23 @@ const Settings = () => {
       setCurrency(selectedCurrency);
       setShowCurrencyDialog(false);
       
-      // In a full implementation, we would save to server here
-      // For now, we'll just show a success message
+      // Save the setting to the server
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ currency: selectedCurrency }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to save currency setting");
+      }
+      
       toast({
         title: "Currency Updated",
         description: `Your currency has been updated to ${symbol} ${selectedCurrency}.`,
       });
-      
-      // This is where we would call the server API to save the setting
-      // await apiRequest("PATCH", "/api/settings", { currency: selectedCurrency });
-      
     } catch (error) {
       console.error("Error updating currency:", error);
       toast({
@@ -133,15 +140,24 @@ const Settings = () => {
       setWeekStartDay(selectedDay);
       setShowWeekStartDialog(false);
       
+      // Save the setting to the server
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ weekStartDay: selectedDay }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to save week start day setting");
+      }
+      
       // Show success message
       toast({
         title: "Week Start Day Updated",
         description: `Your week will now start on ${selectedDay}.`,
       });
-      
-      // This is where we would call the server API to save the setting
-      // await apiRequest("PATCH", "/api/settings", { weekStartDay: selectedDay });
-      
     } catch (error) {
       console.error("Error updating week start day:", error);
       toast({

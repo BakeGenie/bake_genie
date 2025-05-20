@@ -5,24 +5,13 @@ import { eq } from "drizzle-orm";
 
 export const router = Router();
 
-interface AuthRequest extends Request {
-  session: {
-    userId: number;
-    [key: string]: any;
-  };
-}
-
 /**
  * Get settings for the current user
  */
 router.get("/", async (req: Request, res: Response) => {
-  // For demo purposes, assume user ID 1
-  const userId = req.session?.userId || 1;
+  // For demo purposes, assume user ID 1 
+  const userId = 1;
   try {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
 
     const userSettings = await db
       .select()
@@ -50,12 +39,10 @@ router.get("/", async (req: Request, res: Response) => {
 /**
  * Update settings for the current user
  */
-router.patch("/", async (req: AuthRequest, res: Response) => {
+router.patch("/", async (req: Request, res: Response) => {
+  // For demo purposes, use a fixed user ID
+  const userId = 1;
   try {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
 
     const userSettings = await db
       .select()
