@@ -8,6 +8,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { OrderWithItems } from "@/types";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FormatCurrency } from "@/components/ui/format-currency";
 
 interface DateRange {
   startDate?: Date;
@@ -433,7 +434,7 @@ const ReportView: React.FC<ReportViewProps> = ({ reportId, dateRange, onBack }) 
           {
             accessorKey: "amount",
             header: "Amount",
-            cell: ({ row }) => formatCurrency(row.getValue("amount")),
+            cell: ({ row }) => <FormatCurrency amount={row.getValue("amount")} />,
           },
         ];
 
@@ -456,7 +457,7 @@ const ReportView: React.FC<ReportViewProps> = ({ reportId, dateRange, onBack }) 
           {
             accessorKey: "amount",
             header: "Amount",
-            cell: ({ row }) => formatCurrency(row.getValue("amount")),
+            cell: ({ row }) => <FormatCurrency amount={row.getValue("amount")} />,
           },
         ];
 
