@@ -34,6 +34,7 @@ import Settings from "./pages/settings";
 import TaxRates from "./pages/tax-rates";
 import NewOrder from "./pages/new-order";
 import ManageFeatures from "./pages/manage-features";
+import InvoicePreview from "./pages/invoice-preview";
 
 function Router() {
   return (
@@ -65,6 +66,7 @@ function Router() {
         <Route path="/integrations" component={Integrations} />
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/manage-features" component={ManageFeatures} />
+        <Route path="/invoice-preview" component={InvoicePreview} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
