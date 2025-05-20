@@ -268,7 +268,12 @@ export const settings = pgTable("settings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().unique(),
   currency: text("currency").default("USD"),
+  weekStartDay: text("week_start_day").default("Monday"),
+  languageCode: text("language_code").default("en"),
   defaultTaxRate: decimal("default_tax_rate", { precision: 5, scale: 2 }).default("0"),
+  taxEnabled: boolean("tax_enabled").default(true),
+  useGst: boolean("use_gst").default(false), // Use GST instead of VAT terminology
+  useTaxInvoice: boolean("use_tax_invoice").default(false), // Use "Tax Invoice" as title instead of "Invoice"
   businessHours: jsonb("business_hours"),
   // Business details for invoices
   businessName: text("business_name"),
@@ -287,6 +292,19 @@ export const settings = pgTable("settings", {
   invoiceColors: jsonb("invoice_colors"),
   // Labor settings
   laborRate: decimal("labor_rate", { precision: 10, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tax Rates table
+export const taxRates = pgTable("tax_rates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(), // e.g., "Standard Rate", "Reduced Rate"
+  rate: decimal("rate", { precision: 5, scale: 2 }).notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").default(false),
+  active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
