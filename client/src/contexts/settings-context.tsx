@@ -1,164 +1,184 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// Define the settings context type
+// Define the shape of our settings
+interface Settings {
+  currency: string;
+  currencySymbol: string;
+  weekStartDay: string;
+  language: string;
+  hourlyRate: string;
+  markupMargin: string;
+}
+
+// Define what our context provides
 interface SettingsContextType {
-  currency: string;
-  currencySymbol: string;
-  weekStartDay: string;
-  language: string;
-  hourlyRate: string;
-  markupMargin: string;
-  updateSettings: (settings: Partial<SettingsState>) => Promise<void>;
+  settings: Settings;
+  isLoading: boolean;
+  updateSettings: (newSettings: Partial<Settings>) => Promise<boolean>;
+  getCurrencySymbol: (currencyCode: string) => string;
 }
 
-// Define the settings state structure
-interface SettingsState {
-  currency: string;
-  currencySymbol: string;
-  weekStartDay: string;
-  language: string;
-  hourlyRate: string;
-  markupMargin: string;
-}
+// Create the context with default values
+const SettingsContext = createContext<SettingsContextType>({
+  settings: {
+    currency: 'AUD',
+    currencySymbol: '$',
+    weekStartDay: 'Monday',
+    language: 'English',
+    hourlyRate: '30.00',
+    markupMargin: '40',
+  },
+  isLoading: true,
+  updateSettings: async () => false,
+  getCurrencySymbol: () => '$',
+});
 
-// Currency symbols lookup object
+// Currency mapping of code to symbol
 const currencySymbols: Record<string, string> = {
-  "AUD": "$",
-  "USD": "$",
-  "EUR": "€",
-  "GBP": "£",
-  "AED": "د.إ",
-  "ARS": "$",
-  "BDT": "৳",
-  "BGN": "лв",
-  "BRL": "R$",
-  "CAD": "$",
-  "CHF": "Fr",
-  "CLP": "$",
-  "CNY": "¥",
-  "COP": "$",
-  "CZK": "Kč",
-  "DKK": "kr",
-  "EGP": "£",
-  "HKD": "$",
-  "HRK": "kn",
-  "HUF": "Ft",
-  "IDR": "Rp",
-  "ILS": "₪",
-  "INR": "₹",
-  "JPY": "¥",
-  "KES": "KSh",
-  "KRW": "₩",
-  "KWD": "د.ك",
-  "LKR": "₨",
-  "MAD": "د.م.",
-  "MXN": "$",
-  "MYR": "RM",
-  "NGN": "₦",
-  "NOK": "kr",
-  "NZD": "$",
-  "PEN": "S/",
-  "PHP": "₱",
-  "PKR": "₨",
-  "PLN": "zł",
-  "QAR": "ر.ق",
-  "RON": "lei",
-  "RSD": "дин.",
-  "SAR": "ر.س",
-  "SEK": "kr",
-  "SGD": "$",
-  "THB": "฿",
-  "TRY": "₺",
-  "TWD": "NT$",
-  "UAH": "₴",
-  "VND": "₫",
-  "ZAR": "R",
-};
-
-// Create the context with a default value
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
-
-// Default settings values
-const defaultSettings: SettingsState = {
-  currency: "AUD",
-  currencySymbol: "$",
-  weekStartDay: "Monday",
-  language: "English",
-  hourlyRate: "30.00",
-  markupMargin: "40",
+  AUD: '$',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  NZD: '$',
+  CAD: '$',
+  CHF: 'Fr',
+  JPY: '¥',
+  CNY: '¥',
+  INR: '₹',
+  BRL: 'R$',
+  MXN: '$',
+  SGD: '$',
+  HKD: '$',
+  SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
+  PLN: 'zł',
+  AED: 'د.إ',
+  AFN: '؋',
+  ALL: 'L',
+  AMD: '֏',
+  ANG: 'ƒ',
+  AOA: 'Kz',
+  ARS: '$',
+  AWG: 'ƒ',
+  AZN: '₼',
+  BAM: 'KM',
+  BBD: '$',
+  BDT: '৳',
+  BGN: 'лв',
+  BHD: '.د.ب',
+  BIF: 'FBu',
+  BMD: '$',
+  BND: '$',
+  BOB: 'Bs.',
+  BTN: 'Nu.',
+  BWP: 'P',
+  BYN: 'Br',
+  BZD: 'BZ$',
+  CDF: 'FC',
+  CLP: '$',
+  COP: '$',
+  CRC: '₡',
+  CVE: '$',
+  CZK: 'Kč',
+  DJF: 'Fdj',
+  DOP: 'RD$',
+  DZD: 'دج',
+  // Add more as needed
 };
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<SettingsState>(defaultSettings);
+  const [settings, setSettings] = useState<Settings>({
+    currency: 'AUD',
+    currencySymbol: '$',
+    weekStartDay: 'Monday',
+    language: 'English',
+    hourlyRate: '30.00',
+    markupMargin: '40',
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch settings from API on component mount
+  // Function to get currency symbol for a currency code
+  const getCurrencySymbol = (currencyCode: string): string => {
+    return currencySymbols[currencyCode] || '$';
+  };
+
+  // Load settings from server on initial load
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response: any = await apiRequest("GET", "/api/settings");
-        if (response && typeof response === 'object' && Object.keys(response).length > 0) {
-          // Ensure we have a currency symbol even if it's a new currency not in our lookup
-          const currencySymbol = 
-            response.currency && currencySymbols[response.currency] 
-              ? currencySymbols[response.currency] 
-              : "$";
-              
-          setSettings({
-            ...defaultSettings,
-            ...response,
-            currencySymbol
-          });
+        const response = await fetch('/api/settings');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch settings');
         }
+        
+        const data = await response.json();
+        
+        // Update settings with fetched data
+        setSettings({
+          ...settings,
+          ...data,
+          // Make sure currencySymbol is set based on currency
+          currencySymbol: getCurrencySymbol(data.currency || settings.currency),
+        });
       } catch (error) {
-        console.error("Error fetching settings:", error);
-        // If there's an error, we'll use the default settings
+        console.error('Error loading settings:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
+    
     fetchSettings();
   }, []);
 
   // Update settings - both locally and on the server
-  const updateSettings = async (newSettings: Partial<SettingsState>) => {
+  const updateSettings = async (newSettings: Partial<Settings>): Promise<boolean> => {
     try {
-      // If currency is being updated, also update the currency symbol
-      let updatedSettings = { ...newSettings };
-      if (newSettings.currency && currencySymbols[newSettings.currency]) {
-        updatedSettings.currencySymbol = currencySymbols[newSettings.currency];
+      // If changing currency, also update currency symbol
+      if (newSettings.currency) {
+        newSettings.currencySymbol = getCurrencySymbol(newSettings.currency);
       }
       
-      // Update the settings in the API
-      await apiRequest("PATCH", "/api/settings", updatedSettings);
-      
-      // Update local state
-      setSettings(prev => ({ 
-        ...prev, 
-        ...updatedSettings 
+      // Update local state immediately for responsiveness
+      setSettings(prevSettings => ({
+        ...prevSettings,
+        ...newSettings,
       }));
+      
+      // Save to server
+      const response = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSettings),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+      
+      return true;
     } catch (error) {
-      console.error("Error updating settings:", error);
-      throw error;
+      console.error('Error updating settings:', error);
+      return false;
     }
   };
 
-  const value = {
-    ...settings,
-    updateSettings,
-  };
-
   return (
-    <SettingsContext.Provider value={value}>
+    <SettingsContext.Provider 
+      value={{ 
+        settings,
+        isLoading,
+        updateSettings,
+        getCurrencySymbol,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );
 };
 
 // Custom hook to use the settings context
-export const useSettings = (): SettingsContextType => {
-  const context = useContext(SettingsContext);
-  if (context === undefined) {
-    throw new Error("useSettings must be used within a SettingsProvider");
-  }
-  return context;
-};
+export const useSettings = () => useContext(SettingsContext);
