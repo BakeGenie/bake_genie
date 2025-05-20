@@ -64,6 +64,7 @@ function Router() {
         <Route path="/data" component={DataImportExport} />
         <Route path="/integrations" component={Integrations} />
         <Route path="/enquiry-form" component={EnquiryForm} />
+        <Route path="/manage-features" component={ManageFeatures} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
