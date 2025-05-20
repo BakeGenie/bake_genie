@@ -20,7 +20,8 @@ import {
   UtensilsIcon,
   DatabaseIcon,
   LinkIcon,
-  LogOutIcon
+  LogOutIcon,
+  PercentIcon
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -114,6 +115,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       label: "Printables",
       icon: <PrinterIcon className="w-5 h-5" />,
       sublinks: true,
+    },
+    {
+      path: "/tax-rates",
+      label: "Tax Rates",
+      icon: <PercentIcon className="w-5 h-5" />,
     },
     {
       path: "/tools",

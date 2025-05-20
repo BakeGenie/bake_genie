@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
-import { TaxRatesSection } from "@/components/settings/tax-rates-section";
+import { Link } from "wouter";
+import { PercentIcon } from "lucide-react";
 import { EmailUpdatesSection } from "@/components/settings/email-updates-section";
 
 const Settings = () => {
@@ -672,10 +673,22 @@ const Settings = () => {
           </CardContent>
         </Card>
         
-        {/* Tax Rates Section */}
-        <div id="tax-rates" ref={taxRatesSectionRef} className="mt-6">
-          <TaxRatesSection />
-        </div>
+        {/* Tax Rates link */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Tax Rates</CardTitle>
+            <CardDescription>Configure tax rates and settings for your business</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/tax-rates" className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-md border transition-colors">
+              <div className="flex items-center">
+                <PercentIcon className="mr-3 h-5 w-5 text-primary-500" />
+                <span>Manage Tax Rates</span>
+              </div>
+              <ChevronRightIcon className="h-5 w-5 text-gray-600" />
+            </Link>
+          </CardContent>
+        </Card>
 
         {/* Email Updates Section */}
         <div id="email-updates" ref={emailUpdatesSectionRef} className="mt-6">
