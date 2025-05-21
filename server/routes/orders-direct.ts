@@ -75,44 +75,55 @@ router.post("/api/orders", async (req, res) => {
       // Get user ID from session
       const userId = req.session?.userId || 1;
       
+      // Log entire request body
+      console.log("Creating order with complete data:", JSON.stringify(req.body, null, 2));
+      
+      // Extract data from the request, mapping to our database column names
       const {
-        contact_id,
-        event_date,
-        event_type,
+        contactId,
+        eventDate,
+        eventType,
         status,
-        delivery_type,
-        delivery_address,
-        delivery_time,
+        deliveryType,
+        deliveryAddress,
+        deliveryTime,
         notes,
-        order_number,
-        title,
-        total_amount
+        orderNumber,
+        total,
+        items
       } = req.body;
       
       // Generate order number if not provided
-      const orderNumber = order_number || `ORD-${Date.now().toString().substring(6)}`;
+      const orderNum = orderNumber || `ORD-${Date.now().toString().substring(6)}`;
       
-      console.log("Creating order with data:", req.body);
+      // Convert total to string if needed
+      const totalAmount = typeof total === 'number' ? total.toString() : (total || '0');
+      
+      // Parse event date from ISO string to Date object (if needed)
+      const parsedEventDate = eventDate ? new Date(eventDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      
+      console.log("Using orderNum:", orderNum);
+      console.log("Using parsedEventDate:", parsedEventDate);
+      console.log("Using totalAmount:", totalAmount);
       
       // Insert the order
       const insertOrderResult = await client.query(
         `INSERT INTO orders (
           user_id, contact_id, event_date, event_type, status, 
-          delivery_type, delivery_address, delivery_time, total_amount, notes, order_number, title
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+          delivery_type, delivery_address, delivery_time, total_amount, notes, order_number
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
         [
           userId, 
-          contact_id, 
-          event_date,
-          event_type || 'Other',
+          contactId, 
+          parsedEventDate,
+          eventType || 'Other',
           status || 'Quote',
-          delivery_type || 'Pickup',
-          delivery_address || '',
-          delivery_time || '',
-          total_amount || '0',
+          deliveryType || 'Pickup',
+          deliveryAddress || '',
+          deliveryTime || '',
+          totalAmount,
           notes || '',
-          orderNumber,
-          title || ''
+          orderNum
         ]
       );
       
@@ -120,18 +131,22 @@ router.post("/api/orders", async (req, res) => {
       console.log("Order created:", newOrder);
       
       // Insert order items if provided
-      if (req.body.items && Array.isArray(req.body.items)) {
-        for (const item of req.body.items) {
+      if (items && Array.isArray(items)) {
+        console.log("Processing order items:", items);
+        
+        for (const item of items) {
+          console.log("Processing item:", item);
+          
           await client.query(
             `INSERT INTO order_items (
               order_id, product_id, description, quantity, price
             ) VALUES ($1, $2, $3, $4, $5)`,
             [
               newOrder.id,
-              item.product_id || null,
+              item.productId || null,
               item.description || '',
               item.quantity || 1,
-              item.price || '0'
+              item.price ? item.price.toString() : '0'
             ]
           );
         }
@@ -141,17 +156,19 @@ router.post("/api/orders", async (req, res) => {
       
       res.status(201).json({ 
         success: true, 
-        order: newOrder 
+        order: newOrder,
+        id: newOrder.id
       });
     } catch (error) {
       await client.query('ROLLBACK');
+      console.error("Transaction error:", error);
       throw error;
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Error creating order:", error);
-    res.status(500).json({ success: false, error: "Failed to create order" });
+    res.status(500).json({ success: false, error: "Failed to create order", details: error.message });
   }
 });
 
