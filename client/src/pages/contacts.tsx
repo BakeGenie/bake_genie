@@ -48,11 +48,17 @@ const Contacts = () => {
   const [selectedContact, setSelectedContact] = React.useState<Contact | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Fetch contacts with refetch capability
+  // Fetch contacts with refetch capability and debug
   const { data: contacts = [], isLoading, refetch } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Consider data stale after 1 second
+    staleTime: 0, // Always refetch
+    onSuccess: (data) => {
+      console.log("Contacts fetched successfully:", data);
+    },
+    onError: (error) => {
+      console.error("Error fetching contacts:", error);
+    }
   });
 
   // Form for new contact
