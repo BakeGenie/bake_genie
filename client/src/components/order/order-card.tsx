@@ -85,106 +85,26 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="flex-1">
         <div className="flex items-start">
           <div className="flex-1">
-            <div className={`text-sm font-medium ${
-              isCancelled ? "text-gray-400 line-through" : "text-gray-800"
-            }`}>
-              {formattedDate}
+            {/* Delivery information exactly like in the screenshot */}
+            <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-700"}`}>
+              Delivery: {order.deliveryType || 'Pickup'} 
+              {order.deliveryTime ? ` - ${order.deliveryTime}` : ''}
+              {order.deliveryAddress && ` - ${order.deliveryAddress}`}
             </div>
-            
-            {/* Customer information expanded with contact details */}
-            <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
-              {order.contact?.firstName || ''} {order.contact?.lastName || ''}
-            </div>
-            
-            {/* Event type displayed prominently */}
-            {order.eventType && (
-              <div className={`text-sm font-medium ${isCancelled ? "text-gray-400 line-through" : "text-gray-700"}`}>
-                Event type: {order.eventType}
-              </div>
-            )}
-            
-            {/* Customer additional information */}
-            {order.contact && (
-              <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-                {order.contact.email && `${order.contact.email} · `}
-                {order.contact.phone && `${order.contact.phone}`}
-              </div>
-            )}
-            
-            {/* Order description or title - exactly like screenshot */}
-            <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-              {order.items?.[0]?.description || order.items?.[0]?.name || order.title || ''}
-            </div>
-            
-            {/* Event date shown clearly if different from order date */}
-            {order.eventDate && formattedDate && (
-              <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-                Event date: {new Date(order.eventDate).toLocaleDateString()}
-              </div>
-            )}
-            {/* Delivery information with icon */}
-            {order.delivery_type && (
-              <div className={`text-xs flex items-center ${isCancelled ? "text-gray-400 line-through" : "text-gray-400"}`}>
-                <span className="font-medium mr-1">Delivery:</span> {order.delivery_type} 
-                {order.delivery_time ? ` - ${order.delivery_time}` : ''}
-                {order.delivery_address && ` - ${order.delivery_address}`}
-                {order.delivery_fee > 0 && ` (+${order.delivery_fee})`}
-              </div>
-            )}
-            
-            {/* Special instructions */}
-            {order.special_instructions && (
-              <div className={`text-xs flex items-center mt-1 ${isCancelled ? "text-gray-400 line-through" : "text-amber-500"}`}>
-                <AlertCircleIcon className="h-3 w-3 mr-1" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>Special instructions</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">{order.special_instructions}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
           </div>
           
           <div className="flex flex-col items-end ml-4">
+            {/* Price display exactly like in screenshot - right aligned with spacing */}
             <div className={`text-base font-medium ${isCancelled ? "text-gray-400" : ""}`}>
               $ <FormatCurrency amount={order.total_amount || order.total || 0} showSymbol={false} />
             </div>
             
-            <div className="mt-1">
-              {order.status && (
-                <div className="inline-flex items-center">
-                  {getStatusBadge()}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex mt-1">
-              {onEmailClick && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handleEmailClick}
-                  title="Email"
-                >
-                  <MailIcon className="h-3.5 w-3.5 text-gray-500" />
-                </Button>
-              )}
-              {onDownloadClick && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handleDownloadClick}
-                  title="Download"
-                >
-                  <FileDownIcon className="h-3.5 w-3.5 text-gray-500" />
-                </Button>
-              )}
-            </div>
+            {/* Only show Paid badge like in screenshot */}
+            {order.status === "Paid" && (
+              <div className="mt-1">
+                <Badge variant="default">Paid</Badge>
+              </div>
+            )}
           </div>
         </div>
       </div>
