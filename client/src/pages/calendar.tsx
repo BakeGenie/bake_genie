@@ -184,7 +184,7 @@ const Calendar = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <PageHeader title="Calendar" className="mb-0" />
+        <PageHeader title="Calendar" />
         <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => navigate('/orders/new')}>
           <PlusIcon className="h-4 w-4 mr-1" /> Add Item
         </Button>
@@ -322,27 +322,20 @@ const Calendar = () => {
         </div>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">
-            <CalendarIcon className="h-5 w-5 inline-block mr-2" />
-            Calendar
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="border rounded-md overflow-hidden">
           {/* Days of week header */}
-          <div className="grid grid-cols-7 mb-2 text-center">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="py-2 font-semibold text-sm text-gray-500">
+          <div className="grid grid-cols-7 text-center bg-gray-700 text-white border-b">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+              <div key={day} className="py-2 font-semibold text-sm border-r last:border-r-0">
                 {day}
               </div>
             ))}
           </div>
           
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 bg-white">
             {Array.from({ length: firstDayOfMonth.getDay() }).map((_, index) => (
-              <div key={`empty-start-${index}`} className="h-28 bg-gray-50 rounded-md border border-gray-100"></div>
+              <div key={`empty-start-${index}`} className="h-28 bg-gray-50 border-r border-b"></div>
             ))}
             
             {daysInMonth.map((day) => {
@@ -456,8 +449,6 @@ const Calendar = () => {
               <div key={`empty-end-${index}`} className="h-28 bg-gray-50 rounded-md border border-gray-100"></div>
             ))}
           </div>
-        </CardContent>
-      </Card>
       
       {/* Date Selection Action Dialog */}
       <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>
