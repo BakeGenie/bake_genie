@@ -186,7 +186,7 @@ const Orders = () => {
   };
   
   const handleOrderClick = (order: OrderWithItems) => {
-    navigate(`/order/${order.id}`);
+    navigate(`/orders/${order.id}`);
   };
   
   return (
