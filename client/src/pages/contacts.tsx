@@ -48,9 +48,11 @@ const Contacts = () => {
   const [selectedContact, setSelectedContact] = React.useState<Contact | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Fetch contacts
-  const { data: contacts = [], isLoading } = useQuery<Contact[]>({
+  // Fetch contacts with refetch capability
+  const { data: contacts = [], isLoading, refetch } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
+    refetchOnWindowFocus: true,
+    staleTime: 1000, // Consider data stale after 1 second
   });
 
   // Form for new contact
@@ -73,10 +75,11 @@ const Contacts = () => {
     setIsSubmitting(true);
     
     try {
-      await apiRequest("POST", "/api/contacts", data);
+      const response = await apiRequest("POST", "/api/contacts", data);
       
-      // Invalidate contacts query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      // Invalidate and immediately refetch contacts to update the list
+      await queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      await refetch(); // Explicitly refetch to ensure UI updates
       
       // Reset form and close dialog
       form.reset();
@@ -87,6 +90,7 @@ const Contacts = () => {
         description: `${data.firstName} ${data.lastName} has been added to your contacts.`,
       });
     } catch (error) {
+      console.error("Error creating contact:", error);
       toast({
         title: "Error",
         description: "There was an error creating the contact. Please try again.",
