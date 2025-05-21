@@ -310,10 +310,10 @@ const Contacts = () => {
               <DialogTitle>{selectedContact.firstName} {selectedContact.lastName}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {selectedContact.company && (
+              {selectedContact.businessName && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Company</h4>
-                  <p>{selectedContact.company}</p>
+                  <p>{selectedContact.businessName}</p>
                 </div>
               )}
               
@@ -336,16 +336,10 @@ const Contacts = () => {
                 )}
               </div>
               
-              {(selectedContact.address || selectedContact.city || selectedContact.state || selectedContact.zip || selectedContact.country) && (
+              {selectedContact.address && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Address</h4>
-                  <p>
-                    {selectedContact.address && `${selectedContact.address}, `}
-                    {selectedContact.city && `${selectedContact.city}, `}
-                    {selectedContact.state && `${selectedContact.state} `}
-                    {selectedContact.zip && `${selectedContact.zip}, `}
-                    {selectedContact.country}
-                  </p>
+                  <p>{selectedContact.address}</p>
                 </div>
               )}
               
