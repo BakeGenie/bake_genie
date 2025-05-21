@@ -34,7 +34,11 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
   };
   
   const handleViewCalendar = () => {
-    // No need to store date or navigate - just close this dialog
+    // Save the selected date in localStorage for the calendar page to use
+    localStorage.setItem('selectedCalendarDate', selectedDate.toISOString());
+    
+    // Navigate to the main Calendar page in the sidebar and pass the date
+    navigate(`/calendar?date=${selectedDate.toISOString()}`);
     onClose();
   };
   
@@ -71,6 +75,15 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
           >
             <Calendar className="h-5 w-5" />
             <span>View Calendar</span>
+          </Button>
+          
+          <Button 
+            onClick={handleAddEvent}
+            variant="outline" 
+            className="flex justify-start items-center gap-2 py-3"
+          >
+            <PlusCircle className="h-5 w-5" />
+            <span>Add Calendar Event</span>
           </Button>
         </div>
         
