@@ -85,12 +85,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
               <div className={`text-sm font-medium ${
                 isCancelled ? "text-gray-400" : "text-gray-800"
               }`}>
-                #{order.orderNumber} - {formattedDate}
+                #{order.orderNumber || 'N/A'} - {formattedDate}
               </div>
               <div className="ml-2">{getStatusBadge()}</div>
             </div>
             <div className={`text-sm ${isCancelled ? "text-gray-400" : "text-gray-600"}`}>
-              {order.contact?.firstName} {order.contact?.lastName}
+              {order.contact?.firstName || ''} {order.contact?.lastName || ''}
               {order.eventType && (
                 <span className={isCancelled ? "text-gray-400" : "text-primary-600"}>
                   {" "}({order.eventType})
@@ -107,7 +107,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       </div>
       <div className="text-right">
         <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
-          <FormatCurrency amount={order.total} />
+          <FormatCurrency amount={order.total_amount || order.total || 0} />
         </div>
         {(onDownloadClick || onEmailClick) && (
           <div className="flex mt-1">
