@@ -49,6 +49,39 @@ async function updateProductsTable() {
       return;
     }
     
+    // Check if product_bundles table exists
+    const bundlesResult = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'product_bundles'
+      );
+    `);
+    
+    const bundlesTableExists = bundlesResult.rows[0].exists;
+    
+    if (!bundlesTableExists) {
+      console.log("Product bundles table doesn't exist, creating it...");
+      await pool.query(`
+        CREATE TABLE product_bundles (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT,
+          created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+        
+        CREATE TABLE bundle_items (
+          id SERIAL PRIMARY KEY,
+          bundle_id INTEGER NOT NULL REFERENCES product_bundles(id),
+          product_id INTEGER NOT NULL REFERENCES products(id),
+          quantity INTEGER NOT NULL DEFAULT 1,
+          created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+      `);
+      console.log("Product bundles tables created successfully!");
+    }
+    
     console.log("Products table exists, checking for missing columns...");
     
     // Check if type column exists
@@ -80,6 +113,8 @@ async function updateProductsTable() {
       { name: 'overhead', definition: 'DECIMAL(10,2) DEFAULT \'0\'' },
       { name: 'active', definition: 'BOOLEAN DEFAULT TRUE' },
       { name: 'bundle_id', definition: 'INTEGER' },
+      { name: 'servings', definition: 'INTEGER' },
+      { name: 'sku', definition: 'TEXT' },
     ];
     
     for (const column of columnsToCheck) {
