@@ -1,19 +1,99 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckIcon } from "lucide-react";
+import { ArrowLeft, CheckIcon, AlertCircle, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function StripePaymentProvider() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+  
+  // Get the connection status
+  const { data: statusData, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
+    queryKey: ['/api/integrations/stripe/status'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/integrations/stripe/status');
+      return response.json();
+    },
+    enabled: !!process.env.STRIPE_SECRET_KEY,
+  });
 
+  // Generate OAuth link for connecting to Stripe
+  const { mutate: generateLink, isPending: isGeneratingLink } = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/integrations/stripe/connect', {
+        redirectUri: `${window.location.origin}/api/integrations/stripe/callback` 
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.authUrl) {
+        // Redirect to Stripe OAuth URL
+        window.location.href = data.authUrl;
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to connect with Stripe",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect with Stripe. Please try again later.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Disconnect from Stripe
+  const { mutate: disconnectStripe, isPending: isDisconnecting } = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/integrations/stripe/disconnect');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Your Stripe account has been disconnected successfully"
+      });
+      setConnectionStatus('disconnected');
+      refetchStatus();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to disconnect Stripe account",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle clicking the Connect with Stripe button
   const handleConnectWithStripe = () => {
-    toast({
-      title: "Stripe Connection",
-      description: "This would connect to your Stripe account. API integration will be implemented."
-    });
+    if (!process.env.STRIPE_SECRET_KEY) {
+      toast({
+        title: "Configuration Missing",
+        description: "Stripe API keys need to be configured first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    generateLink();
   };
+
+  // Update connection status when data is loaded
+  useEffect(() => {
+    if (!statusLoading && statusData) {
+      setConnectionStatus(statusData.connected ? 'connected' : 'disconnected');
+    }
+  }, [statusData, statusLoading]);
 
   return (
     <div className="h-full bg-gray-50">

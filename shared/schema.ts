@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, date, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { type InferSelectModel, relations } from "drizzle-orm";
 
 // Define event types
 export const eventTypes = ['Birthday', 'Wedding', 'Anniversary', 'Baby Shower', 'Christening / Baptism', 'Hen/Bux/Stag', 'Corporate', 'Other'] as const;
