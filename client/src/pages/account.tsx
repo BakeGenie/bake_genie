@@ -414,18 +414,95 @@ const Account = () => {
         <TabsContent value="billing">
           <Card>
             <CardHeader>
-              <CardTitle>Billing & Subscription</CardTitle>
+              <CardTitle>Subscription Details</CardTitle>
               <CardDescription>
-                Manage your subscription and payment methods
+                Update your subscription details, change your billing information or download your billing receipts.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6 py-4">
-                <div className="bg-muted p-6 rounded-lg text-center">
-                  <p className="text-muted-foreground mb-4">No billing information available</p>
-                  <Button variant="outline">
-                    <CreditCardIcon className="h-4 w-4 mr-2" /> Set Up Billing
-                  </Button>
+              <div className="grid grid-cols-1 gap-4">
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => {
+                    // Handle manage subscription
+                    toast({
+                      title: "Managing Subscription",
+                      description: "This feature will connect to the billing provider."
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
+                    <div>
+                      <p className="font-medium">Manage Subscription</p>
+                      <p className="text-sm text-muted-foreground">Update plan, change billing cycle</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">Active</span>
+                    <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => {
+                    // Handle update billing details
+                    toast({
+                      title: "Update Billing Details",
+                      description: "This feature will allow changing payment methods."
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
+                    <div>
+                      <p className="font-medium">Update Billing Details</p>
+                      <p className="text-sm text-muted-foreground">Change payment method, billing address</p>
+                    </div>
+                  </div>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+                </div>
+
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => {
+                    // Handle billing history
+                    toast({
+                      title: "Billing History",
+                      description: "View and download past invoices."
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <ReceiptIcon className="h-5 w-5 mr-3 text-primary" />
+                    <div>
+                      <p className="font-medium">Billing History</p>
+                      <p className="text-sm text-muted-foreground">View and download past invoices</p>
+                    </div>
+                  </div>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+                </div>
+
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors border-destructive/20 hover:bg-destructive/10"
+                  onClick={() => {
+                    // Handle cancel subscription
+                    toast({
+                      title: "Cancel Subscription",
+                      description: "Starting the cancellation process.",
+                      variant: "destructive"
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <XCircleIcon className="h-5 w-5 mr-3 text-destructive" />
+                    <div>
+                      <p className="font-medium">Cancel Subscription</p>
+                      <p className="text-sm text-muted-foreground">End your subscription and delete billing information</p>
+                    </div>
+                  </div>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>
