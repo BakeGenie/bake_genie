@@ -81,11 +81,32 @@ const Contacts = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await apiRequest("POST", "/api/contacts", data);
+      console.log("Submitting contact data:", data);
       
-      // Invalidate and immediately refetch contacts to update the list
-      await queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
-      await refetch(); // Explicitly refetch to ensure UI updates
+      // Use direct fetch instead of apiRequest
+      const response = await fetch("/api/contacts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error creating contact: ${response.status} ${errorText}`);
+      }
+      
+      const newContact = await response.json();
+      console.log("Contact created successfully:", newContact);
+      
+      // Manually add the new contact to the local data while we wait for the refetch
+      const updatedContacts = [...contacts, newContact];
+      
+      // Force invalidate all queries to ensure UI updates
+      queryClient.clear();
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
       
       // Reset form and close dialog
       form.reset();
@@ -95,6 +116,9 @@ const Contacts = () => {
         title: "Contact Created",
         description: `${data.firstName} ${data.lastName} has been added to your contacts.`,
       });
+      
+      // Force reload to ensure UI updates
+      window.location.reload();
     } catch (error) {
       console.error("Error creating contact:", error);
       toast({
