@@ -78,10 +78,18 @@ const OrderCard: React.FC<OrderCardProps> = ({
         
         {/* Order details - direct database content display */}
         <div className="mt-3 text-xs grid grid-cols-2 gap-x-2 gap-y-1">
-          {/* Show key-value pairs directly from all order properties */}
+          {/* Show key-value pairs directly from all order properties - with specified fields excluded */}
           {Object.entries(order).map(([key, value]) => {
-            // Skip the items array and contact object for separate display
-            if (key === 'items' || key === 'contact') return null;
+            // Skip the items array, contact object, and excluded fields
+            if (key === 'items' || 
+                key === 'contact' || 
+                key === 'id' || 
+                key === 'userId' || 
+                key === 'special_instructions' || 
+                key === 'deliveryFee' || 
+                key === 'status' || 
+                key === 'notes' || 
+                key === 'taxRate') return null;
             
             // Format value based on type
             let displayValue = 'null';
