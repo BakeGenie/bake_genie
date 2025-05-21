@@ -181,6 +181,8 @@ const Orders = () => {
     
     // Store the selected date in localStorage
     localStorage.setItem('selectedDate', date.toISOString());
+    
+    console.log('Date selected from calendar:', date.toISOString());
   };
   
   const handleOrderClick = (order: OrderWithItems) => {
@@ -203,8 +205,10 @@ const Orders = () => {
               <span>Filter Orders</span>
             </Button>
             <Button onClick={() => {
-              // Store the current date in localStorage
-              localStorage.setItem('selectedDate', new Date().toISOString());
+              // Store the selected date (or current date if none selected) in localStorage
+              const dateToUse = selectedDate || new Date();
+              localStorage.setItem('selectedDate', dateToUse.toISOString());
+              console.log('Date passed to New Order:', dateToUse.toISOString());
               setIsNewOrderDialogOpen(true);
             }} className="bg-blue-500 hover:bg-blue-600">
               <PlusIcon className="h-4 w-4 mr-2" />
