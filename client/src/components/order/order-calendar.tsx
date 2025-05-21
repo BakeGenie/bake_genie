@@ -2,6 +2,7 @@ import React from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from "date-fns";
+import DateSelectionDialog from "./date-selection-dialog";
 
 type OrderCalendarProps = {
   orders: any[];
@@ -21,6 +22,9 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   const currentMonthDate = new Date(year, month - 1);
   const firstDayOfMonth = startOfMonth(currentMonthDate);
   const lastDayOfMonth = endOfMonth(currentMonthDate);
+  
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [clickedDate, setClickedDate] = React.useState<Date | null>(null);
   
   // Get all days in the current month
   const daysInMonth = eachDayOfInterval({
@@ -60,13 +64,19 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
     
     const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
     
+    const handleDateClick = (date: Date) => {
+      setClickedDate(date);
+      setDialogOpen(true);
+      onDateSelect(date);
+    };
+    
     calendarDays.push(
       <div
         key={dateKey}
         className={`h-24 border-t border-l p-1 relative ${
           isToday(day) ? 'bg-blue-50' : ''
         } ${isSelected ? 'ring-2 ring-blue-500 z-10' : ''}`}
-        onClick={() => onDateSelect(day)}
+        onClick={() => handleDateClick(day)}
       >
         <div className="flex justify-between items-start">
           <span className={`text-sm font-medium ${isToday(day) ? 'text-blue-600' : ''}`}>
@@ -111,6 +121,10 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
     calendarDays.push(<div key={`empty-end-${i}`} className="h-24 border-t border-l p-1"></div>);
   }
   
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+  
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -125,6 +139,13 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
           </Button>
         </div>
       </div>
+      
+      {/* Date Selection Dialog */}
+      <DateSelectionDialog 
+        isOpen={dialogOpen}
+        onClose={handleCloseDialog}
+        selectedDate={clickedDate}
+      />
       
       <div className="grid grid-cols-7 border-r border-b">
         {/* Calendar header - Days of week */}
