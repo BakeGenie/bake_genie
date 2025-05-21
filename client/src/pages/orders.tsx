@@ -59,11 +59,36 @@ const Orders = () => {
   }, [isNewOrderDialogOpen, location, navigate]);
   
   // Fetch orders
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: rawOrders = [], isLoading } = useQuery({
     queryKey: ['/api/orders'],
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
+  
+  // Map the API response to the expected OrderWithItems format
+  const orders = React.useMemo(() => {
+    return (rawOrders as any[]).map((order) => ({
+      id: order.id,
+      userId: order.user_id,
+      contactId: order.contact_id,
+      orderNumber: order.order_number,
+      eventType: order.event_type,
+      eventDate: order.event_date,
+      status: order.status,
+      deliveryType: order.delivery_type,
+      deliveryTime: order.delivery_time,
+      total: order.total_amount,
+      totalAmount: order.total_amount,
+      amount_paid: order.amount_paid,
+      notes: order.notes,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      
+      // Add empty contact and items arrays to prevent errors
+      contact: { id: order.contact_id, firstName: "", lastName: "" } as any,
+      items: []
+    }));
+  }, [rawOrders]);
   
   // Handle order form submission
   const handleFormSubmit = async (data: any) => {
@@ -117,14 +142,22 @@ const Orders = () => {
   };
   
   // Filter orders based on filter states
-  const filteredOrders = orders.filter((order: OrderWithItems) => {
+  const filteredOrders = orders.filter((order: any) => {
     // Filter by order status (Order vs Quote)
     if (order.status === 'Quote' && !showQuotes) return false;
     if (order.status !== 'Quote' && !showOrders) return false;
     
     // Filter by payment status
-    // Default to "No Payments" if payment_status is not defined
-    const paymentStatus = order.payment_status || 'No Payments';
+    // Default to "No Payments" if no amount_paid
+    const amountPaid = parseFloat(order.amount_paid || '0');
+    const totalAmount = parseFloat(order.totalAmount || order.total || '0');
+    
+    let paymentStatus = 'No Payments';
+    if (amountPaid > 0 && amountPaid < totalAmount) {
+      paymentStatus = 'Partial Payment';
+    } else if (amountPaid > 0 && amountPaid === totalAmount) {
+      paymentStatus = 'Paid in Full';
+    }
     
     if (paymentStatus === 'No Payments' && !showNoPayments) return false;
     if (paymentStatus === 'Booking Payment' && !showBookingPayments) return false;
@@ -137,7 +170,7 @@ const Orders = () => {
     
     // Filter by month and year if set
     if (month && year) {
-      const orderDate = new Date(order.event_date);
+      const orderDate = new Date(order.eventDate || order.event_date);
       if (orderDate.getMonth() + 1 !== month || orderDate.getFullYear() !== year) {
         return false;
       }
@@ -147,9 +180,9 @@ const Orders = () => {
     if (search) {
       const searchLower = search.toLowerCase();
       return (
-        // Use the actual properties from the API response
-        (order.event_type && order.event_type.toLowerCase().includes(searchLower)) ||
-        (order.order_number && order.order_number.toLowerCase().includes(searchLower))
+        // Use the actual properties from the API response with fallbacks
+        (order.eventType && order.eventType.toLowerCase().includes(searchLower)) ||
+        (order.orderNumber && order.orderNumber.toLowerCase().includes(searchLower))
       );
     }
     
