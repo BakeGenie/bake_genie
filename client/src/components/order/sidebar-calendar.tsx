@@ -205,7 +205,7 @@ const SidebarCalendar: React.FC<SidebarCalendarProps> = ({
               <div
                 key={day.toString()}
                 className={cn(
-                  "h-16 relative border-r border-b cursor-pointer p-1",
+                  "h-20 relative border-r border-b cursor-pointer p-1",
                   isSelected ? "bg-primary/10 border-primary" : 
                   isCurrentDay ? "bg-blue-50" : "bg-white hover:bg-gray-50"
                 )}
@@ -218,25 +218,22 @@ const SidebarCalendar: React.FC<SidebarCalendarProps> = ({
                   {format(day, "d")}
                 </div>
                 
-                {/* Orders indicator */}
+                {/* Orders in day cell */}
                 {hasOrders && (
                   <div className="overflow-y-auto max-h-10">
                     <div className="flex flex-col gap-1">
                       {ordersOnDay.slice(0, 2).map((order: any) => (
                         <div
                           key={order.id}
-                          className="relative flex items-center"
-                        >
-                          <div 
-                            className="w-1.5 h-1.5 rounded-full mr-1 flex-shrink-0"
-                            style={{backgroundColor: getEventTypeColor(order.eventType || "Other")}}
-                          />
-                          <div className={cn(
-                            "text-[9px] truncate px-1 py-0.5 rounded-sm",
+                          className={cn(
+                            "text-xs px-1 py-0.5 rounded truncate",
                             getStatusColor(order.status)
-                          )}>
-                            {order.contact?.firstName} {order.contact?.lastName?.charAt(0)}.
-                          </div>
+                          )}
+                          style={{
+                            borderLeft: `2px solid ${getEventTypeColor(order.eventType || "Other")}`
+                          }}
+                        >
+                          {order.orderNumber?.split('-')[1]} - {order.contact?.firstName || "No contact"}
                         </div>
                       ))}
                       
