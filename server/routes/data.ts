@@ -51,45 +51,101 @@ router.get("/export", async (req: Request, res: Response) => {
  */
 router.get("/export/:dataType", async (req: Request, res: Response) => {
   try {
-    // Use a mock user ID until authentication is implemented
-    const userId = 1;
+    // Use user ID from session
+    const userId = req.session?.userId || 1;
     const dataType = req.params.dataType;
+    const format = req.query.format || 'csv'; // Default to CSV format as requested
     
-    let data: any;
-    
-    switch (dataType) {
-      case "orders":
-        data = await exportService.exportOrders(userId);
-        break;
-      case "contacts":
-        data = await exportService.exportContacts(userId);
-        break;
-      case "recipes":
-        data = await exportService.exportRecipes(userId);
-        break;
-      case "products":
-        data = await exportService.exportProducts(userId);
-        break;
-      case "financials":
-        data = await exportService.exportFinancials(userId);
-        break;
-      case "tasks":
-        data = await exportService.exportTasks(userId);
-        break;
-      case "enquiries":
-        data = await exportService.exportEnquiries(userId);
-        break;
-      case "settings":
-        data = await exportService.exportSettings(userId);
-        break;
-      default:
-        return res.status(400).json({ 
-          success: false, 
-          error: `Unknown data type: ${dataType}` 
-        });
+    if (format === 'csv') {
+      // CSV export
+      let csvData: string = '';
+      let filename: string = '';
+      
+      switch(dataType) {
+        case "orders":
+          csvData = await exportService.exportOrdersAsCsv(userId);
+          filename = `orders-export-${Date.now()}.csv`;
+          break;
+        case "contacts":
+          csvData = await exportService.exportContactsAsCsv(userId);
+          filename = `contacts-export-${Date.now()}.csv`;
+          break;
+        case "recipes":
+          csvData = await exportService.exportRecipesAsCsv(userId);
+          filename = `recipes-export-${Date.now()}.csv`;
+          break;
+        case "products":
+          csvData = await exportService.exportProductsAsCsv(userId);
+          filename = `products-export-${Date.now()}.csv`;
+          break;
+        case "financials":
+          csvData = await exportService.exportFinancialsAsCsv(userId);
+          filename = `financials-export-${Date.now()}.csv`;
+          break;
+        case "tasks":
+          csvData = await exportService.exportTasksAsCsv(userId);
+          filename = `tasks-export-${Date.now()}.csv`;
+          break;
+        case "enquiries":
+          csvData = await exportService.exportEnquiriesAsCsv(userId);
+          filename = `enquiries-export-${Date.now()}.csv`;
+          break;
+        case "settings":
+          // Settings don't have a CSV export
+          return res.status(400).json({ 
+            success: false, 
+            error: `Settings cannot be exported as CSV` 
+          });
+        default:
+          return res.status(400).json({ 
+            success: false, 
+            error: `Unknown data type for CSV export: ${dataType}` 
+          });
+      }
+      
+      // Send CSV response
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(csvData);
+      
+    } else {
+      // JSON export (fallback for backward compatibility)
+      let data: any;
+      
+      switch (dataType) {
+        case "orders":
+          data = await exportService.exportOrders(userId);
+          break;
+        case "contacts":
+          data = await exportService.exportContacts(userId);
+          break;
+        case "recipes":
+          data = await exportService.exportRecipes(userId);
+          break;
+        case "products":
+          data = await exportService.exportProducts(userId);
+          break;
+        case "financials":
+          data = await exportService.exportFinancials(userId);
+          break;
+        case "tasks":
+          data = await exportService.exportTasks(userId);
+          break;
+        case "enquiries":
+          data = await exportService.exportEnquiries(userId);
+          break;
+        case "settings":
+          data = await exportService.exportSettings(userId);
+          break;
+        default:
+          return res.status(400).json({ 
+            success: false, 
+            error: `Unknown data type: ${dataType}` 
+          });
+      }
+      
+      return res.json(data);
     }
-    
-    res.json(data);
   } catch (error) {
     console.error(`Export error for ${req.params.dataType}:`, error);
     res.status(500).json({ 

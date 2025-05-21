@@ -324,6 +324,58 @@ export class ExportService {
       throw new Error('Failed to export financial data');
     }
   }
+  
+  /**
+   * Export financial data as CSV for a specific user
+   */
+  async exportFinancialsAsCsv(userId: number) {
+    try {
+      const { expenses: userExpenses, income: userIncome } = await this.exportFinancials(userId);
+      
+      // Prepare expenses data for CSV export
+      const expensesData = userExpenses.map(expense => {
+        return {
+          'Record Type': 'Expense',
+          'Date': format(new Date(expense.date), 'yyyy-MM-dd'),
+          'Category': expense.category || '',
+          'Description': expense.description || '',
+          'Amount': expense.amount || 0,
+          'Notes': expense.notes || '',
+          'Tax Deductible': expense.taxDeductible ? 'Yes' : 'No'
+        };
+      });
+      
+      // Prepare income data for CSV export
+      const incomeData = userIncome.map(inc => {
+        return {
+          'Record Type': 'Income',
+          'Date': format(new Date(inc.date), 'yyyy-MM-dd'),
+          'Category': inc.category || '',
+          'Description': inc.description || '',
+          'Amount': inc.amount || 0,
+          'Notes': inc.notes || '',
+          'Tax Deductible': 'N/A'
+        };
+      });
+      
+      // Combine both datasets
+      const combinedData = [...expensesData, ...incomeData];
+      
+      // Sort by date
+      combinedData.sort((a, b) => {
+        return new Date(a.Date).getTime() - new Date(b.Date).getTime();
+      });
+      
+      // Generate CSV from the data
+      return stringify(combinedData, { 
+        header: true,
+        columns: Object.keys(combinedData[0] || {})
+      });
+    } catch (error) {
+      console.error('Error exporting financial data as CSV:', error);
+      throw new Error('Failed to export financial data as CSV');
+    }
+  }
 
   /**
    * Export tasks for a specific user
@@ -336,6 +388,38 @@ export class ExportService {
       throw new Error('Failed to export tasks');
     }
   }
+  
+  /**
+   * Export tasks as CSV for a specific user
+   */
+  async exportTasksAsCsv(userId: number) {
+    try {
+      const tasksData = await this.exportTasks(userId);
+      
+      // Prepare data for CSV export
+      const csvData = tasksData.map(task => {
+        return {
+          'Title': task.title,
+          'Description': task.description || '',
+          'Due Date': task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
+          'Priority': task.priority || 'Normal',
+          'Status': task.status,
+          'Related To': task.relatedTo || '',
+          'Related ID': task.relatedId || '',
+          'Created': format(new Date(task.createdAt), 'yyyy-MM-dd')
+        };
+      });
+      
+      // Generate CSV from the data
+      return stringify(csvData, { 
+        header: true,
+        columns: Object.keys(csvData[0] || {})
+      });
+    } catch (error) {
+      console.error('Error exporting tasks as CSV:', error);
+      throw new Error('Failed to export tasks as CSV');
+    }
+  }
 
   /**
    * Export enquiries for a specific user
@@ -346,6 +430,40 @@ export class ExportService {
     } catch (error) {
       console.error('Error exporting enquiries:', error);
       throw new Error('Failed to export enquiries');
+    }
+  }
+  
+  /**
+   * Export enquiries as CSV for a specific user
+   */
+  async exportEnquiriesAsCsv(userId: number) {
+    try {
+      const enquiriesData = await this.exportEnquiries(userId);
+      
+      // Prepare data for CSV export
+      const csvData = enquiriesData.map(enquiry => {
+        return {
+          'Name': enquiry.name,
+          'Email': enquiry.email,
+          'Phone': enquiry.phone || '',
+          'Event Type': enquiry.eventType || '',
+          'Event Date': enquiry.eventDate ? format(new Date(enquiry.eventDate), 'yyyy-MM-dd') : '',
+          'Budget': enquiry.budget || '',
+          'Message': enquiry.message || '',
+          'Status': enquiry.status || 'New',
+          'Created': format(new Date(enquiry.createdAt), 'yyyy-MM-dd'),
+          'Last Updated': enquiry.updatedAt ? format(new Date(enquiry.updatedAt), 'yyyy-MM-dd') : ''
+        };
+      });
+      
+      // Generate CSV from the data
+      return stringify(csvData, { 
+        header: true,
+        columns: Object.keys(csvData[0] || {})
+      });
+    } catch (error) {
+      console.error('Error exporting enquiries as CSV:', error);
+      throw new Error('Failed to export enquiries as CSV');
     }
   }
 
