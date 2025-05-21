@@ -403,6 +403,10 @@ const Calendar = () => {
                           className="text-xs p-1.5 rounded bg-white border border-gray-200 cursor-pointer hover:bg-gray-50 flex-shrink-0 w-[156px] shadow-sm"
                           onClick={(e) => {
                             e.stopPropagation(); // Prevent triggering the parent div's onClick
+                            // Log the order data before navigating
+                            console.log("Calendar - selected order:", order);
+                            // Store selected order details in localStorage to ensure we have all the information
+                            localStorage.setItem('selectedOrder', JSON.stringify(order));
                             navigate(`/orders/${order.id}`);
                           }}
                         >

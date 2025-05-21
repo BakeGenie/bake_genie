@@ -87,11 +87,34 @@ const OrderDetails: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: [`/api/orders/${id}/logs`] });
   };
 
-  // Fetch order details
-  const { data: order, isLoading, error } = useQuery({
+  // Check if we have order data in localStorage from calendar click
+  const [initialOrderData, setInitialOrderData] = React.useState<any>(() => {
+    try {
+      const storedOrder = localStorage.getItem('selectedOrder');
+      if (storedOrder) {
+        return JSON.parse(storedOrder);
+      }
+      return null;
+    } catch (e) {
+      console.error("Error parsing stored order:", e);
+      return null;
+    }
+  });
+  
+  // Fetch order details from API
+  const { data: orderData, isLoading, error } = useQuery<any>({
     queryKey: [`/api/orders/${id}`],
     enabled: !!id,
   });
+  
+  // Combine data from localStorage and API
+  const order = React.useMemo(() => {
+    console.log("Order data from API:", orderData);
+    console.log("Initial order data from localStorage:", initialOrderData);
+    
+    // Return API data if available, otherwise use localStorage data as fallback
+    return orderData || initialOrderData;
+  }, [orderData, initialOrderData]);
 
   if (isLoading) {
     return (
