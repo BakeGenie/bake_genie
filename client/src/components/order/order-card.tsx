@@ -11,14 +11,14 @@ interface OrderCardProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
 }
 
-// Format date to match screenshot format exactly
-const formatOrderDate = (dateString: string | Date | null | undefined) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+// Format date for display in order cards
+const formatDisplayDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
     weekday: 'short',
     day: '2-digit',
-    month: 'short',
+    month: 'short', 
     year: 'numeric'
   });
 };
@@ -67,56 +67,58 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="flex-1">
         {/* Order number and date */}
         <div className="text-sm font-medium text-gray-700">
-          #{orderNumber} - {formatOrderDate(order.eventDate)}
+          #{orderNumber} - {formatDisplayDate(order.eventDate)}
         </div>
         
-        {/* Customer and event type */}
+        {/* Customer name and event type */}
         <div className="text-blue-600">
           {order.contact && `${order.contact.firstName} ${order.contact.lastName}`} 
           {order.eventType && ` (${order.eventType})`}
         </div>
         
-        {/* Display fields directly without labels */}
-        <div className="text-xs space-y-1 mt-2 text-gray-600">
-          <div>Delivery: {order.deliveryType} {order.deliveryTime && `at ${order.deliveryTime}`}</div>
+        {/* All order fields directly from database */}
+        <div className="mt-2 text-xs text-gray-500 grid grid-cols-1 gap-1">
+          {/* Display all database fields directly without labels */}
+          <div>id: {order.id}</div>
+          <div>order_number: {order.orderNumber}</div>
+          <div>user_id: {order.userId}</div>
+          <div>contact_id: {order.contactId}</div>
+          <div>event_type: {order.eventType}</div>
+          <div>event_date: {order.eventDate}</div>
+          <div>status: {order.status}</div>
+          <div>delivery_type: {order.deliveryType}</div>
+          <div>delivery_time: {order.deliveryTime}</div>
+          {order.deliveryAddress && <div>delivery_address: {order.deliveryAddress}</div>}
+          {order.deliveryFee && <div>delivery_fee: {order.deliveryFee}</div>}
+          {order.taxRate && <div>tax_rate: {order.taxRate}</div>}
+          {order.discount && <div>discount: {order.discount}</div>}
+          {order.total && <div>total: {order.total}</div>}
+          {order.notes && <div>notes: {order.notes}</div>}
+          <div>created_at: {order.createdAt}</div>
+          <div>updated_at: {order.updatedAt}</div>
           
-          {/* Order notes */}
-          {order.notes && <div>{order.notes}</div>}
-          
-          {/* Financial information */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {order.discount && parseFloat(order.discount.toString()) > 0 && (
-              <span>Discount: ${parseFloat(order.discount.toString()).toFixed(2)}</span>
-            )}
-            
-            {order.taxRate && (
-              <span>Tax: {parseFloat(order.taxRate.toString()).toFixed(2)}%</span>
-            )}
-          </div>
-          
-          {/* Item information */}
+          {/* Order items listing (if available) */}
           {order.items && order.items.length > 0 && (
-            <div>
-              Items:
-              {order.items.map((item, index) => (
-                <div key={index} className="ml-2 text-xs">
-                  - {item.quantity}x {item.name} (${parseFloat(item.price.toString()).toFixed(2)})
+            <div className="mt-1">
+              order_items:
+              {order.items.map((item, idx) => (
+                <div key={idx} className="ml-2 border-t border-gray-100 pt-1 mt-1">
+                  <div>id: {item.id}</div>
+                  <div>name: {item.name}</div>
+                  <div>quantity: {item.quantity}</div>
+                  <div>price: {item.price}</div>
+                  {item.description && <div>description: {item.description}</div>}
+                  {item.notes && <div>notes: {item.notes}</div>}
                 </div>
               ))}
             </div>
           )}
-          
-          {/* Order dates information */}
-          <div className="flex gap-x-2 text-gray-500">
-            <span>Created: {new Date(order.createdAt).toLocaleDateString()}</span>
-            <span>Updated: {new Date(order.updatedAt).toLocaleDateString()}</span>
-          </div>
         </div>
       </div>
       
-      {/* Right column with price and buttons */}
-      <div className="flex flex-col items-end ml-2">
-        {/* Price */}
+      {/* Right column with price and status */}
+      <div className="flex flex-col items-end ml-4">
+        {/* Total price */}
         <div className="text-base font-medium text-right mb-1">
           $ {order.total ? parseFloat(order.total.toString()).toFixed(2) : '0.00'}
         </div>
