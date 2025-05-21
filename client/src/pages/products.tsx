@@ -236,48 +236,29 @@ const Products = () => {
       
       console.log("Submitting product with formatted data:", formattedData);
       
-      // Make the product creation request and handle the response
+      // Make the product creation request and handle the response using apiRequest
       try {
-        const response = await fetch("/api/products", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formattedData),
-        });
-        
-        // Clone the response so we can read it multiple times if needed
-        const clonedResponse = response.clone();
-        
-        // Try to parse the response body
-        let responseText = '';
-        try {
-          responseText = await clonedResponse.text();
-        } catch (e) {
-          console.warn("Couldn't read response text:", e);
-        }
+        console.log("Sending product data to API:", formattedData);
+
+        const response = await apiRequest("POST", "/api/products", formattedData);
         
         // Check if response is OK
         if (!response.ok) {
-          console.error("Error creating product. Status:", response.status, "Text:", responseText);
+          console.error("Error creating product. Status:", response.status);
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
           throw new Error("Failed to create product. Please try again.");
         }
         
         // If there's no content, just return
-        if (response.status === 204 || !responseText.trim()) {
+        if (response.status === 204) {
           console.log("Product created successfully, but no data returned");
           return;
         }
         
-        // Try to parse the JSON
-        let data;
-        try {
-          data = JSON.parse(responseText);
-          console.log("Product creation successful:", data);
-        } catch (e) {
-          console.warn("Response is not valid JSON:", responseText);
-          throw new Error("Server returned an invalid response");
-        }
+        // Parse the JSON response
+        const data = await response.json();
+        console.log("Product creation successful:", data);
       } catch (error) {
         console.error("Product creation error:", error);
         toast({
