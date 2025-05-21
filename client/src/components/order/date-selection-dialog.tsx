@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -45,9 +45,9 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
         <DialogTitle className="text-center text-lg font-semibold mb-1">
           {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}
         </DialogTitle>
-        <p className="text-center text-gray-600 mb-4">
+        <DialogDescription className="text-center text-gray-600 mb-4">
           What would you like to do?
-        </p>
+        </DialogDescription>
         
         <div className="flex flex-col gap-3 mb-4">
           <Button 
