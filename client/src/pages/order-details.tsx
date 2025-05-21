@@ -392,50 +392,39 @@ const OrderDetails: React.FC = () => {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-medium">Order Log</h3>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Call the API to add a note
+                      const action = "Note Added";
+                      const details = prompt("Enter note details");
+                      if (details) {
+                        fetch(`/api/orders/${id}/logs`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action, details })
+                        })
+                        .then(res => {
+                          if (res.ok) {
+                            toast({
+                              title: "Note added",
+                              description: "Your note has been added to the order log",
+                            });
+                            // Refresh logs
+                            refetchLogs();
+                          }
+                        });
+                      }
+                    }}
+                  >
                     <PlusIcon className="h-4 w-4 mr-1" />
                     Add Note
                   </Button>
                 </div>
-                <div className="rounded-md border">
-                  <div className="grid grid-cols-2 bg-gray-50 p-3 border-b">
-                    <div className="font-medium text-sm">Date</div>
-                    <div className="font-medium text-sm">Action</div>
-                  </div>
-                  <div className="divide-y">
-                    {/* Simple log entries for now, with fixed dates to avoid errors */}
-                    <div className="grid grid-cols-2 p-3">
-                      <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
-                      <div className="text-sm">Order Created</div>
-                    </div>
-                    
-                    {/* If there's a contact email, show email sent entry */}
-                    {order.contact?.email && (
-                      <div className="grid grid-cols-2 p-3">
-                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
-                        <div className="text-sm">Email Sent - Recipient: {order.contact.email}</div>
-                      </div>
-                    )}
-                    
-                    {/* Show different statuses based on order status */}
-                    {isQuote ? (
-                      <div className="grid grid-cols-2 p-3">
-                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
-                        <div className="text-sm">Quote Created</div>
-                      </div>
-                    ) : order.status === 'Paid' ? (
-                      <div className="grid grid-cols-2 p-3">
-                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
-                        <div className="text-sm">Payment Received</div>
-                      </div>
-                    ) : order.status === 'Cancelled' ? (
-                      <div className="grid grid-cols-2 p-3">
-                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
-                        <div className="text-sm">Order Cancelled</div>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
+                
+                {/* Fetch the actual logs from the database */}
+                <OrderLogHistory orderId={id} />
               </CardContent>
             </Card>
           </TabsContent>

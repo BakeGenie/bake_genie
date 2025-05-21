@@ -17,6 +17,7 @@ import { router as productsRouter } from "./routes/products";
 import subscriptionRouter from "./routes/subscription";
 import integrationsRouter from "./routes/integrations";
 import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct";
+import orderLogsRouter from "./routes/order-logs";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
@@ -75,6 +76,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register orders routes
   app.use(ordersRouter);
+  
+  // Register order logs routes
+  app.use(orderLogsRouter);
   
   // Register import routes
   const importRouter = Router();
