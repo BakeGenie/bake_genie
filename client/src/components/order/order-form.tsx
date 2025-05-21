@@ -1314,7 +1314,6 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              onClick={() => console.log("Create Order button clicked directly")}
             >
               {isSubmitting ? "Saving..." : "Create Order"}
             </Button>
