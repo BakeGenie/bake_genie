@@ -132,6 +132,8 @@ const Orders = () => {
     setIsSubmitting(true);
     
     try {
+      console.log("Submitting order data from orders page:", data);
+      
       // Generate order number (normally this would be done on the server)
       const orderNumber = `O${Math.floor(Math.random() * 10000)}`;
       
@@ -140,6 +142,8 @@ const Orders = () => {
         ...data,
         orderNumber,
         userId: 1, // In a real app, this would be the current user's ID
+        contactId: data.contactId || 12, // Default to a known contact if not provided
+        status: data.status || "Quote",
         // Convert Date objects to ISO strings
         eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : data.eventDate,
         orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : data.orderDate,
