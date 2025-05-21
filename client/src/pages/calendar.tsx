@@ -42,19 +42,42 @@ interface CalendarEvent {
 
 const Calendar = () => {
   const [_, navigate] = useLocation();
-  // Check for stored date in localStorage
+  // Check for date in URL parameters or localStorage
   const storedDate = React.useMemo(() => {
+    // 1. First check URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    
+    // 2. Then check localStorage
     const dateFromStorage = localStorage.getItem('selectedCalendarDate');
+    
+    // Try URL parameter first
+    if (dateParam) {
+      try {
+        const parsedDate = new Date(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          console.log("Using date from URL parameter:", parsedDate);
+          return parsedDate;
+        }
+      } catch (e) {
+        console.error("Error parsing date from URL:", e);
+      }
+    }
+    
+    // Try localStorage next
     if (dateFromStorage) {
       try {
         const parsedDate = new Date(dateFromStorage);
         // Clear localStorage after using it
         localStorage.removeItem('selectedCalendarDate');
+        console.log("Using date from localStorage:", parsedDate);
         return parsedDate;
       } catch (e) {
         console.error("Error parsing stored calendar date:", e);
       }
     }
+    
+    // Default to today
     return new Date();
   }, []);
   
