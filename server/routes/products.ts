@@ -103,17 +103,46 @@ router.post("/", async (req: Request, res: Response) => {
     
     console.log("Formatted product data:", JSON.stringify(productData, null, 2));
     
-    // Directly use SQL query to ensure product is created successfully
+    // First check the columns that actually exist in the database
     try {
+      console.log("Checking database columns in products table...");
+      const columnsResult = await pool.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'products'
+      `);
+      
+      console.log("Available columns:", columnsResult.rows.map(row => row.column_name));
+      
+      // Directly use SQL query to ensure product is created successfully
+      console.log("Attempting to insert product with values:", [
+        userId, 
+        productData.name, 
+        productData.type,
+        productData.description,
+        productData.servings,
+        productData.price,
+        productData.cost,
+        productData.taxRate,
+        productData.laborHours,
+        productData.laborRate,
+        productData.overhead,
+        productData.imageUrl,
+        productData.sku,
+        productData.bundleId,
+        productData.active
+      ]);
+      
       const result = await pool.query(`
         INSERT INTO products (
           user_id, name, type, description, servings, price, cost, 
           tax_rate, labor_hours, labor_rate, overhead, image_url, sku, 
-          bundle_id, active, created_at
+          bundle_id, active
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, 
           $8, $9, $10, $11, $12, $13,
-          $14, $15, NOW()
+          $14, $15
         ) RETURNING *
       `, [
         userId, 
