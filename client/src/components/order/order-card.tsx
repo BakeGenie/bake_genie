@@ -93,13 +93,15 @@ const OrderCard: React.FC<OrderCardProps> = ({
             
             {/* Customer information expanded with contact details */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
-              {order.contact?.firstName || ''} {order.contact?.lastName || ''} 
-              {order.eventType && (
-                <span className="text-gray-500 ml-1">
-                  ({order.eventType})
-                </span>
-              )}
+              {order.contact?.firstName || ''} {order.contact?.lastName || ''}
             </div>
+            
+            {/* Event type displayed prominently */}
+            {order.eventType && (
+              <div className={`text-sm font-medium ${isCancelled ? "text-gray-400 line-through" : "text-gray-700"}`}>
+                Event type: {order.eventType}
+              </div>
+            )}
             
             {/* Customer additional information */}
             {order.contact && (
