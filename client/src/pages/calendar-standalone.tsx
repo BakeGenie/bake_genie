@@ -24,6 +24,46 @@ const CalendarStandalone = () => {
   const [selectedOrder, setSelectedOrder] = React.useState<OrderWithItems | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = React.useState(false);
   
+  // Check for date in URL query parameters or localStorage
+  React.useEffect(() => {
+    // 1. First check URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    
+    // 2. Then check localStorage
+    const storedDate = localStorage.getItem('selectedCalendarDate');
+    
+    // Use date from either source
+    if (dateParam) {
+      try {
+        const parsedDate = new Date(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          // Valid date - set the selected date and update month/year
+          setSelectedDate(parsedDate);
+          setMonth(parsedDate.getMonth() + 1);
+          setYear(parsedDate.getFullYear());
+        }
+      } catch (e) {
+        console.error("Error parsing date from URL:", e);
+      }
+    } else if (storedDate) {
+      try {
+        const parsedDate = new Date(storedDate);
+        if (!isNaN(parsedDate.getTime())) {
+          // Valid date - set the selected date and update month/year
+          setSelectedDate(parsedDate);
+          setMonth(parsedDate.getMonth() + 1);
+          setYear(parsedDate.getFullYear());
+          
+          // Clear localStorage after using it
+          localStorage.removeItem('selectedCalendarDate');
+        }
+      } catch (e) {
+        console.error("Error parsing stored date:", e);
+      }
+    }
+  }, []);
+  
   // Fetch orders
   const { data: rawOrders = [], isLoading } = useQuery<any[]>({
     queryKey: ['/api/orders'],

@@ -31,9 +31,11 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
   };
   
   const handleViewCalendar = () => {
-    // Navigate to the calendar page with the selected date
+    // Save the selected date in localStorage for the calendar page to use
     localStorage.setItem('selectedCalendarDate', selectedDate.toISOString());
-    navigate('/calendar');
+    
+    // Navigate to the calendar page with the date as a query parameter
+    navigate(`/calendar?date=${selectedDate.toISOString()}`);
     onClose();
   };
   
