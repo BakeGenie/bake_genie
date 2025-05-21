@@ -402,7 +402,9 @@ const Calendar = () => {
                   // Format date as yyyy-MM-dd and ensure it's properly encoded for URL
                   const formattedDate = format(selectedDate, "yyyy-MM-dd");
                   console.log("Calendar: Selected date for new order:", formattedDate);
-                  navigate(`/orders/new?date=${encodeURIComponent(formattedDate)}`);
+                  
+                  // Use eventDate to be more explicit in the query parameter
+                  navigate(`/orders/new?eventDate=${encodeURIComponent(formattedDate)}`);
                 }
               }}
             >

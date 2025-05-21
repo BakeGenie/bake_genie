@@ -57,7 +57,8 @@ const NewOrderPage = () => {
   
   // Parse URL parameters to get pre-selected date if any
   const searchParams = new URLSearchParams(location.split('?')[1] || '');
-  const preselectedDate = searchParams.get('date');
+  // Check for both 'eventDate' and 'date' params to support both formats
+  const preselectedDate = searchParams.get('eventDate') || searchParams.get('date');
   
   // Handle form submission for a new order
   const handleNewOrderSubmit = async (data: OrderFormValues) => {
