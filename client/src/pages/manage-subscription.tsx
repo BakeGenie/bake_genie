@@ -154,9 +154,6 @@ export default function ManageSubscription() {
               </div>
             </CardContent>
             <CardFooter className="border-t pt-6 flex flex-col items-start">
-              <p className="text-sm text-muted-foreground mb-4">
-                Your subscription renews automatically. You can cancel or change your subscription at any time.
-              </p>
               <div className="flex justify-start gap-2">
                 <Button 
                   variant="outline" 
