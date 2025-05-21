@@ -7,15 +7,13 @@ import OrderCalendar from "@/components/order/order-calendar";
 import OrderCard from "@/components/order/order-card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { InvoicePreviewButton } from "@/components/ui/invoice-preview-button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
 import OrderForm from "@/components/order/order-form";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { OrderFormData } from "@/types";
+import { FilterDialog } from "@/components/order/filter-dialog";
 
 const Orders = () => {
   const [location, navigate] = useLocation();
