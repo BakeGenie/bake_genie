@@ -452,6 +452,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         specialInstructions: data.notes || '', // Match database column
         taxRate: data.taxRate?.toString() || '0', // Required field in database
         notes: data.notes || '',
+        discountType: data.discountType || "%",
+        discount: (data.discount || 0).toString(),
+        setupFee: (data.setupFee || 0).toString(),
         items: data.items.map(item => ({
           description: item.description || 'Product',
           price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
@@ -463,32 +466,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       // Log the data being sent (for debugging)
       console.log("Submitting formatted order data:", JSON.stringify(formattedData, null, 2));
       
-      // Send data directly to API to bypass any potential issues with the parent component
-      console.log("Submitting directly to API...");
-      const response = await fetch("/api/orders-direct", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server responded with error:", response.status, errorText);
-        throw new Error(`Server error: ${response.status} - ${errorText || 'Unknown error'}`);
-      }
-      
-      const result = await response.json();
-      console.log("API response:", result);
-      
-      // Invalidate orders query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      
-      // Navigate to the orders list
-      window.location.href = "/orders";
-      
-      // Also call parent onSubmit for backward compatibility
+      // Let parent component handle the submission
+      // This approach works better and prevents duplicate API calls
       console.log("Calling parent onSubmit with data...");
       onSubmit(formattedData);
       console.log("Parent onSubmit called successfully");
