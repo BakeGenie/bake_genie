@@ -15,6 +15,7 @@ import { router as featuresRouter } from "./routes/features";
 import { router as contactsRouter } from "./routes/contacts";
 import subscriptionRouter from "./routes/subscription";
 import integrationsRouter from "./routes/integrations";
+import ordersRouter from "./routes/orders";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
@@ -63,6 +64,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register integrations routes (for Stripe, Square, etc.)
   app.use('/api/integrations', integrationsRouter);
+  
+  // Register orders routes
+  app.use(ordersRouter);
   
   // Register import routes
   const importRouter = Router();
