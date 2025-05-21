@@ -137,7 +137,7 @@ const NewOrderPage = () => {
         discount: (data.discount || 0).toString(),
         setupFee: (data.setupFee || 0).toString(),
         // The database column is actually named "total_amount" not "total"
-        total_amount: totalAmount(
+        total: totalAmount(
           data.items,
           data.discount || 0,
           data.setupFee || 0,

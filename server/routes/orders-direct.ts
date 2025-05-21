@@ -89,7 +89,11 @@ router.post("/api/orders", async (req, res) => {
         deliveryTime = '',
         notes = '',
         orderNumber,
-        total,
+        total, // We're getting this from client as 'total'
+        deliveryFee = '0',
+        amountPaid = '0',
+        specialInstructions = '',
+        taxRate = '0',
         items = []
       } = req.body;
       
@@ -130,14 +134,14 @@ router.post("/api/orders", async (req, res) => {
           deliveryType || 'Pickup',
           deliveryAddress || '',
           deliveryTime || '',
-          totalAmount,
+          totalAmount, // This is now using the 'total' field from request
           notes || '',
           orderNum,
           req.body.title || '', // Optional title field
-          req.body.deliveryFee || '0', // Required delivery_fee field
-          req.body.amountPaid || '0', // Required amount_paid field
-          req.body.specialInstructions || '', // Optional special_instructions field
-          req.body.taxRate || '0' // Required tax_rate field
+          deliveryFee, // Use the extracted value
+          amountPaid, // Use the extracted value
+          specialInstructions, // Use the extracted value
+          taxRate // Use the extracted value
         ]
       );
       
