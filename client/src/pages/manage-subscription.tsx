@@ -127,8 +127,19 @@ export default function ManageSubscription() {
                       ) : userData?.createdAt ? (
                         (() => {
                           const createdDate = new Date(userData.createdAt);
+                          const today = new Date();
+                          
+                          // Calculate how many months since the initial billing date
+                          const monthsDiff = (today.getFullYear() - createdDate.getFullYear()) * 12 + 
+                                             today.getMonth() - createdDate.getMonth();
+                          
+                          // Get the next billing date by preserving the day of month from creation date
                           const nextBillingDate = new Date(createdDate);
-                          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                          nextBillingDate.setMonth(createdDate.getMonth() + monthsDiff + 1);
+                          
+                          // Preserve the day from the original creation date
+                          nextBillingDate.setDate(createdDate.getDate());
+                          
                           return format(nextBillingDate, 'EEE, dd MMM yyyy');
                         })()
                       ) : (
