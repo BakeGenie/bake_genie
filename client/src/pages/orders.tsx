@@ -168,12 +168,10 @@ const Orders = () => {
     if (order.status === 'Completed' && !showCompleted) return false;
     if (order.status === 'Cancelled' && !showCancelled) return false;
     
-    // Filter by month and year if set
-    if (month && year) {
-      const orderDate = new Date(order.eventDate || order.event_date);
-      if (orderDate.getMonth() + 1 !== month || orderDate.getFullYear() !== year) {
-        return false;
-      }
+    // Always filter by month and year
+    const orderDate = new Date(order.eventDate || order.event_date);
+    if (orderDate.getMonth() + 1 !== month || orderDate.getFullYear() !== year) {
+      return false;
     }
     
     // Filter by search
@@ -337,21 +335,108 @@ const Orders = () => {
         </div>
       </div>
       
-      {/* Orders List */}
+      {/* Orders List - Styled like screenshot */}
       <div className="flex-1 bg-white rounded-md border shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-full p-8">
             <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" aria-label="Loading" />
           </div>
         ) : filteredOrders.length > 0 ? (
-          <div className="divide-y divide-gray-200">
-            {filteredOrders.map((order: OrderWithItems) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onClick={() => handleOrderClick(order)}
-              />
-            ))}
+          <div className="divide-y divide-gray-100">
+            {filteredOrders
+              // Sort orders by event date
+              .sort((a, b) => {
+                const dateA = new Date(a.eventDate || a.event_date);
+                const dateB = new Date(b.eventDate || b.event_date);
+                return dateA.getTime() - dateB.getTime();
+              })
+              .map((order: any) => {
+                // Format price with dollar sign
+                const price = parseFloat(order.totalAmount || order.total_amount || '0').toFixed(2);
+                
+                // Format date for display like in screenshot example
+                const orderDate = new Date(order.eventDate || order.event_date);
+                const dayName = orderDate.toLocaleString('default', { weekday: 'short' });
+                const dayNum = orderDate.getDate();
+                const monthName = orderDate.toLocaleString('default', { month: 'short' });
+                const yearNum = orderDate.getFullYear();
+                
+                // Get order type and customer name/business name 
+                const orderEventType = order.eventType || order.event_type || '';
+                const isBusinessEvent = orderEventType === 'Corporate';
+                
+                // Status badge for paid, quote, cancelled
+                const isPaid = order.status === 'Paid';
+                const isCancelled = order.status === 'Cancelled';
+                const isQuote = order.status === 'Quote';
+                
+                // Background color for cancelled items
+                const itemBgClass = isCancelled ? 'bg-gray-100' : '';
+                
+                // Status badge styling
+                const badgeClass = isCancelled 
+                  ? "bg-gray-500 text-white text-xs py-0.5 px-2 rounded" 
+                  : isPaid 
+                    ? "bg-gray-200 text-gray-800 text-xs py-0.5 px-2 rounded" 
+                    : "bg-blue-100 text-blue-700 text-xs py-0.5 px-2 rounded";
+                
+                return (
+                  <div key={order.id} className={`py-3 px-4 hover:bg-gray-50 ${itemBgClass}`} onClick={() => handleOrderClick(order)}>
+                    <div className="flex justify-between">
+                      <div className="flex items-start">
+                        {/* Order number and icon marker */}
+                        <div className="flex-shrink-0 mt-1 w-6 mr-1">
+                          <div className="w-5 h-5 flex items-center justify-center">
+                            {isCancelled ? (
+                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                            ) : (
+                              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Order details */}
+                        <div>
+                          <div className="text-gray-500 text-sm">
+                            #{order.orderNumber || order.order_number} - {dayName}, {dayNum} {monthName} {yearNum}
+                          </div>
+                          <div className="text-blue-600">
+                            Contact #{order.contactId || order.contact_id} <span className="text-gray-500">({orderEventType})</span>
+                          </div>
+                          <div className="text-gray-500 text-sm">
+                            {order.notes || "No description available"}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Price and status */}
+                      <div className="flex flex-col items-end">
+                        <div className="font-medium">$ {price}</div>
+                        <div className="mt-1">
+                          <span className={badgeClass}>{order.status}</span>
+                        </div>
+                        <div className="flex mt-1">
+                          <button className="text-gray-400 hover:text-gray-600 mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              <polyline points="14 2 14 8 20 8"></polyline>
+                              <line x1="16" y1="13" x2="8" y2="13"></line>
+                              <line x1="16" y1="17" x2="8" y2="17"></line>
+                              <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                          </button>
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                              <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-64 text-gray-500">
