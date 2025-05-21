@@ -233,10 +233,16 @@ const Products = () => {
       
       console.log("Submitting product with formatted data:", formattedData);
       
-      await apiRequest("POST", "/api/products", formattedData);
+      const response = await apiRequest("POST", "/api/products", formattedData);
+      console.log("Product creation response:", response);
       
-      // Invalidate products query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      // Fetch the products again directly to ensure we have the updated list
+      const updatedProducts = await fetch("/api/products").then(res => res.json());
+      console.log("Updated products list:", updatedProducts);
+      
+      // Force invalidate the products query to refresh the list
+      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/products"] });
       
       // Reset form and close dialog
       form.reset();
