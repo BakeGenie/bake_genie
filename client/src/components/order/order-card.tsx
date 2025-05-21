@@ -35,10 +35,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
   // Generate a placeholder order number if one doesn't exist
   const orderNum = order.id ? order.id.toString().padStart(2, '0') : '';
   
-  // Format order number - use quote prefix for quotes
+  // Format order number - use quote prefix for quotes and add # for display
   const formattedOrderNumber = order.orderNumber 
     ? (order.status === 'Quote' ? `Q${order.orderNumber.replace(/^Q/, '')}` : order.orderNumber)
-    : orderNum;
+    : `#${orderNum}`;
 
   // Handle status badge color
   const getStatusBadge = () => {
