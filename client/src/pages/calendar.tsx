@@ -473,6 +473,7 @@ const Calendar = () => {
               <div key={`empty-end-${index}`} className="h-28 bg-gray-50 rounded-md border border-gray-100"></div>
             ))}
           </div>
+      </div>
       
       {/* Use the sidebar date dialog with custom handlers */}
       <SidebarDateDialog 
