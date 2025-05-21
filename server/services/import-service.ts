@@ -318,7 +318,7 @@ export class ImportService {
           }
           
           // Parse amounts
-          const quoteTotal = parseFloat(record["Order Total"] || '0');
+          const quoteTotal = record["Order Total"] ? parseFloat(record["Order Total"]) : 0;
           const quoteNumber = parseInt(record["Order Number"], 10);
           
           // Check if quote already exists
@@ -342,11 +342,15 @@ export class ImportService {
             status: 'Draft', // Default status for quotes
             deliveryType: 'Pickup', // Default to pickup
             deliveryDetails: '',
+            discount: '0',
+            discountType: '%',
+            setupFee: '0',
             total: quoteTotal.toString(),
             theme: record.Theme || '',
             expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
             taxRate: '0',
             notes: 'Imported from Bake Diary',
+            imageUrls: [],
           }).returning();
           
           processedRows++;
