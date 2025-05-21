@@ -211,7 +211,22 @@ const Products = () => {
         data.imageUrl = imageUrl;
       }
       
-      await apiRequest("POST", "/api/products", data);
+      // Format all numeric values as strings for database compatibility
+      const formattedData = {
+        ...data,
+        // Convert all numeric fields to strings with proper decimal format
+        price: data.price.toString(),
+        cost: data.cost ? data.cost.toString() : "0",
+        taxRate: data.taxRate ? data.taxRate.toString() : "0",
+        laborHours: data.laborHours ? data.laborHours.toString() : "0",
+        laborRate: data.laborRate ? data.laborRate.toString() : "0",
+        overhead: data.overhead ? data.overhead.toString() : "0",
+        servings: data.servings ? data.servings.toString() : "1"
+      };
+      
+      console.log("Submitting product with formatted data:", formattedData);
+      
+      await apiRequest("POST", "/api/products", formattedData);
       
       // Invalidate products query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
@@ -227,6 +242,7 @@ const Products = () => {
         description: `${data.name} has been added to your products.`,
       });
     } catch (error) {
+      console.error("Product creation error:", error);
       toast({
         title: "Error",
         description: "There was an error creating the product. Please try again.",
