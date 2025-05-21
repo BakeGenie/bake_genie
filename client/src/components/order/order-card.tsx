@@ -76,39 +76,71 @@ const OrderCard: React.FC<OrderCardProps> = ({
           {order.eventType && ` (${order.eventType})`}
         </div>
         
-        {/* All order fields directly from database */}
-        <div className="mt-2 text-xs text-gray-500 grid grid-cols-1 gap-1">
-          {/* Display all database fields directly without labels */}
-          <div>id: {order.id}</div>
-          <div>order_number: {order.orderNumber}</div>
-          <div>user_id: {order.userId}</div>
-          <div>contact_id: {order.contactId}</div>
-          <div>event_type: {order.eventType}</div>
-          <div>event_date: {order.eventDate}</div>
-          <div>status: {order.status}</div>
-          <div>delivery_type: {order.deliveryType}</div>
-          <div>delivery_time: {order.deliveryTime}</div>
-          {order.deliveryAddress && <div>delivery_address: {order.deliveryAddress}</div>}
-          {order.deliveryFee && <div>delivery_fee: {order.deliveryFee}</div>}
-          {order.taxRate && <div>tax_rate: {order.taxRate}</div>}
-          {order.discount && <div>discount: {order.discount}</div>}
-          {order.total && <div>total: {order.total}</div>}
-          {order.notes && <div>notes: {order.notes}</div>}
-          <div>created_at: {order.createdAt}</div>
-          <div>updated_at: {order.updatedAt}</div>
+        {/* Order details - direct database content display */}
+        <div className="mt-3 text-xs grid grid-cols-2 gap-x-2 gap-y-1">
+          {/* Show key-value pairs directly from all order properties */}
+          {Object.entries(order).map(([key, value]) => {
+            // Skip the items array and contact object for separate display
+            if (key === 'items' || key === 'contact') return null;
+            
+            // Format value based on type
+            let displayValue = 'null';
+            
+            if (value !== null && value !== undefined) {
+              if (key.includes('date') || key.includes('Date') || key.includes('At')) {
+                // Format dates
+                displayValue = new Date(value.toString()).toLocaleString();
+              } else if (typeof value === 'object') {
+                // Format objects
+                displayValue = JSON.stringify(value);
+              } else {
+                // Default format
+                displayValue = value.toString();
+              }
+            }
+            
+            return (
+              <div key={key} className="col-span-2 border-b border-gray-100 pb-1 flex">
+                <span className="font-semibold w-40 flex-shrink-0">{key}:</span>
+                <span className="text-gray-700">{displayValue}</span>
+              </div>
+            );
+          })}
           
-          {/* Order items listing (if available) */}
+          {/* Contact information if available */}
+          {order.contact && (
+            <div className="col-span-2 mt-2 border-t border-gray-200 pt-2">
+              <div className="font-semibold mb-1">Contact:</div>
+              {Object.entries(order.contact).map(([key, value]) => {
+                if (value === null || value === undefined) return null;
+                
+                return (
+                  <div key={key} className="ml-2 flex">
+                    <span className="font-semibold w-32 flex-shrink-0">{key}:</span>
+                    <span className="text-gray-700">{value.toString()}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          {/* Order items listing */}
           {order.items && order.items.length > 0 && (
-            <div className="mt-1">
-              order_items:
+            <div className="col-span-2 mt-2 border-t border-gray-200 pt-2">
+              <div className="font-semibold">Order Items ({order.items.length}):</div>
               {order.items.map((item, idx) => (
-                <div key={idx} className="ml-2 border-t border-gray-100 pt-1 mt-1">
-                  <div>id: {item.id}</div>
-                  <div>name: {item.name}</div>
-                  <div>quantity: {item.quantity}</div>
-                  <div>price: {item.price}</div>
-                  {item.description && <div>description: {item.description}</div>}
-                  {item.notes && <div>notes: {item.notes}</div>}
+                <div key={idx} className="ml-2 mt-2 pb-2 border-b border-gray-100">
+                  <div className="font-medium">Item #{idx + 1}</div>
+                  {Object.entries(item).map(([key, value]) => {
+                    if (value === null || value === undefined) return null;
+                    
+                    return (
+                      <div key={key} className="ml-2 flex">
+                        <span className="font-semibold w-24 flex-shrink-0">{key}:</span>
+                        <span className="text-gray-700">{value.toString()}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
