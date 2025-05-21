@@ -81,6 +81,11 @@ const orderFormSchema = insertOrderSchema.extend({
   items: z.array(orderItemSchema),
   // Make these fields required
   orderDate: z.date({ required_error: "Order date is required" }),
+  // Allow both date and string formats for eventDate to handle all cases
+  eventDate: z.union([
+    z.string({ required_error: "Event date is required" }),
+    z.date({ required_error: "Event date is required" })
+  ]),
   customerName: z.string(),
   status: z.string().min(1, "Status is required"),
   eventType: z.string().min(1, "Event type is required"),
