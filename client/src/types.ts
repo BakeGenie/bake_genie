@@ -25,8 +25,14 @@ export interface OrderWithItems {
   imageUrls?: string[] | null;
   createdAt: string | Date;
   updatedAt: string | Date;
+  deliveryAddress?: string | null; // Adding this for OrderDetailsDialog
   
   // Extended properties
   items: OrderItem[];
   contact: Contact;
+}
+
+// Extend OrderItem to match what the UI expects
+export interface ExtendedOrderItem extends OrderItem {
+  productName?: string | null;
 }
