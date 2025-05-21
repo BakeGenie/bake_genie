@@ -420,70 +420,12 @@ const Account = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">Pro Plan</h3>
-                      <p className="text-sm text-muted-foreground">$15.00 per month</p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage Subscription
-                    </Button>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Payment Methods</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border p-4 rounded-lg">
-                      <div className="flex items-center">
-                        <CreditCardIcon className="h-5 w-5 mr-2 text-primary-500" />
-                        <div>
-                          <p className="font-medium">Visa ending in 4242</p>
-                          <p className="text-sm text-muted-foreground">Expires 12/2025</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        Edit
-                      </Button>
-                    </div>
-                    <Button variant="outline">
-                      <CreditCardIcon className="h-4 w-4 mr-2" /> Add Payment Method
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator className="my-6" />
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Billing History</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <div>
-                        <p className="font-medium">Invoice #1234</p>
-                        <p className="text-sm text-muted-foreground">May 1, 2023</p>
-                      </div>
-                      <div className="flex items-center">
-                        <p className="font-medium mr-4">$15.00</p>
-                        <Button variant="ghost" size="sm">
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <div>
-                        <p className="font-medium">Invoice #1233</p>
-                        <p className="text-sm text-muted-foreground">April 1, 2023</p>
-                      </div>
-                      <div className="flex items-center">
-                        <p className="font-medium mr-4">$15.00</p>
-                        <Button variant="ghost" size="sm">
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+              <div className="space-y-6 py-4">
+                <div className="bg-muted p-6 rounded-lg text-center">
+                  <p className="text-muted-foreground mb-4">No billing information available</p>
+                  <Button variant="outline">
+                    <CreditCardIcon className="h-4 w-4 mr-2" /> Set Up Billing
+                  </Button>
                 </div>
               </div>
             </CardContent>
