@@ -118,6 +118,8 @@ const NewOrderPage = () => {
     if (storedEventDate) {
       try {
         console.log("Found stored event date:", storedEventDate);
+        // Parse as a string date in the format "yyyy-MM-dd"
+        // The form will handle the conversion to Date as needed
         const selectedDate = new Date(storedEventDate);
         
         if (!isNaN(selectedDate.getTime())) {
@@ -140,7 +142,6 @@ const NewOrderPage = () => {
         
         if (!isNaN(selectedDate.getTime())) {
           values.eventDate = selectedDate;
-          console.log("Calendar: Selected date for new order:", selectedDate.toISOString().split('T')[0]);
         }
       } catch (e) {
         console.error("Invalid date format from URL:", preselectedDate);

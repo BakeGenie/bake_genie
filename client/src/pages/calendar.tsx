@@ -398,11 +398,11 @@ const Calendar = () => {
               onClick={() => {
                 setIsActionDialogOpen(false);
                 if (selectedDate) {
-                  // Store the selected date in localStorage for easy access
+                  // Format and store the selected date as a string in yyyy-MM-dd format
                   const formattedDate = format(selectedDate, "yyyy-MM-dd");
                   console.log("Calendar: Storing selected date for new order:", formattedDate);
                   
-                  // Use localStorage to pass the date - more reliable than URL parameters
+                  // Use localStorage with string format - more reliable and avoids type issues
                   localStorage.setItem('pendingEventDate', formattedDate);
                   
                   // Navigate without parameters - we'll get the date from localStorage
