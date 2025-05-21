@@ -391,12 +391,15 @@ router.delete("/api/orders/:id", async (req, res) => {
  */
 router.post("/api/orders-direct", async (req, res) => {
   try {
-    console.log("Received order creation request:", req.body);
+    console.log("Received order creation request at /api/orders-direct endpoint");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
     
     // Get user ID from session or use default
     const userId = req.session?.userId || 1;
+    console.log("Using userId:", userId);
     
     // Start a transaction
+    console.log("Starting database transaction");
     const client = await pool.connect();
     
     try {
