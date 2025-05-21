@@ -443,19 +443,20 @@ router.post("/api/orders-direct", async (req, res) => {
       // Insert order items if provided
       if (req.body.items && Array.isArray(req.body.items)) {
         for (const item of req.body.items) {
+          // Query the order_items table structure to see what columns it actually has
+          console.log(`Inserting order item for order: ${newOrder.id}`);
+          
+          // Insert only the columns that exist in the order_items table
           await client.query(
             `INSERT INTO order_items (
-              order_id, description, quantity, price, product_id, name, type, unit_price
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              order_id, description, quantity, price, name
+            ) VALUES ($1, $2, $3, $4, $5)`,
             [
               newOrder.id,
               item.description,
               item.quantity,
               item.price,
-              item.productId,
-              item.name,
-              item.type || 'Product',
-              item.unitPrice
+              item.name
             ]
           );
         }

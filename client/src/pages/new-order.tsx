@@ -164,17 +164,33 @@ const NewOrderPage = () => {
         JSON.stringify(formattedData, null, 2),
       );
 
-      // Make the API request
-      console.log("Using direct API endpoint for order creation");
-      const response = await fetch("/api/orders-direct", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
-      });
-      console.log("STEP 3 - API response status:", response.status);
+      // Make the API request with all debugging info
+      console.log("Making fetch request to /api/orders-direct endpoint");
+      let response;
+      try {
+        console.log("REQUEST DATA:", JSON.stringify(formattedData, null, 2));
+        response = await fetch("/api/orders-direct", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedData),
+        });
+        console.log("STEP 3 - API response status:", response.status);
+        console.log("Response headers:", JSON.stringify(Object.fromEntries([...response.headers]), null, 2));
+        
+        // Check for network errors
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server responded with error:", response.status, errorText);
+          throw new Error(`Server error: ${response.status} - ${errorText || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error("Fetch error:", error);
+        throw error;
+      }
 
+      // Parse the JSON response
       const newOrder = await response.json();
       console.log(
         "STEP 4 - API response data:",
