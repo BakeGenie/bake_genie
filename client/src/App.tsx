@@ -29,6 +29,7 @@ import Printables from "./pages/printables";
 import Tools from "./pages/tools";
 import Account from "./pages/account";
 import ManageSubscription from "./pages/manage-subscription";
+import CancelSubscription from "./pages/cancel-subscription";
 import DataImportExport from "./pages/data-import-export";
 import Import from "./pages/import";
 import Integrations from "./pages/integrations";
@@ -67,6 +68,7 @@ function Router() {
         <Route path="/tax-rates" component={TaxRates} />
         <Route path="/account" component={Account} />
         <Route path="/manage-subscription" component={ManageSubscription} />
+        <Route path="/cancel-subscription" component={CancelSubscription} />
         <Route path="/data" component={DataImportExport} />
         <Route path="/import" component={Import} />
         <Route path="/integrations" component={Integrations} />

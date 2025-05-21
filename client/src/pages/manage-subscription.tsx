@@ -26,11 +26,7 @@ export default function ManageSubscription() {
   };
 
   const handleCancelSubscription = () => {
-    toast({
-      title: "Cancel Subscription",
-      description: "Starting the cancellation process.",
-      variant: "destructive",
-    });
+    setLocation("/cancel-subscription");
   };
 
   return (
