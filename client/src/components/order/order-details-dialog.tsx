@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, X } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
-import { OrderWithItems } from "@/types";
+import { OrderWithItems, ExtendedOrderItem } from "@/types";
 
 interface OrderDetailsDialogProps {
   isOpen: boolean;
@@ -81,11 +81,15 @@ const OrderDetailsDialog: React.FC<OrderDetailsDialogProps> = ({
             <h3 className="text-gray-500 mb-1">Order Details:</h3>
             <div className="bg-gray-50 p-3 rounded">
               {order.items && order.items.length > 0 
-                ? order.items.map((item, index) => (
-                    <p key={index} className="font-medium mb-1">
-                      {item.quantity} {item.description || item.productName || 'Item'}
-                    </p>
-                  ))
+                ? order.items.map((item, index) => {
+                    // Cast to any to handle different API response structures
+                    const itemAny = item as any;
+                    return (
+                      <p key={index} className="font-medium mb-1">
+                        {item.quantity} {itemAny.description || itemAny.name || 'Item'}
+                      </p>
+                    );
+                  })
                 : <p className="font-medium">No items</p>
               }
             </div>
@@ -95,8 +99,8 @@ const OrderDetailsDialog: React.FC<OrderDetailsDialogProps> = ({
             <h3 className="text-gray-500 mb-1">Delivery / Collection:</h3>
             <div className="bg-gray-50 p-3 rounded">
               {order.deliveryType === 'Delivery' 
-                ? <p className="font-medium">Delivery to: {order.deliveryAddress || 'N/A'}</p>
-                : <p className="font-medium">Collected from: {order.deliveryAddress || 'Shop address'}</p>
+                ? <p className="font-medium">Delivery to: {order.deliveryAddress || order.deliveryDetails || 'N/A'}</p>
+                : <p className="font-medium">Collection from: {order.deliveryDetails || 'Shop address'}</p>
               }
             </div>
           </div>

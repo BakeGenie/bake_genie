@@ -1,11 +1,12 @@
 import React from "react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from "date-fns";
 import DateSelectionDialog from "./date-selection-dialog";
+import OrderDetailsDialog from "./order-details-dialog";
+import { OrderWithItems } from "@/types";
 
 type OrderCalendarProps = {
-  orders: any[];
+  orders: OrderWithItems[];
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   month: number;
@@ -23,8 +24,10 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   const firstDayOfMonth = startOfMonth(currentMonthDate);
   const lastDayOfMonth = endOfMonth(currentMonthDate);
   
-  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [dateDialogOpen, setDateDialogOpen] = React.useState(false);
+  const [orderDialogOpen, setOrderDialogOpen] = React.useState(false);
   const [clickedDate, setClickedDate] = React.useState<Date | null>(null);
+  const [selectedOrder, setSelectedOrder] = React.useState<OrderWithItems | null>(null);
   
   // Get all days in the current month
   const daysInMonth = eachDayOfInterval({
@@ -36,7 +39,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   const startingDayOfWeek = firstDayOfMonth.getDay();
   
   // Group orders by date
-  const ordersByDate = orders.reduce((acc: Record<string, any[]>, order: any) => {
+  const ordersByDate = orders.reduce((acc: Record<string, OrderWithItems[]>, order: OrderWithItems) => {
     const eventDate = new Date(order.eventDate);
     const dateKey = format(eventDate, 'yyyy-MM-dd');
     
@@ -64,10 +67,20 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
     
     const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
     
-    const handleDateClick = (date: Date) => {
-      setClickedDate(date);
-      setDialogOpen(true);
-      onDateSelect(date);
+    const handleDateClick = (e: React.MouseEvent, date: Date) => {
+      // Only open date dialog if clicking on the cell background, not on an order
+      if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('date-cell-bg')) {
+        e.stopPropagation();
+        setClickedDate(date);
+        setDateDialogOpen(true);
+        onDateSelect(date);
+      }
+    };
+    
+    const handleOrderClick = (e: React.MouseEvent, order: OrderWithItems) => {
+      e.stopPropagation();
+      setSelectedOrder(order);
+      setOrderDialogOpen(true);
     };
     
     calendarDays.push(
@@ -76,9 +89,9 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
         className={`h-24 border-t border-l p-1 relative ${
           isToday(day) ? 'bg-blue-50' : ''
         } ${isSelected ? 'ring-2 ring-blue-500 z-10' : ''}`}
-        onClick={() => handleDateClick(day)}
+        onClick={(e) => handleDateClick(e, day)}
       >
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start date-cell-bg">
           <span className={`text-sm font-medium ${isToday(day) ? 'text-blue-600' : ''}`}>
             {format(day, 'd')}
           </span>
@@ -86,16 +99,17 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
         
         {hasOrders && (
           <div className="mt-1 space-y-1 overflow-y-auto max-h-16">
-            {ordersOnDay.slice(0, 3).map((order: any) => (
+            {ordersOnDay.slice(0, 3).map((order) => (
               <div
                 key={order.id}
-                className={`text-xs px-1 py-0.5 rounded truncate ${
+                className={`text-xs px-1 py-0.5 rounded truncate cursor-pointer ${
                   order.status === 'Cancelled'
                     ? 'bg-gray-200 text-gray-700'
                     : order.status === 'Completed'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-blue-100 text-blue-800'
                 }`}
+                onClick={(e) => handleOrderClick(e, order)}
               >
                 {order.orderNumber}
               </div>
@@ -121,8 +135,12 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
     calendarDays.push(<div key={`empty-end-${i}`} className="h-24 border-t border-l p-1"></div>);
   }
   
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
+  const handleCloseDateDialog = () => {
+    setDateDialogOpen(false);
+  };
+  
+  const handleCloseOrderDialog = () => {
+    setOrderDialogOpen(false);
   };
   
   return (
@@ -142,9 +160,16 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
       
       {/* Date Selection Dialog */}
       <DateSelectionDialog 
-        isOpen={dialogOpen}
-        onClose={handleCloseDialog}
+        isOpen={dateDialogOpen}
+        onClose={handleCloseDateDialog}
         selectedDate={clickedDate}
+      />
+      
+      {/* Order Details Dialog */}
+      <OrderDetailsDialog
+        isOpen={orderDialogOpen}
+        onClose={handleCloseOrderDialog}
+        order={selectedOrder}
       />
       
       <div className="grid grid-cols-7 border-r border-b">
