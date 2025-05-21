@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "wouter";
 import { ChevronLeftIcon, UploadIcon, DownloadIcon, CalendarIcon, InfoIcon, PlusIcon } from "lucide-react";
 import { FormatCurrency } from "@/components/ui/format-currency";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +11,73 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
+// Order Log History component
+interface OrderLogHistoryProps {
+  orderId: string | number;
+}
+
+const OrderLogHistory: React.FC<OrderLogHistoryProps> = ({ orderId }) => {
+  const { data: logs, isLoading, refetch } = useQuery({
+    queryKey: [`/api/orders/${orderId}/logs`],
+    enabled: !!orderId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="rounded-md border">
+        <div className="grid grid-cols-2 bg-gray-50 p-3 border-b">
+          <div className="font-medium text-sm">Date</div>
+          <div className="font-medium text-sm">Action</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-6 text-center text-gray-500">
+          <p>No history available yet</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border">
+      <div className="grid grid-cols-3 bg-gray-50 p-3 border-b">
+        <div className="font-medium text-sm">Date</div>
+        <div className="font-medium text-sm">Action</div>
+        <div className="font-medium text-sm">By</div>
+      </div>
+      <div className="divide-y">
+        {logs.map((log: any) => (
+          <div key={log.id} className="grid grid-cols-3 p-3">
+            <div className="text-sm">{format(parseISO(log.createdAt), 'dd MMM yyyy HH:mm')}</div>
+            <div className="text-sm">
+              {log.action}
+              {log.details && <div className="text-xs text-gray-500 mt-1">{log.details}</div>}
+            </div>
+            <div className="text-sm">{log.creatorName || 'System'}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const OrderDetails: React.FC = () => {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("details");
+  
+  // Function to refetch order logs
+  const refetchLogs = () => {
+    queryClient.invalidateQueries({ queryKey: [`/api/orders/${id}/logs`] });
+  };
 
   // Fetch order details
   const { data: order, isLoading, error } = useQuery({
