@@ -410,7 +410,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       // Format the data for submission with date conversion
       const formattedData = {
         ...data,
-        total: totalAmount,
+        total: totalAmount.toString(), // Convert to string as required by the server
         // Ensure dates are properly formatted for API submission
         orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : new Date().toISOString(),
         eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
