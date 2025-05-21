@@ -19,11 +19,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <div className="sticky top-0 z-10 flex items-center h-14 px-4 bg-white border-b border-gray-200">
       {backLink && (
-        <Link href={backLink}>
-          <a className="flex items-center text-gray-500 hover:text-gray-700 mr-4">
-            <ChevronLeft className="h-5 w-5" />
-            {backLabel && <span className="ml-1 text-sm">{backLabel}</span>}
-          </a>
+        <Link href={backLink} className="flex items-center text-gray-500 hover:text-gray-700 mr-4">
+          <ChevronLeft className="h-5 w-5" />
+          {backLabel && <span className="ml-1 text-sm">{backLabel}</span>}
         </Link>
       )}
       <h1 className="text-lg font-semibold text-gray-800">{title}</h1>

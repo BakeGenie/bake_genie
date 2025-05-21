@@ -121,9 +121,13 @@ const RecipesList = () => {
               filteredRecipes.map((recipe) => (
                 <TableRow key={recipe.id}>
                   <TableCell className="font-medium">
-                    <a href="#" className="text-blue-600 hover:underline">
+                    <Button 
+                      variant="link" 
+                      className="p-0 text-blue-600 hover:underline"
+                      onClick={() => {/* View recipe logic */}}
+                    >
                       {recipe.name}
-                    </a>
+                    </Button>
                   </TableCell>
                   <TableCell>{recipe.category}</TableCell>
                   <TableCell>

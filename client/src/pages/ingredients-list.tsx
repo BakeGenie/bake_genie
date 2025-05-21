@@ -87,9 +87,13 @@ const IngredientsList = () => {
                 filteredIngredients.map((ingredient) => (
                   <TableRow key={ingredient.id}>
                     <TableCell className="font-medium">
-                      <a href="#" className="text-blue-600 hover:underline">
+                      <Button 
+                        variant="link" 
+                        className="p-0 text-blue-600 hover:underline"
+                        onClick={() => {/* View ingredient logic */}}
+                      >
                         {ingredient.name}
-                      </a>
+                      </Button>
                     </TableCell>
                     <TableCell>{ingredient.supplier || '-'}</TableCell>
                     <TableCell>{ingredient.purchaseSize || '-'}</TableCell>
