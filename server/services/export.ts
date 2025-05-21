@@ -134,7 +134,30 @@ export class ExportService {
    */
   async exportOrders(userId: number) {
     try {
-      const userOrders = await db.select().from(orders).where(eq(orders.userId, userId));
+      // Explicitly select only fields that exist in the database schema
+      const userOrders = await db.select({
+        id: orders.id,
+        userId: orders.userId,
+        orderNumber: orders.orderNumber,
+        contactId: orders.contactId,
+        eventType: orders.eventType,
+        eventDate: orders.eventDate,
+        status: orders.status,
+        theme: orders.theme,
+        deliveryType: orders.deliveryType,
+        deliveryDetails: orders.deliveryDetails,
+        deliveryTime: orders.deliveryTime,
+        discount: orders.discount,
+        discountType: orders.discountType,
+        setupFee: orders.setupFee,
+        taxRate: orders.taxRate,
+        total: orders.total,
+        notes: orders.notes,
+        jobSheetNotes: orders.jobSheetNotes,
+        imageUrls: orders.imageUrls,
+        createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt
+      }).from(orders).where(eq(orders.userId, userId));
       
       // Get order items for each order
       const orderIds = userOrders.map(order => order.id);
@@ -577,16 +600,14 @@ export class ExportService {
     try {
       const tasksData = await this.exportTasks(userId);
       
-      // Prepare data for CSV export
+      // Prepare data for CSV export - only include fields that exist in the task object
       const csvData = tasksData.map(task => {
         return {
           'Title': task.title,
           'Description': task.description || '',
           'Due Date': task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
           'Priority': task.priority || 'Normal',
-          'Status': task.status,
-          'Related To': task.relatedTo || '',
-          'Related ID': task.relatedId || '',
+          'Status': task.status || '',
           'Created': format(new Date(task.createdAt), 'yyyy-MM-dd')
         };
       });
