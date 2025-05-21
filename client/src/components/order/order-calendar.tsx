@@ -119,37 +119,43 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
         formattedDate = format(day, "d");
         const cloneDay = day;
         const ordersForDay = getOrdersForDate(day);
+        const isCurrentMonth = isSameMonth(day, monthStart);
+        const isToday = isSameDay(day, today);
+        const isSelected = selectedDate && isSameDay(day, selectedDate);
 
         days.push(
           <div
             key={day.toString()}
-            className="py-2 relative"
+            className={`p-2 min-h-[40px] relative cursor-pointer border hover:bg-blue-50
+              ${!isCurrentMonth ? "bg-gray-50 text-gray-400" : ""}
+              ${isToday ? "bg-blue-50" : ""}
+              ${isSelected ? "bg-blue-100 border-blue-500" : "border-gray-200"}
+            `}
             onClick={() => onDateSelect(cloneDay)}
           >
-            <div
-              className={`calendar-day ${
-                !isSameMonth(day, monthStart) ? "other-month text-gray-300" : ""
-              } ${isSameDay(day, today) ? "today" : ""} ${
-                ordersForDay.length > 0 ? "has-events" : ""
-              } ${
-                selectedDate && isSameDay(day, selectedDate)
-                  ? "border-2 border-primary-500"
-                  : "border border-gray-200"
-              }`}
-            >
-              {formattedDate}
+            <div className="flex justify-between items-start">
+              <span className={`text-sm ${isToday ? "font-bold text-blue-500" : ""}`}>
+                {formattedDate}
+              </span>
+              {ordersForDay.length > 0 && (
+                <div className="relative">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 absolute -right-1 -top-1"></div>
+                </div>
+              )}
             </div>
             {ordersForDay.length > 0 && (
-              <div className="w-1 h-1 rounded-full bg-gray-400 absolute bottom-0 left-1/2 transform -translate-x-1/2"></div>
+              <div className="text-xs mt-1 text-gray-700">
+                {ordersForDay.length} order{ordersForDay.length !== 1 ? "s" : ""}
+              </div>
             )}
-          </div>,
+          </div>
         );
         day = addDays(day, 1);
       }
       rows.push(
         <div key={day.toString()} className="grid grid-cols-7">
           {days}
-        </div>,
+        </div>
       );
       days = [];
     }
@@ -157,38 +163,44 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   };
 
   return (
-    <div className="p-3 border-b border-gray-200 w-4/5 mx-auto">
-      <div className="mb-3">
+    <div className="p-3 w-full">
+      <div className="mb-4">
         <div className="flex justify-between items-center">
-          <div>
-            <div className="text-gray-500 text-xs">Today's Date</div>
-            <div className="flex items-center">
-              <span className="text-sm font-medium">
-                {format(today, "EEEE")} {format(today, "d")}{" "}
+          <div className="flex flex-col">
+            <div className="text-gray-500 text-sm">Today's Date</div>
+            <div className="flex flex-col">
+              <span className="text-4xl font-bold">{format(today, "dd")}</span>
+              <span className="text-lg">
                 {format(today, "MMM")}
+                <br />
+                {format(today, "EEEE")}
               </span>
             </div>
           </div>
-          <div className="flex">
-            <Button variant="ghost" size="icon" onClick={prevMonth}>
-              <ChevronLeftIcon className="h-5 w-5 text-gray-400" />
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={prevMonth} className="text-blue-500">
+              <ChevronLeftIcon className="h-5 w-5" />
             </Button>
             <div className="mx-2 text-center">
               <div className="text-xl font-bold">
                 {format(currentMonth, "MMMM yyyy")}
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={nextMonth}>
-              <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+            <Button variant="ghost" size="icon" onClick={nextMonth} className="text-blue-500">
+              <ChevronRightIcon className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* Calendar */}
-      <div>
-        {renderDays()}
-        {renderCells()}
+      <div className="border rounded-md overflow-hidden">
+        <div className="bg-blue-50 py-1">
+          {renderDays()}
+        </div>
+        <div className="bg-white">
+          {renderCells()}
+        </div>
       </div>
     </div>
   );

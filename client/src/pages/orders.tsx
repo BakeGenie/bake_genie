@@ -205,7 +205,7 @@ const Orders = () => {
               // Store the current date in localStorage
               localStorage.setItem('selectedDate', new Date().toISOString());
               setIsNewOrderDialogOpen(true);
-            }}>
+            }} className="bg-blue-500 hover:bg-blue-600">
               <PlusIcon className="h-4 w-4 mr-2" />
               New Order
             </Button>
@@ -213,84 +213,114 @@ const Orders = () => {
         }
       />
       
-      <div className="border rounded-md mb-4 p-3 flex items-center space-x-4 bg-white">
-        <div className="relative w-full max-w-sm">
-          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search orders by customer, event type or order number"
-            className="pl-9"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      {/* Calendar and Date Selection Section - Similar to BakeDiary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 mb-6 gap-6">
+        <div className="md:col-span-1 bg-white rounded-md border shadow-sm">
+          <div className="p-4">
+            <div className="text-lg font-semibold mb-2">Today's Date</div>
+            <div className="flex items-center gap-2">
+              <div className="text-5xl font-bold">
+                {new Date().getDate()}
+              </div>
+              <div>
+                <div className="text-lg font-medium">
+                  {format(new Date(), "MMM")}
+                </div>
+                <div className="text-lg">
+                  {format(new Date(), "EEEE")}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Select
-            value={month.toString()}
-            onValueChange={(value) => setMonth(parseInt(value))}
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Month" />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select
-            value={year.toString()}
-            onValueChange={(value) => setYear(parseInt(value))}
-          >
-            <SelectTrigger className="w-24">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              {yearOptions.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="md:col-span-2 bg-white rounded-md border shadow-sm">
+          <div className="p-4">
+            <OrderCalendar
+              orders={orders}
+              selectedDate={selectedDate}
+              onDateSelect={handleDateSelect}
+              month={month}
+              year={year}
+            />
+          </div>
         </div>
       </div>
       
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,350px] gap-4">
-        <div className="overflow-y-auto bg-white p-4 rounded-md border">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading" />
+      {/* Order Period and Filter Controls - Similar to BakeDiary */}
+      <div className="bg-white rounded-md border shadow-sm mb-6 p-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-500">Order Period:</h3>
+            <div className="flex items-center space-x-2 mt-1">
+              <Select
+                value={month.toString()}
+                onValueChange={(value) => setMonth(parseInt(value))}
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select
+                value={year.toString()}
+                onValueChange={(value) => setYear(parseInt(value))}
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          ) : filteredOrders.length > 0 ? (
-            <div className="space-y-4">
-              {filteredOrders.map((order: OrderWithItems) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onClick={() => handleOrderClick(order)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <p className="mb-4">No orders found for the selected filters.</p>
-              <Button onClick={resetAllFilters}>Reset Filters</Button>
-            </div>
-          )}
+          </div>
+          
+          <div className="relative flex-1 max-w-md">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search orders by customer, event type or order number"
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
-        
-        <div className="hidden lg:block bg-white p-4 rounded-md border">
-          <h3 className="text-lg font-semibold mb-4">Order Calendar</h3>
-          <OrderCalendar
-            orders={orders}
-            selectedDate={selectedDate}
-            onDateSelect={handleDateSelect}
-          />
-        </div>
+      </div>
+      
+      {/* Orders List */}
+      <div className="flex-1 bg-white rounded-md border shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full p-8">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" aria-label="Loading" />
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {filteredOrders.map((order: OrderWithItems) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onClick={() => handleOrderClick(order)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+            <p className="mb-4">No orders found for the selected filters.</p>
+            <Button onClick={resetAllFilters} variant="outline">Reset Filters</Button>
+          </div>
+        )}
       </div>
       
       {/* New Order Dialog */}
