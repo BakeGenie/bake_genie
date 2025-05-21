@@ -60,6 +60,30 @@ const NewOrderPage = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
+  // Function to calculate total amount for an order
+  const totalAmount = (items: any[], discount = 0, setupFee = 0, deliveryFee = 0, discountType = '%') => {
+    // Calculate subtotal from items
+    const subtotal = items.reduce((sum, item) => {
+      const quantity = item.quantity || 1;
+      const price = typeof item.price === 'number' ? item.price : parseFloat(item.price || '0');
+      return sum + (quantity * price);
+    }, 0);
+    
+    // Apply discount
+    let discountAmount = 0;
+    if (discountType === '%') {
+      discountAmount = subtotal * (discount / 100);
+    } else {
+      discountAmount = discount;
+    }
+    
+    // Calculate final total
+    const total = subtotal - discountAmount + setupFee + deliveryFee;
+    
+    // Return as string with 2 decimal places
+    return total.toFixed(2);
+  };
+  
   // Parse URL parameters to get pre-selected date if any
   const searchParams = new URLSearchParams(location.split('?')[1] || '');
   // Check for both 'eventDate' and 'date' params to support both formats
@@ -73,13 +97,31 @@ const NewOrderPage = () => {
       // Create a unique order number
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       
-      // Format the form data for the API request
+      // Format the form data for the API request to match what the server expects
       const formattedData = {
-        ...data,
+        contactId: data.customer?.id || data.contactId || 12, // Make sure contactId is properly sent
         orderNumber,
-        // Convert Date objects to ISO strings for API
-        eventDate: data.eventDate ? data.eventDate.toISOString() : new Date().toISOString(),
-        orderDate: data.orderDate ? data.orderDate.toISOString() : new Date().toISOString(),
+        eventType: data.eventType || 'Birthday',
+        eventDate: data.eventDate ? new Date(data.eventDate).toISOString() : new Date().toISOString(),
+        status: data.status || 'Quote',
+        deliveryType: data.deliveryType || 'Pickup',
+        deliveryAddress: data.deliveryAddress || '',
+        deliveryTime: data.deliveryTime || '',
+        deliveryFee: data.deliveryFee?.toString() || '0',
+        notes: data.notes || '',
+        specialInstructions: data.notes || '',
+        taxRate: data.taxRate?.toString() || '0',
+        amountPaid: '0',
+        total: totalAmount(data.items, data.discount || 0, data.setupFee || 0, data.deliveryFee || 0, data.discountType || '%'),
+        items: data.items.map(item => ({
+          description: item.description || '',
+          quantity: item.quantity || 1,
+          price: item.price?.toString() || '0',
+          name: item.productName || item.description || 'Product',
+          type: 'Product',
+          unitPrice: item.price?.toString() || '0',
+          productId: item.productId || null
+        }))
       };
       
       const response = await apiRequest("POST", "/api/orders", formattedData);
