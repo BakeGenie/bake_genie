@@ -64,8 +64,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/products', productsRouter);
   
   // Register new product routes for the fixed implementation
-  import productsNewRouter from "./routes/products-new";
-  app.use('/api', productsNewRouter);
   
   // Register subscription routes
   app.use('/api/subscription', subscriptionRouter);

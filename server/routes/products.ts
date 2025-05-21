@@ -120,10 +120,8 @@ router.post("/", async (req: Request, res: Response) => {
       
       console.log("Product created successfully:", result.rows[0]);
       
-      return res.status(201).json({ 
-        success: true, 
-        product: result.rows[0] 
-      });
+      // Return just the product directly instead of nested in an object
+      return res.status(201).json(result.rows[0]);
     } catch (dbError) {
       console.error("Database error creating product:", dbError);
       console.error("Error details:", (dbError as any).detail, (dbError as any).code);

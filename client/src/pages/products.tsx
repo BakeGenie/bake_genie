@@ -236,17 +236,32 @@ const Products = () => {
       
       console.log("Submitting product with formatted data:", formattedData);
       
-      const response = await apiRequest("POST", "/api/products", formattedData);
-      console.log("Product creation response:", response);
+      // Make the product creation request and handle the response
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
+      });
       
-      // Force update the products list
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error creating product:", errorData);
+        throw new Error(errorData.error || "Failed to create product");
+      }
+      
+      const data = await response.json();
+      console.log("Product creation response:", data);
+      
+      // Force update the products list with both methods to ensure it appears
       await refetch();
       
-      // For extra safety, force a complete reload of products
+      // For additional safety, force a complete refetch after a small delay
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["/api/products"] });
         refetch();
-      }, 500);
+      }, 300);
       
       // Reset form and close dialog
       form.reset();
