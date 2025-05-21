@@ -102,6 +102,7 @@ const NewOrderPage = () => {
       
       // Format the form data for the API request to match what the server expects
       const formattedData = {
+        userId: 1, // Add userId (hardcoded for testing as 1, which is the default test user)
         contactId: data.customer?.id || data.contactId || 12, // Make sure contactId is properly sent
         orderNumber,
         eventType: data.eventType || 'Birthday',
@@ -115,6 +116,9 @@ const NewOrderPage = () => {
         specialInstructions: data.notes || '',
         taxRate: data.taxRate?.toString() || '0',
         amountPaid: '0',
+        discountType: data.discountType || '%',
+        discount: (data.discount || 0).toString(),
+        setupFee: (data.setupFee || 0).toString(),
         total: totalAmount(data.items, data.discount || 0, data.setupFee || 0, data.deliveryFee || 0, data.discountType || '%'),
         items: data.items.map(item => ({
           description: item.description || '',
