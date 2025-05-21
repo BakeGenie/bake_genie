@@ -281,6 +281,7 @@ export class ImportService {
               lastName,
               email: '',
               phone: '',
+              company: '', // Add company field to match schema
               address: '',
               notes: 'Imported from Bake Diary'
             }).returning();
@@ -343,10 +344,9 @@ export class ImportService {
             eventDate,
             status: 'Draft', // Default status for quotes
             deliveryType: 'Pickup', // Default to pickup
-            deliveryAddress: '',
-            deliveryFee: '0',
-            totalAmount: quoteTotal.toString(),
-            specialInstructions: record.Theme || '',
+            deliveryDetails: '',
+            total: quoteTotal.toString(),
+            theme: record.Theme || '',
             expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
             taxRate: '0',
             notes: 'Imported from Bake Diary',
