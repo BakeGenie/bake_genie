@@ -169,6 +169,7 @@ const NewOrderPage = () => {
       let response;
       try {
         console.log("REQUEST DATA:", JSON.stringify(formattedData, null, 2));
+        // Using orders-direct endpoint that we verified is working
         response = await fetch("/api/orders-direct", {
           method: "POST",
           headers: {
