@@ -433,7 +433,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         deliveryAddress: data.deliveryAddress || '',
         deliveryFee: data.deliveryFee?.toString() || '0', // Match database column
         deliveryTime: data.deliveryTime || '',
-        totalAmount: totalAmount.toString(), // Match database column
+        totalAmount: totalAmount ? totalAmount.toString() : '0', // Match database column
         amountPaid: '0', // Required field in database
         specialInstructions: data.notes || '', // Match database column
         taxRate: data.taxRate?.toString() || '0', // Required field in database
