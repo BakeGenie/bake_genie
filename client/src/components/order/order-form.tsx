@@ -120,6 +120,9 @@ const defaultValues: Partial<OrderFormValues> = {
   deliveryAddress: "",
   deliveryTime: "",
   eventType: "Birthday",
+  discount: 0,
+  discountType: "%",
+  setupFee: 0,
   items: [
     {
       description: "",
@@ -131,6 +134,11 @@ const defaultValues: Partial<OrderFormValues> = {
   customer: {
     firstName: "",
     lastName: "",
+    businessName: "",
+    email: "",
+    phone: "",
+    address: "",
+    notes: "",
     userId: 1, // Default user ID
   },
   userId: 1, // Default user ID
@@ -816,7 +824,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Business Name</FormLabel>
                       <FormControl>
-                        <Input {...field} className="h-8" />
+                        <Input {...field} className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -830,7 +838,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Email</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" className="h-8" />
+                        <Input {...field} type="email" className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -844,7 +852,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Phone</FormLabel>
                       <FormControl>
-                        <Input {...field} className="h-8" />
+                        <Input {...field} className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -858,7 +866,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Address</FormLabel>
                       <FormControl>
-                        <Input {...field} className="h-8" />
+                        <Input {...field} className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
