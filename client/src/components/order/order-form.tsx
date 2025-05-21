@@ -414,10 +414,15 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         // Ensure dates are properly formatted for API submission
         orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : new Date().toISOString(),
         eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
+        // Set contactId from the customer selection
+        contactId: data.customer?.id || 12, // Default to a known contact if needed
         // Generate a customer name for display
         customerName: `${data.customer.firstName} ${data.customer.lastName}`,
-        // Add additional defaults
+        // Add additional defaults required by server
         userId: 1,
+        status: data.status || 'Quote', 
+        eventType: data.eventType || 'Birthday',
+        deliveryType: data.deliveryType || 'Pickup',
       };
       
       // Log the data being sent (for debugging)
