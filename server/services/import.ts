@@ -1,424 +1,409 @@
 import { db } from "../db";
-import { orders, quotes, orderItems, contacts } from "@shared/schema";
-import fs from 'fs/promises';
-import path from 'path';
-import { eq, sql } from "drizzle-orm";
-import { createReadStream } from 'fs';
-import { parse } from 'csv-parse';
-import { promisify } from 'util';
-import { finished } from 'stream';
+import { 
+  users, 
+  contacts, 
+  orders,
+  orderItems,
+  quotes,
+  quoteItems,
+  tasks,
+  products,
+  recipes,
+  expenses,
+  income,
+  enquiries,
+  settings,
+  featureSettings,
+  taxRates,
+  integrations,
+  productBundles,
+  bundleItems,
+  ingredients,
+  recipeIngredients,
+  reminderTemplates,
+  reminderSchedules,
+  reminderHistory,
+  orderLogs,
+  payments
+} from "@shared/schema";
 
-interface ImportResult {
-  success: boolean;
-  message: string;
-  processedRows: number;
-  skippedRows: number;
-  errors?: string[];
+export interface ImportData {
+  users?: any[];
+  contacts?: any[];
+  orders?: any[];
+  orderItems?: any[];
+  quotes?: any[];
+  quoteItems?: any[];
+  tasks?: any[];
+  products?: any[];
+  recipes?: any[];
+  expenses?: any[];
+  income?: any[];
+  enquiries?: any[];
+  settings?: any;
+  featureSettings?: any[];
+  taxRates?: any[];
+  integrations?: any[];
+  productBundles?: any[];
+  bundleItems?: any[];
+  ingredients?: any[];
+  recipeIngredients?: any[];
+  reminderTemplates?: any[];
+  reminderSchedules?: any[];
+  reminderHistory?: any[];
+  orderLogs?: any[];
+  payments?: any[];
 }
 
-/**
- * Service for importing data from Bake Diary CSV files
- */
 export class ImportService {
   /**
-   * Import order list from CSV
+   * Import data from a backup file
    */
-  async importOrderList(filePath: string, userId: number): Promise<ImportResult> {
+  async importData(data: ImportData, userId: number): Promise<{ success: boolean; message: string }> {
     try {
-      const fileContent = await fs.promises.readFile(filePath, 'utf-8');
-      const records = csvParse(fileContent, {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true
-      });
+      let importStats = {
+        contacts: 0,
+        orders: 0,
+        orderItems: 0,
+        quotes: 0,
+        quoteItems: 0,
+        tasks: 0,
+        products: 0,
+        recipes: 0,
+        expenses: 0,
+        income: 0,
+        enquiries: 0,
+        settings: false,
+        features: 0,
+        taxRates: 0
+      };
 
-      console.log(`Processing ${records.length} order records`);
-      
-      let processedRows = 0;
-      let skippedRows = 0;
-      const errors: string[] = [];
-
-      // Process each record
-      for (const record of records) {
-        try {
-          // First check and create contact if needed
-          const contactName = record.Contact ? record.Contact.trim() : '';
-          if (!contactName) {
-            throw new Error('Missing contact name');
-          }
-
-          // Split contact name into first/last name (best effort)
-          const nameParts = contactName.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          // Check if contact exists
-          let contactId;
-          const existingContacts = await db.select().from(contacts).where(
-            eq(contacts.email, record.Contact_Email || '')
-          );
-          
-          if (existingContacts.length > 0) {
-            // Use existing contact
-            contactId = existingContacts[0].id;
-          } else {
-            // Create new contact
-            const [newContact] = await db.insert(contacts).values({
-              userId,
-              firstName,
-              lastName,
-              email: record['Contact Email'] || '',
-              phone: '',
-              address: '',
-              notes: 'Imported from Bake Diary',
-            }).returning();
-            
-            contactId = newContact.id;
-          }
-
-          // Parse event date
-          let eventDate: Date;
-          try {
-            if (record.Event_Date || record['Event Date']) {
-              const dateStr = record.Event_Date || record['Event Date'];
-              // Handle different date formats
-              if (dateStr.includes('-')) {
-                // YYYY-MM-DD format
-                eventDate = new Date(dateStr);
-              } else if (dateStr.includes('/')) {
-                // MM/DD/YYYY format
-                const [month, day, year] = dateStr.split('/');
-                eventDate = new Date(`${year}-${month}-${day}`);
-              } else {
-                throw new Error(`Unrecognized date format: ${dateStr}`);
-              }
-            } else {
-              // Default to current date if missing
-              eventDate = new Date();
-            }
-          } catch (err) {
-            console.error('Date parsing error:', err);
-            eventDate = new Date(); // Fallback to current date
-          }
-
-          // Parse order status
-          const statusMapping: Record<string, string> = {
-            '': 'Quote',
-            'Booked': 'Confirmed',
-            'Paid': 'Paid',
-            'Delivered': 'Delivered',
-            'Cancelled': 'Cancelled'
+      // Import contacts
+      if (data.contacts && data.contacts.length > 0) {
+        for (const contact of data.contacts) {
+          const contactData = {
+            userId,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            email: contact.email,
+            phone: contact.phone,
+            address: contact.address,
+            businessName: contact.businessName,
+            notes: contact.notes
           };
-          
-          const status = statusMapping[record.Status || ''] || 'Quote';
-          
-          // Parse amounts
-          const orderTotal = parseFloat(record.Order_Total || record['Order Total'] || '0');
-          const amountOutstanding = parseFloat(record.Amount_Outstanding || record['Amount Outstanding'] || '0');
-          const deliveryAmount = parseFloat(record.Delivery_Amount || record['Delivery Amount'] || '0');
-          
-          // Check if order already exists with this order number
-          const orderNumber = parseInt(record.Order_Number || record['Order Number'] || '0', 10);
-          const existingOrders = await db.select().from(orders).where(
-            sql`${orders.orderNumber} = ${orderNumber.toString()}`
-          );
-          
-          if (existingOrders.length > 0) {
-            errors.push(`Order #${orderNumber} already exists, skipping`);
-            skippedRows++;
-            continue;
-          }
+          await db.insert(contacts).values(contactData);
+          importStats.contacts++;
+        }
+      }
 
-          // Create order
-          const [newOrder] = await db.insert(orders).values({
+      // Import orders
+      if (data.orders && data.orders.length > 0) {
+        for (const order of data.orders) {
+          const orderData = {
             userId,
-            contactId,
-            orderNumber: orderNumber,
-            title: record.Theme || '',
-            eventType: record.Event_Type || record['Event Type'] || 'Other',
-            eventDate: eventDate,
-            status: status,
-            deliveryType: deliveryAmount > 0 ? 'Delivery' : 'Pickup',
-            deliveryAddress: '',
-            deliveryFee: deliveryAmount.toString(),
-            totalAmount: orderTotal.toString(),
-            amountPaid: (orderTotal - amountOutstanding).toString(),
-            specialInstructions: record.Theme || '',
-            taxRate: '0',
-            notes: 'Imported from Bake Diary',
-          }).returning();
-
-          processedRows++;
-        } catch (err) {
-          console.error('Error processing order record:', err);
-          errors.push(`Error processing order: ${record.Order_Number || 'Unknown'} - ${err}`);
-          skippedRows++;
+            contactId: order.contactId,
+            orderNumber: order.orderNumber,
+            title: order.title,
+            eventType: order.eventType,
+            eventDate: order.eventDate,
+            status: order.status,
+            deliveryType: order.deliveryType,
+            deliveryAddress: order.deliveryAddress,
+            deliveryFee: order.deliveryFee,
+            deliveryTime: order.deliveryTime,
+            totalAmount: order.totalAmount,
+            amountPaid: order.amountPaid,
+            specialInstructions: order.specialInstructions,
+            taxRate: order.taxRate,
+            notes: order.notes
+          };
+          await db.insert(orders).values(orderData);
+          importStats.orders++;
         }
       }
 
-      return {
-        success: true,
-        message: `Successfully imported ${processedRows} orders`,
-        processedRows,
-        skippedRows,
-        errors: errors.length > 0 ? errors : undefined
-      };
-    } catch (error) {
-      console.error('Order import error:', error);
-      return {
-        success: false,
-        message: `Import failed: ${error}`,
-        processedRows: 0,
-        skippedRows: 0,
-        errors: [`Import failed: ${error}`]
-      };
-    } finally {
-      // Delete temporary file
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
+      // Import order items
+      if (data.orderItems && data.orderItems.length > 0) {
+        for (const item of data.orderItems) {
+          const itemData = {
+            orderId: item.orderId,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            price: item.price
+          };
+          await db.insert(orderItems).values(itemData);
+          importStats.orderItems++;
+        }
       }
-    }
-  }
 
-  /**
-   * Import quote list from CSV
-   */
-  async importQuoteList(filePath: string, userId: number): Promise<ImportResult> {
-    try {
-      const fileContent = await fs.promises.readFile(filePath, 'utf-8');
-      const records = csvParse(fileContent, {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true
-      });
-
-      console.log(`Processing ${records.length} quote records`);
-      
-      let processedRows = 0;
-      let skippedRows = 0;
-      const errors: string[] = [];
-
-      // Process each record
-      for (const record of records) {
-        try {
-          // First check and create contact if needed
-          const contactName = record.Contact ? record.Contact.trim() : '';
-          if (!contactName) {
-            throw new Error('Missing contact name');
-          }
-
-          // Split contact name into first/last name (best effort)
-          const nameParts = contactName.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          // Check if contact exists
-          let contactId;
-          const existingContacts = await db.select().from(contacts).where(
-            eq(contacts.firstName, firstName)
-          );
-          
-          if (existingContacts.length > 0) {
-            // Use existing contact
-            contactId = existingContacts[0].id;
-          } else {
-            // Create new contact
-            const [newContact] = await db.insert(contacts).values({
-              userId,
-              firstName,
-              lastName,
-              email: '',
-              phone: '',
-              address: '',
-              notes: 'Imported from Bake Diary',
-            }).returning();
-            
-            contactId = newContact.id;
-          }
-
-          // Parse event date
-          let eventDate: Date;
-          try {
-            if (record.Event_Date || record['Event Date']) {
-              const dateStr = record.Event_Date || record['Event Date'];
-              // Handle different date formats
-              if (dateStr.includes('-')) {
-                // YYYY-MM-DD format
-                eventDate = new Date(dateStr);
-              } else if (dateStr.includes('/')) {
-                // MM/DD/YYYY format
-                const [month, day, year] = dateStr.split('/');
-                eventDate = new Date(`${year}-${month}-${day}`);
-              } else {
-                throw new Error(`Unrecognized date format: ${dateStr}`);
-              }
-            } else {
-              // Default to current date if missing
-              eventDate = new Date();
-            }
-          } catch (err) {
-            console.error('Date parsing error:', err);
-            eventDate = new Date(); // Fallback to current date
-          }
-          
-          // Parse amounts
-          const quoteTotal = parseFloat(record.Order_Total || record['Order Total'] || '0');
-          
-          // Check if quote already exists with this order number
-          const quoteNumber = parseInt(record.Order_Number || record['Order Number'] || '0', 10);
-          const existingQuotes = await db.select().from(quotes).where(
-            eq(quotes.quoteNumber, quoteNumber)
-          );
-          
-          if (existingQuotes.length > 0) {
-            errors.push(`Quote #${quoteNumber} already exists, skipping`);
-            skippedRows++;
-            continue;
-          }
-
-          // Create quote
-          const [newQuote] = await db.insert(quotes).values({
+      // Import quotes
+      if (data.quotes && data.quotes.length > 0) {
+        for (const quote of data.quotes) {
+          const quoteData = {
             userId,
-            contactId,
-            quoteNumber: quoteNumber,
-            title: record.Theme || '',
-            eventType: record.Event_Type || record['Event Type'] || 'Other',
-            eventDate: eventDate,
-            status: 'Draft', // Default status for quotes
-            deliveryType: 'Pickup', // Default to pickup
-            deliveryAddress: '',
-            deliveryFee: '0',
-            totalAmount: quoteTotal.toString(),
-            specialInstructions: record.Theme || '',
-            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            taxRate: '0',
-            notes: 'Imported from Bake Diary',
-          }).returning();
+            contactId: quote.contactId,
+            quoteNumber: quote.quoteNumber,
+            title: quote.title,
+            eventType: quote.eventType,
+            eventDate: quote.eventDate,
+            status: quote.status,
+            deliveryType: quote.deliveryType,
+            deliveryAddress: quote.deliveryAddress,
+            deliveryFee: quote.deliveryFee,
+            totalAmount: quote.totalAmount,
+            specialInstructions: quote.specialInstructions,
+            expiryDate: quote.expiryDate,
+            taxRate: quote.taxRate,
+            notes: quote.notes
+          };
+          await db.insert(quotes).values(quoteData);
+          importStats.quotes++;
+        }
+      }
 
-          processedRows++;
-        } catch (err) {
-          console.error('Error processing quote record:', err);
-          errors.push(`Error processing quote: ${record.Order_Number || 'Unknown'} - ${err}`);
-          skippedRows++;
+      // Import quote items
+      if (data.quoteItems && data.quoteItems.length > 0) {
+        for (const item of data.quoteItems) {
+          const itemData = {
+            quoteId: item.quoteId,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            price: item.price
+          };
+          await db.insert(quoteItems).values(itemData);
+          importStats.quoteItems++;
+        }
+      }
+
+      // Import products
+      if (data.products && data.products.length > 0) {
+        for (const product of data.products) {
+          const productData = {
+            userId,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            category: product.category,
+            sku: product.sku,
+            active: product.active,
+            imageUrl: product.imageUrl,
+            productType: product.productType
+          };
+          await db.insert(products).values(productData);
+          importStats.products++;
+        }
+      }
+
+      // Import recipes
+      if (data.recipes && data.recipes.length > 0) {
+        for (const recipe of data.recipes) {
+          const recipeData = {
+            userId,
+            name: recipe.name,
+            description: recipe.description,
+            category: recipe.category,
+            prepTime: recipe.prepTime,
+            cookTime: recipe.cookTime,
+            yield: recipe.yield,
+            instructions: recipe.instructions,
+            notes: recipe.notes,
+            isPublic: recipe.isPublic,
+            imageUrl: recipe.imageUrl
+          };
+          await db.insert(recipes).values(recipeData);
+          importStats.recipes++;
+        }
+      }
+
+      // Import ingredients
+      if (data.ingredients && data.ingredients.length > 0) {
+        for (const ingredient of data.ingredients) {
+          const ingredientData = {
+            userId,
+            name: ingredient.name,
+            unit: ingredient.unit,
+            costPerUnit: ingredient.costPerUnit,
+            category: ingredient.category,
+            inStock: ingredient.inStock,
+            stockQuantity: ingredient.stockQuantity,
+            supplier: ingredient.supplier
+          };
+          await db.insert(ingredients).values(ingredientData);
+          importStats.ingredients++;
+        }
+      }
+
+      // Import recipe ingredients
+      if (data.recipeIngredients && data.recipeIngredients.length > 0) {
+        for (const ri of data.recipeIngredients) {
+          const riData = {
+            recipeId: ri.recipeId,
+            ingredientId: ri.ingredientId,
+            quantity: ri.quantity,
+            notes: ri.notes
+          };
+          await db.insert(recipeIngredients).values(riData);
+        }
+      }
+
+      // Import expenses
+      if (data.expenses && data.expenses.length > 0) {
+        for (const expense of data.expenses) {
+          const expenseData = {
+            userId,
+            date: expense.date,
+            category: expense.category,
+            amount: expense.amount,
+            description: expense.description,
+            receiptUrl: expense.receiptUrl,
+            taxDeductible: expense.taxDeductible
+          };
+          await db.insert(expenses).values(expenseData);
+          importStats.expenses++;
+        }
+      }
+
+      // Import income
+      if (data.income && data.income.length > 0) {
+        for (const inc of data.income) {
+          const incomeData = {
+            userId,
+            date: inc.date,
+            category: inc.category,
+            amount: inc.amount,
+            description: inc.description,
+            receiptUrl: inc.receiptUrl
+          };
+          await db.insert(income).values(incomeData);
+          importStats.income++;
+        }
+      }
+
+      // Import tasks
+      if (data.tasks && data.tasks.length > 0) {
+        for (const task of data.tasks) {
+          const taskData = {
+            userId,
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate,
+            priority: task.priority,
+            completed: task.completed,
+            category: task.category,
+            relatedTo: task.relatedTo,
+            relatedId: task.relatedId
+          };
+          await db.insert(tasks).values(taskData);
+          importStats.tasks++;
+        }
+      }
+
+      // Import enquiries
+      if (data.enquiries && data.enquiries.length > 0) {
+        for (const enquiry of data.enquiries) {
+          const enquiryData = {
+            userId,
+            firstName: enquiry.firstName,
+            lastName: enquiry.lastName,
+            email: enquiry.email,
+            phone: enquiry.phone,
+            eventType: enquiry.eventType,
+            eventDate: enquiry.eventDate,
+            message: enquiry.message,
+            status: enquiry.status,
+            source: enquiry.source
+          };
+          await db.insert(enquiries).values(enquiryData);
+          importStats.enquiries++;
+        }
+      }
+
+      // Import settings
+      if (data.settings) {
+        const settingsData = {
+          userId,
+          businessName: data.settings.businessName,
+          businessEmail: data.settings.businessEmail,
+          businessPhone: data.settings.businessPhone,
+          businessAddress: data.settings.businessAddress,
+          businessLogo: data.settings.businessLogo,
+          invoicePrefix: data.settings.invoicePrefix,
+          quotePrefix: data.settings.quotePrefix,
+          taxRate: data.settings.taxRate,
+          currency: data.settings.currency,
+          dateFormat: data.settings.dateFormat,
+          timeFormat: data.settings.timeFormat,
+          theme: data.settings.theme,
+          businessHours: data.settings.businessHours,
+          notificationEmail: data.settings.notificationEmail,
+          emailTemplate: data.settings.emailTemplate,
+          documentFont: data.settings.documentFont,
+          documentFontSize: data.settings.documentFontSize,
+          emailSubject: data.settings.emailSubject,
+          emailBody: data.settings.emailBody,
+          emailSignature: data.settings.emailSignature,
+          paymentTerms: data.settings.paymentTerms,
+          weekStart: data.settings.weekStart
+        };
+        await db.insert(settings).values(settingsData);
+        importStats.settings = true;
+      }
+
+      // Import tax rates
+      if (data.taxRates && data.taxRates.length > 0) {
+        for (const taxRate of data.taxRates) {
+          const taxRateData = {
+            userId,
+            name: taxRate.name,
+            rate: taxRate.rate,
+            isDefault: taxRate.isDefault,
+            description: taxRate.description
+          };
+          await db.insert(taxRates).values(taxRateData);
+          importStats.taxRates++;
+        }
+      }
+
+      // Import feature settings
+      if (data.featureSettings && data.featureSettings.length > 0) {
+        for (const feature of data.featureSettings) {
+          const featureData = {
+            id: feature.id,
+            name: feature.name,
+            enabled: feature.enabled,
+            userId
+          };
+          await db.insert(featureSettings).values(featureData);
+          importStats.features++;
         }
       }
 
       return {
         success: true,
-        message: `Successfully imported ${processedRows} quotes`,
-        processedRows,
-        skippedRows,
-        errors: errors.length > 0 ? errors : undefined
+        message: `
+          Successfully imported the following data:
+          - ${importStats.contacts} contacts
+          - ${importStats.orders} orders (with ${importStats.orderItems} items)
+          - ${importStats.quotes} quotes (with ${importStats.quoteItems} items)
+          - ${importStats.products} products
+          - ${importStats.recipes} recipes
+          - ${importStats.tasks} tasks
+          - ${importStats.expenses} expenses
+          - ${importStats.income} income entries
+          - ${importStats.enquiries} enquiries
+          - ${importStats.settings ? 'Business settings' : 'No settings'}
+          - ${importStats.features} feature settings
+          - ${importStats.taxRates} tax rates
+        `
       };
     } catch (error) {
-      console.error('Quote import error:', error);
-      return {
-        success: false,
-        message: `Import failed: ${error}`,
-        processedRows: 0,
-        skippedRows: 0,
-        errors: [`Import failed: ${error}`]
+      console.error("Import error:", error);
+      return { 
+        success: false, 
+        message: `Import failed: ${(error as Error).message}` 
       };
-    } finally {
-      // Delete temporary file
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
-    }
-  }
-
-  /**
-   * Import order items from CSV
-   */
-  async importOrderItems(filePath: string, userId: number): Promise<ImportResult> {
-    try {
-      const fileContent = await fs.promises.readFile(filePath, 'utf-8');
-      const records = csvParse(fileContent, {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true
-      });
-
-      console.log(`Processing ${records.length} order item records`);
-      
-      let processedRows = 0;
-      let skippedRows = 0;
-      const errors: string[] = [];
-
-      // Process each record
-      for (const record of records) {
-        try {
-          // Skip total rows
-          if (record.Date === 'Total' || !record.Order_Number && !record['Order Number']) {
-            skippedRows++;
-            continue;
-          }
-
-          const orderNumber = parseInt(record.Order_Number || record['Order Number'] || '0', 10);
-          
-          // Find the order
-          const existingOrders = await db.select().from(orders).where(
-            eq(orders.orderNumber, orderNumber)
-          );
-          
-          if (existingOrders.length === 0) {
-            errors.push(`Order #${orderNumber} not found, skipping item`);
-            skippedRows++;
-            continue;
-          }
-          
-          const orderId = existingOrders[0].id;
-          
-          // Parse values
-          const itemName = record.Item || '';
-          const details = record.Details || '';
-          const price = parseFloat(record.Sell_Price || record['Sell Price (excl VAT)'] || '0');
-          const quantity = parseInt(record.Servings || '1', 10);
-          
-          // Create order item
-          const [newItem] = await db.insert(orderItems).values({
-            orderId,
-            name: itemName,
-            description: details,
-            quantity: quantity,
-            price: price.toString(),
-          }).returning();
-
-          processedRows++;
-        } catch (err) {
-          console.error('Error processing order item record:', err);
-          errors.push(`Error processing item: ${record.Item || 'Unknown'} - ${err}`);
-          skippedRows++;
-        }
-      }
-
-      return {
-        success: true,
-        message: `Successfully imported ${processedRows} order items`,
-        processedRows,
-        skippedRows,
-        errors: errors.length > 0 ? errors : undefined
-      };
-    } catch (error) {
-      console.error('Order items import error:', error);
-      return {
-        success: false,
-        message: `Import failed: ${error}`,
-        processedRows: 0,
-        skippedRows: 0,
-        errors: [`Import failed: ${error}`]
-      };
-    } finally {
-      // Delete temporary file
-      try {
-        await fs.promises.unlink(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
     }
   }
 }
