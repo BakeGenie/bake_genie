@@ -1,6 +1,5 @@
 import React from "react";
 import { useLocation } from "wouter";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronRightIcon } from "lucide-react";
 
 export default function PaymentSettings() {
@@ -8,60 +7,59 @@ export default function PaymentSettings() {
 
   return (
     <div className="container py-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Receive Payments & Integration</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col md:flex-row gap-6 w-full">
+        {/* Left Panel */}
+        <div className="md:w-1/4 p-5 bg-gray-50 rounded-md">
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Receive Payments & Integration</h2>
+          <p className="text-gray-600 text-sm">
             Add a Payment Provider to allow your customers to pay through BakeGenie.
           </p>
         </div>
-      </div>
 
-      <div className="grid gap-2 mt-4">
-        <Card 
-          className="hover:border-primary/50 transition-colors cursor-pointer" 
-          onClick={() => setLocation("/payment-settings/stripe")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between p-4">
-            <div className="flex items-center space-x-3">
+        {/* Right Panel */}
+        <div className="md:w-3/4 bg-white rounded-md shadow-sm border">
+          {/* Stripe Payments */}
+          <div 
+            onClick={() => setLocation("/payment-settings/stripe")}
+            className="p-4 flex justify-between items-center border-b cursor-pointer hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
               <div className="bg-blue-500 text-white w-6 h-6 rounded-sm flex items-center justify-center">
-                <span className="font-bold">S</span>
+                <span className="font-bold text-sm">S</span>
               </div>
-              <CardTitle className="text-base font-medium">Stripe Payments</CardTitle>
+              <span className="font-medium">Stripe Payments</span>
             </div>
-            <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-        </Card>
+            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+          </div>
 
-        <Card 
-          className="hover:border-primary/50 transition-colors cursor-pointer"
-          onClick={() => setLocation("/payment-settings/square")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between p-4">
-            <div className="flex items-center space-x-3">
+          {/* Square Payments */}
+          <div 
+            onClick={() => setLocation("/payment-settings/square")}
+            className="p-4 flex justify-between items-center border-b cursor-pointer hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
               <div className="bg-black text-white w-6 h-6 rounded-sm flex items-center justify-center">
-                <span className="font-bold">□</span>
+                <span className="font-bold text-sm">□</span>
               </div>
-              <CardTitle className="text-base font-medium">Square Payments</CardTitle>
+              <span className="font-medium">Square Payments</span>
             </div>
-            <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-        </Card>
+            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+          </div>
 
-        <Card 
-          className="hover:border-primary/50 transition-colors cursor-pointer"
-          onClick={() => setLocation("/payment-settings/tipping")}
-        >
-          <CardHeader className="flex flex-row items-center justify-between p-4">
-            <div className="flex items-center space-x-3">
+          {/* Setup Tipping */}
+          <div 
+            onClick={() => setLocation("/payment-settings/tipping")}
+            className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
               <div className="bg-green-500 text-white w-6 h-6 rounded-sm flex items-center justify-center">
-                <span className="font-bold">$</span>
+                <span className="font-bold text-sm">$</span>
               </div>
-              <CardTitle className="text-base font-medium">Setup Tipping</CardTitle>
+              <span className="font-medium">Setup Tipping</span>
             </div>
-            <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-        </Card>
+            <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+          </div>
+        </div>
       </div>
     </div>
   );
