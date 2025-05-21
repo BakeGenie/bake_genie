@@ -42,13 +42,19 @@ export const registerImportRoutes = (router: Router) => {
    * @desc Import orders from Bake Diary CSV
    * @access Private
    */
-  router.post("/api/import/orders", upload.single("file"), async (req: AuthRequest, res: Response) => {
+  router.post("/api/import/orders", upload.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded" });
       }
 
-      const result = await importService.importOrderList(req.file.path, req.user.id);
+      // Check if user session exists
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: "User not authenticated" });
+      }
+
+      const userId = req.session.user.id;
+      const result = await importService.importOrderList(req.file.path, userId);
       return res.json(result);
     } catch (error) {
       console.error("Error importing orders:", error);
@@ -64,13 +70,19 @@ export const registerImportRoutes = (router: Router) => {
    * @desc Import quotes from Bake Diary CSV
    * @access Private
    */
-  router.post("/api/import/quotes", upload.single("file"), async (req: AuthRequest, res: Response) => {
+  router.post("/api/import/quotes", upload.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded" });
       }
 
-      const result = await importService.importQuoteList(req.file.path, req.user.id);
+      // Check if user session exists
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: "User not authenticated" });
+      }
+
+      const userId = req.session.user.id;
+      const result = await importService.importQuoteList(req.file.path, userId);
       return res.json(result);
     } catch (error) {
       console.error("Error importing quotes:", error);
@@ -86,7 +98,7 @@ export const registerImportRoutes = (router: Router) => {
    * @desc Import order items from Bake Diary CSV
    * @access Private
    */
-  router.post("/api/import/order-items", upload.single("file"), async (req: AuthRequest, res: Response) => {
+  router.post("/api/import/order-items", upload.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ success: false, message: "No file uploaded" });
