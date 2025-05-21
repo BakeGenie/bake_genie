@@ -186,49 +186,49 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     }
   }, []);
   
-  // Set dates as soon as the component mounts
+  // Set dates immediately when component mounts
   useEffect(() => {
-    // Set default date values first
-    setValue("orderDate", new Date());
-    setValue("eventDate", new Date());
+    // First get the selected date from localStorage directly
+    const storedDate = localStorage.getItem('selectedDate');
+    let selectedDate = new Date();
     
-    // Then apply any provided initialValues
-    if (initialValues) {
-      console.log("Received initialValues:", initialValues);
-      
-      // Handle event date from calendar selection
-      if (initialValues.eventDate) {
-        const eventDate = new Date(initialValues.eventDate);
-        console.log("Setting event date:", eventDate);
-        
-        // Force update eventDate
-        setValue("eventDate", eventDate, { 
-          shouldValidate: true,
-          shouldDirty: true,
-          shouldTouch: true 
-        });
-        
-        // Also set the orderDate to match if not explicitly provided
-        if (!initialValues.orderDate) {
-          console.log("Also setting order date to match event date:", eventDate);
-          setValue("orderDate", eventDate, {
-            shouldValidate: true
-          });
-        }
-      }
-      
-      // Handle explicit order date if provided
-      if (initialValues.orderDate) {
-        const orderDate = new Date(initialValues.orderDate);
-        console.log("Setting order date:", orderDate);
-        setValue("orderDate", orderDate, {
-          shouldValidate: true, 
-          shouldDirty: true,
-          shouldTouch: true
-        });
+    if (storedDate) {
+      try {
+        console.log("Found stored event date:", storedDate);
+        selectedDate = new Date(storedDate);
+        console.log("Using stored event date:", selectedDate);
+      } catch (e) {
+        console.error("Error parsing stored date:", e);
       }
     }
-  }, [initialValues, setValue]);
+    
+    // Set initial values immediately
+    console.log("Initial values being passed to form:", {
+      orderDate: new Date(),
+      eventDate: selectedDate
+    });
+    
+    // Force update both date fields with the proper values
+    setValue("eventDate", selectedDate, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    setValue("orderDate", new Date(), {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    // Log the form values after setting them
+    setTimeout(() => {
+      console.log("Form values after init:", {
+        eventDate: getValues("eventDate"),
+        orderDate: getValues("orderDate")
+      });
+    }, 0);
+  }, [setValue, getValues]);
   
   // Debug current form values
   useEffect(() => {
