@@ -13,6 +13,7 @@ import { router as settingsRouter } from "./routes/settings";
 import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
 import { router as contactsRouter } from "./routes/contacts";
+import subscriptionRouter from "./routes/subscription";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
@@ -55,6 +56,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register contacts routes
   app.use('/api/contacts', contactsRouter);
+  
+  // Register subscription routes
+  app.use('/api/subscription', subscriptionRouter);
   
   // Register import routes
   const importRouter = Router();
