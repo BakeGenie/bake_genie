@@ -386,6 +386,102 @@ router.delete("/api/orders/:id", async (req, res) => {
   }
 });
 
+/**
+ * Create a new order directly with the specific endpoint used by the client
+ */
+router.post("/api/orders-direct", async (req, res) => {
+  try {
+    console.log("Received order creation request:", req.body);
+    
+    // Get user ID from session or use default
+    const userId = req.session?.userId || 1;
+    
+    // Start a transaction
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Insert the order into the database
+      const orderResult = await client.query(
+        `INSERT INTO orders (
+          user_id, contact_id, order_number, event_type, event_date, 
+          status, delivery_type, delivery_address, delivery_time, 
+          delivery_fee, notes, special_instructions, tax_rate, 
+          amount_paid, discount_type, discount, setup_fee, total
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
+          $13, $14, $15, $16, $17, $18
+        ) RETURNING *`,
+        [
+          userId,
+          req.body.contactId,
+          req.body.orderNumber,
+          req.body.eventType,
+          req.body.eventDate,
+          req.body.status,
+          req.body.deliveryType,
+          req.body.deliveryAddress,
+          req.body.deliveryTime,
+          req.body.deliveryFee,
+          req.body.notes,
+          req.body.specialInstructions,
+          req.body.taxRate,
+          req.body.amountPaid,
+          req.body.discountType,
+          req.body.discount,
+          req.body.setupFee,
+          req.body.total
+        ]
+      );
+      
+      const newOrder = orderResult.rows[0];
+      console.log("Order created:", newOrder);
+      
+      // Insert order items if provided
+      if (req.body.items && Array.isArray(req.body.items)) {
+        for (const item of req.body.items) {
+          await client.query(
+            `INSERT INTO order_items (
+              order_id, description, quantity, price, product_id, name, type, unit_price
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+              newOrder.id,
+              item.description,
+              item.quantity,
+              item.price,
+              item.productId,
+              item.name,
+              item.type || 'Product',
+              item.unitPrice
+            ]
+          );
+        }
+      }
+      
+      await client.query('COMMIT');
+      
+      res.status(201).json({
+        success: true,
+        id: newOrder.id,
+        message: "Order created successfully"
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Error creating order:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to create order",
+      message: error.message 
+    });
+  }
+});
+
 // Function to register routes
 export function registerOrdersDirectRoutes(app: any) {
   app.use(router);
