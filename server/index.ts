@@ -4,10 +4,60 @@ import { setupVite, serveStatic, log } from "./vite";
 import fs from 'fs';
 import path from 'path';
 import { startEmailScheduler } from './services/email-scheduler';
+import session from 'express-session';
+import { storage } from './storage';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configure session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'bakegenie-secret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Set up a default demo user for development
+app.use(async (req, res, next) => {
+  if (!req.session.user) {
+    // For development, create/get default user
+    try {
+      // Try to find user with ID 1
+      let user = await storage.getUser(1);
+      
+      // If user doesn't exist, create a demo user
+      if (!user) {
+        user = await storage.createUser({
+          username: 'demo',
+          password: 'password',
+          email: 'demo@example.com',
+          firstName: 'Demo',
+          lastName: 'User',
+          businessName: 'Bakery Business',
+          phone: '555-123-4567',
+          address: '123 Baker Street',
+          city: 'Bakersville',
+          state: 'CA',
+          zip: '12345',
+          country: 'US',
+          logoUrl: null,
+          signature: null
+        });
+      }
+      
+      // Set user in session
+      req.session.user = user;
+    } catch (error) {
+      console.error('Error setting up demo user:', error);
+    }
+  }
+  next();
+});
 
 // Serve static files from the uploads directory
 const uploadsDir = path.join(process.cwd(), 'uploads');
