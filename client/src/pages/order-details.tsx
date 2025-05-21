@@ -87,18 +87,10 @@ const OrderDetails: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: [`/api/orders/${id}/logs`] });
   };
 
-  // Check if we have order data in localStorage from calendar click
-  const [initialOrderData, setInitialOrderData] = React.useState<any>(() => {
-    try {
-      const storedOrder = localStorage.getItem('selectedOrder');
-      if (storedOrder) {
-        return JSON.parse(storedOrder);
-      }
-      return null;
-    } catch (e) {
-      console.error("Error parsing stored order:", e);
-      return null;
-    }
+  // Fetch contact information for the order
+  const { data: contactData } = useQuery<any>({
+    queryKey: ["/api/contacts"],
+    staleTime: 60000,
   });
   
   // Fetch order details from API
@@ -107,14 +99,49 @@ const OrderDetails: React.FC = () => {
     enabled: !!id,
   });
   
-  // Combine data from localStorage and API
+  // Process order data with contact information
   const order = React.useMemo(() => {
-    console.log("Order data from API:", orderData);
-    console.log("Initial order data from localStorage:", initialOrderData);
+    if (!orderData) return {};
     
-    // Return API data if available, otherwise use localStorage data as fallback
-    return orderData || initialOrderData;
-  }, [orderData, initialOrderData]);
+    // Make a deep copy to avoid mutation issues
+    const processedOrder = JSON.parse(JSON.stringify(orderData));
+    
+    // If order has contactId but no contact object, find contact from contacts list
+    if (processedOrder.contact_id && !processedOrder.contact && contactData) {
+      const contactInfo = contactData.find((c: any) => c.id === processedOrder.contact_id);
+      if (contactInfo) {
+        processedOrder.contact = contactInfo;
+      }
+    }
+    
+    // Convert snake_case to camelCase for frontend components if needed
+    if (processedOrder.order_number && !processedOrder.orderNumber) {
+      processedOrder.orderNumber = processedOrder.order_number;
+    }
+    
+    if (processedOrder.event_type && !processedOrder.eventType) {
+      processedOrder.eventType = processedOrder.event_type;
+    }
+    
+    if (processedOrder.event_date && !processedOrder.eventDate) {
+      processedOrder.eventDate = processedOrder.event_date;
+    }
+    
+    if (processedOrder.delivery_type && !processedOrder.deliveryType) {
+      processedOrder.deliveryType = processedOrder.delivery_type;
+    }
+    
+    if (processedOrder.delivery_fee && !processedOrder.deliveryFee) {
+      processedOrder.deliveryFee = processedOrder.delivery_fee;
+    }
+    
+    if (processedOrder.total_amount && !processedOrder.totalAmount) {
+      processedOrder.totalAmount = processedOrder.total_amount;
+    }
+    
+    console.log("Processed order data:", processedOrder);
+    return processedOrder;
+  }, [orderData, contactData]);
 
   if (isLoading) {
     return (

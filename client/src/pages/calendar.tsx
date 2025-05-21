@@ -405,9 +405,22 @@ const Calendar = () => {
                             e.stopPropagation(); // Prevent triggering the parent div's onClick
                             // Log the order data before navigating
                             console.log("Calendar - selected order:", order);
-                            // Store selected order details in localStorage to ensure we have all the information
-                            localStorage.setItem('selectedOrder', JSON.stringify(order));
-                            navigate(`/orders/${order.id}`);
+                            
+                            // Create a popup with order preview before redirecting
+                            const confirmed = window.confirm(`
+Order #: ${order.orderNumber}
+Event: ${order.eventType}
+Date: ${new Date(order.eventDate).toLocaleDateString()}
+Status: ${order.status}
+                            
+Click OK to view full order details.
+                            `);
+                            
+                            if (confirmed) {
+                              // Store selected order details in localStorage to ensure we have all the information
+                              localStorage.setItem('selectedOrder', JSON.stringify(order));
+                              navigate(`/orders/${order.id}`);
+                            }
                           }}
                         >
                           <div className="flex items-start mb-0.5">
