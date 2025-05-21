@@ -21,6 +21,8 @@ import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register our direct routes first
+  await registerOrdersDirectRoutes(app);
   // put application routes here
   // prefix all routes with /api
 

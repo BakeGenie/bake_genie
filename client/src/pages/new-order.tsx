@@ -162,7 +162,14 @@ const NewOrderPage = () => {
       );
 
       // Make the API request
-      const response = await apiRequest("POST", "/api/orders", formattedData);
+      console.log("Using direct API endpoint for order creation");
+      const response = await fetch("/api/orders-direct", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
+      });
       console.log("STEP 3 - API response status:", response.status);
 
       const newOrder = await response.json();

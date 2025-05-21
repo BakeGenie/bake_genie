@@ -409,6 +409,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   const onSubmitForm = async (data: OrderFormValues) => {
     try {
       console.log("Starting form submission with data:", data);
+      console.log("Form handleSubmit triggered");
       
       // Ensure all required fields are present
       if (!data.customer?.firstName || !data.customer?.lastName) {
@@ -429,6 +430,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         });
         return;
       }
+      
+      // Output form data for debugging
+      console.log("Form validated successfully, proceeding with submission");
 
       // Format the data for submission with date conversion
       // We need to match the actual database column names
@@ -1307,8 +1311,12 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Order"}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              onClick={() => console.log("Create Order button clicked directly")}
+            >
+              {isSubmitting ? "Saving..." : "Create Order"}
             </Button>
           </div>
         </div>

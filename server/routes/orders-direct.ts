@@ -386,4 +386,10 @@ router.delete("/api/orders/:id", async (req, res) => {
   }
 });
 
+// Function to register routes
+export function registerOrdersDirectRoutes(app: any) {
+  app.use(router);
+  console.log("Direct orders routes registered");
+}
+
 export default router;
