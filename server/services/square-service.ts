@@ -1,27 +1,16 @@
-import { SquareClient } from 'square';
-import { SquareEnvironment } from 'square';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
-import { users, integrations } from '@shared/schema';
+import { integrations } from '@shared/schema';
+import fetch from 'node-fetch';
 
-// Initialize Square client with credentials from environment variables
-const squareAccessToken = import.meta.env?.SQUARE_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN || '';
-const squareAppId = import.meta.env?.SQUARE_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID || '';
-let squareClient: SquareClient | null = null;
+// Initialize Square credentials from environment variables
+const squareAppId = import.meta.env?.VITE_SQUARE_APPLICATION_ID || process.env.VITE_SQUARE_APPLICATION_ID || '';
+const squareSecret = import.meta.env?.SQUARE_APPLICATION_SECRET || process.env.SQUARE_APPLICATION_SECRET || '';
+const isProduction = (import.meta.env?.NODE_ENV || process.env.NODE_ENV) === 'production';
 
-try {
-  if (squareAccessToken) {
-    squareClient = new SquareClient({
-      accessToken: squareAccessToken,
-      environment: (import.meta.env?.NODE_ENV || process.env.NODE_ENV) === 'production' 
-        ? SquareEnvironment.Production 
-        : SquareEnvironment.Sandbox
-    });
-  } else {
-    console.log('Warning: SQUARE_ACCESS_TOKEN not found in environment variables');
-  }
-} catch (error) {
-  console.error('Error initializing Square client:', error);
+// Log if credentials are missing
+if (!squareAppId || !squareSecret) {
+  console.log('Warning: Square application credentials not found in environment variables');
 }
 
 export class SquareService {
@@ -29,7 +18,7 @@ export class SquareService {
    * Check if Square is configured
    */
   isConfigured(): boolean {
-    return !!squareClient && !!squareAppId;
+    return Boolean(squareAppId && squareSecret);
   }
 
   /**
@@ -53,7 +42,7 @@ export class SquareService {
     });
 
     // Different URLs for sandbox and production
-    const baseUrl = (import.meta.env?.NODE_ENV || process.env.NODE_ENV) === 'production'
+    const baseUrl = isProduction
       ? 'https://connect.squareup.com'
       : 'https://connect.squareupsandbox.com';
 
@@ -64,10 +53,6 @@ export class SquareService {
    * Handle OAuth callback and save account
    */
   async handleOAuthCallback(code: string, state: string): Promise<{success: boolean, squareAccountId?: string, error?: string}> {
-    if (!squareClient) {
-      return { success: false, error: 'Square is not configured' };
-    }
-
     try {
       // Verify state parameter to prevent CSRF
       const userId = this.verifyStateParam(state);
@@ -75,31 +60,52 @@ export class SquareService {
         return { success: false, error: 'Invalid state parameter' };
       }
 
-      // Exchange authorization code for access token
-      const response = await squareClient.oAuthApi.obtainToken({
-        code,
-        clientId: squareAppId,
-        clientSecret: import.meta.env?.SQUARE_APPLICATION_SECRET || process.env.SQUARE_APPLICATION_SECRET || '',
-        grantType: 'authorization_code'
+      if (!squareAppId || !squareSecret) {
+        return { success: false, error: 'Square is not configured' };
+      }
+
+      // Exchange authorization code for access token using fetch instead of Square SDK
+      const tokenUrl = isProduction
+        ? 'https://connect.squareup.com/oauth2/token'
+        : 'https://connect.squareupsandbox.com/oauth2/token';
+
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Square-Version': '2023-05-17'
+        },
+        body: JSON.stringify({
+          client_id: squareAppId,
+          client_secret: squareSecret,
+          code: code,
+          grant_type: 'authorization_code'
+        })
       });
 
-      if (!response.result?.accessToken || !response.result?.merchantId) {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Square token exchange error:', errorText);
         return { success: false, error: 'Failed to connect Square account' };
       }
 
-      const { accessToken, merchantId, refreshToken } = response.result;
+      const data = await response.json();
+      
+      if (!data.access_token || !data.merchant_id) {
+        return { success: false, error: 'Invalid response from Square' };
+      }
 
       // Store Square account in the database
       await this.saveSquareAccount(
         userId, 
-        merchantId, 
-        accessToken,
-        refreshToken || ''
+        data.merchant_id, 
+        data.access_token,
+        data.refresh_token || ''
       );
 
       return { 
         success: true, 
-        squareAccountId: merchantId 
+        squareAccountId: data.merchant_id 
       };
     } catch (error: any) {
       console.error('Square OAuth error:', error);
@@ -116,18 +122,14 @@ export class SquareService {
   async isUserConnected(userId: number): Promise<boolean> {
     try {
       const integration = await db.query.integrations.findFirst({
-        where: (integrations, { and, eq }) => and(
-          eq(integrations.userId, userId),
-          eq(integrations.provider, 'square')
-        ),
-        columns: {
-          id: true,
-          provider: true,
-          isActive: true
-        }
+        where: (integration, { and, eq }) => and(
+          eq(integration.userId, userId),
+          eq(integration.type, 'square'),
+          eq(integration.active, true)
+        )
       });
-
-      return !!integration && integration.provider === 'square' && integration.isActive;
+      
+      return !!integration;
     } catch (error) {
       console.error('Error checking Square connection:', error);
       return false;
@@ -146,9 +148,9 @@ export class SquareService {
     try {
       // Check if record already exists
       const existingIntegration = await db.query.integrations.findFirst({
-        where: (integrations, { and, eq }) => and(
-          eq(integrations.userId, userId),
-          eq(integrations.provider, 'square')
+        where: (integration, { and, eq }) => and(
+          eq(integration.userId, userId),
+          eq(integration.type, 'square')
         )
       });
 
@@ -156,10 +158,15 @@ export class SquareService {
         // Update existing integration
         await db.update(integrations)
           .set({ 
-            providerAccountId: squareAccountId,
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-            isActive: true,
+            config: JSON.stringify({
+              merchantId: squareAccountId,
+              environment: isProduction ? 'production' : 'sandbox'
+            }),
+            credentials: JSON.stringify({
+              accessToken: accessToken,
+              refreshToken: refreshToken
+            }),
+            active: true,
             updatedAt: new Date()
           })
           .where(eq(integrations.id, existingIntegration.id));
@@ -167,11 +174,16 @@ export class SquareService {
         // Create new integration
         await db.insert(integrations).values({
           userId,
-          provider: 'square',
-          providerAccountId: squareAccountId,
-          accessToken,
-          refreshToken,
-          isActive: true,
+          type: 'square',
+          config: JSON.stringify({
+            merchantId: squareAccountId,
+            environment: isProduction ? 'production' : 'sandbox'
+          }),
+          credentials: JSON.stringify({
+            accessToken: accessToken,
+            refreshToken: refreshToken
+          }),
+          active: true,
           createdAt: new Date(),
           updatedAt: new Date()
         });
@@ -210,9 +222,9 @@ export class SquareService {
   async disconnectAccount(userId: number): Promise<boolean> {
     try {
       const integration = await db.query.integrations.findFirst({
-        where: (integrations, { and, eq }) => and(
-          eq(integrations.userId, userId),
-          eq(integrations.provider, 'square')
+        where: (integration, { and, eq }) => and(
+          eq(integration.userId, userId),
+          eq(integration.type, 'square')
         )
       });
 
@@ -220,28 +232,53 @@ export class SquareService {
         return false;
       }
 
-      // Set as inactive rather than deleting
-      await db.update(integrations)
-        .set({ 
-          isActive: false,
-          updatedAt: new Date()
-        })
-        .where(eq(integrations.id, integration.id));
+      // Get access token from credentials
+      let accessToken = '';
+      try {
+        const credentials = JSON.parse(integration.credentials);
+        accessToken = credentials.accessToken;
+      } catch (e) {
+        console.error('Error parsing credentials:', e);
+      }
 
       // Revoke the token with Square if possible
-      if (squareClient && integration.accessToken) {
+      if (accessToken && squareAppId && squareSecret) {
         try {
-          await squareClient.oAuthApi.revokeToken({
-            clientId: squareAppId,
-            accessToken: integration.accessToken,
-            // Add merchantId if available
-            merchantId: integration.providerAccountId || undefined
+          // Revoke token using fetch
+          const revokeUrl = isProduction
+            ? 'https://connect.squareup.com/oauth2/revoke'
+            : 'https://connect.squareupsandbox.com/oauth2/revoke';
+
+          const response = await fetch(revokeUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Square-Version': '2023-05-17'
+            },
+            body: JSON.stringify({
+              client_id: squareAppId,
+              client_secret: squareSecret,
+              access_token: accessToken
+            })
           });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error revoking Square token:', errorText);
+          }
         } catch (error) {
           console.error('Error revoking Square token:', error);
           // Continue even if revocation fails
         }
       }
+
+      // Set as inactive rather than deleting
+      await db.update(integrations)
+        .set({ 
+          active: false,
+          updatedAt: new Date()
+        })
+        .where(eq(integrations.id, integration.id));
 
       return true;
     } catch (error) {
