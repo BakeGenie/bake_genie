@@ -20,6 +20,7 @@ import Recipes from "./pages/recipes-new";
 import RecipesList from "./pages/recipes-list";
 import AddRecipe from "./pages/add-recipe";
 import IngredientsList from "./pages/ingredients-list";
+import CreateTestOrder from "./pages/create-test-order";
 import SuppliesList from "./pages/supplies-list";
 import MasterIngredients from "./pages/master-ingredients";
 import Bundles from "./pages/bundles";
@@ -50,6 +51,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/orders/new" component={NewOrder} />
+        <Route path="/orders/test" component={CreateTestOrder} />
         <Route path="/orders/:id" component={OrderDetails} />
         <Route path="/orders" component={Orders} />
         <Route path="/contacts" component={Contacts} />
