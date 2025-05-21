@@ -169,23 +169,54 @@ export class ExportService {
    */
   async exportOrdersAsCsv(userId: number) {
     try {
-      const ordersWithItems = await this.exportOrders(userId);
+      // Directly query orders data - avoid the due_date column that caused errors
+      const ordersData = await db.select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        status: orders.status,
+        createdAt: orders.createdAt,
+        eventType: orders.eventType,
+        eventDate: orders.eventDate,
+        deliveryType: orders.deliveryType,
+        deliveryDetails: orders.deliveryDetails,
+        deliveryTime: orders.deliveryTime,
+        total: orders.total,
+        discount: orders.discount,
+        discountType: orders.discountType,
+        setupFee: orders.setupFee,
+        notes: orders.notes,
+        contactId: orders.contactId
+      }).from(orders).where(eq(orders.userId, userId));
+      
+      // Get all contacts in one query
+      const contactsData = await db.select().from(contacts).where(eq(contacts.userId, userId));
+      
+      // Create a lookup map for contacts
+      const contactsMap = contactsData.reduce((acc, contact) => {
+        acc[contact.id] = contact;
+        return acc;
+      }, {} as Record<number, typeof contactsData[0]>);
       
       // Prepare data for CSV export - flatten the order structure
-      const csvData = ordersWithItems.map(order => {
+      const csvData = ordersData.map(order => {
+        const contact = contactsMap[order.contactId] || {};
+        
         return {
           'Order Number': order.orderNumber,
           'Status': order.status,
-          'Order Date': format(new Date(order.createdAt || new Date()), 'yyyy-MM-dd'),
+          'Order Date': order.createdAt ? format(new Date(order.createdAt), 'yyyy-MM-dd') : '',
           'Event Type': order.eventType,
-          'Event Date': order.eventDate,
+          'Event Date': order.eventDate ? format(new Date(order.eventDate), 'yyyy-MM-dd') : '',
+          'Customer Name': contact.firstName && contact.lastName ? `${contact.firstName} ${contact.lastName}` : '',
+          'Customer Email': contact.email || '',
+          'Customer Phone': contact.phone || '',
           'Delivery Type': order.deliveryType,
           'Delivery Address': order.deliveryDetails || '',
           'Delivery Time': order.deliveryTime || '',
           'Total Amount': order.total,
-          'Discount': order.discount || 0,
+          'Discount': order.discount || '0',
           'Discount Type': order.discountType || '%',
-          'Setup Fee': order.setupFee || 0,
+          'Setup Fee': order.setupFee || '0',
           'Notes': order.notes || ''
         };
       });
@@ -232,11 +263,8 @@ export class ExportService {
           'Email': contact.email || '',
           'Phone': contact.phone || '',
           'Address': contact.address || '',
-          'City': contact.city || '',
-          'State': contact.state || '',
-          'Zip': contact.zip || '',
-          'Country': contact.country || '',
-          'Notes': contact.notes || ''
+          'Notes': contact.notes || '',
+          'Created': format(new Date(contact.createdAt), 'yyyy-MM-dd')
         };
       });
       
@@ -256,7 +284,19 @@ export class ExportService {
    */
   async exportRecipes(userId: number) {
     try {
-      const userRecipes = await db.select().from(recipes).where(eq(recipes.userId, userId));
+      // Direct query with only the columns we need
+      const userRecipes = await db.select({
+        id: recipes.id,
+        name: recipes.name,
+        description: recipes.description,
+        instructions: recipes.instructions,
+        preparationTime: recipes.preparationTime,
+        cookingTime: recipes.cookingTime,
+        servings: recipes.servings,
+        notes: recipes.notes,
+        createdAt: recipes.createdAt,
+        updatedAt: recipes.updatedAt
+      }).from(recipes).where(eq(recipes.userId, userId));
       
       // Get recipe ingredients
       const recipeIds = userRecipes.map(recipe => recipe.id);
@@ -364,7 +404,18 @@ export class ExportService {
    */
   async exportProducts(userId: number) {
     try {
-      return await db.select().from(products).where(eq(products.userId, userId));
+      // Only select the columns we need to avoid the "type" column error
+      return await db.select({
+        id: products.id,
+        name: products.name,
+        description: products.description,
+        price: products.price,
+        sku: products.sku,
+        costPerUnit: products.costPerUnit,
+        imageUrl: products.imageUrl,
+        category: products.category,
+        createdAt: products.createdAt
+      }).from(products).where(eq(products.userId, userId));
     } catch (error) {
       console.error('Error exporting products:', error);
       throw new Error('Failed to export products');
