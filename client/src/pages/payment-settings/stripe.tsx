@@ -1,6 +1,5 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -17,91 +16,98 @@ export default function StripePaymentProvider() {
   };
 
   return (
-    <div className="container py-6">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="h-full bg-gray-50">
+      {/* Header */}
+      <div className="flex items-center border-b bg-white p-3">
         <Button 
           variant="ghost" 
           size="sm" 
-          className="flex items-center gap-2"
-          onClick={() => setLocation("/payment-settings")}
+          className="flex items-center gap-1"
+          onClick={() => setLocation("/integrations")}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Payment Settings
+          <span>Stripe Payment Provider</span>
         </Button>
-        <h1 className="text-2xl font-bold">Stripe Payment Provider</h1>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Get your Invoices Paid Online</CardTitle>
-              <CardDescription>
-                BakeGenie has partnered with Stripe to provide you the easiest way to accept payments online.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+      {/* Content */}
+      <div className="flex flex-col md:flex-row">
+        {/* Left Column */}
+        <div className="md:w-1/3 bg-gray-50 p-6">
+          <h2 className="text-lg font-semibold mb-2">Get your Invoices Paid Online</h2>
+          <p className="text-gray-600 text-sm">
+            BakeGenie has partnered with Stripe to provide you the easiest way to accept
+            payments online.
+          </p>
         </div>
 
-        <div className="md:col-span-2">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                Connect your Stripe Account
-                <div className="h-10 w-10 rounded-full bg-blue-100 p-2">
-                  <div className="text-blue-600 font-bold text-xl flex items-center justify-center">S</div>
+        {/* Right Column */}
+        <div className="md:w-2/3 bg-white">
+          {/* Connect your Stripe Account */}
+          <div className="border-b p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+              <div className="mb-4 md:mb-0 md:pr-8">
+                <h3 className="text-lg font-semibold mb-2">Connect your Stripe Account</h3>
+                <p className="text-gray-600 text-sm">
+                  Click below to connect your BakeGenie account with Stripe and start collecting
+                  payments for invoices you send via BakeGenie.
+                </p>
+              </div>
+              <div className="relative flex-shrink-0">
+                <div className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className="text-white text-4xl font-bold">S</span>
                 </div>
-              </CardTitle>
-              <CardDescription>
-                Click below to connect your BakeGenie account with Stripe and start collecting
-                payments for invoices you send via BakeGenie.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-2"
-                onClick={handleConnectWithStripe}
-              >
-                <div className="bg-white rounded text-blue-600 w-6 h-6 flex items-center justify-center font-bold text-lg">S</div>
-                Connect with Stripe
-              </Button>
-            </CardContent>
-          </Card>
+                <div className="absolute bottom-0 right-0 h-6 w-6 bg-yellow-500 rounded-full border-2 border-white flex items-center justify-center">
+                  <span className="text-white text-xs">🔒</span>
+                </div>
+              </div>
+            </div>
+            <Button 
+              className="bg-blue-500 hover:bg-blue-600 transition-colors"
+              onClick={handleConnectWithStripe}
+            >
+              <span className="text-white mr-2">$</span>
+              Connect with Stripe
+            </Button>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Benefits of using Stripe</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <p>No setup fees, no monthly fees, no hidden fees</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <p>Get set up in minutes</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <p>Supported in 26 countries. See <a href="https://stripe.com/global" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">full country list</a> here.</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <p>Pricing: European issued cards 1.4% + 25¢ • Non-European issued cards 2.9% + 25¢ <br />
-                <span className="text-sm text-muted-foreground">(Pricing for other countries may vary slightly)</span></p>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <p>Payout vary depending on your country. See <a href="https://stripe.com/docs/payouts" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Payout Schedule</a> for further details.</p>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col items-start border-t pt-4">
-              <h3 className="font-medium mb-2">What is Stripe</h3>
-              <p className="text-muted-foreground">
-                Stripe is an American technology company operating in over 26 countries that allows both private individuals and businesses to accept payments over the Internet. <a href="https://stripe.com/about" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Find out more</a>.
-              </p>
-            </CardFooter>
-          </Card>
+          {/* Benefits of using Stripe */}
+          <div className="border-b p-6">
+            <h3 className="text-lg font-semibold mb-4">Benefits of using Stripe</h3>
+            <ul className="space-y-3">
+              <li className="flex items-start">
+                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-gray-700">No setup fees, no monthly fees, no hidden fees</span>
+              </li>
+              <li className="flex items-start">
+                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-gray-700">Get set up in minutes</span>
+              </li>
+              <li className="flex items-start">
+                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-gray-700">Supported in 26 countries. See <a href="https://stripe.com/global" className="text-blue-500 hover:underline">full country list</a> here</span>
+              </li>
+              <li className="flex items-start">
+                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-gray-700">Pricing: European issued cards 1.4% + 25c • Non-European issued cards 2.9% + 25c<br />
+                <span className="text-gray-500 text-sm">(Pricing for other countries may vary slightly)</span></span>
+              </li>
+              <li className="flex items-start">
+                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                <span className="text-gray-700">Payout vary depending on your country. See <a href="https://stripe.com/docs/payouts" className="text-blue-500 hover:underline">Payout Schedule</a> for further details.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* What is Stripe */}
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-2">What is Stripe</h3>
+            <p className="text-gray-700">
+              Stripe is an American technology company operating in over 26 countries that allows both private 
+              individuals and businesses to accept payments over the Internet. 
+              <a href="https://stripe.com/about" className="text-blue-500 hover:underline ml-1">Find out more</a>.
+            </p>
+          </div>
         </div>
       </div>
     </div>
