@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeftIcon, CreditCardIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
 export default function ManageSubscription() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Fetch user data to get account creation date
+  const { data: userData, isLoading } = useQuery({
+    queryKey: ['/api/users/current'],
+    refetchOnWindowFocus: false,
+  });
   
   const handleChangePlan = () => {
     toast({
@@ -95,7 +103,15 @@ export default function ManageSubscription() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Start Date</p>
-                    <p className="font-medium">Mon, 21 May 2025</p>
+                    <p className="font-medium">
+                      {isLoading ? (
+                        <span className="text-muted-foreground">Loading...</span>
+                      ) : userData?.createdAt ? (
+                        format(new Date(userData.createdAt), 'EEE, dd MMM yyyy')
+                      ) : (
+                        "Mon, 21 May 2025"
+                      )}
+                    </p>
                   </div>
                   
                   <div>
@@ -105,7 +121,20 @@ export default function ManageSubscription() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Next Billing Date</p>
-                    <p className="font-medium">Fri, 21 Jun 2025</p>
+                    <p className="font-medium">
+                      {isLoading ? (
+                        <span className="text-muted-foreground">Loading...</span>
+                      ) : userData?.createdAt ? (
+                        (() => {
+                          const createdDate = new Date(userData.createdAt);
+                          const nextBillingDate = new Date(createdDate);
+                          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                          return format(nextBillingDate, 'EEE, dd MMM yyyy');
+                        })()
+                      ) : (
+                        "Fri, 21 Jun 2025"
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
