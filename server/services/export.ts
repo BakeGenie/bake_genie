@@ -528,7 +528,17 @@ export class ExportService {
    */
   async exportTasks(userId: number) {
     try {
-      return await db.select().from(tasks).where(eq(tasks.userId, userId));
+      // Explicitly select columns to avoid the order_id column error
+      return await db.select({
+        id: tasks.id,
+        userId: tasks.userId,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        status: tasks.status,
+        priority: tasks.priority,
+        createdAt: tasks.createdAt
+      }).from(tasks).where(eq(tasks.userId, userId));
     } catch (error) {
       console.error('Error exporting tasks:', error);
       throw new Error('Failed to export tasks');
@@ -572,7 +582,22 @@ export class ExportService {
    */
   async exportEnquiries(userId: number) {
     try {
-      return await db.select().from(enquiries).where(eq(enquiries.userId, userId));
+      // Explicitly select fields to avoid the 'name' column error
+      return await db.select({
+        id: enquiries.id,
+        userId: enquiries.userId,
+        email: enquiries.email,
+        phone: enquiries.phone,
+        eventType: enquiries.eventType,
+        eventDate: enquiries.eventDate,
+        budget: enquiries.budget,
+        message: enquiries.message,
+        status: enquiries.status,
+        createdAt: enquiries.createdAt,
+        updatedAt: enquiries.updatedAt,
+        firstName: enquiries.firstName,
+        lastName: enquiries.lastName
+      }).from(enquiries).where(eq(enquiries.userId, userId));
     } catch (error) {
       console.error('Error exporting enquiries:', error);
       throw new Error('Failed to export enquiries');

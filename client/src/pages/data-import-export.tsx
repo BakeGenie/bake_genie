@@ -223,7 +223,12 @@ export default function DataImportExport() {
       // Create a link to download the file
       const link = document.createElement("a");
       link.href = endpoint;
-      link.setAttribute("download", `cakehub-export-${exportType}-${new Date().toISOString().slice(0, 10)}.json`);
+      
+      // Use .csv extension for individual data types, .json for "all" data export
+      const fileExtension = exportType === "all" ? "json" : "csv";
+      const appName = "bakegenie"; // Updated app name from cakehub
+      
+      link.setAttribute("download", `${appName}-export-${exportType}-${new Date().toISOString().slice(0, 10)}.${fileExtension}`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
