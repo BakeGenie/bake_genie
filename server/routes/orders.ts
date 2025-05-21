@@ -15,9 +15,11 @@ router.get("/api/orders", async (req, res) => {
     const userId = req.session?.userId || 1;
     
     // Use direct SQL query to avoid schema issues
-    const result = await db.execute(`
-      SELECT * FROM orders WHERE user_id = $1
-    `, [userId]);
+    // Note: Using $1 requires explicitly providing an array of parameters
+    const result = await db.execute(
+      "SELECT * FROM orders WHERE user_id = $1",
+      [userId]
+    );
     
     res.json(result.rows);
   } catch (error) {
@@ -37,9 +39,10 @@ router.get("/api/orders/:id", async (req, res) => {
     const userId = req.session?.userId || 1;
     
     // Use direct SQL query to avoid schema issues
-    const result = await db.execute(`
-      SELECT * FROM orders WHERE id = $1 AND user_id = $2
-    `, [orderId, userId]);
+    const result = await db.execute(
+      "SELECT * FROM orders WHERE id = $1 AND user_id = $2",
+      [orderId, userId]
+    );
     
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: "Order not found" });
@@ -48,9 +51,10 @@ router.get("/api/orders/:id", async (req, res) => {
     const order = result.rows[0];
     
     // Get order items using direct SQL
-    const itemsResult = await db.execute(`
-      SELECT * FROM order_items WHERE order_id = $1
-    `, [orderId]);
+    const itemsResult = await db.execute(
+      "SELECT * FROM order_items WHERE order_id = $1",
+      [orderId]
+    );
     
     res.json({ 
       ...order, 
