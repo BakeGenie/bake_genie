@@ -158,6 +158,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   
   // Handle initialValues changes (needed for calendar date selection)
   useEffect(() => {
+    // This effect ensures that on initial mount and when initialValues changes,
+    // the form is properly updated with the new values
     if (initialValues?.eventDate) {
       console.log("Setting event date from initialValues:", initialValues.eventDate);
       // Force update the eventDate field with the date from initialValues
@@ -177,6 +179,29 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       });
     }
   }, [initialValues, setValue]);
+  
+  // Ensure date fields are set with initial values on component mount
+  useEffect(() => {
+    const formValues = getValues();
+    
+    // If form doesn't have an eventDate but initialValues does, set it
+    if (!formValues.eventDate && initialValues?.eventDate) {
+      setValue("eventDate", initialValues.eventDate, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+    }
+    
+    // If form doesn't have an orderDate but initialValues does, set it
+    if (!formValues.orderDate && initialValues?.orderDate) {
+      setValue("orderDate", initialValues.orderDate, {
+        shouldValidate: true,
+        shouldDirty: true, 
+        shouldTouch: true
+      });
+    }
+  }, []);
 
   // Initialize items field array
   const { fields, append, remove } = useFieldArray({

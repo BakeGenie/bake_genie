@@ -117,7 +117,7 @@ const NewOrderPage = () => {
           // Set order date to today
           values.orderDate = new Date();
           
-          console.log("Pre-populating date:", selectedDate);
+          console.log("Calendar: Selected date for new order:", selectedDate.toISOString().split('T')[0]);
         } else {
           console.error("Invalid date created from:", preselectedDate);
         }
