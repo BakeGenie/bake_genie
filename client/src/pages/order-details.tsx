@@ -45,24 +45,30 @@ const OrderLogHistory: React.FC<OrderLogHistoryProps> = ({ orderId }) => {
   }
 
   return (
-    <div className="rounded-md border">
-      <div className="grid grid-cols-3 bg-gray-50 p-3 border-b">
-        <div className="font-medium text-sm">Date</div>
-        <div className="font-medium text-sm">Action</div>
-        <div className="font-medium text-sm">By</div>
-      </div>
-      <div className="divide-y">
-        {logs.map((log: any) => (
-          <div key={log.id} className="grid grid-cols-3 p-3">
-            <div className="text-sm">{format(parseISO(log.createdAt), 'dd MMM yyyy HH:mm')}</div>
-            <div className="text-sm">
-              {log.action}
-              {log.details && <div className="text-xs text-gray-500 mt-1">{log.details}</div>}
-            </div>
-            <div className="text-sm">{log.creatorName || 'System'}</div>
+    <div className="space-y-2">
+      {logs.map((log: any) => (
+        <div key={log.id} className="border-b pb-2">
+          <div className="text-sm">
+            <span className="font-medium">{format(parseISO(log.createdAt), 'EEE, dd MMM yyyy')}</span>
+            {log.action && (
+              <span className="text-gray-700"> ({log.action})</span>
+            )}
+            {log.details && (
+              <span className="text-gray-600"> - {log.details}</span>
+            )}
           </div>
-        ))}
-      </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Created by: {log.creatorName || 'System'}
+          </div>
+        </div>
+      ))}
+      
+      {/* If no logs, show empty state */}
+      {(!logs || logs.length === 0) && (
+        <div className="text-center py-6 text-gray-500">
+          <p>No order history available</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -69,76 +69,76 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <div
-      className={`relative flex items-start px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
+      className={`relative flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
         isSelected ? "bg-blue-50" : isCancelled ? "bg-gray-50" : ""
       }`}
       onClick={onClick}
     >
       {/* Small colored circle indicating event type */}
-      <div className="absolute top-4 left-4 w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+      <div className="mr-2 w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
       
-      <div className="flex-1 pl-6">
-        <div className="flex flex-col">
-          <div className="flex items-baseline mb-1">
+      <div className="flex-1">
+        <div className="flex items-start">
+          <div className="flex-1">
             <div className={`text-sm font-medium ${
               isCancelled ? "text-gray-400 line-through" : "text-gray-800"
             }`}>
               #{formattedOrderNumber} - {formattedDate}
             </div>
-          </div>
-          
-          <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
-            {order.contact?.firstName || ''} {order.contact?.lastName || ''}
-            {order.eventType && (
-              <span className="ml-1">
-                ({order.eventType})
-              </span>
-            )}
-          </div>
-          
-          {/* Order description or title - like "Pink Peppa Pink - Own Topper" */}
-          <div className={`text-sm mt-0.5 ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-            {order.title || order.items?.[0]?.description || order.items?.[0]?.name || ''}
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex flex-col items-end min-w-[140px]">
-        <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
-          <FormatCurrency amount={order.total_amount || order.total || 0} />
-        </div>
-        
-        <div className="mt-1">
-          {order.status && (
-            <div className="inline-flex items-center">
-              {getStatusBadge()}
+            
+            <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
+              {order.contact?.firstName || ''} {order.contact?.lastName || ''}
+              {order.eventType && (
+                <span className="text-gray-600">
+                  {" "}({order.eventType})
+                </span>
+              )}
             </div>
-          )}
-        </div>
-        
-        <div className="flex mt-1">
-          {onDownloadClick && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleDownloadClick}
-              title="Download"
-            >
-              <FileDownIcon className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-            </Button>
-          )}
-          {onEmailClick && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleEmailClick}
-              title="Email"
-            >
-              <MailIcon className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
-            </Button>
-          )}
+            
+            {/* Order description or title */}
+            <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
+              {order.title || order.items?.[0]?.description || order.items?.[0]?.name || ''}
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-end ml-4">
+            <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
+              <FormatCurrency amount={order.total_amount || order.total || 0} />
+            </div>
+            
+            <div className="mt-1">
+              {order.status && (
+                <div className="inline-flex items-center">
+                  {getStatusBadge()}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex mt-1">
+              {onEmailClick && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleEmailClick}
+                  title="Email"
+                >
+                  <MailIcon className="h-3.5 w-3.5 text-gray-500" />
+                </Button>
+              )}
+              {onDownloadClick && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleDownloadClick}
+                  title="Download"
+                >
+                  <FileDownIcon className="h-3.5 w-3.5 text-gray-500" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
