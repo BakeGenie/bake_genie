@@ -211,7 +211,7 @@ export class ExportService {
           'Customer Email': contact.email || '',
           'Customer Phone': contact.phone || '',
           'Delivery Type': order.deliveryType,
-          'Delivery Address': order.deliveryAddress || '',
+          'Delivery Details': order.deliveryDetails || '',
           'Delivery Time': order.deliveryTime || '',
           'Total Amount': order.total,
           'Discount': order.discount || '0',
