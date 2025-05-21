@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db";
-import { orders, orderItems } from "@shared/schema";
+import { orders, orderItems, contacts } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
@@ -41,9 +41,19 @@ router.get("/api/orders/:id", async (req, res) => {
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.userId, userId)));
-
+      
     if (!order) {
       return res.status(404).json({ success: false, error: "Order not found" });
+    }
+    
+    // Get the contact information separately
+    let contact = null;
+    if (order.contactId) {
+      const [contactResult] = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.id, order.contactId));
+      contact = contactResult;
     }
 
     // Get order items
@@ -52,10 +62,15 @@ router.get("/api/orders/:id", async (req, res) => {
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
 
-    res.json({
+    const orderWithItems = {
       ...order,
+      contact,
       items,
-    });
+    };
+
+    console.log("Sending order details:", orderWithItems);
+
+    res.json(orderWithItems);
   } catch (error) {
     console.error("Error fetching order:", error);
     res.status(500).json({ success: false, error: "Failed to fetch order" });
