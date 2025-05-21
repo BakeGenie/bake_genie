@@ -11,6 +11,18 @@ interface OrderCardProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
 }
 
+// Format date to match screenshot format exactly
+const formatOrderDate = (dateString: string | Date | null | undefined) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected = false,
@@ -18,46 +30,26 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEmailClick,
   onDownloadClick,
 }) => {
-  // Format order number properly with # prefix
-  const orderNum = order.orderNumber || (order.id ? order.id.toString().padStart(2, '0') : '');
-  
-  // Format date to Tue, 06 May 2025 format
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-  
-  // Format money values to show $ and 2 decimal places
-  const formatMoney = (value: any) => {
-    if (value === undefined || value === null) return '';
-    return `$${parseFloat(value.toString()).toFixed(2)}`;
-  };
-  
-  // Handle email and doc clicks
+  // Handle email click
   const handleEmailClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onEmailClick) onEmailClick(e);
   };
   
+  // Handle document click
   const handleDocClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDownloadClick) onDownloadClick(e);
   };
-
+  
   return (
-    <div 
+    <div
       className={`relative flex items-start px-4 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
         isSelected ? "bg-blue-50" : ""
       }`}
       onClick={onClick}
     >
-      {/* Status indicator dot */}
+      {/* Red/Gray indicator dot based on status */}
       <div className="mr-3 pt-1">
         {order.status === 'Quote' || order.status === 'Cancelled' ? (
           <div className="w-5 h-5 rounded-sm bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-medium text-gray-600 border border-gray-300">
@@ -68,49 +60,57 @@ const OrderCard: React.FC<OrderCardProps> = ({
         )}
       </div>
       
-      {/* Order details column */}
+      {/* Order details left column */}
       <div className="flex-1">
         {/* Order number and date */}
         <div className="text-sm font-medium text-gray-700">
-          #{orderNum} - {formatDate(order.eventDate)}
+          #{order.orderNumber} - {formatOrderDate(order.eventDate)}
         </div>
         
-        {/* Customer name with event type */}
+        {/* Customer and event type */}
         <div className="text-blue-600">
           {order.contact && `${order.contact.firstName} ${order.contact.lastName}`} 
           {order.eventType && ` (${order.eventType})`}
         </div>
         
-        {/* Description text */}
-        <div className="text-sm text-gray-600">
-          {order.notes}
-        </div>
-        
-        {/* Display ALL order data without titles */}
-        <div className="mt-1 text-xs text-gray-500 grid grid-cols-2 gap-x-2 gap-y-1">
-          {order.deliveryType && <div>{order.deliveryType}</div>}
-          {order.deliveryTime && <div>{order.deliveryTime}</div>}
-          {order.deliveryAddress && <div>{order.deliveryAddress}</div>}
-          {order.deliveryFee && <div>{formatMoney(order.deliveryFee)}</div>}
-          {order.tax && <div>{formatMoney(order.tax)}</div>}
-          {order.taxRate && <div>{order.taxRate}%</div>}
-          {order.discount && <div>Discount: {formatMoney(order.discount)}</div>}
-          {order.depositAmount && (
-            <div>
-              Deposit: {formatMoney(order.depositAmount)}
-              {order.depositPaid && " ✓"}
-            </div>
-          )}
-          {order.subtotal && <div>{formatMoney(order.subtotal)}</div>}
-          {order.jobSheetNotes && <div className="col-span-2">{order.jobSheetNotes}</div>}
+        {/* Display ALL fields from order directly without labels */}
+        <div className="text-xs space-y-1 mt-2 text-gray-600">
+          <div>Delivery: {order.deliveryType} {order.deliveryTime && `at ${order.deliveryTime}`}</div>
+          {order.deliveryDetails && <div>{order.deliveryDetails}</div>}
+          {order.notes && <div>{order.notes}</div>}
+          {order.theme && <div>{order.theme}</div>}
+          {order.jobSheetNotes && <div>{order.jobSheetNotes}</div>}
+          
+          {/* Financial information */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {order.discount && (
+              <span>Discount: ${parseFloat(order.discount.toString()).toFixed(2)}</span>
+            )}
+            {order.discountType && (
+              <span>({order.discountType})</span>
+            )}
+            {order.setupFee && parseFloat(order.setupFee.toString()) > 0 && (
+              <span>Setup: ${parseFloat(order.setupFee.toString()).toFixed(2)}</span>
+            )}
+            {order.taxRate && (
+              <span>Tax: {parseFloat(order.taxRate.toString()).toFixed(2)}%</span>
+            )}
+          </div>
+          
+          {/* Order time information */}
+          <div className="flex gap-x-2 text-gray-500">
+            <span>Created: {new Date(order.createdAt).toLocaleDateString()}</span>
+            <span>Updated: {new Date(order.updatedAt).toLocaleDateString()}</span>
+            {order.dueDate && <span>Due: {formatOrderDate(order.dueDate)}</span>}
+          </div>
         </div>
       </div>
       
-      {/* Right column with price, status and actions */}
+      {/* Right column with price and buttons */}
       <div className="flex flex-col items-end ml-2">
-        {/* Total price */}
-        <div className="text-base font-medium">
-          {formatMoney(order.total)}
+        {/* Price */}
+        <div className="text-base font-medium text-right mb-1">
+          $ {parseFloat(order.total.toString()).toFixed(2)}
         </div>
         
         {/* Status badge */}
