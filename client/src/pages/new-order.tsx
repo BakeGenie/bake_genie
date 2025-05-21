@@ -137,8 +137,8 @@ const NewOrderPage = () => {
         discountType: data.discountType || "%",
         discount: (data.discount || 0).toString(),
         setupFee: (data.setupFee || 0).toString(),
-        // Use "total" field as expected by the server, not "total_amount"
-        total:
+        // Map total to total_amount as expected by the database
+        total_amount:
           data.total ||
           totalAmount(
             data.items,

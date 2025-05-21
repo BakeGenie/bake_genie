@@ -406,15 +406,17 @@ router.post("/api/orders-direct", async (req, res) => {
       await client.query('BEGIN');
       
       // Insert the order into the database
+      // Using the exact field names that match the database structure
+      console.log("Creating order with fields that match the database table structure");
       const orderResult = await client.query(
         `INSERT INTO orders (
           user_id, contact_id, order_number, event_type, event_date, 
           status, delivery_type, delivery_address, delivery_time, 
           delivery_fee, notes, special_instructions, tax_rate, 
-          amount_paid, discount_type, discount, setup_fee, total
+          amount_paid, total_amount
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
-          $13, $14, $15, $16, $17, $18
+          $13, $14, $15
         ) RETURNING *`,
         [
           userId,
@@ -431,10 +433,7 @@ router.post("/api/orders-direct", async (req, res) => {
           req.body.specialInstructions,
           req.body.taxRate,
           req.body.amountPaid,
-          req.body.discountType,
-          req.body.discount,
-          req.body.setupFee,
-          req.body.total
+          req.body.total_amount // Using the exact database field name
         ]
       );
       
