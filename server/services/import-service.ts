@@ -279,7 +279,7 @@ export class ImportService {
               lastName,
               email: '',
               phone: '',
-              company: '', // Add company field to match schema
+              businessName: '', // Using businessName instead of company to match schema
               address: '',
               notes: 'Imported from Bake Diary'
             }).returning();
