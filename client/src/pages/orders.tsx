@@ -204,9 +204,11 @@ const Orders = () => {
             <Button onClick={() => {
               // Store the selected date in localStorage if available
               if (selectedDate) {
-                const formattedDate = selectedDate.toISOString().split('T')[0];
-                console.log("Orders: Storing selected date for new order:", formattedDate);
-                localStorage.setItem('pendingEventDate', formattedDate);
+                // Create a new date with time set to noon to avoid timezone issues
+                const dateToStore = new Date(selectedDate);
+                dateToStore.setHours(12, 0, 0, 0);
+                console.log("Orders: Storing selected date for new order:", dateToStore.toISOString());
+                localStorage.setItem('pendingEventDate', dateToStore.toISOString());
               }
               setIsNewOrderDialogOpen(true);
             }}>
@@ -377,8 +379,10 @@ const Orders = () => {
                 const storedEventDate = localStorage.getItem('pendingEventDate');
                 
                 if (storedEventDate) {
-                  // Use the stored event date from localStorage
+                  // Use the stored event date from localStorage with time set to noon
                   const selectedDate = new Date(storedEventDate);
+                  // Ensure consistent time to avoid timezone issues
+                  selectedDate.setHours(12, 0, 0, 0);
                   console.log("Orders dialog: Using stored event date:", selectedDate);
                   
                   // Clear localStorage since we're using it now
