@@ -42,9 +42,25 @@ interface CalendarEvent {
 
 const Calendar = () => {
   const [_, navigate] = useLocation();
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+  // Check for stored date in localStorage
+  const storedDate = React.useMemo(() => {
+    const dateFromStorage = localStorage.getItem('selectedCalendarDate');
+    if (dateFromStorage) {
+      try {
+        const parsedDate = new Date(dateFromStorage);
+        // Clear localStorage after using it
+        localStorage.removeItem('selectedCalendarDate');
+        return parsedDate;
+      } catch (e) {
+        console.error("Error parsing stored calendar date:", e);
+      }
+    }
+    return new Date();
+  }, []);
+  
+  const [currentDate, setCurrentDate] = React.useState(storedDate);
   const [view, setView] = React.useState<"month" | "week" | "day">("month");
-  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(storedDate);
   const [isActionDialogOpen, setIsActionDialogOpen] = React.useState(false);
   const [isBlockoutDialogOpen, setIsBlockoutDialogOpen] = React.useState(false);
   const [isNewEventDialogOpen, setIsNewEventDialogOpen] = React.useState(false);
