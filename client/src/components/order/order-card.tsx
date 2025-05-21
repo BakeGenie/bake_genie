@@ -12,9 +12,9 @@ interface OrderCardProps {
 }
 
 // Format date for display in order cards
-const formatDisplayDate = (dateStr: string) => {
+const formatDisplayDate = (dateStr: string | Date) => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
+  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     day: '2-digit',
@@ -67,17 +67,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="flex-1">
         {/* Order number and event date */}
         <div className="text-sm font-medium text-gray-700">
-          #{orderNumber} - {formatDisplayDate(order.eventDate)}
+          #{orderNumber} - {formatDisplayDate(String(order.eventDate))}
         </div>
         
-        {/* Contact ID and event type */}
-        <div className="text-blue-600">
-          {order.contactId} {order.eventType && ` (${order.eventType})`}
-        </div>
-        
-        {/* Description (notes) */}
-        <div className="text-gray-600 text-sm mt-1">
-          {order.notes || "No description available"}
+        {/* No description line */}
+        <div className="text-gray-600 text-sm">
+          No description available
         </div>
         
         {/* Order details - direct database content display */}
