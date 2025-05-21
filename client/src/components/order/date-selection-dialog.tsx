@@ -23,7 +23,9 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
   const formattedDate = format(selectedDate, 'dd MMMM yyyy');
   
   const handleCreateOrder = () => {
-    navigate(`/orders/new?date=${format(selectedDate, 'yyyy-MM-dd')}`);
+    // Store the selected date in localStorage so it persists across navigation
+    localStorage.setItem('selectedEventDate', selectedDate.toISOString());
+    navigate('/orders/new');
     onClose();
   };
   

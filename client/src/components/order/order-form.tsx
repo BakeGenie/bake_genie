@@ -189,14 +189,17 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   // Set dates immediately when component mounts
   useEffect(() => {
     // First get the selected date from localStorage directly
-    const storedDate = localStorage.getItem('selectedDate');
+    const storedEventDate = localStorage.getItem('selectedEventDate');
     let selectedDate = new Date();
     
-    if (storedDate) {
+    if (storedEventDate) {
       try {
-        console.log("Found stored event date:", storedDate);
-        selectedDate = new Date(storedDate);
+        console.log("Found stored event date:", storedEventDate);
+        selectedDate = new Date(storedEventDate);
         console.log("Using stored event date:", selectedDate);
+        
+        // Clear localStorage after using it
+        localStorage.removeItem('selectedEventDate');
       } catch (e) {
         console.error("Error parsing stored date:", e);
       }
