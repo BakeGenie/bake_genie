@@ -347,7 +347,10 @@ const Calendar = () => {
                 setIsActionDialogOpen(false);
                 if (selectedDate) {
                   // Navigate directly to the new order page with the date parameter
-                  navigate(`/orders/new?date=${format(selectedDate, "yyyy-MM-dd")}`);
+                  // Format date as yyyy-MM-dd and ensure it's properly encoded for URL
+                  const formattedDate = format(selectedDate, "yyyy-MM-dd");
+                  console.log("Calendar: Selected date for new order:", formattedDate);
+                  navigate(`/orders/new?date=${encodeURIComponent(formattedDate)}`);
                 }
               }}
             >
