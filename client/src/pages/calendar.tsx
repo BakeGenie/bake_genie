@@ -86,7 +86,7 @@ const Calendar = () => {
   const [view, setView] = React.useState<"month" | "week" | "day">("month");
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(storedDate);
   const [isActionDialogOpen, setIsActionDialogOpen] = React.useState(false);
-  const [isBlockoutDialogOpen, setIsBlockoutDialogOpen] = React.useState(false);
+  const [isBlockDateDialogOpen, setIsBlockDateDialogOpen] = React.useState(false);
   const [isNewEventDialogOpen, setIsNewEventDialogOpen] = React.useState(false);
   const [calendarEvents, setCalendarEvents] = React.useState<CalendarEvent[]>([]);
   const [blockedDates, setBlockedDates] = React.useState<{[key: string]: string}>({});
@@ -496,7 +496,7 @@ const Calendar = () => {
       />
       
       {/* Block Out Time Dialog */}
-      <Dialog open={isBlockoutDialogOpen} onOpenChange={setIsBlockoutDialogOpen}>
+      <Dialog open={isBlockDateDialogOpen} onOpenChange={setIsBlockDateDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Block Out Time</DialogTitle>
@@ -587,7 +587,7 @@ const Calendar = () => {
                     alert(`Dates from ${formattedStartDate} to ${formattedEndDate} have been blocked out.`);
                   }
                   
-                  setIsBlockoutDialogOpen(false);
+                  setIsBlockDateDialogOpen(false);
                 } else {
                   alert("Please select both start and end dates");
                 }
@@ -600,7 +600,7 @@ const Calendar = () => {
           <DialogFooter className="sm:justify-center">
             <Button
               variant="ghost"
-              onClick={() => setIsBlockoutDialogOpen(false)}
+              onClick={() => setIsBlockDateDialogOpen(false)}
             >
               Cancel
             </Button>
