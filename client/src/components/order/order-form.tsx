@@ -153,6 +153,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     },
   });
   
+  // Destructure form methods
+  const { control, watch, setValue, getValues, formState: { isSubmitting } } = form;
+  
   // Handle initialValues changes (needed for calendar date selection)
   useEffect(() => {
     if (initialValues?.eventDate) {
@@ -164,9 +167,6 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       setValue("orderDate", initialValues.orderDate);
     }
   }, [initialValues, setValue]);
-
-  // Destructure form methods
-  const { control, watch, setValue, getValues, formState: { isSubmitting } } = form;
 
   // Initialize items field array
   const { fields, append, remove } = useFieldArray({
