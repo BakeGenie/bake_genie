@@ -169,7 +169,7 @@ export class ExportService {
    */
   async exportOrdersAsCsv(userId: number) {
     try {
-      // Directly query orders data - avoid the due_date column that caused errors
+      // Directly query orders data - only include columns that exist in the schema
       const ordersData = await db.select({
         id: orders.id,
         orderNumber: orders.orderNumber,
@@ -178,7 +178,7 @@ export class ExportService {
         eventType: orders.eventType,
         eventDate: orders.eventDate,
         deliveryType: orders.deliveryType,
-        deliveryDetails: orders.deliveryDetails,
+        deliveryDetails: orders.deliveryDetails,  // Correct column name
         deliveryTime: orders.deliveryTime,
         total: orders.total,
         discount: orders.discount,
@@ -211,7 +211,7 @@ export class ExportService {
           'Customer Email': contact.email || '',
           'Customer Phone': contact.phone || '',
           'Delivery Type': order.deliveryType,
-          'Delivery Address': order.deliveryDetails || '',
+          'Delivery Address': order.deliveryAddress || '',
           'Delivery Time': order.deliveryTime || '',
           'Total Amount': order.total,
           'Discount': order.discount || '0',
@@ -458,8 +458,33 @@ export class ExportService {
    */
   async exportFinancials(userId: number) {
     try {
-      const userExpenses = await db.select().from(expenses).where(eq(expenses.userId, userId));
-      const userIncome = await db.select().from(income).where(eq(income.userId, userId));
+      // Explicitly select columns to avoid receipt_url column error
+      const userExpenses = await db.select({
+        id: expenses.id,
+        userId: expenses.userId,
+        date: expenses.date,
+        category: expenses.category,
+        description: expenses.description,
+        amount: expenses.amount,
+        tax: expenses.tax,
+        paymentMethod: expenses.paymentMethod,
+        vendor: expenses.vendor,
+        notes: expenses.notes,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt
+      }).from(expenses).where(eq(expenses.userId, userId));
+      
+      const userIncome = await db.select({
+        id: income.id,
+        userId: income.userId,
+        date: income.date,
+        category: income.category,
+        description: income.description,
+        amount: income.amount,
+        notes: income.notes,
+        createdAt: income.createdAt,
+        updatedAt: income.updatedAt
+      }).from(income).where(eq(income.userId, userId));
       
       return {
         expenses: userExpenses,
