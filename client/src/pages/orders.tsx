@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { FilterIcon, PlusIcon, SearchIcon, CalendarIcon, ListIcon } from "lucide-react";
 import OrderForm from "@/components/order/order-form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -24,36 +24,20 @@ const Orders = () => {
   const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = React.useState(shouldOpenNew);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [month, setMonth] = React.useState(new Date().getMonth() + 1);
-  const [year, setYear] = React.useState(new Date().getFullYear());
-  const [search, setSearch] = React.useState("");
-  const [selectedDate, setSelectedDate] = React.useState<Date>(
-    preselectedDate ? new Date(preselectedDate) : new Date()
+  
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(
+    preselectedDate ? new Date(preselectedDate) : null
   );
   
-  // Filter states
-  const [showOrders, setShowOrders] = React.useState(true);
-  const [showQuotes, setShowQuotes] = React.useState(true);
-  const [showNoPayments, setShowNoPayments] = React.useState(true);
-  const [showBookingPayments, setShowBookingPayments] = React.useState(true);
-  const [showPartialPayments, setShowPartialPayments] = React.useState(true);
-  const [showPaidInFull, setShowPaidInFull] = React.useState(true);
-  const [showCompleted, setShowCompleted] = React.useState(true);
-  const [showCancelled, setShowCancelled] = React.useState(true);
+  const [month, setMonth] = React.useState(new Date().getMonth() + 1);
+  const [year, setYear] = React.useState(new Date().getFullYear());
   
-  // When the preselected date changes, update the selectedDate
-  React.useEffect(() => {
-    if (preselectedDate) {
-      setSelectedDate(new Date(preselectedDate));
-    }
-  }, [preselectedDate]);
+  const [view, setView] = React.useState<string>("list");
   
-  // When dialog closes, update URL
-  React.useEffect(() => {
-    if (!isNewOrderDialogOpen && location.includes('newOrder=true')) {
-      navigate('/orders');
-    }
-  }, [isNewOrderDialogOpen, location, navigate]);
+  // View options
+  const viewOptions = [
+    { value: "list", label: "List View" },
+  ];
   
   // Fetch orders
   const { data: rawOrders = [], isLoading } = useQuery({
@@ -62,9 +46,11 @@ const Orders = () => {
     refetchOnMount: true,
   });
   
-  // Map the API response to the expected OrderWithItems format
+  console.log("Orders from API:", rawOrders);
+  
+  // Transform backend data to frontend format
   const orders = React.useMemo(() => {
-    return (rawOrders as any[]).map((order) => ({
+    return (Array.isArray(rawOrders) ? rawOrders : []).map((order: any) => ({
       id: order.id,
       userId: order.user_id,
       contactId: order.contact_id,
@@ -76,22 +62,58 @@ const Orders = () => {
       deliveryTime: order.delivery_time,
       total: order.total_amount,
       totalAmount: order.total_amount,
-      amount_paid: order.amount_paid,
+      amountPaid: order.amount_paid,
       notes: order.notes,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
-      
-      // Add empty contact and items arrays to prevent errors
-      contact: { id: order.contact_id, firstName: "", lastName: "" } as any,
-      items: []
+      contact: order.contact,
+      items: order.items || [],
     }));
   }, [rawOrders]);
   
-  // Handle order form submission
-  const handleFormSubmit = async (data: any) => {
+  // Filter orders for the current month/year
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter((order: any) => {
+      if (!order.eventDate) return false;
+      const orderDate = new Date(order.eventDate);
+      return orderDate.getMonth() + 1 === month && 
+             orderDate.getFullYear() === year;
+    }).sort((a: any, b: any) => {
+      return new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
+    });
+  }, [orders, month, year]);
+  
+  const handleOrderClick = (order: any) => {
+    navigate(`/orders/${order.id}`);
+  };
+  
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
+  
+  const getMonthName = (monthNum: number): string => {
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return monthNames[monthNum - 1];
+  };
+  
+  const closeNewOrderDialog = () => {
+    setIsNewOrderDialogOpen(false);
+    
+    // Remove the query parameter from the URL
+    if (shouldOpenNew) {
+      navigate('/orders');
+    }
+  };
+  
+  const handleNewOrderSubmit = async (data: any) => {
     setIsSubmitting(true);
+    
     try {
-      const res = await fetch('/api/orders', {
+      // Submit the order
+      const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,26 +121,25 @@ const Orders = () => {
         body: JSON.stringify(data),
       });
       
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error('Failed to create order');
       }
       
-      const order = await res.json();
+      // Invalidate the orders query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       
-      setIsNewOrderDialogOpen(false);
       toast({
-        title: 'Success',
-        description: 'Order created successfully!',
+        title: 'Order created',
+        description: 'The order has been created successfully.',
       });
       
-      navigate('/orders');
-      
-      // Invalidate orders query
-      await queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-    } catch (err: any) {
+      // Close the dialog
+      closeNewOrderDialog();
+    } catch (error) {
+      console.error('Error creating order:', error);
       toast({
         title: 'Error',
-        description: err.message,
+        description: 'Failed to create the order. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -126,503 +147,253 @@ const Orders = () => {
     }
   };
   
-  // Function to reset all filters to their default state (all enabled)
-  const resetAllFilters = () => {
-    setShowOrders(true);
-    setShowQuotes(true);
-    setShowNoPayments(true);
-    setShowBookingPayments(true);
-    setShowPartialPayments(true);
-    setShowPaidInFull(true);
-    setShowCompleted(true);
-    setShowCancelled(true);
-  };
-  
-  // Filter orders based on filter states
-  const filteredOrders = orders.filter((order: any) => {
-    // Filter by order status (Order vs Quote)
-    if (order.status === 'Quote' && !showQuotes) return false;
-    if (order.status !== 'Quote' && !showOrders) return false;
-    
-    // Filter by payment status
-    // Default to "No Payments" if no amount_paid
-    const amountPaid = parseFloat(order.amount_paid || '0');
-    const totalAmount = parseFloat(order.totalAmount || order.total || '0');
-    
-    let paymentStatus = 'No Payments';
-    if (amountPaid > 0 && amountPaid < totalAmount) {
-      paymentStatus = 'Partial Payment';
-    } else if (amountPaid > 0 && amountPaid === totalAmount) {
-      paymentStatus = 'Paid in Full';
-    }
-    
-    if (paymentStatus === 'No Payments' && !showNoPayments) return false;
-    if (paymentStatus === 'Booking Payment' && !showBookingPayments) return false;
-    if (paymentStatus === 'Partial Payment' && !showPartialPayments) return false;
-    if (paymentStatus === 'Paid in Full' && !showPaidInFull) return false;
-    
-    // Filter by completion status
-    if (order.status === 'Completed' && !showCompleted) return false;
-    if (order.status === 'Cancelled' && !showCancelled) return false;
-    
-    // Always filter by month and year
-    const orderDate = new Date(order.eventDate || order.event_date);
-    if (orderDate.getMonth() + 1 !== month || orderDate.getFullYear() !== year) {
-      return false;
-    }
-    
-    // Filter by search
-    if (search) {
-      const searchLower = search.toLowerCase();
-      return (
-        // Use the actual properties from the API response with fallbacks
-        (order.eventType && order.eventType.toLowerCase().includes(searchLower)) ||
-        (order.orderNumber && order.orderNumber.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    return true;
-  });
-  
-  // Generate month options
-  const monthOptions = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ];
-  
-  // Generate year options (5 years back, 5 years ahead)
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
-  
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    
-    // Store the selected date in localStorage
-    localStorage.setItem('selectedDate', date.toISOString());
-    
-    console.log('Date selected from calendar:', date.toISOString());
-  };
-  
-  const handleOrderClick = (order: OrderWithItems) => {
-    navigate(`/orders/${order.id}`);
-  };
-  
   return (
     <div className="flex flex-col h-full">
       <PageHeader
         title="Orders & Quotes"
+        description="Manage your cake orders and quotes"
         actions={
-          <div className="flex space-x-2">
-            <Button onClick={() => {
-              setIsFilterDialogOpen(true);
-            }} 
-              variant="outline" 
-              className="flex items-center space-x-2"
+          <>
+            <Button
+              onClick={() => setIsFilterDialogOpen(true)}
+              variant="outline"
+              size="icon"
             >
-              <FilterIcon className="h-4 w-4" />
-              <span>Filter Orders</span>
+              <FilterIcon className="h-5 w-5" />
             </Button>
-            <Button onClick={() => {
-              // Store the selected date (or current date if none selected) in localStorage
-              const dateToUse = selectedDate || new Date();
-              localStorage.setItem('selectedDate', dateToUse.toISOString());
-              console.log('Date passed to New Order:', dateToUse.toISOString());
-              setIsNewOrderDialogOpen(true);
-            }} className="bg-blue-500 hover:bg-blue-600">
+            <Button onClick={() => setIsNewOrderDialogOpen(true)}>
               <PlusIcon className="h-4 w-4 mr-2" />
               New Order
             </Button>
-          </div>
+          </>
         }
       />
       
-      {/* Calendar and Date Selection Section - Similar to BakeDiary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 mb-6 gap-6">
-        <div className="md:col-span-1 bg-white rounded-md border shadow-sm">
-          <div className="p-4">
-            <div className="text-lg font-semibold mb-2">Today's Date</div>
-            <div className="flex items-center gap-2">
-              <div className="text-5xl font-bold">
-                {new Date().getDate()}
-              </div>
-              <div>
-                <div className="text-lg font-medium">
-                  {format(new Date(), "MMM")}
-                </div>
-                <div className="text-lg">
-                  {format(new Date(), "EEEE")}
-                </div>
-              </div>
-            </div>
+      {/* Tools and Views Selector */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          {/* Search */}
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search orders..."
+              className="pl-9 w-60"
+            />
+          </div>
+          
+          {/* Month/Year Selector */}
+          <div className="flex space-x-2">
+            <Select value={month.toString()} onValueChange={(value) => setMonth(parseInt(value))}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <SelectItem key={m} value={m.toString()}>
+                    {getMonthName(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={year.toString()} onValueChange={(value) => setYear(parseInt(value))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
+                  <SelectItem key={y} value={y.toString()}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         
-        <div className="md:col-span-2 bg-white rounded-md border shadow-sm">
-          <div className="p-4">
-            <OrderCalendar
-              orders={orders}
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              month={month}
-              year={year}
-            />
-          </div>
+        {/* View Toggle */}
+        <div className="flex items-center border rounded-md p-1">
+          <Button
+            variant={view === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setView('list')}
+            className="flex items-center space-x-1"
+          >
+            <ListIcon className="h-4 w-4" />
+            <span>List</span>
+          </Button>
         </div>
       </div>
       
-      {/* Order Period and Filter Controls - Similar to BakeDiary */}
-      <div className="bg-white rounded-md border shadow-sm mb-6 p-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Order Period:</h3>
-            <div className="flex items-center space-x-2 mt-1">
-              <Select
-                value={month.toString()}
-                onValueChange={(value) => setMonth(parseInt(value))}
-              >
-                <SelectTrigger className="w-36">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value.toString()}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={year.toString()}
-                onValueChange={(value) => setYear(parseInt(value))}
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="relative flex-1 max-w-md">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search orders by customer, event type or order number"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* Orders List - Styled like screenshot */}
-      <div className="flex-1 bg-white rounded-md border shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full p-8">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" aria-label="Loading" />
-          </div>
-        ) : filteredOrders.length > 0 ? (
-          <div className="divide-y divide-gray-100">
-            {filteredOrders
-              // Sort orders by event date
-              .sort((a, b) => {
-                const dateA = new Date(a.eventDate || a.event_date);
-                const dateB = new Date(b.eventDate || b.event_date);
-                return dateA.getTime() - dateB.getTime();
-              })
-              .map((order: any) => {
-                // Format price with dollar sign
-                const price = parseFloat(order.totalAmount || order.total_amount || '0').toFixed(2);
-                
-                // Format date for display like in screenshot example
-                const orderDate = new Date(order.eventDate || order.event_date);
-                const dayName = orderDate.toLocaleString('default', { weekday: 'short' });
-                const dayNum = orderDate.getDate();
-                const monthName = orderDate.toLocaleString('default', { month: 'short' });
-                const yearNum = orderDate.getFullYear();
-                
-                // Get order type and customer name/business name 
-                const orderEventType = order.eventType || order.event_type || '';
-                const isBusinessEvent = orderEventType === 'Corporate';
-                
-                // Status badge for paid, quote, cancelled
-                const isPaid = order.status === 'Paid';
-                const isCancelled = order.status === 'Cancelled';
-                const isQuote = order.status === 'Quote';
-                
-                // Background color for cancelled items
-                const itemBgClass = isCancelled ? 'bg-gray-100' : '';
-                
-                // Status badge styling
-                const badgeClass = isCancelled 
-                  ? "bg-gray-500 text-white text-xs py-0.5 px-2 rounded" 
-                  : isPaid 
-                    ? "bg-gray-200 text-gray-800 text-xs py-0.5 px-2 rounded" 
-                    : "bg-blue-100 text-blue-700 text-xs py-0.5 px-2 rounded";
-                
-                return (
-                  <div key={order.id} className={`py-3 px-4 hover:bg-gray-50 ${itemBgClass}`} onClick={() => handleOrderClick(order)}>
-                    <div className="flex justify-between">
-                      <div className="flex items-start">
-                        {/* Order number and icon marker */}
-                        <div className="flex-shrink-0 mt-1 w-6 mr-1">
-                          <div className="w-5 h-5 flex items-center justify-center">
-                            {isCancelled ? (
-                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                            ) : (
-                              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            )}
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow overflow-hidden">
+        {/* Order List */}
+        <div className={`${view === 'list' ? 'md:col-span-3' : 'md:col-span-1'} bg-white rounded-md border shadow-sm overflow-hidden flex flex-col`}>
+          <div className="flex-grow overflow-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-center p-6">
+                <div className="text-gray-400 mb-2">
+                  <FilterIcon className="h-8 w-8" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">No orders found</h3>
+                <p className="text-gray-500 mt-1 max-w-sm">
+                  No orders found for {getMonthName(month)} {year}. Try adjusting your filters or create a new order.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setIsNewOrderDialogOpen(true)}
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create New Order
+                </Button>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {filteredOrders.map((order: any) => {
+                  // Format the date
+                  const orderDate = new Date(order.eventDate);
+                  const formattedDate = format(orderDate, 'dd MMM yyyy');
+                  const dayName = format(orderDate, 'EEE');
+                  
+                  // Format price
+                  const price = parseFloat(order.totalAmount || '0').toFixed(2);
+                  
+                  // Determine status style
+                  const isPaid = order.status === 'Paid';
+                  const isCancelled = order.status === 'Cancelled';
+                  
+                  return (
+                    <li 
+                      key={order.id}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer ${isCancelled ? 'bg-gray-100' : ''}`}
+                      onClick={() => handleOrderClick(order)}
+                    >
+                      <div className="flex justify-between">
+                        <div className="flex space-x-3">
+                          <div className="mt-1">
+                            <div className={`w-3 h-3 rounded-full ${isCancelled ? 'bg-gray-400' : 'bg-red-500'}`}></div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-gray-500 text-sm">
+                              #{order.orderNumber} - {dayName}, {formattedDate}
+                            </div>
+                            <div className="text-blue-600">
+                              Contact #{order.contactId} <span className="text-gray-500">({order.eventType})</span>
+                            </div>
+                            <div className="text-gray-700 text-sm">
+                              {order.notes || "No description available"}
+                            </div>
                           </div>
                         </div>
                         
-                        {/* Order details */}
-                        <div>
-                          <div className="text-gray-500 text-sm">
-                            #{order.orderNumber || order.order_number} - {dayName}, {dayNum} {monthName} {yearNum}
-                          </div>
-                          <div className="text-blue-600">
-                            Contact #{order.contactId || order.contact_id} <span className="text-gray-500">({orderEventType})</span>
-                          </div>
-                          <div className="text-gray-500 text-sm">
-                            {order.notes || "No description available"}
+                        <div className="text-right">
+                          <div className="font-medium">$ {price}</div>
+                          <div className="mt-1">
+                            <span className={
+                              isCancelled 
+                                ? "bg-gray-500 text-white text-xs px-2 py-0.5 rounded" 
+                                : isPaid 
+                                  ? "bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded" 
+                                  : "bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
+                            }>
+                              {order.status}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Price and status */}
-                      <div className="flex flex-col items-end">
-                        <div className="font-medium">$ {price}</div>
-                        <div className="mt-1">
-                          <span className={badgeClass}>{order.status}</span>
-                        </div>
-                        <div className="flex mt-1">
-                          <button className="text-gray-400 hover:text-gray-600 mr-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                              <polyline points="14 2 14 8 20 8"></polyline>
-                              <line x1="16" y1="13" x2="8" y2="13"></line>
-                              <line x1="16" y1="17" x2="8" y2="17"></line>
-                              <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                          </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                              <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <p className="mb-4">No orders found for the selected filters.</p>
-            <Button onClick={resetAllFilters} variant="outline">Reset Filters</Button>
-          </div>
-        )}
+        </div>
       </div>
       
       {/* New Order Dialog */}
       <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogTitle>New Order</DialogTitle>
           <DialogDescription>
-            Enter the details for the new order.
+            Create a new order by filling out the form below.
           </DialogDescription>
-          <div className="overflow-y-auto pr-1 flex-1">
-            <OrderForm 
-              onSubmit={handleFormSubmit} 
-              isSubmitting={isSubmitting}
-              defaultValues={(() => {
-                // Try to get the selected date from localStorage
-                const storedDate = localStorage.getItem('selectedDate');
-                
-                if (storedDate) {
-                  try {
-                    const date = new Date(storedDate);
-                    if (!isNaN(date.getTime())) {
-                      console.log('Setting form default dates from stored date:', date);
-                      return { 
-                        eventDate: date,
-                        orderDate: date 
-                      };
-                    }
-                  } catch (e) {
-                    // If parsing fails, ignore
-                  }
-                }
-                
-                // Fall back to the URL parameter if localStorage is empty
-                return preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined;
-              })()}
-            />
-          </div>
+          <OrderForm 
+            onSubmit={handleNewOrderSubmit} 
+            defaultValues={
+              selectedDate 
+                ? { eventDate: selectedDate, orderDate: new Date() } 
+                : { eventDate: new Date() }
+            }
+          />
         </DialogContent>
       </Dialog>
       
       {/* Filter Dialog */}
       <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>Change Order Filters</DialogTitle>
-          <div className="space-y-3 py-3">
-            {/* Order Type Filters */}
+        <DialogContent>
+          <DialogTitle>Filter Orders</DialogTitle>
+          <DialogDescription>
+            Apply filters to narrow down the orders list.
+          </DialogDescription>
+          <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="orders-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showOrders}
-                  onChange={(e) => setShowOrders(e.target.checked)}
-                />
-                <label htmlFor="orders-filter" className="text-sm font-medium text-gray-700">
-                  Orders
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="quotes-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showQuotes}
-                  onChange={(e) => setShowQuotes(e.target.checked)}
-                />
-                <label htmlFor="quotes-filter" className="text-sm font-medium text-gray-700">
-                  Quotes
-                </label>
-              </div>
+              <label className="text-sm font-medium">Status</label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="quote">Quote</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
-            {/* Payment Status Filters */}
-            <div className="space-y-2 border-t border-gray-200 pt-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="no-payments-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showNoPayments}
-                  onChange={(e) => setShowNoPayments(e.target.checked)}
-                />
-                <label htmlFor="no-payments-filter" className="text-sm font-medium text-gray-700">
-                  Orders with No Payments
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="booking-payments-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showBookingPayments}
-                  onChange={(e) => setShowBookingPayments(e.target.checked)}
-                />
-                <label htmlFor="booking-payments-filter" className="text-sm font-medium text-gray-700">
-                  Orders with Booking Payments
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="partial-payments-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showPartialPayments}
-                  onChange={(e) => setShowPartialPayments(e.target.checked)}
-                />
-                <label htmlFor="partial-payments-filter" className="text-sm font-medium text-gray-700">
-                  Orders with Partial Payments
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="paid-in-full-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showPaidInFull}
-                  onChange={(e) => setShowPaidInFull(e.target.checked)}
-                />
-                <label htmlFor="paid-in-full-filter" className="text-sm font-medium text-gray-700">
-                  Orders Paid in Full
-                </label>
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Event Type</label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="birthday">Birthday</SelectItem>
+                  <SelectItem value="wedding">Wedding</SelectItem>
+                  <SelectItem value="anniversary">Anniversary</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
-            {/* Order Status Filters */}
-            <div className="space-y-2 border-t border-gray-200 pt-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="completed-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showCompleted}
-                  onChange={(e) => setShowCompleted(e.target.checked)}
-                />
-                <label htmlFor="completed-filter" className="text-sm font-medium text-gray-700">
-                  Completed Orders
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="cancelled-filter"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={showCancelled}
-                  onChange={(e) => setShowCancelled(e.target.checked)}
-                />
-                <label htmlFor="cancelled-filter" className="text-sm font-medium text-gray-700">
-                  Cancelled Orders
-                </label>
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Delivery Type</label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select delivery type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="pickup">Pickup</SelectItem>
+                  <SelectItem value="delivery">Delivery</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
-          <div className="flex justify-between mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsFilterDialogOpen(false)}
-            >
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsFilterDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                // Apply all filters and close dialog
-                setIsFilterDialogOpen(false);
-                
-                // Show success toast
-                toast({
-                  title: "Filters Applied",
-                  description: "Your order filters have been updated."
-                });
-              }}
-            >
-              Save
-            </Button>
+            <Button>Apply Filters</Button>
           </div>
         </DialogContent>
       </Dialog>
