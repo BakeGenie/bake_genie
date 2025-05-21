@@ -52,28 +52,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
             #{orderNum} -
           </div>
           
-          {/* Display raw database fields exactly as in screenshot */}
+          {/* Display only the requested database fields */}
           <div className="text-xs space-y-1 text-gray-800">
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">user_id:</div>
-              <div>{order.userId}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">contact_id:</div>
-              <div>{order.contactId}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">order_number:</div>
-              <div>{order.orderNumber}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">title:</div>
-              <div>{order.title || 'null'}</div>
-            </div>
-            
             <div className="grid grid-cols-2 gap-x-6">
               <div className="font-medium text-gray-500">event_type:</div>
               <div>{order.eventType}</div>
@@ -92,41 +72,6 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div className="grid grid-cols-2 gap-x-6">
               <div className="font-medium text-gray-500">delivery_address:</div>
               <div>{order.deliveryAddress || 'null'}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">delivery_fee:</div>
-              <div>{order.deliveryFee || 0}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">delivery_time:</div>
-              <div>{order.deliveryTime || 'null'}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">total_amount:</div>
-              <div>{order.total || 0}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">amount_paid:</div>
-              <div>{order.amount_paid || 0}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">tax_rate:</div>
-              <div>{order.taxRate || 0}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">created_at:</div>
-              <div>{order.createdAt ? new Date(order.createdAt).toLocaleString() : 'null'}</div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-x-6">
-              <div className="font-medium text-gray-500">updated_at:</div>
-              <div>{order.updatedAt ? new Date(order.updatedAt).toLocaleString() : 'null'}</div>
             </div>
           </div>
         </div>
