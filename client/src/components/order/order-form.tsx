@@ -1312,8 +1312,85 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type="button" 
               disabled={isSubmitting}
+              onClick={async () => {
+                try {
+                  // Get current form values
+                  const data = form.getValues();
+                  console.log("Form values on direct submit:", data);
+                  
+                  // Create a unique order number
+                  const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+                  
+                  // Format the data for API submission
+                  const formattedData = {
+                    userId: 1,
+                    contactId: data.customer?.id || 12,
+                    orderNumber,
+                    eventType: data.eventType || 'Birthday',
+                    eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
+                    status: data.status || 'Quote',
+                    deliveryType: data.deliveryType || 'Pickup',
+                    deliveryAddress: data.deliveryAddress || '',
+                    deliveryFee: data.deliveryFee?.toString() || '0',
+                    deliveryTime: data.deliveryTime || '',
+                    total_amount: getFinalTotal().toString(),
+                    amountPaid: '0',
+                    specialInstructions: data.notes || '',
+                    taxRate: data.taxRate?.toString() || '0',
+                    notes: data.notes || '',
+                    discountType: data.discountType || "%",
+                    discount: (data.discount || 0).toString(),
+                    setupFee: (data.setupFee || 0).toString(),
+                    items: (data.items || []).map(item => ({
+                      description: item.description || 'Product',
+                      price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
+                      quantity: item.quantity || 1,
+                      name: item.productName || item.description || 'Product'
+                    }))
+                  };
+                  
+                  console.log("Sending direct API call with data:", JSON.stringify(formattedData, null, 2));
+                  
+                  // Make direct API call
+                  const response = await fetch("/api/orders-direct", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formattedData)
+                  });
+                  
+                  console.log("API response status:", response.status);
+                  
+                  if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Server error details:", errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                  }
+                  
+                  const result = await response.json();
+                  console.log("Order created successfully:", result);
+                  
+                  // Show success message
+                  toast({
+                    title: "Order Created",
+                    description: `Order #${orderNumber} has been created successfully.`
+                  });
+                  
+                  // Refresh orders list and navigate
+                  queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+                  window.location.href = "/orders";
+                } catch (error) {
+                  console.error("Error creating order:", error);
+                  toast({
+                    title: "Error",
+                    description: `Failed to create order: ${error instanceof Error ? error.message : "Unknown error"}`,
+                    variant: "destructive"
+                  });
+                }
+              }}
             >
               {isSubmitting ? "Saving..." : "Create Order"}
             </Button>
