@@ -75,7 +75,7 @@ router.post("/api/orders", async (req, res) => {
       // Get user ID from session
       const userId = req.session?.userId || 1;
       
-      // Log entire request body
+      // Log entire request body for debugging
       console.log("Creating order with complete data:", JSON.stringify(req.body, null, 2));
       
       // Extract data from the request, mapping to our database column names
@@ -85,13 +85,21 @@ router.post("/api/orders", async (req, res) => {
         eventType,
         status,
         deliveryType,
-        deliveryAddress,
-        deliveryTime,
-        notes,
+        deliveryAddress = '',
+        deliveryTime = '',
+        notes = '',
         orderNumber,
         total,
-        items
+        items = []
       } = req.body;
+      
+      // Validate required fields
+      if (!contactId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing required field: contactId" 
+        });
+      }
       
       // Generate order number if not provided
       const orderNum = orderNumber || `ORD-${Date.now().toString().substring(6)}`;

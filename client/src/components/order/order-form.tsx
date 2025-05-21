@@ -397,11 +397,23 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   // Form submission handler
   const onSubmitForm = async (data: OrderFormValues) => {
     try {
+      console.log("Starting form submission with data:", data);
+      
       // Ensure all required fields are present
-      if (!data.customer.firstName || !data.customer.lastName) {
+      if (!data.customer?.firstName || !data.customer?.lastName) {
         toast({
           title: "Error",
           description: "Customer name is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Make sure we have items with valid prices
+      if (!data.items || data.items.length === 0) {
+        toast({
+          title: "Error",
+          description: "At least one item is required",
           variant: "destructive",
         });
         return;
@@ -423,10 +435,18 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         status: data.status || 'Quote', 
         eventType: data.eventType || 'Birthday',
         deliveryType: data.deliveryType || 'Pickup',
+        // Ensure required fields for items
+        items: data.items.map(item => ({
+          ...item,
+          description: item.description || 'Product',
+          price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
+          quantity: item.quantity || 1,
+          total: typeof item.total === 'number' ? item.total.toString() : (item.total || '0')
+        }))
       };
       
       // Log the data being sent (for debugging)
-      console.log("Submitting order data:", formattedData);
+      console.log("Submitting formatted order data:", JSON.stringify(formattedData, null, 2));
       
       // Send data to parent component for submission
       onSubmit(formattedData);
@@ -700,7 +720,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || "Quote"}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a status" />
@@ -727,7 +747,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               render={({ field }) => (
                 <FormItem className="col-span-6">
                   <FormLabel>Delivery Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || "Pickup"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select delivery type" />

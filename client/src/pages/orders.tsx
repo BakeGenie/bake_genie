@@ -148,7 +148,17 @@ const Orders = () => {
         eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : data.eventDate,
         orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : data.orderDate,
         deliveryDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : data.deliveryDate,
+        // Ensure items are properly formatted
+        items: Array.isArray(data.items) ? data.items.map((item: any) => ({
+          ...item,
+          description: item.description || 'Product',
+          price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
+          quantity: item.quantity || 1
+        })) : []
       };
+      
+      // Log full data for debugging
+      console.log("Sending to server:", JSON.stringify(formattedData, null, 2));
       
       const response = await apiRequest("POST", "/api/orders", formattedData);
       
