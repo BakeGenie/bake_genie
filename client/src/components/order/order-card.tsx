@@ -61,10 +61,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
           {customerName} {order.eventType && `(${order.eventType})`}
         </div>
         
-        {/* Order description or first item */}
+        {/* Display all order items with full details */}
         {order.items && order.items.length > 0 && (
-          <div className="text-sm pl-5 text-gray-500">
-            {order.items[0].description || order.items[0].name}
+          <div className="pl-5">
+            {order.items.map((item, index) => (
+              <div key={index} className="text-sm text-gray-700 mt-1">
+                <span className="font-medium">{item.quantity}x</span> {item.name || item.description} 
+                {item.unitPrice && <span className="text-gray-500 ml-2">${parseFloat(item.unitPrice.toString()).toFixed(2)}/ea</span>}
+                {item.price && <span className="text-gray-500 ml-2">= ${parseFloat(item.price.toString()).toFixed(2)}</span>}
+                {item.notes && <div className="text-xs text-gray-500 ml-4">{item.notes}</div>}
+              </div>
+            ))}
           </div>
         )}
         
