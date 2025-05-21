@@ -1,7 +1,7 @@
 import React from "react";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { FileText } from "lucide-react";
+import { Mail, FileText } from "lucide-react";
 
 interface OrderCardProps {
   order: OrderWithItems;
@@ -15,9 +15,23 @@ const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected = false,
   onClick,
+  onEmailClick,
+  onDownloadClick,
 }) => {
-  // Get raw order data (we'll access it directly to display database fields)
-  const rawOrder = order as any;
+  // Handle email click
+  const handleEmailClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEmailClick) onEmailClick(e);
+  };
+  
+  // Handle document click
+  const handleDocClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDownloadClick) onDownloadClick(e);
+  };
+  
+  // Get order number for display
+  const orderNum = order.orderNumber || order.id?.toString().padStart(2, '0') || '';
   
   return (
     <div
@@ -34,31 +48,30 @@ const OrderCard: React.FC<OrderCardProps> = ({
         </div>
         
         <div className="flex-1">
-          {/* Order number */}
           <div className="text-sm font-medium mb-2 text-blue-600">
-            #{rawOrder.order_number || rawOrder.id} -
+            #{orderNum} -
           </div>
           
-          {/* Display raw database fields exactly as in screenshot */}
+          {/* Display only the requested database fields */}
           <div className="text-xs space-y-1 text-gray-800">
             <div className="grid grid-cols-2 gap-x-6">
               <div className="font-medium text-gray-500">event_type:</div>
-              <div>{rawOrder.event_type}</div>
+              <div>{order.eventType}</div>
             </div>
             
             <div className="grid grid-cols-2 gap-x-6">
               <div className="font-medium text-gray-500">event_date:</div>
-              <div>{rawOrder.event_date ? new Date(rawOrder.event_date).toLocaleString() : 'null'}</div>
+              <div>{order.eventDate ? new Date(order.eventDate).toLocaleString() : 'null'}</div>
             </div>
             
             <div className="grid grid-cols-2 gap-x-6">
               <div className="font-medium text-gray-500">delivery_type:</div>
-              <div>{rawOrder.delivery_type}</div>
+              <div>{order.deliveryType}</div>
             </div>
             
             <div className="grid grid-cols-2 gap-x-6">
               <div className="font-medium text-gray-500">delivery_address:</div>
-              <div>{rawOrder.delivery_address || 'null'}</div>
+              <div>{order.deliveryAddress || 'null'}</div>
             </div>
           </div>
         </div>
