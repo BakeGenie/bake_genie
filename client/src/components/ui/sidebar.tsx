@@ -224,8 +224,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             {links.map((link) => (
               <li key={link.path}>
                 <Link href={link.path}>
-                  <a
-                    className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm ${
+                  <div
+                    className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
                         ? "active"
                         : "text-gray-700"
@@ -248,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     ) : link.sublinks ? (
                       <ChevronRight className="h-4 w-4 text-gray-400" />
                     ) : null}
-                  </a>
+                  </div>
                 </Link>
               </li>
             ))}
