@@ -146,12 +146,31 @@ router.post("/api/orders", async (req, res) => {
       
       // Insert order items if provided
       if (items && Array.isArray(items)) {
-        console.log("Processing order items:", items);
+        console.log("Processing order items:", JSON.stringify(items, null, 2));
         
         for (const item of items) {
-          console.log("Processing item:", item);
+          console.log("Processing item:", JSON.stringify(item, null, 2));
           
           try {
+            // Format values to match database expectations
+            const itemPrice = item.price ? item.price.toString() : '0';
+            const itemQuantity = item.quantity || 1;
+            const itemDescription = item.description || '';
+            const itemName = item.name || item.description || 'Product';
+            const itemType = item.type || 'Product';
+            const itemUnitPrice = item.unitPrice ? item.unitPrice.toString() : itemPrice;
+            
+            console.log("Inserting order item with values:", {
+              orderId: newOrder.id,
+              productId: item.productId,
+              description: itemDescription,
+              quantity: itemQuantity,
+              price: itemPrice,
+              name: itemName,
+              type: itemType,
+              unitPrice: itemUnitPrice
+            });
+            
             await client.query(
               `INSERT INTO order_items (
                 order_id, product_id, description, quantity, price, name, type, unit_price
@@ -159,14 +178,16 @@ router.post("/api/orders", async (req, res) => {
               [
                 newOrder.id,
                 item.productId || null,
-                item.description || '',
-                item.quantity || 1,
-                item.price ? item.price.toString() : '0',
-                item.name || item.description || 'Product', // Name field is required
-                item.type || 'Product', // Type field is required
-                item.unitPrice ? item.unitPrice.toString() : (item.price ? item.price.toString() : '0') // UnitPrice field is required
+                itemDescription,
+                itemQuantity,
+                itemPrice,
+                itemName,
+                itemType,
+                itemUnitPrice
               ]
             );
+            
+            console.log("Order item inserted successfully");
           } catch (itemError) {
             console.error("Error inserting order item:", itemError);
             console.error("Problem item data:", JSON.stringify(item, null, 2));
