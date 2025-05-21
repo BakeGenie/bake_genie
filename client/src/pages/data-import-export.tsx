@@ -45,11 +45,13 @@ export default function DataImportExport() {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
-      // Check if file is JSON
-      if (file.type !== "application/json") {
+      // Check if file is JSON or CSV
+      if (file.type !== "application/json" && 
+          !file.name.toLowerCase().endsWith('.csv') && 
+          file.type !== "text/csv") {
         toast({
           title: "Invalid file type",
-          description: "Please select a JSON file",
+          description: "Please select a JSON or CSV file",
           variant: "destructive",
         });
         return;
@@ -134,6 +136,16 @@ export default function DataImportExport() {
       return;
     }
 
+    // Verify file type is CSV for Bake Diary imports
+    if (!importFile.name.toLowerCase().endsWith('.csv') && importFile.type !== "text/csv") {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a CSV file for Bake Diary imports",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsImporting(true);
     setImportSuccess(null);
     setImportMessage("");
@@ -148,7 +160,19 @@ export default function DataImportExport() {
         formData.append(key, value.toString());
       });
 
-      const response = await fetch("/api/data/import/bake-diary", {
+      // Determine the import type based on filename
+      let importEndpoint = "/api/import/orders"; // Default to orders
+      
+      if (importFile.name.toLowerCase().includes("order list")) {
+        importEndpoint = "/api/import/orders";
+      } else if (importFile.name.toLowerCase().includes("quote list")) {
+        importEndpoint = "/api/import/quotes";
+      } else if (importFile.name.toLowerCase().includes("order items") || 
+                importFile.name.toLowerCase().includes("detailed order")) {
+        importEndpoint = "/api/import/order-items";
+      }
+
+      const response = await fetch(importEndpoint, {
         method: "POST",
         body: formData,
       });
@@ -157,23 +181,25 @@ export default function DataImportExport() {
 
       if (result.success) {
         setImportSuccess(true);
-        setImportMessage("Data imported successfully from Bake Diary!");
-        // Format summary message
-        if (result.result && result.result.summary) {
-          const summary = result.result.summary;
-          let summaryMessage = "Import summary:\n";
-          
-          Object.entries(summary).forEach(([key, value]: [string, any]) => {
-            if (value.imported > 0 || value.errors > 0) {
-              summaryMessage += `- ${key}: ${value.imported} imported, ${value.errors} errors\n`;
-            }
+        setImportMessage(`Data imported successfully from Bake Diary! ${result.message || ''}`);
+        
+        // Format error messages if any
+        if (result.errors && result.errors.length > 0) {
+          const errorList = result.errors.slice(0, 5); // Show just the first 5 errors
+          let errorMessage = "\n\nErrors encountered:\n";
+          errorList.forEach((err: string, index: number) => {
+            errorMessage += `${index + 1}. ${err}\n`;
           });
           
-          setImportMessage(summaryMessage);
+          if (result.errors.length > 5) {
+            errorMessage += `...and ${result.errors.length - 5} more errors.`;
+          }
+          
+          setImportMessage(prev => prev + errorMessage);
         }
       } else {
         setImportSuccess(false);
-        setImportError(result.error || "Unknown error occurred");
+        setImportError(result.message || "Unknown error occurred");
       }
     } catch (error) {
       setImportSuccess(false);
@@ -304,6 +330,20 @@ export default function DataImportExport() {
                   Import data from a backup file or migrate from Bake Diary
                 </CardDescription>
               </CardHeader>
+              <div className="px-6 pt-2">
+                <Alert className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Import from Bake Diary (CSV)</AlertTitle>
+                  <AlertDescription>
+                    To import data from Bake Diary, select one of the CSV files exported from Bake Diary:
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                      <li>Order List - To import orders and their basic details</li>
+                      <li>Quote List - To import quotes and their basic details</li>
+                      <li>Detailed Order Items - To import order items and details</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              </div>
               <CardContent>
                 <div className="grid gap-6">
                   <div className="grid gap-2">
@@ -311,7 +351,7 @@ export default function DataImportExport() {
                     <input
                       id="importFile"
                       type="file"
-                      accept=".json,application/json"
+                      accept=".json,.csv,application/json,text/csv"
                       onChange={handleFileChange}
                       className="border rounded p-2"
                     />
