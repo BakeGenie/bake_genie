@@ -14,10 +14,12 @@ router.get("/api/orders", async (req, res) => {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
-    // Query the database for orders
-    const result = await db.select().from(orders).where(eq(orders.userId, userId));
+    // Use direct SQL query to avoid schema issues
+    const result = await db.execute(`
+      SELECT * FROM orders WHERE user_id = $1
+    `, [userId]);
     
-    res.json(result);
+    res.json(result.rows);
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({ success: false, error: "Failed to fetch orders" });
@@ -34,17 +36,26 @@ router.get("/api/orders/:id", async (req, res) => {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
-    // Query the database for the order
-    const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).where(eq(orders.userId, userId));
+    // Use direct SQL query to avoid schema issues
+    const result = await db.execute(`
+      SELECT * FROM orders WHERE id = $1 AND user_id = $2
+    `, [orderId, userId]);
     
-    if (!order) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: "Order not found" });
     }
     
-    // Get order items
-    const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    const order = result.rows[0];
     
-    res.json({ ...order, items });
+    // Get order items using direct SQL
+    const itemsResult = await db.execute(`
+      SELECT * FROM order_items WHERE order_id = $1
+    `, [orderId]);
+    
+    res.json({ 
+      ...order, 
+      items: itemsResult.rows 
+    });
   } catch (error) {
     console.error("Error fetching order:", error);
     res.status(500).json({ success: false, error: "Failed to fetch order" });
