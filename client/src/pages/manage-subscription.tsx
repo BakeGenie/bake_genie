@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -7,7 +7,7 @@ import { ArrowLeftIcon, CreditCardIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ManageSubscription() {
-  const [navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   
   const handleChangePlan = () => {
@@ -32,7 +32,7 @@ export default function ManageSubscription() {
           variant="ghost" 
           size="sm" 
           className="flex items-center gap-2"
-          onClick={() => navigate("/account")}
+          onClick={() => setLocation("/account")}
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Back to Account
