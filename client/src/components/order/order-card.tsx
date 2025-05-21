@@ -11,133 +11,146 @@ interface OrderCardProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
 }
 
+// Label formatting helpers
+const formatLabel = (key: string) => {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+};
+
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected = false,
   onClick,
 }) => {
-  const isQuote = order.status === 'Quote';
-  const isPaid = order.status === 'Paid';
-  const isCancelled = order.status === "Cancelled";
+  // Display all direct order fields from the database
+  const renderOrderFields = () => {
+    // Fields to exclude from rendering directly
+    const excludeFields = ['items', 'contact', 'createdAt', 'updatedAt', 'imageUrls'];
+    
+    return Object.entries(order).map(([key, value]) => {
+      // Skip excluded fields and null/undefined values
+      if (excludeFields.includes(key) || value === null || value === undefined) {
+        return null;
+      }
+      
+      // Format dates
+      if (key === 'eventDate' || key === 'dueDate') {
+        const dateValue = value ? new Date(value).toLocaleDateString() : '';
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+            <span className="text-gray-600">{dateValue}</span>
+          </div>
+        );
+      }
+      
+      // Format special fields like status
+      if (key === 'status') {
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+            <Badge 
+              variant={
+                value === 'Paid' ? 'default' : 
+                value === 'Quote' ? 'outline' :
+                value === 'Cancelled' ? 'destructive' : 'secondary'
+              }
+              className="text-xs"
+            >
+              {value?.toString()}
+            </Badge>
+          </div>
+        );
+      }
+      
+      // Format price/money fields
+      if (key === 'total' || key === 'total_amount' || key === 'discount' || key === 'setupFee' || key === 'taxRate') {
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+            <span className="text-gray-600">
+              {typeof value === 'number' || typeof value === 'string' && !isNaN(parseFloat(value?.toString())) ? 
+                `$${parseFloat(value?.toString()).toFixed(2)}` : value?.toString()}
+            </span>
+          </div>
+        );
+      }
+      
+      // Format customer name from contact_id if available
+      if (key === 'contactId' && order.contact) {
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">Customer:</span>
+            <span className="text-blue-600">
+              {order.contact.firstName} {order.contact.lastName}
+            </span>
+          </div>
+        );
+      }
+      
+      // Default rendering for other fields
+      return (
+        <div key={key} className="text-sm flex mb-1">
+          <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+          <span className="text-gray-600">{value?.toString()}</span>
+        </div>
+      );
+    }).filter(Boolean); // Remove null entries
+  };
   
-  // Format date to display in standard format
-  const formattedDate = order.eventDate ? 
-    new Date(order.eventDate).toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    }) : "";
-
-  // Get the amount from the total field
-  const amount = order.total || 0;
-  
-  // Generate order number display
-  const orderNumber = order.orderNumber || `#${order.id?.toString().padStart(2, '0')}`;
-  
-  // Get customer name from contact
-  const customerName = order.contact 
-    ? `${order.contact.firstName || ''} ${order.contact.lastName || ''}`
-    : '';
-
   return (
     <div
-      className={`relative flex justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
-        isSelected ? "bg-blue-50" : isCancelled ? "bg-gray-50" : ""
+      className={`relative px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
+        isSelected ? "bg-blue-50" : order.status === "Cancelled" ? "bg-gray-50" : ""
       }`}
       onClick={onClick}
     >
-      {/* Left side with red dot and order details */}
-      <div className="flex flex-col">
-        {/* Red indicator dot and order number/date */}
-        <div className="flex items-center">
-          <div className="w-2 h-2 rounded-full bg-red-500 mr-3"></div>
-          <div className="text-sm font-medium text-gray-600">
-            {orderNumber} - {formattedDate}
+      {/* Red indicator dot */}
+      <div className="absolute left-1.5 top-5 w-2 h-2 rounded-full bg-red-500"></div>
+      
+      {/* Order header */}
+      <div className="mb-3 pb-2 border-b border-gray-100">
+        <div className="flex justify-between">
+          <div className="flex">
+            <div className="ml-3 font-medium">
+              {order.orderNumber ? `#${order.orderNumber}` : `#${order.id?.toString().padStart(2, '0')}`}
+            </div>
+          </div>
+          <div className="text-base font-medium">
+            $ <FormatCurrency amount={order.total || order.total_amount || 0} showSymbol={false} />
           </div>
         </div>
-        
-        {/* Customer name with event type */}
-        <div className="text-sm pl-5 mt-1 text-blue-600">
-          {customerName} {order.eventType && `(${order.eventType})`}
-        </div>
-        
-        {/* Display ALL order items with COMPLETE details */}
-        {order.items && order.items.length > 0 && (
-          <div className="pl-5">
-            {order.items.map((item, index) => (
-              <div key={index} className="text-sm text-gray-700 mt-2 border-l-2 border-gray-200 pl-2">
-                {/* Item ID and Product ID */}
-                <div className="text-xs text-gray-400">
-                  ID: {item.id || 'N/A'} 
-                  {item.productId && <span className="ml-2">Product ID: {item.productId}</span>}
-                  {item.type && <span className="ml-2 text-gray-500 font-medium">Type: {item.type}</span>}
-                </div>
-                
-                {/* Item name, quantity, and prices */}
-                <div className="font-medium">
-                  <span>{item.quantity}x</span> {item.name || item.description}
-                </div>
-                
-                {/* Price information */}
-                <div className="flex flex-wrap gap-2 text-xs text-gray-600 mt-1">
-                  {item.unitPrice && (
-                    <span className="bg-gray-100 px-2 py-0.5 rounded">
-                      Unit: ${parseFloat(item.unitPrice.toString()).toFixed(2)}
-                    </span>
-                  )}
-                  {item.price && (
-                    <span className="bg-gray-100 px-2 py-0.5 rounded">
-                      Total: ${parseFloat(item.price.toString()).toFixed(2)}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Notes */}
-                {item.notes && (
-                  <div className="text-xs mt-1 bg-yellow-50 px-2 py-1 rounded">
-                    <span className="font-medium">Notes:</span> {item.notes}
-                  </div>
-                )}
-                
-                {/* Show all other properties */}
-                <div className="text-xs text-gray-500 mt-1">
-                  {Object.entries(item)
-                    .filter(([key]) => !['id', 'productId', 'type', 'name', 'description', 'quantity', 'unitPrice', 'price', 'notes'].includes(key))
-                    .map(([key, value]) => (
-                      <div key={key} className="inline-block mr-3">
-                        <span className="font-medium">{key}:</span> {value?.toString() || 'N/A'}
-                      </div>
-                    ))
-                  }
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* Delivery information if available */}
-        {order.deliveryType && (
-          <div className="text-xs pl-5 text-gray-500 mt-1">
-            Delivery: {order.deliveryType}
-            {order.deliveryTime && ` - ${order.deliveryTime}`}
-          </div>
-        )}
       </div>
       
-      {/* Right side with price and status */}
-      <div className="flex flex-col items-end">
-        {/* Price amount */}
-        <div className="text-base font-medium">
-          $ <FormatCurrency amount={amount} showSymbol={false} />
-        </div>
-        
-        {/* Status badge */}
-        <div className="mt-1">
-          {isQuote && <Badge variant="outline" className="text-xs">Quote</Badge>}
-          {isPaid && <Badge variant="default" className="text-xs">Paid</Badge>}
-          {isCancelled && <Badge variant="destructive" className="text-xs">Cancelled</Badge>}
-        </div>
+      {/* Display ALL fields from the order record */}
+      <div className="pl-3">
+        {renderOrderFields()}
       </div>
+      
+      {/* Display order items if available */}
+      {order.items && order.items.length > 0 && (
+        <div className="mt-2 pl-3">
+          <div className="font-medium mb-1 text-sm">Order Items:</div>
+          {order.items.map((item, index) => (
+            <div key={index} className="mb-2 pb-2 border-b border-gray-100 text-sm">
+              <div className="font-medium">
+                Item #{index + 1}: {item.quantity}x {item.name || item.description}
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                {Object.entries(item).map(([key, value]) => 
+                  value !== null && value !== undefined && (
+                    <div key={key} className="flex mb-0.5">
+                      <span className="font-medium w-24">{formatLabel(key)}:</span> 
+                      <span>{value?.toString()}</span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
