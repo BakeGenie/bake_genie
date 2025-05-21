@@ -2,9 +2,10 @@ import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { FileTextIcon, CircleXIcon, FileDownIcon, MailIcon } from "lucide-react";
+import { FileTextIcon, CircleXIcon, FileDownIcon, MailIcon, AlertCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormatCurrency } from "@/components/ui/format-currency";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface OrderCardProps {
   order: OrderWithItems;
@@ -107,6 +108,22 @@ const OrderCard: React.FC<OrderCardProps> = ({
             {order.delivery_type && (
               <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-400"}`}>
                 {order.delivery_type} {order.delivery_time ? `- ${order.delivery_time}` : ''}
+                {order.delivery_address && ` - ${order.delivery_address}`}
+              </div>
+            )}
+            
+            {/* Special instructions */}
+            {order.special_instructions && (
+              <div className={`text-xs flex items-center mt-1 ${isCancelled ? "text-gray-400 line-through" : "text-amber-500"}`}>
+                <AlertCircleIcon className="h-3 w-3 mr-1" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>Special instructions</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">{order.special_instructions}</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             )}
           </div>
@@ -115,6 +132,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
               <FormatCurrency amount={order.total_amount || order.total || 0} />
             </div>
+            
+            {/* Show amount paid if available */}
+            {order.amount_paid > 0 && (
+              <div className={`text-xs text-green-600 ${isCancelled ? "text-gray-400" : ""}`}>
+                Paid: <FormatCurrency amount={order.amount_paid} />
+              </div>
+            )}
             
             <div className="mt-1">
               {order.status && (
