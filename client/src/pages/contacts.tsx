@@ -38,7 +38,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertContactSchema } from "@shared/schema";
 import { ColumnDef } from "@tanstack/react-table";
-import { PlusIcon, MailIcon, PhoneIcon, Trash2Icon, EditIcon } from "lucide-react";
+import { PlusIcon, MailIcon, PhoneIcon, Trash2Icon, EditIcon, SearchIcon, XIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
@@ -365,6 +365,27 @@ const Contacts = () => {
     },
   ];
 
+  // Advanced search functionality
+  const [searchQuery, setSearchQuery] = React.useState('');
+  
+  const filteredContacts = React.useMemo(() => {
+    if (!searchQuery.trim() || !contacts || contacts.length === 0) return contacts;
+    
+    const lowerCaseQuery = searchQuery.toLowerCase();
+    
+    // Type-safe way to filter contacts with null handling
+    return contacts.filter((contact) => {
+      return (
+        (contact.firstName || '').toLowerCase().includes(lowerCaseQuery) ||
+        (contact.lastName || '').toLowerCase().includes(lowerCaseQuery) ||
+        (contact.email || '').toLowerCase().includes(lowerCaseQuery) ||
+        (contact.phone || '').toLowerCase().includes(lowerCaseQuery) ||
+        (contact.businessName || '').toLowerCase().includes(lowerCaseQuery) ||
+        (contact.address || '').toLowerCase().includes(lowerCaseQuery)
+      );
+    });
+  }, [contacts, searchQuery]);
+
   return (
     <div className="p-6">
       <PageHeader
@@ -375,14 +396,31 @@ const Contacts = () => {
           </Button>
         }
       />
+      
+      <div className="w-full my-4 relative">
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-10 pr-10"
+            placeholder="Search by name, email, phone, company..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button 
+              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              onClick={() => setSearchQuery('')}
+            >
+              <XIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
         <DataTable
           columns={columns}
-          data={contacts}
-          isLoading={isLoading}
-          searchPlaceholder="Search contacts..."
-          searchKey="lastName"
+          data={filteredContacts || []}
           onRowClick={handleContactClick}
         />
       </div>
@@ -571,7 +609,9 @@ const Contacts = () => {
                 <Button 
                   onClick={() => {
                     setIsViewContactDialogOpen(false);
-                    handleEditClick(selectedContact, new MouseEvent('click') as React.MouseEvent<Element, MouseEvent>);
+                    // Create a synthetic event for the edit action
+                    const syntheticEvent = { stopPropagation: () => {} } as React.MouseEvent<Element, MouseEvent>;
+                    handleEditClick(selectedContact, syntheticEvent);
                   }}
                 >
                   Edit
