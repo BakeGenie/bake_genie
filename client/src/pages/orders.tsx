@@ -340,24 +340,24 @@ const Orders = () => {
               onSubmit={handleFormSubmit} 
               isSubmitting={isSubmitting}
               defaultValues={(() => {
-              // Try to get the selected date from localStorage
-              const storedDate = localStorage.getItem('selectedDate');
-              
-              if (storedDate) {
-                try {
-                  const date = new Date(storedDate);
-                  if (!isNaN(date.getTime())) {
-                    return { eventDate: date };
+                // Try to get the selected date from localStorage
+                const storedDate = localStorage.getItem('selectedDate');
+                
+                if (storedDate) {
+                  try {
+                    const date = new Date(storedDate);
+                    if (!isNaN(date.getTime())) {
+                      return { eventDate: date };
+                    }
+                  } catch (e) {
+                    // If parsing fails, ignore
                   }
-                } catch (e) {
-                  // If parsing fails, ignore
                 }
-              }
-              
-              // Fall back to the URL parameter if localStorage is empty
-              return preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined;
-            })()}
-          />
+                
+                // Fall back to the URL parameter if localStorage is empty
+                return preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined;
+              })()}
+            />
           </div>
         </DialogContent>
       </Dialog>
