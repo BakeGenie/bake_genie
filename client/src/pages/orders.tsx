@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FilterIcon, PlusIcon, SearchIcon, CalendarIcon, ListIcon } from "lucide-react";
+import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
 import OrderForm from "@/components/order/order-form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -32,14 +32,6 @@ const Orders = () => {
   
   const [month, setMonth] = React.useState(new Date().getMonth() + 1);
   const [year, setYear] = React.useState(new Date().getFullYear());
-  
-  const [view, setView] = React.useState<string>("list");
-  
-  // View options
-  const viewOptions = [
-    { value: "list", label: "List View" },
-    { value: "calendar", label: "Calendar View" },
-  ];
   
   // Fetch orders
   const { data: rawOrders = [], isLoading } = useQuery({
@@ -212,136 +204,118 @@ const Orders = () => {
           </div>
         </div>
         
-        {/* View Toggle */}
-        <div className="flex items-center border rounded-md p-1">
-          <Button
-            variant={view === 'list' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setView('list')}
-            className="flex items-center space-x-1"
-          >
-            <ListIcon className="h-4 w-4" />
-            <span>List</span>
-          </Button>
-          
-          <Button
-            variant={view === 'calendar' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setView('calendar')}
-            className="flex items-center space-x-1"
-          >
-            <CalendarIcon className="h-4 w-4" />
-            <span>Calendar</span>
-          </Button>
+        {/* Month/Year display */}
+        <div className="text-sm font-medium text-gray-500">
+          {getMonthName(month)} {year}
         </div>
       </div>
       
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow overflow-hidden">
+      <div className="grid grid-cols-1 gap-4 flex-grow overflow-auto">
         {/* Calendar View */}
-        {view === "calendar" && (
-          <div className="md:col-span-3 bg-white rounded-md border shadow-sm">
-            <div className="p-4">
-              <OrderCalendar
-                orders={orders}
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-                month={month}
-                year={year}
-              />
-            </div>
+        <div className="bg-white rounded-md border shadow-sm">
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-3">Calendar View</h3>
+            <OrderCalendar
+              orders={orders}
+              selectedDate={selectedDate}
+              onDateSelect={handleDateSelect}
+              month={month}
+              year={year}
+            />
           </div>
-        )}
+        </div>
         
         {/* Order List */}
-        {view === 'list' && (
-          <div className="md:col-span-3 bg-white rounded-md border shadow-sm overflow-hidden flex flex-col">
-            <div className="flex-grow overflow-auto">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+        <div className="bg-white rounded-md border shadow-sm overflow-hidden flex flex-col">
+          <div className="p-4 border-b">
+            <h3 className="text-lg font-semibold">Order List</h3>
+          </div>
+          <div className="flex-grow overflow-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-center p-6">
+                <div className="text-gray-400 mb-2">
+                  <FilterIcon className="h-8 w-8" />
                 </div>
-              ) : filteredOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-center p-6">
-                  <div className="text-gray-400 mb-2">
-                    <FilterIcon className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900">No orders found</h3>
-                  <p className="text-gray-500 mt-1 max-w-sm">
-                    No orders found for {getMonthName(month)} {year}. Try adjusting your filters or create a new order.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => setIsNewOrderDialogOpen(true)}
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Create New Order
-                  </Button>
-                </div>
-              ) : (
-                <ul className="divide-y divide-gray-200">
-                  {filteredOrders.map((order: any) => {
-                    // Format the date
-                    const orderDate = new Date(order.eventDate);
-                    const formattedDate = format(orderDate, 'dd MMM yyyy');
-                    const dayName = format(orderDate, 'EEE');
-                    
-                    // Format price
-                    const price = parseFloat(order.totalAmount || '0').toFixed(2);
-                    
-                    // Determine status style
-                    const isPaid = order.status === 'Paid';
-                    const isCancelled = order.status === 'Cancelled';
-                    
-                    return (
-                      <li 
-                        key={order.id}
-                        className={`p-4 hover:bg-gray-50 cursor-pointer ${isCancelled ? 'bg-gray-100' : ''}`}
-                        onClick={() => handleOrderClick(order)}
-                      >
-                        <div className="flex justify-between">
-                          <div className="flex space-x-3">
-                            <div className="mt-1">
-                              <div className={`w-3 h-3 rounded-full ${isCancelled ? 'bg-gray-400' : 'bg-red-500'}`}></div>
-                            </div>
-                            
-                            <div>
-                              <div className="text-gray-500 text-sm">
-                                #{order.orderNumber} - {dayName}, {formattedDate}
-                              </div>
-                              <div className="text-blue-600">
-                                Contact #{order.contactId} <span className="text-gray-500">({order.eventType})</span>
-                              </div>
-                              <div className="text-gray-700 text-sm">
-                                {order.notes || "No description available"}
-                              </div>
-                            </div>
+                <h3 className="text-lg font-medium text-gray-900">No orders found</h3>
+                <p className="text-gray-500 mt-1 max-w-sm">
+                  No orders found for {getMonthName(month)} {year}. Try adjusting your filters or create a new order.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setIsNewOrderDialogOpen(true)}
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create New Order
+                </Button>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {filteredOrders.map((order: any) => {
+                  // Format the date
+                  const orderDate = new Date(order.eventDate);
+                  const formattedDate = format(orderDate, 'dd MMM yyyy');
+                  const dayName = format(orderDate, 'EEE');
+                  
+                  // Format price
+                  const price = parseFloat(order.totalAmount || '0').toFixed(2);
+                  
+                  // Determine status style
+                  const isPaid = order.status === 'Paid';
+                  const isCancelled = order.status === 'Cancelled';
+                  
+                  return (
+                    <li 
+                      key={order.id}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer ${isCancelled ? 'bg-gray-100' : ''}`}
+                      onClick={() => handleOrderClick(order)}
+                    >
+                      <div className="flex justify-between">
+                        <div className="flex space-x-3">
+                          <div className="mt-1">
+                            <div className={`w-3 h-3 rounded-full ${isCancelled ? 'bg-gray-400' : 'bg-red-500'}`}></div>
                           </div>
                           
-                          <div className="text-right">
-                            <div className="font-medium">$ {price}</div>
-                            <div className="mt-1">
-                              <span className={
-                                isCancelled 
-                                  ? "bg-gray-500 text-white text-xs px-2 py-0.5 rounded" 
-                                  : isPaid 
-                                    ? "bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded" 
-                                    : "bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
-                              }>
-                                {order.status}
-                              </span>
+                          <div>
+                            <div className="text-gray-500 text-sm">
+                              #{order.orderNumber} - {dayName}, {formattedDate}
+                            </div>
+                            <div className="text-blue-600">
+                              Contact #{order.contactId} <span className="text-gray-500">({order.eventType})</span>
+                            </div>
+                            <div className="text-gray-700 text-sm">
+                              {order.notes || "No description available"}
                             </div>
                           </div>
                         </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+                        
+                        <div className="text-right">
+                          <div className="font-medium">$ {price}</div>
+                          <div className="mt-1">
+                            <span className={
+                              isCancelled 
+                                ? "bg-gray-500 text-white text-xs px-2 py-0.5 rounded" 
+                                : isPaid 
+                                  ? "bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded" 
+                                  : "bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
+                            }>
+                              {order.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-        )}
+        </div>
       </div>
       
       {/* New Order Dialog */}
