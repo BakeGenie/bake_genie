@@ -198,8 +198,11 @@ router.post("/api/orders", async (req, res) => {
       
       await client.query('COMMIT');
       
+      console.log("Transaction committed successfully. Order created with ID:", newOrder.id);
+      
       res.status(201).json({ 
         success: true, 
+        message: "Order created successfully",
         order: newOrder,
         id: newOrder.id
       });
