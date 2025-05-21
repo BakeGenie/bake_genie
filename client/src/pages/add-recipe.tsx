@@ -261,7 +261,7 @@ const AddRecipe = () => {
                               onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                             />
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                              <InfoCircledIcon className="h-4 w-4 text-muted-foreground" />
+                              <InfoIcon className="h-4 w-4 text-muted-foreground" />
                             </div>
                           </div>
                         </FormControl>
@@ -301,12 +301,12 @@ const AddRecipe = () => {
                               {...field}
                             />
                             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                              <InfoCircledIcon className="h-4 w-4 text-muted-foreground" />
+                              <InfoIcon className="h-4 w-4 text-muted-foreground" />
                             </div>
                           </div>
                         </FormControl>
                         <FormDescription className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <InfoCircledIcon className="h-3 w-3" /> Your 'Custom Price' should be the same as your 'Cost Price', unless you add in a buffer for ingredient price changes.
+                          <InfoIcon className="h-3 w-3" /> Your 'Custom Price' should be the same as your 'Cost Price', unless you add in a buffer for ingredient price changes.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -374,7 +374,7 @@ const AddRecipe = () => {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
-                      <InfoCircledIcon className="h-8 w-8 mb-2" />
+                      <InfoIcon className="h-8 w-8 mb-2" />
                       <p>You have not added any ingredients to your order.</p>
                     </div>
                   )}
@@ -412,7 +412,7 @@ const AddRecipe = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <InfoCircledIcon className="h-3 w-3" /> Images larger than 3mb may take longer to upload when saving the order.
+                    <InfoIcon className="h-3 w-3" /> Images larger than 3mb may take longer to upload when saving the order.
                   </p>
                 </div>
               </CardContent>
