@@ -491,7 +491,7 @@ const Calendar = () => {
           }
         }}
         onBlockDate={() => {
-          setIsBlockoutDialogOpen(true);
+          setIsBlockDateDialogOpen(true);
         }}
       />
       
