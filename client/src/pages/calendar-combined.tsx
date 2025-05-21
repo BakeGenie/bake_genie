@@ -1,17 +1,16 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { OrderWithItems } from "@/types";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths, isWithinInterval, parse, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO } from "date-fns";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, PlusIcon, CalendarDaysIcon, XIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, PlusIcon, CalendarDaysIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { eventTypes, type EventType } from "@shared/schema";
 import { eventTypeColors } from "@/lib/constants";
-import OrderCard from "@/components/order/order-card";
 import { 
   Dialog, 
   DialogContent, 
@@ -21,57 +20,30 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 
-// Define event types for calendar events
-const calendarEventTypes = [
-  'Admin', 'Baking', 'Decorating', 'Delivery', 'Personal', 'Appointment', 
-  'Market', 'Class', 'Workshop', 'Other'
-];
-
-interface CalendarEvent {
-  id: string;
-  startDate: string;
-  endDate: string;
-  type: string;
-  description: string;
-}
-
-const CalendarWithList = () => {
+const CalendarCombined = () => {
   const [_, navigate] = useLocation();
-  // Check for stored date in localStorage
-  const storedDate = React.useMemo(() => {
-    const dateFromStorage = localStorage.getItem('selectedCalendarDate');
-    if (dateFromStorage) {
-      try {
-        const parsedDate = new Date(dateFromStorage);
-        // Clear localStorage after using it
-        localStorage.removeItem('selectedCalendarDate');
-        return parsedDate;
-      } catch (e) {
-        console.error("Error parsing stored calendar date:", e);
-      }
-    }
-    return new Date();
-  }, []);
   
-  const [currentDate, setCurrentDate] = React.useState(storedDate);
-  const [selectedDate, setSelectedDate] = React.useState<Date | null>(storedDate);
+  // Initialize with current date
+  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   const [isActionDialogOpen, setIsActionDialogOpen] = React.useState(false);
-  const [isBlockoutDialogOpen, setIsBlockoutDialogOpen] = React.useState(false);
-  const [calendarEvents, setCalendarEvents] = React.useState<CalendarEvent[]>([]);
-  const [blockedDates, setBlockedDates] = React.useState<{[key: string]: string}>({});
   
   // Get the first and last day of the current month
   const firstDayOfMonth = startOfMonth(currentDate);
   const lastDayOfMonth = endOfMonth(currentDate);
   
-  // Adjust first day of month to get correct day of week (0 = Monday in our grid)
-  const adjustedFirstDayOfMonth = (firstDayOfMonth.getDay() || 7) - 1;
-  
-  // Get all days in the current month
+  // Calculate days to display
   const daysInMonth = eachDayOfInterval({
     start: firstDayOfMonth,
     end: lastDayOfMonth,
   });
+  
+  // Get day of week index for the first day (0 = Sunday, 6 = Saturday)
+  const startDayIndex = firstDayOfMonth.getDay();
+  
+  // Get number of days in the last row to fill
+  const endDayIndex = lastDayOfMonth.getDay();
+  const daysToFillEnd = endDayIndex === 6 ? 0 : 6 - endDayIndex;
   
   // Fetch orders for the current month
   const { data: orders = [], isLoading } = useQuery<OrderWithItems[]>({
@@ -96,23 +68,29 @@ const CalendarWithList = () => {
   // Get orders for a specific day
   const getOrdersForDay = (day: Date) => {
     return orders.filter(order => {
-      const orderDate = new Date(order.eventDate);
-      return isSameDay(orderDate, day);
+      if (!order.eventDate) return false;
+      try {
+        const orderDate = new Date(order.eventDate);
+        return isSameDay(orderDate, day);
+      } catch (e) {
+        console.error("Error parsing order date:", e);
+        return false;
+      }
     });
-  };
-  
-  // Check if a date is blocked out
-  const isDateBlocked = (day: Date) => {
-    const dateStr = format(day, "yyyy-MM-dd");
-    return dateStr in blockedDates;
   };
   
   // Sort orders by event date
   const sortedOrders = React.useMemo(() => {
     return [...orders].sort((a, b) => {
-      const dateA = new Date(a.eventDate);
-      const dateB = new Date(b.eventDate);
-      return dateA.getTime() - dateB.getTime();
+      if (!a.eventDate || !b.eventDate) return 0;
+      try {
+        const dateA = new Date(a.eventDate);
+        const dateB = new Date(b.eventDate);
+        return dateA.getTime() - dateB.getTime();
+      } catch (e) {
+        console.error("Error sorting dates:", e);
+        return 0;
+      }
     });
   }, [orders]);
   
@@ -149,18 +127,6 @@ const CalendarWithList = () => {
       };
     }
     
-    // For custom event types saved in local storage
-    const customEventTypes = JSON.parse(localStorage.getItem('customEventTypes') || '[]');
-    const customType = customEventTypes.find((t: any) => t.name === eventType);
-    
-    if (customType) {
-      return {
-        backgroundColor: `${customType.color}20`, // 20% opacity version of the color
-        color: customType.color,
-        borderColor: customType.color
-      };
-    }
-    
     // Default fallback if no color is found
     return {
       backgroundColor: "#F3F4F6",
@@ -174,7 +140,7 @@ const CalendarWithList = () => {
       <div className="flex justify-between items-center mb-4">
         <PageHeader title="Calendar & Orders" />
         <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => navigate('/orders/new')}>
-          <PlusIcon className="h-4 w-4 mr-1" /> Add Item
+          <PlusIcon className="h-4 w-4 mr-1" /> Add Order
         </Button>
       </div>
       
@@ -183,7 +149,6 @@ const CalendarWithList = () => {
         <div className="md:col-span-2">
           <div className="flex justify-between items-center mb-4 bg-white p-3 rounded-md shadow-sm border">
             <div className="flex space-x-2 items-center">
-              <div className="text-sm font-medium text-gray-500 mr-1">Period:</div>
               <Select
                 value={format(currentDate, "MMMM")}
                 onValueChange={(selectedMonth) => {
@@ -248,17 +213,13 @@ const CalendarWithList = () => {
               <Button variant="outline" size="sm" onClick={navigateToToday} className="h-8">
                 Today
               </Button>
-              <Button className="bg-gray-50 text-gray-600 hover:bg-gray-100 border" size="sm">
-                <CalendarDaysIcon className="h-4 w-4 mr-2" />
-                Filter Orders
-              </Button>
             </div>
           </div>
           
           <div className="border rounded-md overflow-hidden shadow-sm">
             {/* Days of week header */}
             <div className="grid grid-cols-7 text-center bg-gray-700 text-white">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                 <div key={day} className="py-2 font-semibold text-sm border-r last:border-r-0">
                   {day}
                 </div>
@@ -267,10 +228,12 @@ const CalendarWithList = () => {
             
             {/* Calendar grid */}
             <div className="grid grid-cols-7 bg-white">
-              {Array.from({ length: firstDayOfMonth.getDay() }).map((_, index) => (
+              {/* Empty cells for days before the first day of month */}
+              {Array.from({ length: startDayIndex }).map((_, index) => (
                 <div key={`empty-start-${index}`} className="h-28 bg-gray-50 border-r border-b"></div>
               ))}
               
+              {/* Actual days in month */}
               {daysInMonth.map((day) => {
                 const dayOrders = getOrdersForDay(day);
                 const isCurrentDay = isToday(day);
@@ -282,8 +245,7 @@ const CalendarWithList = () => {
                     className={cn(
                       "h-28 p-1 relative border-r border-b",
                       isSelected ? "bg-primary/10 border-primary" : 
-                      isCurrentDay ? "bg-blue-50" : "bg-white hover:bg-gray-50",
-                      isDateBlocked(day) ? "bg-gray-50" : ""
+                      isCurrentDay ? "bg-blue-50" : "bg-white hover:bg-gray-50"
                     )}
                     onClick={() => {
                       setSelectedDate(day);
@@ -296,12 +258,6 @@ const CalendarWithList = () => {
                     )}>
                       {format(day, "d")}
                     </div>
-                    
-                    {isDateBlocked(day) && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                        <div className="text-red-500 text-5xl font-bold opacity-40">X</div>
-                      </div>
-                    )}
                     
                     {/* Orders container with horizontal scroll */}
                     <div className="h-[calc(100%-22px)] overflow-y-auto">
@@ -359,7 +315,8 @@ const CalendarWithList = () => {
                 );
               })}
               
-              {Array.from({ length: 6 - lastDayOfMonth.getDay() }).map((_, index) => (
+              {/* Empty cells for days after the last day of month */}
+              {Array.from({ length: daysToFillEnd }).map((_, index) => (
                 <div key={`empty-end-${index}`} className="h-28 bg-gray-50 border-r border-b"></div>
               ))}
             </div>
@@ -368,7 +325,7 @@ const CalendarWithList = () => {
         
         {/* Orders list column - takes 1/3 of space on larger screens */}
         <div className="md:col-span-1">
-          <div className="bg-white rounded-md shadow-sm border">
+          <div className="bg-white rounded-md shadow-sm border h-full">
             <div className="p-4 border-b">
               <h3 className="text-lg font-semibold">Orders for {format(currentDate, "MMMM yyyy")}</h3>
             </div>
@@ -388,7 +345,7 @@ const CalendarWithList = () => {
                           {/* Event Date and Order ID */}
                           <div className="flex justify-between items-start mb-2">
                             <div className="font-semibold text-sm">
-                              {format(new Date(order.eventDate), "MMM d, yyyy")}
+                              {order.eventDate ? format(new Date(order.eventDate), "MMM d, yyyy") : "No date"}
                             </div>
                             <div className="text-xs text-gray-500">
                               #{order.orderNumber?.split('-')[1]}
@@ -434,7 +391,7 @@ const CalendarWithList = () => {
                             
                             {/* Total */}
                             <div className="text-sm font-semibold">
-                              ${order.total !== undefined ? (typeof order.total === 'number' ? order.total.toFixed(2) : order.total) : '0.00'}
+                              ${typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}
                             </div>
                           </div>
                         </div>
@@ -475,85 +432,15 @@ const CalendarWithList = () => {
               variant="outline"
               onClick={() => {
                 setIsActionDialogOpen(false);
-                setIsBlockoutDialogOpen(true);
-              }}
-            >
-              Block Out Date
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsActionDialogOpen(false);
               }}
             >
               Cancel
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Block Out Date Dialog */}
-      <Dialog open={isBlockoutDialogOpen} onOpenChange={setIsBlockoutDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Block Out Date</DialogTitle>
-            <DialogDescription>
-              Block this date from having any orders or appointments.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="blockout-start-date" className="text-sm font-medium">Start Date:</label>
-              <input
-                id="blockout-start-date"
-                type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setSelectedDate(parseISO(e.target.value));
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="blockout-reason" className="text-sm font-medium">Reason:</label>
-              <input
-                id="blockout-reason"
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Enter reason for blocking out this date"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setIsBlockoutDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="default" 
-              onClick={() => {
-                if (selectedDate) {
-                  const dateStr = format(selectedDate, "yyyy-MM-dd");
-                  const reasonInput = document.getElementById('blockout-reason') as HTMLInputElement;
-                  
-                  // Update blocked dates
-                  setBlockedDates(prev => ({
-                    ...prev,
-                    [dateStr]: reasonInput.value || "Blocked"
-                  }));
-                  
-                  setIsBlockoutDialogOpen(false);
-                }
-              }}
-            >
-              Block Date
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 };
 
-export default CalendarWithList;
+export default CalendarCombined;

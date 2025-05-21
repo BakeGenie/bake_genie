@@ -16,7 +16,7 @@ import Contacts from "./pages/contacts";
 import Enquiries from "./pages/enquiries";
 import EnquiryForm from "./pages/enquiry-form";
 import TaskList from "./pages/task-list";
-import Calendar from "./pages/calendar-with-list";
+import Calendar from "./pages/calendar-combined";
 import Recipes from "./pages/recipes-new";
 import RecipesList from "./pages/recipes-list";
 import AddRecipe from "./pages/add-recipe";
