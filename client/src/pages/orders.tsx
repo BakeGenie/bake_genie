@@ -6,7 +6,7 @@ import PageHeader from "@/components/ui/page-header";
 import OrderCalendar from "@/components/order/order-calendar";
 import OrderCard from "@/components/order/order-card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { InvoicePreviewButton } from "@/components/ui/invoice-preview-button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -370,8 +370,9 @@ const Orders = () => {
       {/* New Order Dialog */}
       <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle>New Order</DialogTitle>
+          <DialogDescription>Create a new order or quote for a customer</DialogDescription>
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-6">New Order</h2>
             <OrderForm
               onSubmit={handleNewOrderSubmit}
               initialValues={(() => {
