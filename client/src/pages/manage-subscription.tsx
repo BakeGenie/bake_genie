@@ -61,15 +61,6 @@ export default function ManageSubscription() {
               <div className="flex justify-between items-center mb-2">
                 <Button 
                   variant="outline" 
-                  className="w-full"
-                  onClick={handleChangePlan}
-                >
-                  Change Plan
-                </Button>
-              </div>
-              <div className="flex justify-between items-center mb-2">
-                <Button 
-                  variant="outline" 
                   className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
                   onClick={handleCancelSubscription}
                 >
