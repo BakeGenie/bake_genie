@@ -42,6 +42,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
     if (onDownloadClick) onDownloadClick(e);
   };
   
+  // Get properly formatted order number
+  const orderNumber = order.orderNumber || `${order.id}`.padStart(2, '0');
+  
   return (
     <div
       className={`relative flex items-start px-4 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
@@ -64,7 +67,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="flex-1">
         {/* Order number and date */}
         <div className="text-sm font-medium text-gray-700">
-          #{order.orderNumber} - {formatOrderDate(order.eventDate)}
+          #{orderNumber} - {formatOrderDate(order.eventDate)}
         </div>
         
         {/* Customer and event type */}
@@ -73,35 +76,40 @@ const OrderCard: React.FC<OrderCardProps> = ({
           {order.eventType && ` (${order.eventType})`}
         </div>
         
-        {/* Display ALL fields from order directly without labels */}
+        {/* Display fields directly without labels */}
         <div className="text-xs space-y-1 mt-2 text-gray-600">
           <div>Delivery: {order.deliveryType} {order.deliveryTime && `at ${order.deliveryTime}`}</div>
-          {order.deliveryDetails && <div>{order.deliveryDetails}</div>}
+          
+          {/* Order notes */}
           {order.notes && <div>{order.notes}</div>}
-          {order.theme && <div>{order.theme}</div>}
-          {order.jobSheetNotes && <div>{order.jobSheetNotes}</div>}
           
           {/* Financial information */}
           <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {order.discount && (
+            {order.discount && parseFloat(order.discount.toString()) > 0 && (
               <span>Discount: ${parseFloat(order.discount.toString()).toFixed(2)}</span>
             )}
-            {order.discountType && (
-              <span>({order.discountType})</span>
-            )}
-            {order.setupFee && parseFloat(order.setupFee.toString()) > 0 && (
-              <span>Setup: ${parseFloat(order.setupFee.toString()).toFixed(2)}</span>
-            )}
+            
             {order.taxRate && (
               <span>Tax: {parseFloat(order.taxRate.toString()).toFixed(2)}%</span>
             )}
           </div>
           
-          {/* Order time information */}
+          {/* Item information */}
+          {order.items && order.items.length > 0 && (
+            <div>
+              Items:
+              {order.items.map((item, index) => (
+                <div key={index} className="ml-2 text-xs">
+                  - {item.quantity}x {item.name} (${parseFloat(item.price.toString()).toFixed(2)})
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Order dates information */}
           <div className="flex gap-x-2 text-gray-500">
             <span>Created: {new Date(order.createdAt).toLocaleDateString()}</span>
             <span>Updated: {new Date(order.updatedAt).toLocaleDateString()}</span>
-            {order.dueDate && <span>Due: {formatOrderDate(order.dueDate)}</span>}
           </div>
         </div>
       </div>
@@ -110,7 +118,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="flex flex-col items-end ml-2">
         {/* Price */}
         <div className="text-base font-medium text-right mb-1">
-          $ {parseFloat(order.total.toString()).toFixed(2)}
+          $ {order.total ? parseFloat(order.total.toString()).toFixed(2) : '0.00'}
         </div>
         
         {/* Status badge */}
