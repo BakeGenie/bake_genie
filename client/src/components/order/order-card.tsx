@@ -31,6 +31,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
     month: "short",
     year: "numeric",
   }) : "";
+  
+  // Format order number - use quote prefix for quotes
+  const formattedOrderNumber = order.orderNumber 
+    ? (order.status === 'Quote' ? `Q${order.orderNumber.replace(/^Q/, '')}` : order.orderNumber)
+    : 'N/A';
 
   // Handle status badge color
   const getStatusBadge = () => {
@@ -64,75 +69,81 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <div
-      className={`flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
-        isSelected ? "bg-gray-100" : isCancelled ? "bg-gray-50" : ""
-      }`}
+      className={`flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer ${
+        isSelected ? "bg-blue-50" : isCancelled ? "bg-gray-50" : ""
+      } ${isCancelled ? "" : "border-l-4 border-l-red-500"}`}
       onClick={onClick}
     >
       <div className="flex-1">
-        <div className="flex">
-          <div className={`h-10 w-10 flex items-center justify-center rounded mr-3 ${
-            isCancelled
-              ? "bg-gray-100 text-gray-500"
-              : isSelected
-              ? "bg-primary-100 text-primary-500"
-              : "bg-gray-100 text-gray-500"
-          }`}>
-            {isCancelled ? <CircleXIcon size={18} /> : <FileTextIcon size={18} />}
-          </div>
+        <div className="flex items-start">
+          <input 
+            type="checkbox" 
+            className="mr-3 mt-1.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+            readOnly
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+          />
           <div className="flex-1">
             <div className="flex items-center">
               <div className={`text-sm font-medium ${
-                isCancelled ? "text-gray-400" : "text-gray-800"
+                isCancelled ? "text-gray-400 line-through" : "text-gray-800"
               }`}>
-                #{order.orderNumber || 'N/A'} - {formattedDate}
+                #{formattedOrderNumber} - {formattedDate}
               </div>
-              <div className="ml-2">{getStatusBadge()}</div>
             </div>
-            <div className={`text-sm ${isCancelled ? "text-gray-400" : "text-gray-600"}`}>
-              {order.contact?.firstName || ''} {order.contact?.lastName || ''}
+            <div className={`text-sm mt-0.5 ${isCancelled ? "text-gray-400 line-through" : "text-gray-600"}`}>
+              <span className="font-medium">
+                {order.contact?.firstName || ''} {order.contact?.lastName || ''}
+              </span>
               {order.eventType && (
-                <span className={isCancelled ? "text-gray-400" : "text-primary-600"}>
-                  {" "}({order.eventType})
+                <span className={`ml-1 ${isCancelled ? "text-gray-400" : "text-blue-600"}`}>
+                  ({order.eventType})
                 </span>
               )}
             </div>
-            {order.description && (
-              <div className={`text-sm ${isCancelled ? "text-gray-400" : "text-gray-500"}`}>
-                {order.description}
+            {order.title && (
+              <div className={`text-sm mt-0.5 ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
+                {order.title}
               </div>
             )}
           </div>
         </div>
       </div>
-      <div className="text-right">
+      <div className="flex flex-col items-end">
         <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
           <FormatCurrency amount={order.total_amount || order.total || 0} />
         </div>
-        {(onDownloadClick || onEmailClick) && (
-          <div className="flex mt-1">
-            {onDownloadClick && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleDownloadClick}
-              >
-                <FileDownIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </Button>
-            )}
-            {onEmailClick && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleEmailClick}
-              >
-                <MailIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="mt-1">
+          {order.status && (
+            <div className="inline-flex items-center">
+              {getStatusBadge()}
+            </div>
+          )}
+        </div>
+        <div className="flex mt-1">
+          {onDownloadClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleDownloadClick}
+              title="Download"
+            >
+              <FileDownIcon className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+            </Button>
+          )}
+          {onEmailClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleEmailClick}
+              title="Email"
+            >
+              <MailIcon className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
