@@ -369,12 +369,12 @@ const Contacts = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   
   const filteredContacts = React.useMemo(() => {
-    if (!searchQuery.trim() || !contacts || contacts.length === 0) return contacts;
+    if (!searchQuery.trim() || !contacts) return contacts;
     
     const lowerCaseQuery = searchQuery.toLowerCase();
     
     // Type-safe way to filter contacts with null handling
-    return contacts.filter((contact) => {
+    return contacts.filter((contact: any) => {
       return (
         (contact.firstName || '').toLowerCase().includes(lowerCaseQuery) ||
         (contact.lastName || '').toLowerCase().includes(lowerCaseQuery) ||

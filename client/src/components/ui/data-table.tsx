@@ -30,6 +30,7 @@ interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
   pagination?: boolean;
   pageSize?: number;
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
