@@ -59,8 +59,15 @@ const productFormSchema = insertProductSchema.extend({
   name: z.string().min(1, "Name is required"),
   type: z.string().min(1, "Type is required"),
   price: z.coerce.number().min(0, "Price must be a positive number"),
+  cost: z.coerce.number().min(0, "Cost must be a positive number").optional().nullable(),
+  servings: z.coerce.number().min(0, "Servings must be a positive number").optional().nullable(),
+  taxRate: z.coerce.number().min(0, "Tax rate must be a positive number").optional().nullable(),
+  laborHours: z.coerce.number().min(0, "Labor hours must be a positive number").optional().nullable(),
+  laborRate: z.coerce.number().min(0, "Labor rate must be a positive number").optional().nullable(),
+  overhead: z.coerce.number().min(0, "Overhead must be a positive number").optional().nullable(),
   imageUrl: z.string().optional(),
   bundleId: z.number().optional().nullable(),
+  sku: z.string().optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
