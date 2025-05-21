@@ -24,21 +24,22 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const isQuote = order.status === 'Quote' || (order.orderNumber && order.orderNumber.startsWith("Q"));
   const isCancelled = order.status === "Cancelled";
 
-  // Format date to display
-  const formattedDate = order.eventDate ? new Date(order.eventDate).toLocaleDateString("en-US", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }) : "";
-  
   // Generate a placeholder order number if one doesn't exist
   const orderNum = order.id ? order.id.toString().padStart(2, '0') : '';
   
   // Format order number - use quote prefix for quotes and add # for display
   const formattedOrderNumber = order.orderNumber 
-    ? (order.status === 'Quote' ? `Q${order.orderNumber.replace(/^Q/, '')}` : order.orderNumber)
+    ? (order.status === 'Quote' ? `Q${order.orderNumber.replace(/^Q/, '')}` : `#${order.orderNumber}`)
     : `#${orderNum}`;
+    
+  // Format date to display (Matches BakeDiary format: "#30 - Thu, 15 May 2025")
+  const formattedDate = order.eventDate ? 
+    `${formattedOrderNumber} - ${new Date(order.eventDate).toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).replace(",", "")}` : "";
 
   // Handle status badge color
   const getStatusBadge = () => {
@@ -86,7 +87,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div className={`text-sm font-medium ${
               isCancelled ? "text-gray-400 line-through" : "text-gray-800"
             }`}>
-              #{formattedOrderNumber} - {formattedDate}
+              {formattedDate}
             </div>
             
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
