@@ -209,9 +209,13 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
           });
       }
       
-      // Send CSV response
-      res.setHeader('Content-Type', 'text/csv');
+      // Send CSV response with more explicit headers to prevent browser misinterpretation
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      // Add cache control to prevent browser caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.send(csvData);
       
     } else {
