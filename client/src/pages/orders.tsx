@@ -122,10 +122,13 @@ const Orders = () => {
     if (order.status !== 'Quote' && !showOrders) return false;
     
     // Filter by payment status
-    if (order.payment_status === 'No Payments' && !showNoPayments) return false;
-    if (order.payment_status === 'Booking Payment' && !showBookingPayments) return false;
-    if (order.payment_status === 'Partial Payment' && !showPartialPayments) return false;
-    if (order.payment_status === 'Paid in Full' && !showPaidInFull) return false;
+    // Default to "No Payments" if payment_status is not defined
+    const paymentStatus = order.payment_status || 'No Payments';
+    
+    if (paymentStatus === 'No Payments' && !showNoPayments) return false;
+    if (paymentStatus === 'Booking Payment' && !showBookingPayments) return false;
+    if (paymentStatus === 'Partial Payment' && !showPartialPayments) return false;
+    if (paymentStatus === 'Paid in Full' && !showPaidInFull) return false;
     
     // Filter by completion status
     if (order.status === 'Completed' && !showCompleted) return false;
