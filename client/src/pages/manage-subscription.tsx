@@ -84,6 +84,9 @@ export default function ManageSubscription() {
           <Card>
             <CardHeader>
               <CardTitle>Current Plan</CardTitle>
+              <CardDescription>
+                Your subscription will automatically renew itself unless you cancel it or your card expires.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
