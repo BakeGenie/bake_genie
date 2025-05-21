@@ -10,7 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { InfoIcon, Plus } from "lucide-react";
+import { InfoIcon, Plus, Search, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -27,6 +35,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+// Measurement units for ingredient amounts
+const measurementUnits = [
+  "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "oz", "lb", "piece", "pinch"
+];
 
 // Define recipe form schema
 const recipeFormSchema = z.object({
@@ -66,9 +79,18 @@ const categories = ["Cake", "Filling", "Cookies", "Icing", "Frosting", "Other"];
 const AddRecipe = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [ingredients, setIngredients] = useState<{ qty: string; ingredient: string; cost: string }[]>([]);
+  const [ingredients, setIngredients] = useState<{ qty: string; ingredient: string; cost: string; unit: string }[]>([]);
   const [recipeImage, setRecipeImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Ingredient dialog state
+  const [ingredientDialogOpen, setIngredientDialogOpen] = useState(false);
+  const [newIngredient, setNewIngredient] = useState({
+    name: "",
+    quantity: "",
+    unit: "kg",
+    cost: "$ 0.00",
+  });
   
   const form = useForm<RecipeFormValues>({
     resolver: zodResolver(recipeFormSchema),
@@ -103,8 +125,54 @@ const AddRecipe = () => {
     },
   });
 
-  const handleAddIngredient = () => {
-    setIngredients([...ingredients, { qty: "", ingredient: "", cost: "" }]);
+  const handleAddIngredientClick = () => {
+    setIngredientDialogOpen(true);
+  };
+  
+  const resetIngredientDialog = () => {
+    setNewIngredient({
+      name: "",
+      quantity: "",
+      unit: "kg",
+      cost: "$ 0.00",
+    });
+  };
+  
+  const handleAddIngredientToRecipe = () => {
+    if (newIngredient.name && newIngredient.quantity) {
+      setIngredients([
+        ...ingredients, 
+        { 
+          ingredient: newIngredient.name, 
+          qty: newIngredient.quantity, 
+          unit: newIngredient.unit, 
+          cost: newIngredient.cost 
+        }
+      ]);
+      
+      // Calculate total cost for the recipe
+      const totalCost = parseFloat(form.getValues("costPrice").replace("$", "").trim()) || 0;
+      const ingredientCost = parseFloat(newIngredient.cost.replace("$", "").trim()) || 0;
+      const newTotalCost = totalCost + ingredientCost;
+      
+      // Update the form's costPrice field
+      form.setValue("costPrice", `$ ${newTotalCost.toFixed(2)}`);
+      
+      // Close dialog and reset values
+      setIngredientDialogOpen(false);
+      resetIngredientDialog();
+      
+      toast({
+        title: "Ingredient added",
+        description: `${newIngredient.name} has been added to the recipe`,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please enter both an ingredient name and quantity",
+      });
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,8 +211,13 @@ const AddRecipe = () => {
         }
       });
       
-      // Add ingredients
-      formData.append('ingredients', JSON.stringify(ingredients));
+      // Add ingredients with all fields (name, quantity, unit, cost)
+      formData.append('ingredients', JSON.stringify(ingredients.map(ing => ({
+        name: ing.ingredient,
+        quantity: ing.qty,
+        unit: ing.unit,
+        cost: ing.cost
+      }))));
       
       // Add image if selected
       if (recipeImage) {
@@ -322,7 +395,7 @@ const AddRecipe = () => {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={handleAddIngredient}
+                      onClick={handleAddIngredientClick}
                       className="bg-blue-500 text-white hover:bg-blue-600"
                     >
                       <Plus className="h-4 w-4 mr-1" /> Add Ingredient
@@ -334,7 +407,8 @@ const AddRecipe = () => {
                     <div className="space-y-2">
                       <div className="grid grid-cols-12 gap-2 font-medium text-sm">
                         <div className="col-span-2">Qty</div>
-                        <div className="col-span-8">Ingredient</div>
+                        <div className="col-span-2">Unit</div>
+                        <div className="col-span-6">Ingredient</div>
                         <div className="col-span-2">Cost</div>
                       </div>
                       {ingredients.map((ing, index) => (
@@ -342,31 +416,29 @@ const AddRecipe = () => {
                           <div className="col-span-2">
                             <Input 
                               value={ing.qty} 
-                              onChange={(e) => {
-                                const newIngredients = [...ingredients];
-                                newIngredients[index].qty = e.target.value;
-                                setIngredients(newIngredients);
-                              }}
+                              readOnly
+                              className="bg-muted/30"
                             />
                           </div>
-                          <div className="col-span-8">
+                          <div className="col-span-2">
+                            <Input 
+                              value={ing.unit} 
+                              readOnly
+                              className="bg-muted/30"
+                            />
+                          </div>
+                          <div className="col-span-6">
                             <Input 
                               value={ing.ingredient} 
-                              onChange={(e) => {
-                                const newIngredients = [...ingredients];
-                                newIngredients[index].ingredient = e.target.value;
-                                setIngredients(newIngredients);
-                              }}
+                              readOnly
+                              className="bg-muted/30"
                             />
                           </div>
                           <div className="col-span-2">
                             <Input 
                               value={ing.cost} 
-                              onChange={(e) => {
-                                const newIngredients = [...ingredients];
-                                newIngredients[index].cost = e.target.value;
-                                setIngredients(newIngredients);
-                              }}
+                              readOnly
+                              className="bg-muted/30"
                             />
                           </div>
                         </div>
@@ -375,11 +447,96 @@ const AddRecipe = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
                       <InfoIcon className="h-8 w-8 mb-2" />
-                      <p>You have not added any ingredients to your order.</p>
+                      <p>You have not added any ingredients to your recipe.</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
+              
+              {/* Ingredient Dialog */}
+              <Dialog open={ingredientDialogOpen} onOpenChange={setIngredientDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Select Ingredient</DialogTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute right-4 top-4"
+                      onClick={() => setIngredientDialogOpen(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-2 pb-4">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Search Ingredients:</h4>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Enter Ingredient Name"
+                          className="pl-8"
+                          value={newIngredient.name}
+                          onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Quantity:</h4>
+                        <Input
+                          type="text"
+                          value={newIngredient.quantity}
+                          onChange={(e) => setNewIngredient({ ...newIngredient, quantity: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Measurement:</h4>
+                        <Select
+                          value={newIngredient.unit}
+                          onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {measurementUnits.map((unit) => (
+                              <SelectItem key={unit} value={unit}>
+                                {unit}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Cost: $ {parseFloat(newIngredient.cost.replace("$", "").trim() || "0").toFixed(2)}</h4>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={parseFloat(newIngredient.cost.replace("$", "").trim() || "0")}
+                        onChange={(e) => setNewIngredient({ 
+                          ...newIngredient, 
+                          cost: `$ ${parseFloat(e.target.value).toFixed(2)}` 
+                        })}
+                      />
+                    </div>
+                  </div>
+                  
+                  <DialogFooter className="flex justify-between">
+                    <Button variant="outline" onClick={() => setIngredientDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="button" onClick={handleAddIngredientToRecipe}>
+                      Add to Recipe
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
             
             <Card>
