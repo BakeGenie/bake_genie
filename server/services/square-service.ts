@@ -1,4 +1,4 @@
-import { Client, Environment } from 'square';
+import { ApiError, Client } from 'square';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { users, integrations } from '@shared/schema';
@@ -13,8 +13,8 @@ try {
     squareClient = new Client({
       accessToken: squareAccessToken,
       environment: process.env.NODE_ENV === 'production' 
-        ? Environment.Production 
-        : Environment.Sandbox
+        ? 'production' 
+        : 'sandbox'
     });
   } else {
     console.log('Warning: SQUARE_ACCESS_TOKEN not found in environment variables');
@@ -75,16 +75,18 @@ export class SquareService {
       }
 
       // Exchange authorization code for access token
-      const { result } = await squareClient.oAuthApi.obtainToken({
+      const response = await squareClient.oAuthApi.obtainToken({
+        code,
         clientId: squareAppId,
         clientSecret: process.env.SQUARE_APPLICATION_SECRET || '',
-        code,
         grantType: 'authorization_code'
       });
 
-      if (!result.accessToken || !result.merchantId) {
+      if (!response.result?.accessToken || !response.result?.merchantId) {
         return { success: false, error: 'Failed to connect Square account' };
       }
+
+      const { accessToken, merchantId, refreshToken } = response.result;
 
       // Store Square account in the database
       await this.saveSquareAccount(

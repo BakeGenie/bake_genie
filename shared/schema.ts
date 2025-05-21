@@ -498,6 +498,30 @@ export const reminderHistory = pgTable("reminder_history", {
   sentAt: timestamp("sent_at").notNull().defaultNow(),
 });
 
+// Define table relations
+export const productBundlesRelations = relations(productBundles, ({ many }) => ({
+  items: many(bundleItems)
+}));
+
+export const bundleItemsRelations = relations(bundleItems, ({ one }) => ({
+  bundle: one(productBundles, {
+    fields: [bundleItems.bundleId],
+    references: [productBundles.id]
+  }),
+  product: one(products, {
+    fields: [bundleItems.productId],
+    references: [products.id]
+  })
+}));
+
+export const productsRelations = relations(products, ({ one }) => ({
+  bundle: one(productBundles, {
+    fields: [products.bundleId],
+    references: [productBundles.id],
+    relationName: "productBundle"
+  })
+}));
+
 export const insertReminderTemplateSchema = createInsertSchema(reminderTemplates).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertReminderScheduleSchema = createInsertSchema(reminderSchedules).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertReminderHistorySchema = createInsertSchema(reminderHistory).omit({ id: true });
