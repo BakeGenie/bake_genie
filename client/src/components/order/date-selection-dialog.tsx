@@ -5,6 +5,9 @@ import { PlusCircle, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 
+// This is a placeholder for mobile calendar event handling
+// In a real implementation, this would integrate with the device's calendar API
+
 interface DateSelectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,11 +34,14 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
   };
   
   const handleViewCalendar = () => {
-    // Save the selected date in localStorage for the calendar page to use
-    localStorage.setItem('selectedCalendarDate', selectedDate.toISOString());
-    
-    // Navigate to the calendar page with the date as a query parameter
-    navigate(`/calendar?date=${selectedDate.toISOString()}`);
+    // No need to store date or navigate - just close this dialog
+    onClose();
+  };
+  
+  const handleAddEvent = () => {
+    // This would be implemented to add a calendar event 
+    // For now just close the dialog
+    console.log("Add calendar event for date:", selectedDate);
     onClose();
   };
   
