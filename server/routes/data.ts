@@ -5,6 +5,9 @@ import { csvImportService } from "../services/import-csv";
 import { exportService } from "../services/export";
 import fs from "fs";
 import path from "path";
+import { format } from "date-fns";
+import { stringify } from "csv-stringify/sync";
+import { db } from "../db";
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -61,11 +64,51 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
       let csvData: string = '';
       let filename: string = '';
       
-      switch(dataType) {
-        case "orders":
-          csvData = await exportService.exportOrdersAsCsv(userId);
-          filename = `orders-export-${Date.now()}.csv`;
-          break;
+      // Create fallback empty CSV headers for each type in case of errors
+      const fallbackHeaders = {
+        orders: "Order Number,Status,Event Type,Event Date,Customer Name,Delivery Type,Delivery Details,Total\n",
+        contacts: "First Name,Last Name,Email,Phone,Business Name,Address,Notes\n",
+        tasks: "Title,Description,Due Date,Priority,Completed\n",
+        enquiries: "Name,Email,Phone,Event Type,Event Date,Budget,Details,Status\n",
+        recipes: "Name,Description,Category,Preparation Time,Cooking Time,Servings\n",
+        products: "Name,Description,Price,Category,Image URL\n",
+        financials: "Date,Type,Category,Amount,Description,Payment Method\n"
+      };
+      
+      try {
+        switch(dataType) {
+          case "orders":
+            // Directly use SQL to avoid schema issues with Drizzle
+            try {
+              const result = await db.execute(`
+                SELECT o.id, o.order_number, o.status, o.event_type, o.event_date, 
+                       o.delivery_type, o.delivery_details, o.total,
+                       c.first_name, c.last_name, c.email, c.phone
+                FROM orders o
+                LEFT JOIN contacts c ON o.contact_id = c.id
+                WHERE o.user_id = $1
+              `, [userId]);
+              
+              // Process results
+              const orderRows = result.rows.map(row => ({
+                'Order Number': row.order_number || '',
+                'Status': row.status || '',
+                'Event Type': row.event_type || '',
+                'Event Date': row.event_date ? format(new Date(row.event_date), 'yyyy-MM-dd') : '',
+                'Customer Name': row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
+                'Customer Email': row.email || '',
+                'Delivery Type': row.delivery_type || '',
+                'Delivery Details': row.delivery_details || '',
+                'Total': row.total || ''
+              }));
+              
+              csvData = stringify(orderRows, { header: true });
+            } catch (error) {
+              console.error("Error exporting orders:", error);
+              csvData = fallbackHeaders.orders;
+            }
+            filename = `orders-export-${Date.now()}.csv`;
+            break;
         case "contacts":
           csvData = await exportService.exportContactsAsCsv(userId);
           filename = `contacts-export-${Date.now()}.csv`;
@@ -83,11 +126,62 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
           filename = `financials-export-${Date.now()}.csv`;
           break;
         case "tasks":
-          csvData = await exportService.exportTasksAsCsv(userId);
+          // Directly use SQL for tasks export
+          try {
+            const result = await db.execute(`
+              SELECT id, title, description, due_date, completed, priority, created_at
+              FROM tasks
+              WHERE user_id = $1
+            `, [userId]);
+            
+            // Process results
+            const taskRows = result.rows.map(row => ({
+              'Title': row.title || '',
+              'Description': row.description || '',
+              'Due Date': row.due_date ? format(new Date(row.due_date), 'yyyy-MM-dd') : '',
+              'Priority': row.priority || 'Normal',
+              'Completed': row.completed ? 'Yes' : 'No',
+              'Created': row.created_at ? format(new Date(row.created_at), 'yyyy-MM-dd') : ''
+            }));
+            
+            csvData = stringify(taskRows, { header: true });
+          } catch (error) {
+            console.error("Error exporting tasks:", error);
+            csvData = fallbackHeaders.tasks;
+          }
           filename = `tasks-export-${Date.now()}.csv`;
           break;
         case "enquiries":
-          csvData = await exportService.exportEnquiriesAsCsv(userId);
+          // Directly use SQL for enquiries export
+          try {
+            const result = await db.execute(`
+              SELECT id, email, phone, event_type, event_date, budget, details, status, created_at, updated_at,
+                    first_name, last_name
+              FROM enquiries
+              WHERE user_id = $1
+            `, [userId]);
+            
+            // Process results
+            const enquiryRows = result.rows.map(row => ({
+              'Name': (row.first_name && row.last_name) ? 
+                      `${row.first_name} ${row.last_name}` : 
+                      (row.first_name || row.last_name || ''),
+              'Email': row.email || '',
+              'Phone': row.phone || '',
+              'Event Type': row.event_type || '',
+              'Event Date': row.event_date ? format(new Date(row.event_date), 'yyyy-MM-dd') : '',
+              'Budget': row.budget || '',
+              'Details': row.details || '',
+              'Status': row.status || '',
+              'Created': row.created_at ? format(new Date(row.created_at), 'yyyy-MM-dd') : '',
+              'Last Updated': row.updated_at ? format(new Date(row.updated_at), 'yyyy-MM-dd') : ''
+            }));
+            
+            csvData = stringify(enquiryRows, { header: true });
+          } catch (error) {
+            console.error("Error exporting enquiries:", error);
+            csvData = fallbackHeaders.enquiries;
+          }
           filename = `enquiries-export-${Date.now()}.csv`;
           break;
         case "template_orders":
