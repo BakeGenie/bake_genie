@@ -87,10 +87,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
           </div>
           
-          <div className={`text-sm font-medium ${isCancelled ? "text-gray-400 line-through" : "text-gray-600"}`}>
+          <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
             {order.contact?.firstName || ''} {order.contact?.lastName || ''}
             {order.eventType && (
-              <span className={`ml-1 ${isCancelled ? "text-gray-400" : "text-blue-600"}`}>
+              <span className="ml-1">
                 ({order.eventType})
               </span>
             )}
