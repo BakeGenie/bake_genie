@@ -298,13 +298,15 @@ const Calendar = () => {
             {daysInMonth.map((day) => {
               const dayOrders = getOrdersForDay(day);
               const isCurrentDay = isToday(day);
+              const isSelected = selectedDate && isSameDay(day, selectedDate);
               
               return (
                 <div
                   key={day.toString()}
                   className={cn(
-                    "h-28 p-1 rounded-md border border-gray-200 overflow-y-auto relative",
-                    isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50",
+                    "h-28 p-1 rounded-md border overflow-y-auto relative",
+                    isSelected ? "bg-primary/10 border-primary" : 
+                    isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50 border-gray-200",
                     isDateBlocked(day) ? "bg-gray-50" : ""
                   )}
                   onClick={() => {
