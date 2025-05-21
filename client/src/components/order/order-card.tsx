@@ -164,7 +164,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
       <div className="flex flex-col items-end ml-4">
         {/* Total price */}
         <div className="text-base font-medium text-right mb-1">
-          $ {order.total ? parseFloat(order.total.toString()).toFixed(2) : '0.00'}
+          $ {order.total ? 
+              (typeof order.total === 'string' ? parseFloat(order.total) : order.total).toFixed(2) 
+              : order.totalAmount ? 
+                (typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount).toFixed(2) 
+                : '0.00'}
         </div>
         
         {/* Status badge */}
