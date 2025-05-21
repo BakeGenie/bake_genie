@@ -444,7 +444,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         deliveryAddress: data.deliveryAddress || '',
         deliveryFee: data.deliveryFee?.toString() || '0', // Match database column
         deliveryTime: data.deliveryTime || '',
-        totalAmount: totalAmount ? totalAmount.toString() : '0', // Match database column
+        total: totalAmount ? totalAmount.toString() : '0', // Using 'total' instead of 'totalAmount' to match with server expectations
         amountPaid: '0', // Required field in database
         specialInstructions: data.notes || '', // Match database column
         taxRate: data.taxRate?.toString() || '0', // Required field in database
@@ -464,7 +464,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       console.log("Submitting formatted order data:", JSON.stringify(formattedData, null, 2));
       
       // Send data to parent component for submission
+      console.log("Calling parent onSubmit with data...");
       onSubmit(formattedData);
+      console.log("Parent onSubmit called successfully");
 
       // Show success message on form submit
       toast({
