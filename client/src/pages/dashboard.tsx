@@ -95,7 +95,7 @@ const Dashboard = () => {
             <div className="text-2xl font-bold">{stats?.pendingTasks || 0}</div>
             <p className="text-xs text-muted-foreground">
               <Link href="/tasks">
-                <a className="text-primary-500 hover:underline">View task list</a>
+                <span className="text-primary-500 hover:underline cursor-pointer">View task list</span>
               </Link>
             </p>
           </CardContent>
@@ -179,28 +179,28 @@ const Dashboard = () => {
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <Link href="/orders">
-                <a className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center">
+                <div className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center cursor-pointer">
                   <FileTextIcon className="h-8 w-8 text-primary-500 mb-2" />
                   <span className="text-sm font-medium">Orders & Quotes</span>
-                </a>
+                </div>
               </Link>
               <Link href="/calendar">
-                <a className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center">
+                <div className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center cursor-pointer">
                   <Clock4Icon className="h-8 w-8 text-amber-500 mb-2" />
                   <span className="text-sm font-medium">Calendar</span>
-                </a>
+                </div>
               </Link>
               <Link href="/reports">
-                <a className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center">
+                <div className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center cursor-pointer">
                   <BarChartIcon className="h-8 w-8 text-blue-500 mb-2" />
                   <span className="text-sm font-medium">Reports</span>
-                </a>
+                </div>
               </Link>
               <Link href="/tasks">
-                <a className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center">
+                <div className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col items-center text-center cursor-pointer">
                   <ClipboardCheckIcon className="h-8 w-8 text-green-500 mb-2" />
                   <span className="text-sm font-medium">Tasks</span>
-                </a>
+                </div>
               </Link>
             </div>
           </CardContent>

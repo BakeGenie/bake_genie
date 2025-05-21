@@ -13,29 +13,49 @@ let scheduledTasks: { [key: string]: cron.ScheduledTask } = {};
 export function startEmailScheduler() {
   console.log('Starting email scheduler...');
   
-  // Daily at 7am - Upcoming orders for users with daily frequency
-  scheduledTasks['dailyReports'] = cron.schedule('0 7 * * *', async () => {
-    console.log('Running daily order reports job');
-    await sendReportsForFrequency('daily');
-  });
-  
-  // Every Monday at 7am - Weekly upcoming orders
-  scheduledTasks['weeklyReports'] = cron.schedule('0 7 * * 1', async () => {
-    console.log('Running weekly order reports job');
-    await sendReportsForFrequency('weekly');
-  });
-  
-  // 1st of the month at 7am - Monthly upcoming orders
-  scheduledTasks['monthlyReports'] = cron.schedule('0 7 1 * *', async () => {
-    console.log('Running monthly order reports job');
-    await sendReportsForFrequency('monthly');
-  });
-  
-  // Daily at 10am - Payment reminders
-  scheduledTasks['paymentReminders'] = cron.schedule('0 10 * * *', async () => {
-    console.log('Running payment reminders job');
-    await sendAllPaymentReminders();
-  });
+  try {
+    // Daily at 7am - Upcoming orders for users with daily frequency
+    scheduledTasks['dailyReports'] = cron.schedule('0 7 * * *', async () => {
+      console.log('Running daily order reports job');
+      await sendReportsForFrequency('daily');
+    }, {
+      scheduled: true,
+      timezone: 'UTC'
+    });
+    
+    // Every Monday at 7am - Weekly upcoming orders
+    scheduledTasks['weeklyReports'] = cron.schedule('0 7 * * 1', async () => {
+      console.log('Running weekly order reports job');
+      await sendReportsForFrequency('weekly');
+    }, {
+      scheduled: true,
+      timezone: 'UTC'
+    });
+    
+    // 1st of the month at 7am - Monthly upcoming orders
+    scheduledTasks['monthlyReports'] = cron.schedule('0 7 1 * *', async () => {
+      console.log('Running monthly order reports job');
+      await sendReportsForFrequency('monthly');
+    }, {
+      scheduled: true,
+      timezone: 'UTC'
+    });
+    
+    // Daily at 10am - Payment reminders
+    scheduledTasks['paymentReminders'] = cron.schedule('0 10 * * *', async () => {
+      console.log('Running payment reminders job');
+      await sendAllPaymentReminders();
+    }, {
+      scheduled: true,
+      timezone: 'UTC'
+    });
+    
+    console.log('Email scheduler started successfully');
+  } catch (error) {
+    console.error('Error starting email scheduler:', error);
+    // Create empty scheduledTasks so that the application doesn't crash
+    scheduledTasks = {};
+  }
 }
 
 /**
