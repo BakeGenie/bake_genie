@@ -14,6 +14,7 @@ import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
 import { router as contactsRouter } from "./routes/contacts";
 import subscriptionRouter from "./routes/subscription";
+import integrationsRouter from "./routes/integrations";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
@@ -59,6 +60,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register subscription routes
   app.use('/api/subscription', subscriptionRouter);
+  
+  // Register integrations routes (for Stripe, Square, etc.)
+  app.use('/api/integrations', integrationsRouter);
   
   // Register import routes
   const importRouter = Router();

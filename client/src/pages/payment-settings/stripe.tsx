@@ -129,8 +129,9 @@ export default function StripePaymentProvider() {
               <div className="mb-4 md:mb-0 md:pr-8">
                 <h3 className="text-lg font-semibold mb-2">Connect your Stripe Account</h3>
                 <p className="text-gray-600 text-sm">
-                  Click below to connect your BakeGenie account with Stripe and start collecting
-                  payments for invoices you send via BakeGenie.
+                  {connectionStatus === 'connected' 
+                    ? "Your Stripe account is connected and ready to accept payments."
+                    : "Click below to connect your BakeGenie account with Stripe and start collecting payments for invoices you send via BakeGenie."}
                 </p>
               </div>
               <div className="relative flex-shrink-0">
@@ -142,13 +143,50 @@ export default function StripePaymentProvider() {
                 </div>
               </div>
             </div>
-            <Button 
-              className="bg-blue-500 hover:bg-blue-600 transition-colors"
-              onClick={handleConnectWithStripe}
-            >
-              <span className="text-white mr-2">$</span>
-              Connect with Stripe
-            </Button>
+            
+            {statusLoading ? (
+              <div className="flex items-center space-x-4 mb-4">
+                <Skeleton className="h-10 w-40" />
+              </div>
+            ) : connectionStatus === 'disconnected' ? (
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600 transition-colors"
+                onClick={handleConnectWithStripe}
+                disabled={isGeneratingLink || !process.env.STRIPE_SECRET_KEY}
+              >
+                <span className="text-white mr-2">$</span>
+                {isGeneratingLink ? "Connecting..." : "Connect with Stripe"}
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckIcon className="h-4 w-4 text-green-600" />
+                  <AlertTitle className="text-green-800">Stripe Connected</AlertTitle>
+                  <AlertDescription className="text-green-700">
+                    Your Stripe account is successfully connected to BakeGenie.
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  variant="outline" 
+                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={() => disconnectStripe()}
+                  disabled={isDisconnecting}
+                >
+                  {isDisconnecting ? "Disconnecting..." : "Disconnect Stripe Account"}
+                </Button>
+              </div>
+            )}
+            
+            {/* Missing API Key Warning */}
+            {!process.env.STRIPE_SECRET_KEY && (
+              <Alert className="mt-4 bg-amber-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800">API Keys Required</AlertTitle>
+                <AlertDescription className="text-amber-700">
+                  Stripe API keys are required to complete the connection. Please contact your administrator to set up the Stripe API keys.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           {/* Benefits of using Stripe */}
