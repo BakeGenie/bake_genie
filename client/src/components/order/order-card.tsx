@@ -44,11 +44,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
     if (onEmailClick) onEmailClick(e);
   };
 
-  // Customer name with event type in parentheses
-  const customerName = `${order.contact?.firstName || ''} ${order.contact?.lastName || ''}${order.eventType ? ` (${order.eventType})` : ''}`;
+  // Get correct customer name from contact
+  const customerName = order.contact 
+    ? `${order.contact.firstName || ''} ${order.contact.lastName || ''}${order.eventType ? ` (${order.eventType})` : ''}`
+    : '';
 
-  // First product description or name from items
-  const productDescription = order.items?.[0]?.description || order.items?.[0]?.name || '';
+  // Use theme field as description if no items with description exist
+  // This matches the database structure which has a "title" field that appears to be used for description
+  const description = order.items?.[0]?.description || order.items?.[0]?.name || order.theme || '';
+
+  // Get the amount using different possible field names (schema has different versions)
+  const amount = order.total_amount || order.total || 0;
 
   return (
     <div
@@ -57,7 +63,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       }`}
       onClick={onClick}
     >
-      {/* Red indicator dot */}
+      {/* Red indicator dot - event type color */}
       <div className="absolute left-1.5 top-5 w-2 h-2 rounded-full bg-red-500"></div>
       
       {/* Top row with order number and date */}
@@ -66,7 +72,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
           {formattedDate}
         </div>
         <div className={`text-base font-medium ${isCancelled ? "text-gray-400" : ""}`}>
-          $ <FormatCurrency amount={order.total || 0} showSymbol={false} />
+          $ <FormatCurrency amount={amount} showSymbol={false} />
         </div>
       </div>
       
@@ -75,9 +81,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
         {customerName}
       </div>
       
-      {/* Product description */}
+      {/* Description (from theme or items) */}
       <div className={`text-sm pl-3 ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-        {productDescription}
+        {description}
       </div>
       
       {/* Status and email icon */}
