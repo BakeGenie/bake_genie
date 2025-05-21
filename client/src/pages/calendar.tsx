@@ -183,24 +183,74 @@ const Calendar = () => {
   
   return (
     <div className="p-6">
-      <PageHeader title="Calendar" />
+      <div className="flex justify-between items-center mb-4">
+        <PageHeader title="Calendar" className="mb-0" />
+        <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => navigate('/orders/new')}>
+          <PlusIcon className="h-4 w-4 mr-1" /> Add Item
+        </Button>
+      </div>
       
-      <div className="flex justify-between items-center mb-6 mt-4">
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={navigateToToday}>
-            Today
-          </Button>
-          <div className="flex">
-            <Button variant="outline" size="icon" onClick={navigateToPreviousMonth}>
+      <div className="flex justify-between items-center mb-4 bg-white p-3 rounded-md shadow-sm border">
+        <div className="flex space-x-2 items-center">
+          <div className="text-sm font-medium text-gray-500 mr-1">Period:</div>
+          <Select
+            value={format(currentDate, "MMMM")}
+            onValueChange={(selectedMonth) => {
+              // Get the index of the selected month (0-11)
+              const monthIndex = new Date(Date.parse(`${selectedMonth} 1, 2000`)).getMonth();
+              // Create a new date with the selected month but keep the current year
+              const newDate = new Date(currentDate);
+              newDate.setMonth(monthIndex);
+              // Update the current date
+              setCurrentDate(newDate);
+            }}
+          >
+            <SelectTrigger className="h-8 min-w-[100px] w-auto">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }).map((_, index) => {
+                const monthDate = new Date(currentDate.getFullYear(), index, 1);
+                return (
+                  <SelectItem key={index} value={format(monthDate, "MMMM")}>
+                    {format(monthDate, "MMMM")}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          
+          <Select 
+            value={currentDate.getFullYear().toString()}
+            onValueChange={(selectedYear) => {
+              const newDate = new Date(currentDate);
+              newDate.setFullYear(parseInt(selectedYear));
+              setCurrentDate(newDate);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[80px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 5 }).map((_, index) => {
+                const year = new Date().getFullYear() - 2 + index;
+                return (
+                  <SelectItem key={index} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex ml-1">
+            <Button variant="outline" size="icon" onClick={navigateToPreviousMonth} className="h-8 w-8">
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={navigateToNextMonth}>
+            <Button variant="outline" size="icon" onClick={navigateToNextMonth} className="h-8 w-8">
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
-          <h2 className="text-xl font-semibold flex items-center">
-            {format(currentDate, "MMMM yyyy")}
-          </h2>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -304,7 +354,7 @@ const Calendar = () => {
                 <div
                   key={day.toString()}
                   className={cn(
-                    "h-28 p-1 rounded-md border overflow-y-auto relative",
+                    "h-28 p-1 rounded-md border relative",
                     isSelected ? "bg-primary/10 border-primary" : 
                     isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50 border-gray-200",
                     isDateBlocked(day) ? "bg-gray-50" : ""
@@ -315,7 +365,7 @@ const Calendar = () => {
                   }}
                 >
                   <div className={cn(
-                    "font-medium text-sm sticky top-0 bg-inherit z-10 mb-1",
+                    "font-medium text-sm sticky top-0 bg-inherit z-10 mb-1 pb-1 border-b border-gray-100",
                     isCurrentDay ? "text-blue-600" : "text-gray-700"
                   )}>
                     {format(day, "d")}
@@ -327,44 +377,54 @@ const Calendar = () => {
                     </div>
                   )}
                   
-                  <div className="space-y-1">
+                  <div className="h-[calc(100%-22px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {/* Display orders */}
-                    {dayOrders.map((order) => (
-                      <div
-                        key={order.id}
-                        className="text-xs p-1 rounded bg-white border border-gray-200 cursor-pointer hover:bg-gray-50"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent triggering the parent div's onClick
-                          navigate(`/orders/${order.id}`);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{order.contact?.firstName} {order.contact?.lastName}</span>
-                          <Badge
-                            className={cn(
-                              "text-[10px] px-1 py-0",
-                              getStatusColor(order.status)
-                            )}
-                          >
-                            {order.status}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center mt-0.5">
-                          {order.eventType && (
-                            <div 
-                              className="text-[10px] px-1.5 py-0.5 rounded-sm flex items-center gap-1"
-                              style={getEventTypeColor(order.eventType)}
+                    <div className="flex space-x-1 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                      {dayOrders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="text-xs p-1.5 rounded bg-white border border-gray-200 cursor-pointer hover:bg-gray-50 flex-shrink-0 w-[156px] shadow-sm"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering the parent div's onClick
+                            navigate(`/orders/${order.id}`);
+                          }}
+                        >
+                          <div className="flex items-start mb-0.5">
+                            <div className="flex-1 pr-1">
+                              <div className="font-medium truncate text-[11px]">{order.contact?.firstName} {order.contact?.lastName}</div>
+                              <div className="text-[10px] text-gray-500">#{order.orderNumber?.split('-')[1]}</div>
+                            </div>
+                            <Badge
+                              className={cn(
+                                "text-[9px] px-1 py-0 h-4 ml-auto",
+                                getStatusColor(order.status)
+                              )}
                             >
+                              {order.status}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center mt-1">
+                            {order.eventType && (
                               <div 
-                                className="w-2 h-2 rounded-full"
-                                style={{backgroundColor: getEventTypeColor(order.eventType).color}}
-                              />
-                              <span>{order.eventType}</span>
+                                className="text-[9px] px-1.5 py-0.5 rounded-sm flex items-center gap-1 border"
+                                style={getEventTypeColor(order.eventType)}
+                              >
+                                <div 
+                                  className="w-1.5 h-1.5 rounded-full"
+                                  style={{backgroundColor: getEventTypeColor(order.eventType).color}}
+                                />
+                                <span>{order.eventType}</span>
+                              </div>
+                            )}
+                          </div>
+                          {order.items && order.items.length > 0 && (
+                            <div className="mt-1 text-[9px] text-gray-600 truncate">
+                              {order.items[0].description}
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                     
                     {/* Display calendar events */}
                     {getEventsForDay(day).map((event) => (
