@@ -101,8 +101,14 @@ const OrderCard: React.FC<OrderCardProps> = ({
             
             {/* Order description or title */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-              {order.title || order.items?.[0]?.description || order.items?.[0]?.name || ''}
+              {order.items?.[0]?.description || order.items?.[0]?.name || order.title || ''}
             </div>
+            {/* Delivery information */}
+            {order.delivery_type && (
+              <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-400"}`}>
+                {order.delivery_type} {order.delivery_time ? `- ${order.delivery_time}` : ''}
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col items-end ml-4">
