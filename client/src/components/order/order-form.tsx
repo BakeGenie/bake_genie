@@ -198,11 +198,18 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       if (initialValues.eventDate) {
         console.log("Setting event date:", initialValues.eventDate);
         // Force update eventDate regardless of its current value
-        setValue("eventDate", initialValues.eventDate, { 
+        setValue("eventDate", new Date(initialValues.eventDate), { 
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true 
         });
+        
+        // Also set the orderDate to match if not explicitly provided
+        if (!initialValues.orderDate) {
+          setValue("orderDate", new Date(initialValues.eventDate), {
+            shouldValidate: true
+          });
+        }
       }
       
       // Handle order date (usually today's date)
