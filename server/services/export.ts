@@ -14,6 +14,8 @@ import {
   settings
 } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { stringify } from 'csv-stringify/sync';
+import { format } from 'date-fns';
 
 /**
  * Service for exporting data from the database
@@ -66,6 +68,46 @@ export class ExportService {
       throw new Error('Failed to export orders');
     }
   }
+  
+  /**
+   * Export orders as CSV for a specific user
+   */
+  async exportOrdersAsCsv(userId: number) {
+    try {
+      const ordersWithItems = await this.exportOrders(userId);
+      
+      // Prepare data for CSV export - flatten the order structure
+      const csvData = ordersWithItems.map(order => {
+        return {
+          'Order Number': order.orderNumber,
+          'Status': order.status,
+          'Order Date': format(new Date(order.createdAt || new Date()), 'yyyy-MM-dd'),
+          'Event Type': order.eventType,
+          'Event Date': order.eventDate,
+          'Delivery Type': order.deliveryType,
+          'Delivery Address': order.deliveryDetails || '',
+          'Delivery Time': order.deliveryTime || '',
+          'Total Amount': order.total,
+          'Discount': order.discount || 0,
+          'Discount Type': order.discountType || '%',
+          'Setup Fee': order.setupFee || 0,
+          'Notes': order.notes || ''
+        };
+      });
+      
+      // Generate CSV from the data
+      return stringify(csvData, { 
+        header: true,
+        columns: Object.keys(csvData[0] || {}),
+        cast: {
+          date: (value) => format(new Date(value), 'yyyy-MM-dd')
+        }
+      });
+    } catch (error) {
+      console.error('Error exporting orders as CSV:', error);
+      throw new Error('Failed to export orders as CSV');
+    }
+  }
 
   /**
    * Export contacts for a specific user
@@ -76,6 +118,41 @@ export class ExportService {
     } catch (error) {
       console.error('Error exporting contacts:', error);
       throw new Error('Failed to export contacts');
+    }
+  }
+  
+  /**
+   * Export contacts as CSV for a specific user
+   */
+  async exportContactsAsCsv(userId: number) {
+    try {
+      const contactsData = await this.exportContacts(userId);
+      
+      // Prepare data for CSV export
+      const csvData = contactsData.map(contact => {
+        return {
+          'First Name': contact.firstName,
+          'Last Name': contact.lastName,
+          'Business Name': contact.businessName || '',
+          'Email': contact.email || '',
+          'Phone': contact.phone || '',
+          'Address': contact.address || '',
+          'City': contact.city || '',
+          'State': contact.state || '',
+          'Zip': contact.zip || '',
+          'Country': contact.country || '',
+          'Notes': contact.notes || ''
+        };
+      });
+      
+      // Generate CSV from the data
+      return stringify(csvData, { 
+        header: true,
+        columns: Object.keys(csvData[0] || {})
+      });
+    } catch (error) {
+      console.error('Error exporting contacts as CSV:', error);
+      throw new Error('Failed to export contacts as CSV');
     }
   }
 
@@ -129,6 +206,63 @@ export class ExportService {
       throw new Error('Failed to export recipes');
     }
   }
+  
+  /**
+   * Export recipes as CSV for a specific user
+   */
+  async exportRecipesAsCsv(userId: number) {
+    try {
+      const recipesWithIngredients = await this.exportRecipes(userId);
+      
+      // Prepare data for CSV export - create rows for each recipe with their ingredients
+      const csvData: any[] = [];
+      
+      recipesWithIngredients.forEach(recipe => {
+        // Create a row for the recipe itself
+        csvData.push({
+          'Recipe Name': recipe.name,
+          'Description': recipe.description || '',
+          'Notes': recipe.notes || '',
+          'Preparation Time': recipe.prepTime || '',
+          'Cooking Time': recipe.cookTime || '',
+          'Serving Size': recipe.servingSize || '',
+          'Category': recipe.category || '',
+          'Price': recipe.price || '',
+          'Ingredient': '',
+          'Quantity': '',
+          'Unit': '',
+          'Cost': ''
+        });
+        
+        // Create rows for each ingredient in the recipe
+        recipe.ingredients.forEach(ingredient => {
+          csvData.push({
+            'Recipe Name': recipe.name,
+            'Description': '',
+            'Notes': '',
+            'Preparation Time': '',
+            'Cooking Time': '',
+            'Serving Size': '',
+            'Category': '',
+            'Price': '',
+            'Ingredient': ingredient.ingredient?.name || '',
+            'Quantity': ingredient.quantity || '',
+            'Unit': ingredient.ingredient?.unit || '',
+            'Cost': ingredient.ingredient?.price || ''
+          });
+        });
+      });
+      
+      // Generate CSV from the data
+      return stringify(csvData, { 
+        header: true,
+        columns: Object.keys(csvData[0] || {})
+      });
+    } catch (error) {
+      console.error('Error exporting recipes as CSV:', error);
+      throw new Error('Failed to export recipes as CSV');
+    }
+  }
 
   /**
    * Export products for a specific user
@@ -139,6 +273,37 @@ export class ExportService {
     } catch (error) {
       console.error('Error exporting products:', error);
       throw new Error('Failed to export products');
+    }
+  }
+  
+  /**
+   * Export products as CSV for a specific user
+   */
+  async exportProductsAsCsv(userId: number) {
+    try {
+      const productsData = await this.exportProducts(userId);
+      
+      // Prepare data for CSV export
+      const csvData = productsData.map(product => {
+        return {
+          'Product Name': product.name,
+          'Description': product.description || '',
+          'Price': product.price || '',
+          'Category': product.category || '',
+          'Image URL': product.imageUrl || '',
+          'Notes': product.notes || '',
+          'Last Updated': product.updatedAt ? format(new Date(product.updatedAt), 'yyyy-MM-dd') : ''
+        };
+      });
+      
+      // Generate CSV from the data
+      return stringify(csvData, { 
+        header: true,
+        columns: Object.keys(csvData[0] || {})
+      });
+    } catch (error) {
+      console.error('Error exporting products as CSV:', error);
+      throw new Error('Failed to export products as CSV');
     }
   }
 
