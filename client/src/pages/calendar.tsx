@@ -12,7 +12,7 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { eventTypes, type EventType } from "@shared/schema";
 import { eventTypeColors } from "@/lib/constants";
-import CalendarDateDialog from "@/components/calendar/calendar-date-dialog";
+import SidebarDateDialog from "@/components/calendar/sidebar-date-dialog";
 import { 
   Dialog, 
   DialogContent, 
@@ -474,8 +474,8 @@ const Calendar = () => {
             ))}
           </div>
       
-      {/* Use the calendar-specific date dialog with custom handlers */}
-      <CalendarDateDialog 
+      {/* Use the sidebar date dialog with custom handlers */}
+      <SidebarDateDialog 
         isOpen={isActionDialogOpen}
         onClose={() => setIsActionDialogOpen(false)}
         selectedDate={selectedDate}

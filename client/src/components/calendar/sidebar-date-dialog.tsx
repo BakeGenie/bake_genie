@@ -54,13 +54,13 @@ const SidebarDateDialog: React.FC<SidebarDateDialogProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="p-0 max-w-sm rounded-lg shadow-lg">
-        <div className="relative">
-          <DialogTitle className="text-base font-medium p-4">
+      <DialogContent className="bg-white p-0 max-w-sm rounded-md shadow border">
+        <div className="relative border-b">
+          <DialogTitle className="text-base font-semibold p-3">
             What would you like to do?
           </DialogTitle>
           <button 
-            className="absolute right-4 top-4 rounded-full w-6 h-6 inline-flex items-center justify-center text-gray-500 hover:text-gray-700"
+            className="absolute right-3 top-3 w-5 h-5 inline-flex items-center justify-center text-gray-500 hover:text-gray-700"
             onClick={onClose}
           >
             <span className="sr-only">Close</span>
@@ -72,69 +72,63 @@ const SidebarDateDialog: React.FC<SidebarDateDialogProps> = ({
         </div>
         
         <div className="py-2">
-          <div className="py-2 px-4 text-center bg-blue-50 text-blue-600 font-medium mb-2">
+          <div className="py-2 px-4 text-center bg-blue-50 text-blue-600 font-medium">
             {selectedDate && format(selectedDate, "EEE, dd MMM yyyy")}
           </div>
           
           <div className="flex flex-col">
-            <div className="py-1 px-3 border-b">
-              <button 
-                onClick={handleCreateOrder}
-                className="w-full flex items-center justify-between py-2.5 text-sm hover:text-blue-600 transition-colors"
-              >
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Create New Order</span>
-                </div>
-                <span className="text-gray-400">&gt;</span>
-              </button>
-            </div>
+            <button 
+              onClick={handleCreateOrder}
+              className="w-full flex items-center justify-between py-3 px-4 border-b hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M8 4V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M4 8H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <span>Create New Order</span>
+              </div>
+              <span className="text-gray-400">&gt;</span>
+            </button>
             
-            <div className="py-1 px-3 border-b">
-              <button 
-                onClick={handleAddEvent}
-                className="w-full flex items-center justify-between py-2.5 text-sm hover:text-blue-600 transition-colors"
-              >
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Add a Calendar Event</span>
-                </div>
-                <span className="text-gray-400">&gt;</span>
-              </button>
-            </div>
+            <button 
+              onClick={handleAddEvent}
+              className="w-full flex items-center justify-between py-3 px-4 border-b hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1.5" y="2.5" width="13" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M11 1V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M5 1V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M1.5 6.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <span>Add a Calendar Event</span>
+              </div>
+              <span className="text-gray-400">&gt;</span>
+            </button>
             
-            <div className="py-1 px-3">
-              <button 
-                onClick={handleBlockDate}
-                className="w-full flex items-center justify-between py-2.5 text-sm hover:text-blue-600 transition-colors"
-              >
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-2.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Block out Date</span>
-                </div>
-                <span className="text-gray-400">&gt;</span>
-              </button>
-            </div>
+            <button 
+              onClick={handleBlockDate}
+              className="w-full flex items-center justify-between py-3 px-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 4L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 4L12 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Block out Date</span>
+              </div>
+              <span className="text-gray-400">&gt;</span>
+            </button>
           </div>
         </div>
         
-        <div className="p-3 bg-gray-50 flex justify-center border-t">
+        <div className="p-3 flex justify-center border-t">
           <Button 
             variant="outline" 
             onClick={onClose} 
-            className="w-full max-w-xs"
+            className="w-28"
             size="sm"
           >
             Cancel
