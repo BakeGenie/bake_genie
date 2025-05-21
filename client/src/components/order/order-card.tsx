@@ -37,7 +37,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   const formattedDate = order.eventDate ? 
     `${formattedOrderNumber} - ${new Date(order.eventDate).toLocaleDateString("en-US", {
       weekday: "short",
-      day: "2-digit",
+      day: "numeric",
       month: "short",
       year: "numeric",
     }).replace(",", "")}` : "";
@@ -79,8 +79,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
       }`}
       onClick={onClick}
     >
-      {/* Small colored circle indicating event type */}
-      <div className="mr-2 w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+      {/* Small colored circle indicating event type - exactly matching the screenshot */}
+      <div className="mr-2 w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1"></div>
       
       <div className="flex-1">
         <div className="flex items-start">
@@ -91,18 +91,17 @@ const OrderCard: React.FC<OrderCardProps> = ({
               {formattedDate}
             </div>
             
-            {/* Customer information */}
+            {/* Customer information with event type in same style as screenshot */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
               {order.contact?.firstName || ''} {order.contact?.lastName || ''} 
-              {order.contact?.businessName && ` - ${order.contact.businessName}`}
               {order.eventType && (
-                <span className="text-gray-600">
-                  {" "}({order.eventType})
+                <span className="text-gray-500 ml-1">
+                  ({order.eventType})
                 </span>
               )}
             </div>
             
-            {/* Order description or title */}
+            {/* Order description or title - exactly like screenshot */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
               {order.items?.[0]?.description || order.items?.[0]?.name || order.title || ''}
             </div>
@@ -133,16 +132,9 @@ const OrderCard: React.FC<OrderCardProps> = ({
           </div>
           
           <div className="flex flex-col items-end ml-4">
-            <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
-              <FormatCurrency amount={order.total_amount || order.total || 0} />
+            <div className={`text-base font-medium ${isCancelled ? "text-gray-400" : ""}`}>
+              $ <FormatCurrency amount={order.total_amount || order.total || 0} showSymbol={false} />
             </div>
-            
-            {/* Show amount paid if available */}
-            {order.amount_paid > 0 && (
-              <div className={`text-xs text-green-600 ${isCancelled ? "text-gray-400" : ""}`}>
-                Paid: <FormatCurrency amount={order.amount_paid} />
-              </div>
-            )}
             
             <div className="mt-1">
               {order.status && (
