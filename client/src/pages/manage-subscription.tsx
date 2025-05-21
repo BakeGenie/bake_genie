@@ -90,7 +90,7 @@ export default function ManageSubscription() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Subscription Plan</p>
-                    <p className="font-medium">Pro Annual - $99.00</p>
+                    <p className="font-medium">Monthly - $20.00</p>
                   </div>
                   
                   <div>
@@ -100,12 +100,12 @@ export default function ManageSubscription() {
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Next Billing Amount</p>
-                    <p className="font-medium">$99.00</p>
+                    <p className="font-medium">$20.00</p>
                   </div>
                   
                   <div>
                     <p className="text-sm text-muted-foreground">Next Billing Date</p>
-                    <p className="font-medium">Thu, 21 May 2026</p>
+                    <p className="font-medium">Fri, 21 Jun 2025</p>
                   </div>
                 </div>
               </div>
