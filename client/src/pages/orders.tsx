@@ -34,6 +34,17 @@ const Orders = () => {
   const [selectedDate, setSelectedDate] = React.useState<Date>(
     preselectedDate ? new Date(preselectedDate) : new Date()
   );
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = React.useState(false);
+  
+  // Filter states
+  const [showOrders, setShowOrders] = React.useState(true);
+  const [showQuotes, setShowQuotes] = React.useState(true);
+  const [showNoPayments, setShowNoPayments] = React.useState(true);
+  const [showBookingPayments, setShowBookingPayments] = React.useState(true);
+  const [showPartialPayments, setShowPartialPayments] = React.useState(true);
+  const [showPaidInFull, setShowPaidInFull] = React.useState(true);
+  const [showCompleted, setShowCompleted] = React.useState(true);
+  const [showCancelled, setShowCancelled] = React.useState(true);
 
   // Update the calendar month when dropdown changes
   React.useEffect(() => {
@@ -59,7 +70,7 @@ const Orders = () => {
     }
   });
 
-  // Enhanced filtering: Combine date filtering with search term filtering
+  // Enhanced filtering: Combine date filtering with search term and status filtering
   const filteredOrders = React.useMemo(() => {
     // Start with all orders
     let filtered = orders;
@@ -114,8 +125,49 @@ const Orders = () => {
       });
     }
     
+    // Apply order type filters
+    filtered = filtered.filter(order => {
+      // Check order type (Quote/Order)
+      const isQuote = order.status.toLowerCase() === 'quote';
+      if (isQuote && !showQuotes) return false;
+      if (!isQuote && !showOrders) return false;
+      
+      // Check payment status
+      const amountPaid = parseFloat(order.amountPaid || '0');
+      const totalAmount = parseFloat(order.totalAmount || order.total_amount || '0');
+      
+      if (amountPaid === 0 && !showNoPayments) return false;
+      
+      // Booking payment (deposit) - assuming 25% or less is a booking payment
+      const paymentRatio = amountPaid / totalAmount;
+      const isBookingPayment = amountPaid > 0 && paymentRatio <= 0.25;
+      if (isBookingPayment && !showBookingPayments) return false;
+      
+      // Partial payment (more than booking, less than full)
+      const isPartialPayment = amountPaid > 0 && paymentRatio > 0.25 && paymentRatio < 0.99;
+      if (isPartialPayment && !showPartialPayments) return false;
+      
+      // Paid in full
+      const isPaidInFull = paymentRatio >= 0.99;
+      if (isPaidInFull && !showPaidInFull) return false;
+      
+      // Order status
+      const isCompleted = order.status.toLowerCase() === 'completed';
+      if (isCompleted && !showCompleted) return false;
+      
+      const isCancelled = order.status.toLowerCase() === 'cancelled';
+      if (isCancelled && !showCancelled) return false;
+      
+      return true;
+    });
+    
     return filtered;
-  }, [orders, selectedDate, search]);
+  }, [
+    orders, selectedDate, search, 
+    showOrders, showQuotes, 
+    showNoPayments, showBookingPayments, showPartialPayments, showPaidInFull,
+    showCompleted, showCancelled
+  ]);
 
   // Handle date selection from calendar
   const handleDateSelect = (date: Date) => {
@@ -219,6 +271,18 @@ const Orders = () => {
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
+  // Function to reset all filters to their default state (all enabled)
+  const resetAllFilters = () => {
+    setShowOrders(true);
+    setShowQuotes(true);
+    setShowNoPayments(true);
+    setShowBookingPayments(true);
+    setShowPartialPayments(true);
+    setShowPaidInFull(true);
+    setShowCompleted(true);
+    setShowCancelled(true);
+  };
+  
   return (
     <div className="flex flex-col h-full">
       <PageHeader
@@ -283,7 +347,11 @@ const Orders = () => {
                 />
               </div>
               {/* Add filter here */}
-              <Button variant="outline" size="icon">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIsFilterDialogOpen(true)}
+              >
                 <FilterIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -303,7 +371,11 @@ const Orders = () => {
             <div className="text-sm text-gray-500">
               {filteredOrders.length} orders found
             </div>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsFilterDialogOpen(true)}
+            >
               <FilterIcon className="h-4 w-4 mr-2" /> Filter Orders
             </Button>
           </div>
@@ -424,6 +496,151 @@ const Orders = () => {
         </DialogContent>
       </Dialog>
     </div>
+    {/* Filter Dialog */}
+    <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogTitle>Change Order Filters</DialogTitle>
+        <div className="space-y-3 py-3">
+          {/* Order Type Filters */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="orders-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showOrders}
+                onChange={(e) => setShowOrders(e.target.checked)}
+              />
+              <label htmlFor="orders-filter" className="text-sm font-medium text-gray-700">
+                Orders
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="quotes-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showQuotes}
+                onChange={(e) => setShowQuotes(e.target.checked)}
+              />
+              <label htmlFor="quotes-filter" className="text-sm font-medium text-gray-700">
+                Quotes
+              </label>
+            </div>
+          </div>
+          
+          {/* Payment Status Filters */}
+          <div className="space-y-2 border-t border-gray-200 pt-3">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="no-payments-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showNoPayments}
+                onChange={(e) => setShowNoPayments(e.target.checked)}
+              />
+              <label htmlFor="no-payments-filter" className="text-sm font-medium text-gray-700">
+                Orders with No Payments
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="booking-payments-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showBookingPayments}
+                onChange={(e) => setShowBookingPayments(e.target.checked)}
+              />
+              <label htmlFor="booking-payments-filter" className="text-sm font-medium text-gray-700">
+                Orders with Booking Payments
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="partial-payments-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showPartialPayments}
+                onChange={(e) => setShowPartialPayments(e.target.checked)}
+              />
+              <label htmlFor="partial-payments-filter" className="text-sm font-medium text-gray-700">
+                Orders with Partial Payments
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="paid-in-full-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showPaidInFull}
+                onChange={(e) => setShowPaidInFull(e.target.checked)}
+              />
+              <label htmlFor="paid-in-full-filter" className="text-sm font-medium text-gray-700">
+                Orders Paid in Full
+              </label>
+            </div>
+          </div>
+          
+          {/* Order Status Filters */}
+          <div className="space-y-2 border-t border-gray-200 pt-3">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="completed-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showCompleted}
+                onChange={(e) => setShowCompleted(e.target.checked)}
+              />
+              <label htmlFor="completed-filter" className="text-sm font-medium text-gray-700">
+                Completed Orders
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="cancelled-filter"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={showCancelled}
+                onChange={(e) => setShowCancelled(e.target.checked)}
+              />
+              <label htmlFor="cancelled-filter" className="text-sm font-medium text-gray-700">
+                Cancelled Orders
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-between mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsFilterDialogOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              // Apply all filters and close dialog
+              setIsFilterDialogOpen(false);
+              
+              // Show success toast
+              toast({
+                title: "Filters Applied",
+                description: "Your order filters have been updated."
+              });
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
