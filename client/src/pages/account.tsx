@@ -25,7 +25,10 @@ import {
   KeyIcon,
   CreditCardIcon,
   BellIcon,
-  ShieldIcon
+  ShieldIcon,
+  ChevronRightIcon,
+  XCircleIcon,
+  ReceiptIcon
 } from "lucide-react";
 
 // Extended schema with validation rules for user profile
