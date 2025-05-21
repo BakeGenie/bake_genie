@@ -156,52 +156,41 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   // Destructure form methods
   const { control, watch, setValue, getValues, formState: { isSubmitting } } = form;
   
-  // Handle initialValues changes (needed for calendar date selection)
+  // Set default dates to ensure fields are not empty
   useEffect(() => {
-    // This effect ensures that on initial mount and when initialValues changes,
-    // the form is properly updated with the new values
-    if (initialValues?.eventDate) {
-      console.log("Setting event date from initialValues:", initialValues.eventDate);
-      // Force update the eventDate field with the date from initialValues
-      setValue("eventDate", initialValues.eventDate, { 
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true
-      });
-    }
-    if (initialValues?.orderDate) {
-      console.log("Setting order date from initialValues:", initialValues.orderDate);
-      // Force update the orderDate field with the date from initialValues
-      setValue("orderDate", initialValues.orderDate, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true
-      });
-    }
-  }, [initialValues, setValue]);
-  
-  // Ensure date fields are set with initial values on component mount
-  useEffect(() => {
-    const formValues = getValues();
-    
-    // If form doesn't have an eventDate but initialValues does, set it
-    if (!formValues.eventDate && initialValues?.eventDate) {
-      setValue("eventDate", initialValues.eventDate, {
-        shouldValidate: true,
-        shouldDirty: true,
-        shouldTouch: true
-      });
-    }
-    
-    // If form doesn't have an orderDate but initialValues does, set it
-    if (!formValues.orderDate && initialValues?.orderDate) {
-      setValue("orderDate", initialValues.orderDate, {
-        shouldValidate: true,
-        shouldDirty: true, 
-        shouldTouch: true
-      });
+    // Set default dates if none are provided and fields are empty
+    const currentValues = getValues();
+    if (!currentValues.orderDate) {
+      setValue("orderDate", new Date());
     }
   }, []);
+  
+  // Handle initialValues separately to ensure they override default values
+  useEffect(() => {
+    if (initialValues) {
+      console.log("Received initialValues:", initialValues);
+      
+      // Handle event date from calendar selection
+      if (initialValues.eventDate) {
+        console.log("Setting event date:", initialValues.eventDate);
+        setValue("eventDate", initialValues.eventDate, { 
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true 
+        });
+      }
+      
+      // Handle order date (usually today's date)
+      if (initialValues.orderDate) {
+        console.log("Setting order date:", initialValues.orderDate);
+        setValue("orderDate", initialValues.orderDate, {
+          shouldValidate: true, 
+          shouldDirty: true,
+          shouldTouch: true
+        });
+      }
+    }
+  }, [initialValues, setValue]);
 
   // Initialize items field array
   const { fields, append, remove } = useFieldArray({

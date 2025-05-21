@@ -104,9 +104,12 @@ const NewOrderPage = () => {
 
   // Create initialValues object for the form based on preselected date
   const initialValues = React.useMemo(() => {
-    const values: Partial<OrderFormValues> = {};
+    const values: Partial<OrderFormValues> = {
+      // Always set order date to today by default
+      orderDate: new Date()
+    };
     
-    // If we have a preselected date from the calendar, use it
+    // If we have a preselected date from the calendar, use it for event date
     if (preselectedDate) {
       try {
         const selectedDate = new Date(preselectedDate);
@@ -114,8 +117,6 @@ const NewOrderPage = () => {
         if (!isNaN(selectedDate.getTime())) {
           // Set the event date to the selected calendar date
           values.eventDate = selectedDate;
-          // Set order date to today
-          values.orderDate = new Date();
           
           console.log("Calendar: Selected date for new order:", selectedDate.toISOString().split('T')[0]);
         } else {
