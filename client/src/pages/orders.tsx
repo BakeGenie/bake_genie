@@ -347,7 +347,11 @@ const Orders = () => {
                   try {
                     const date = new Date(storedDate);
                     if (!isNaN(date.getTime())) {
-                      return { eventDate: date };
+                      console.log('Setting form default dates from stored date:', date);
+                      return { 
+                        eventDate: date,
+                        orderDate: date 
+                      };
                     }
                   } catch (e) {
                     // If parsing fails, ignore
