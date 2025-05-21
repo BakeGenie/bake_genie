@@ -332,7 +332,7 @@ export class ImportService {
             continue;
           }
           
-          // Create quote
+          // Create quote - remove 'theme' field which doesn't exist in our schema
           const [newQuote] = await db.insert(quotes).values({
             userId,
             contactId,
@@ -346,10 +346,10 @@ export class ImportService {
             discountType: '%',
             setupFee: '0',
             total: quoteTotal.toString(),
-            theme: record.Theme || '',
+            // Store theme in notes field instead
+            notes: `${record.Theme || record.Notes || ''}\nImported from Bake Diary`,
             expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
             taxRate: '0',
-            notes: 'Imported from Bake Diary',
             imageUrls: [],
           }).returning();
           
