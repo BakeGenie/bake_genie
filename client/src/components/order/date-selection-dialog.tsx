@@ -21,9 +21,12 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
   if (!selectedDate) return null;
   
   const handleCreateOrder = () => {
-    // Navigate to new order page with date parameter
+    // Save the selected date in localStorage for the new order form to use
     localStorage.setItem('selectedEventDate', selectedDate.toISOString());
-    navigate(`/orders?newOrder=true&date=${selectedDate.toISOString()}`);
+    
+    // Navigate to the new order page
+    // We'll pass both formats of date parameters to ensure compatibility
+    navigate(`/orders/new?eventDate=${selectedDate.toISOString()}&date=${selectedDate.toISOString()}`);
     onClose();
   };
   
