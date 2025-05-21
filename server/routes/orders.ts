@@ -1,8 +1,7 @@
 import { Router } from "express";
 import { db } from "../db";
-import { orders, orderItems, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
-import { v4 as uuidv4 } from 'uuid';
-import { eq } from "drizzle-orm";
+import { orders, orderItems } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -14,14 +13,10 @@ router.get("/api/orders", async (req, res) => {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
-    // Use direct SQL query to avoid schema issues
-    // Note: Using $1 requires explicitly providing an array of parameters
-    const result = await db.execute(
-      "SELECT * FROM orders WHERE user_id = $1",
-      [userId]
-    );
+    // Use Drizzle ORM to get orders
+    const result = await db.select().from(orders).where(eq(orders.userId, userId));
     
-    res.json(result.rows);
+    res.json(result);
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).json({ success: false, error: "Failed to fetch orders" });
@@ -38,27 +33,24 @@ router.get("/api/orders/:id", async (req, res) => {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
-    // Use direct SQL query to avoid schema issues
-    const result = await db.execute(
-      "SELECT * FROM orders WHERE id = $1 AND user_id = $2",
-      [orderId, userId]
-    );
+    // Get the order
+    const [order] = await db.select().from(orders)
+      .where(and(
+        eq(orders.id, orderId),
+        eq(orders.userId, userId)
+      ));
     
-    if (result.rows.length === 0) {
+    if (!order) {
       return res.status(404).json({ success: false, error: "Order not found" });
     }
     
-    const order = result.rows[0];
-    
-    // Get order items using direct SQL
-    const itemsResult = await db.execute(
-      "SELECT * FROM order_items WHERE order_id = $1",
-      [orderId]
-    );
+    // Get order items
+    const items = await db.select().from(orderItems)
+      .where(eq(orderItems.orderId, orderId));
     
     res.json({ 
       ...order, 
-      items: itemsResult.rows 
+      items 
     });
   } catch (error) {
     console.error("Error fetching order:", error);
@@ -74,15 +66,15 @@ router.post("/api/orders", async (req, res) => {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
-    // Validate the order data
+    // Prepare order data with userId
     const orderData = {
       ...req.body,
       userId,
       // Convert numbers from strings if needed
       total: typeof req.body.total === 'string' ? parseFloat(req.body.total) : req.body.total,
-      discount: typeof req.body.discount === 'string' ? parseFloat(req.body.discount) : req.body.discount,
-      setupFee: typeof req.body.setupFee === 'string' ? parseFloat(req.body.setupFee) : req.body.setupFee,
-      taxRate: typeof req.body.taxRate === 'string' ? parseFloat(req.body.taxRate) : req.body.taxRate,
+      discount: typeof req.body.discount === 'string' ? parseFloat(req.body.discount) : (req.body.discount || 0),
+      setupFee: typeof req.body.setupFee === 'string' ? parseFloat(req.body.setupFee) : (req.body.setupFee || 0),
+      taxRate: typeof req.body.taxRate === 'string' ? parseFloat(req.body.taxRate) : (req.body.taxRate || 0),
     };
     
     // Generate order number if not provided
@@ -90,8 +82,12 @@ router.post("/api/orders", async (req, res) => {
       orderData.orderNumber = `ORD-${Date.now().toString().substring(6)}`;
     }
     
+    console.log("Creating order with data:", orderData);
+    
     // Insert the order into the database
     const [newOrder] = await db.insert(orders).values(orderData).returning();
+    
+    console.log("Order created:", newOrder);
     
     // Insert order items if provided
     if (req.body.items && Array.isArray(req.body.items)) {
@@ -129,19 +125,23 @@ router.put("/api/orders/:id", async (req, res) => {
     
     // Check if the order exists and belongs to the user
     const [existingOrder] = await db.select().from(orders)
-      .where(eq(orders.id, orderId))
-      .where(eq(orders.userId, userId));
+      .where(and(
+        eq(orders.id, orderId),
+        eq(orders.userId, userId)
+      ));
     
     if (!existingOrder) {
       return res.status(404).json({ success: false, error: "Order not found" });
     }
     
     // Update the order
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date(),
+    };
+    
     const [updatedOrder] = await db.update(orders)
-      .set({
-        ...req.body,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(orders.id, orderId))
       .returning();
     
@@ -185,8 +185,10 @@ router.delete("/api/orders/:id", async (req, res) => {
     
     // Check if the order exists and belongs to the user
     const [existingOrder] = await db.select().from(orders)
-      .where(eq(orders.id, orderId))
-      .where(eq(orders.userId, userId));
+      .where(and(
+        eq(orders.id, orderId),
+        eq(orders.userId, userId)
+      ));
     
     if (!existingOrder) {
       return res.status(404).json({ success: false, error: "Order not found" });
