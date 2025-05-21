@@ -576,17 +576,24 @@ export class ExportService {
    */
   async exportTasks(userId: number) {
     try {
-      // Explicitly select columns to avoid the order_id column error
-      return await db.select({
-        id: tasks.id,
-        userId: tasks.userId,
-        title: tasks.title,
-        description: tasks.description,
-        dueDate: tasks.dueDate,
-        status: tasks.status,
-        priority: tasks.priority,
-        createdAt: tasks.createdAt
-      }).from(tasks).where(eq(tasks.userId, userId));
+      // Use a raw SQL approach to avoid the selected fields error
+      const result = await db.execute(
+        `SELECT id, user_id, title, description, due_date, status, priority, created_at 
+         FROM tasks 
+         WHERE user_id = $1`,
+        [userId]
+      );
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        description: row.description,
+        dueDate: row.due_date,
+        status: row.status,
+        priority: row.priority,
+        createdAt: row.created_at
+      }));
     } catch (error) {
       console.error('Error exporting tasks:', error);
       throw new Error('Failed to export tasks');
@@ -660,8 +667,10 @@ export class ExportService {
       // Prepare data for CSV export
       const csvData = enquiriesData.map(enquiry => {
         return {
-          'Name': enquiry.name,
-          'Email': enquiry.email,
+          'Name': (enquiry.firstName && enquiry.lastName) ? 
+                  `${enquiry.firstName} ${enquiry.lastName}` : 
+                  (enquiry.firstName || enquiry.lastName || ''),
+          'Email': enquiry.email || '',
           'Phone': enquiry.phone || '',
           'Event Type': enquiry.eventType || '',
           'Event Date': enquiry.eventDate ? format(new Date(enquiry.eventDate), 'yyyy-MM-dd') : '',
