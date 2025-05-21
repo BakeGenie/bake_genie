@@ -74,11 +74,31 @@ const Contacts = () => {
     }
   });
 
+  // State for tracking if we're editing a contact
+  const [isEditMode, setIsEditMode] = React.useState(false);
+  const [isEditContactDialogOpen, setIsEditContactDialogOpen] = React.useState(false);
+  const [isEditSubmitting, setIsEditSubmitting] = React.useState(false);
+  
   // Form for new contact
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
       userId: 1, // In a real app, this would be the current user's ID
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      businessName: "",
+      address: "",
+      notes: "",
+    },
+  });
+  
+  // Form for editing contact
+  const editForm = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      userId: 1,
       firstName: "",
       lastName: "",
       email: "",
@@ -156,6 +176,83 @@ const Contacts = () => {
     setIsDeleteDialogOpen(true);
   };
   
+  // Handle initiating contact edit
+  const handleEditClick = (contact: Contact, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the row click
+    setSelectedContact(contact);
+    
+    // Reset the edit form with the selected contact's data
+    editForm.reset({
+      userId: contact.userId || 1,
+      firstName: contact.firstName || "",
+      lastName: contact.lastName || "",
+      email: contact.email || "",
+      phone: contact.phone || "",
+      businessName: contact.businessName || "",
+      address: contact.address || "",
+      notes: contact.notes || "",
+    });
+    
+    setIsEditContactDialogOpen(true);
+  };
+  
+  // Handle edit contact submission
+  const handleEditContactSubmit = async (data: ContactFormValues) => {
+    if (!selectedContact) return;
+    
+    setIsEditSubmitting(true);
+    
+    try {
+      console.log("Submitting updated contact data:", data);
+      
+      // Make PUT request to API
+      const response = await fetch(`/api/contacts/${selectedContact.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error updating contact: ${response.status} ${errorText}`);
+      }
+      
+      const updatedContact = await response.json();
+      console.log("Contact updated successfully:", updatedContact);
+      
+      // Update the cache with the updated contact
+      queryClient.setQueryData(["/api/contacts"], (oldData: Contact[] = []) => {
+        return oldData.map(contact => 
+          contact.id === selectedContact.id ? updatedContact : contact
+        );
+      });
+      
+      // Also trigger a background refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      
+      // Reset form and close dialog
+      editForm.reset();
+      setIsEditContactDialogOpen(false);
+      
+      toast({
+        title: "Contact Updated",
+        description: `${data.firstName} ${data.lastName}'s details have been updated.`,
+      });
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating the contact. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEditSubmitting(false);
+    }
+  };
+
   // Handle actual contact deletion
   const handleDeleteConfirm = async () => {
     if (!selectedContact) return;
@@ -245,7 +342,15 @@ const Contacts = () => {
       cell: ({ row }) => {
         const contact = row.original;
         return (
-          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => handleEditClick(contact, e)}
+              title="Edit contact"
+            >
+              <EditIcon className="h-4 w-4 text-blue-500" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -413,6 +518,7 @@ const Contacts = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{selectedContact.firstName} {selectedContact.lastName}</DialogTitle>
+              <DialogDescription>Contact details</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {selectedContact.businessName && (
@@ -465,16 +571,143 @@ const Contacts = () => {
                 <Button 
                   onClick={() => {
                     setIsViewContactDialogOpen(false);
-                    toast({
-                      title: "Edit Contact",
-                      description: "Contact editing will be implemented soon.",
-                    });
+                    handleEditClick(selectedContact, new MouseEvent('click') as React.MouseEvent<Element, MouseEvent>);
                   }}
                 >
                   Edit
                 </Button>
               </DialogFooter>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Edit Contact Dialog */}
+      {selectedContact && (
+        <Dialog open={isEditContactDialogOpen} onOpenChange={setIsEditContactDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Contact</DialogTitle>
+              <DialogDescription>
+                Update {selectedContact.firstName} {selectedContact.lastName}'s information
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(handleEditContactSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Surname</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={editForm.control}
+                  name="businessName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={editForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditContactDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isEditSubmitting}>
+                    {isEditSubmitting ? "Saving..." : "Save Changes"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       )}
