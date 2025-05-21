@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, addMonths, subMonths } from "date-fns";
 import { OrderWithItems } from "@/types";
 import DateSelectionDialog from "@/components/order/date-selection-dialog";
+import OrderDetailsDialog from "@/components/order/order-details-dialog";
 import { eventTypeColors } from "@/lib/constants";
 import { EventType, eventTypes } from "@shared/schema";
 
@@ -20,6 +21,8 @@ const CalendarFullWidth = () => {
   const [year, setYear] = React.useState(currentDate.getFullYear());
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
   const [isDateDialogOpen, setIsDateDialogOpen] = React.useState(false);
+  const [selectedOrder, setSelectedOrder] = React.useState<OrderWithItems | null>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = React.useState(false);
   
   // Fetch orders
   const { data: rawOrders = [], isLoading } = useQuery<any[]>({
@@ -49,6 +52,7 @@ const CalendarFullWidth = () => {
       specialInstructions: order.special_instructions,
       taxRate: order.tax_rate,
       notes: order.notes,
+      theme: order.theme,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
       contact: order.contact,
@@ -190,6 +194,12 @@ const CalendarFullWidth = () => {
     setIsDateDialogOpen(true);
     // Store selected date for order creation
     localStorage.setItem('selectedEventDate', date.toISOString());
+  };
+  
+  // Handle order selection for details
+  const handleOrderSelect = (order: OrderWithItems) => {
+    setSelectedOrder(order);
+    setIsOrderDetailsOpen(true);
   };
   
   // Get event type color
@@ -342,7 +352,7 @@ const CalendarFullWidth = () => {
                           style={{ borderLeftColor: getEventTypeColor(order.eventType || 'Other') }}
                           onClick={(e) => {
                             e.stopPropagation(); // Prevent opening date dialog
-                            navigate(`/orders/${order.id}`);
+                            handleOrderSelect(order);
                           }}
                         >
                           <div className="flex items-start">
@@ -380,6 +390,13 @@ const CalendarFullWidth = () => {
         isOpen={isDateDialogOpen}
         onClose={() => setIsDateDialogOpen(false)}
         selectedDate={selectedDate}
+      />
+      
+      {/* Order Details Dialog */}
+      <OrderDetailsDialog
+        isOpen={isOrderDetailsOpen}
+        onClose={() => setIsOrderDetailsOpen(false)}
+        order={selectedOrder}
       />
     </div>
   );
