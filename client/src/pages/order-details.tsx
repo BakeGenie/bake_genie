@@ -89,7 +89,7 @@ const OrderDetails: React.FC = () => {
 
   // Fetch order details
   const { data: order, isLoading, error } = useQuery({
-    queryKey: ["/api/orders", id],
+    queryKey: [`/api/orders/${id}`],
     enabled: !!id,
   });
 
