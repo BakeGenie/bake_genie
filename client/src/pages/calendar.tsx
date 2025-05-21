@@ -474,11 +474,25 @@ const Calendar = () => {
             ))}
           </div>
       
-      {/* Import and use the sidebar-specific date dialog */}
+      {/* Use the sidebar-specific date dialog with custom handlers */}
       <SidebarDateDialog 
         isOpen={isActionDialogOpen}
         onClose={() => setIsActionDialogOpen(false)}
         selectedDate={selectedDate}
+        onAddEvent={() => {
+          // Set the selected date for the new event and open the new event dialog
+          if (selectedDate) {
+            setNewEvent({
+              ...newEvent,
+              startDate: format(selectedDate, "yyyy-MM-dd"),
+              endDate: format(selectedDate, "yyyy-MM-dd")
+            });
+            setIsNewEventDialogOpen(true);
+          }
+        }}
+        onBlockDate={() => {
+          setIsBlockoutDialogOpen(true);
+        }}
       />
       
       {/* Block Out Time Dialog */}

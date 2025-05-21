@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Calendar, Ban } from "lucide-react";
 import { format } from "date-fns";
@@ -9,12 +9,16 @@ interface SidebarDateDialogProps {
   isOpen: boolean;
   onClose: () => void;
   selectedDate: Date | null;
+  onAddEvent?: () => void;
+  onBlockDate?: () => void;
 }
 
 const SidebarDateDialog: React.FC<SidebarDateDialogProps> = ({
   isOpen,
   onClose,
   selectedDate,
+  onAddEvent,
+  onBlockDate
 }) => {
   const [, navigate] = useLocation();
   
@@ -30,14 +34,22 @@ const SidebarDateDialog: React.FC<SidebarDateDialogProps> = ({
   };
   
   const handleAddEvent = () => {
-    // This would be implemented to add a calendar event 
-    console.log("Add calendar event for date:", selectedDate);
+    if (onAddEvent) {
+      onAddEvent();
+    } else {
+      // Default behavior if no handler is provided
+      console.log("Add calendar event for date:", selectedDate);
+    }
     onClose();
   };
   
   const handleBlockDate = () => {
-    // This would mark the date as unavailable in the calendar
-    console.log("Block date:", selectedDate);
+    if (onBlockDate) {
+      onBlockDate();
+    } else {
+      // Default behavior if no handler is provided
+      console.log("Block date:", selectedDate);
+    }
     onClose();
   };
   
@@ -47,6 +59,9 @@ const SidebarDateDialog: React.FC<SidebarDateDialogProps> = ({
         <DialogTitle className="text-lg p-3 border-b bg-gray-50">
           What would you like to do?
         </DialogTitle>
+        <DialogDescription className="sr-only">
+          Select an action for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "this date"}
+        </DialogDescription>
         
         <div className="py-2">
           <div className="py-2 px-4 text-center bg-blue-50 text-blue-600 font-medium">
