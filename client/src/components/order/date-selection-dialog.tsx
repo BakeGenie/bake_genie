@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Calendar, Ban } from "lucide-react";
+import { PlusCircle, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 
@@ -39,79 +39,42 @@ const DateSelectionDialog: React.FC<DateSelectionDialogProps> = ({
     onClose();
   };
   
-  const handleAddEvent = () => {
-    // This would be implemented to add a calendar event 
-    // For now just close the dialog
-    console.log("Add calendar event for date:", selectedDate);
-    onClose();
-  };
-  
-  const handleBlockDate = () => {
-    // This would mark the date as unavailable in the calendar
-    console.log("Block date:", selectedDate);
-    onClose();
-  };
-  
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="p-0 max-w-sm">
-        <DialogTitle className="text-lg p-3 border-b bg-gray-50">
-          What would you like to do?
+      <DialogContent className="p-4 max-w-sm">
+        <DialogTitle className="text-center text-lg font-semibold mb-1">
+          {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}
         </DialogTitle>
+        <p className="text-center text-gray-600 mb-4">
+          What would you like to do?
+        </p>
         
-        <div className="py-2">
-          <div className="py-2 px-4 text-center bg-blue-50 text-blue-600 font-medium">
-            {selectedDate && format(selectedDate, "EEE, dd MMM yyyy")}
-          </div>
-          
-          <div className="flex flex-col">
-            <Button 
-              onClick={handleCreateOrder} 
-              variant="ghost"
-              className="flex justify-between items-center border-b py-3 px-4 rounded-none"
-            >
-              <div className="flex items-center gap-2">
-                <PlusCircle className="h-5 w-5" />
-                <span>Create New Order</span>
-              </div>
-              <span className="text-gray-400">&gt;</span>
-            </Button>
-            
-            <Button 
-              onClick={handleAddEvent}
-              variant="ghost"
-              className="flex justify-between items-center border-b py-3 px-4 rounded-none"
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                <span>Add a Calendar Event</span>
-              </div>
-              <span className="text-gray-400">&gt;</span>
-            </Button>
-            
-            <Button 
-              onClick={handleBlockDate}
-              variant="ghost" 
-              className="flex justify-between items-center py-3 px-4 rounded-none"
-            >
-              <div className="flex items-center gap-2">
-                <Ban className="h-5 w-5" />
-                <span>Block out Date</span>
-              </div>
-              <span className="text-gray-400">&gt;</span>
-            </Button>
-          </div>
-        </div>
-        
-        <div className="border-t p-2 bg-gray-50">
+        <div className="flex flex-col gap-3 mb-4">
           <Button 
-            variant="outline" 
-            onClick={onClose} 
-            className="w-full"
+            onClick={handleCreateOrder} 
+            className="flex justify-start items-center gap-2 py-3"
           >
-            Cancel
+            <PlusCircle className="h-5 w-5" />
+            <span>Create New Order</span>
+          </Button>
+          
+          <Button 
+            onClick={handleViewCalendar}
+            variant="outline" 
+            className="flex justify-start items-center gap-2 py-3"
+          >
+            <Calendar className="h-5 w-5" />
+            <span>View Calendar</span>
           </Button>
         </div>
+        
+        <Button 
+          variant="ghost" 
+          onClick={onClose} 
+          className="w-full border mt-2"
+        >
+          Cancel
+        </Button>
       </DialogContent>
     </Dialog>
   );
