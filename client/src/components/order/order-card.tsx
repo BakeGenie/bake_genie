@@ -89,13 +89,25 @@ const OrderCard: React.FC<OrderCardProps> = ({
             if (value !== null && value !== undefined) {
               if (key.includes('date') || key.includes('Date') || key.includes('At')) {
                 // Format dates
-                displayValue = new Date(value.toString()).toLocaleString();
+                try {
+                  displayValue = new Date(String(value)).toLocaleString();
+                } catch (error) {
+                  displayValue = 'Invalid date';
+                }
               } else if (typeof value === 'object') {
                 // Format objects
-                displayValue = JSON.stringify(value);
+                try {
+                  displayValue = JSON.stringify(value);
+                } catch (error) {
+                  displayValue = '[Object]';
+                }
               } else {
                 // Default format
-                displayValue = value.toString();
+                try {
+                  displayValue = String(value);
+                } catch (error) {
+                  displayValue = 'Error displaying value';
+                }
               }
             }
             
