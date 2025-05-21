@@ -61,15 +61,55 @@ const OrderCard: React.FC<OrderCardProps> = ({
           {customerName} {order.eventType && `(${order.eventType})`}
         </div>
         
-        {/* Display all order items with full details */}
+        {/* Display ALL order items with COMPLETE details */}
         {order.items && order.items.length > 0 && (
           <div className="pl-5">
             {order.items.map((item, index) => (
-              <div key={index} className="text-sm text-gray-700 mt-1">
-                <span className="font-medium">{item.quantity}x</span> {item.name || item.description} 
-                {item.unitPrice && <span className="text-gray-500 ml-2">${parseFloat(item.unitPrice.toString()).toFixed(2)}/ea</span>}
-                {item.price && <span className="text-gray-500 ml-2">= ${parseFloat(item.price.toString()).toFixed(2)}</span>}
-                {item.notes && <div className="text-xs text-gray-500 ml-4">{item.notes}</div>}
+              <div key={index} className="text-sm text-gray-700 mt-2 border-l-2 border-gray-200 pl-2">
+                {/* Item ID and Product ID */}
+                <div className="text-xs text-gray-400">
+                  ID: {item.id || 'N/A'} 
+                  {item.productId && <span className="ml-2">Product ID: {item.productId}</span>}
+                  {item.type && <span className="ml-2 text-gray-500 font-medium">Type: {item.type}</span>}
+                </div>
+                
+                {/* Item name, quantity, and prices */}
+                <div className="font-medium">
+                  <span>{item.quantity}x</span> {item.name || item.description}
+                </div>
+                
+                {/* Price information */}
+                <div className="flex flex-wrap gap-2 text-xs text-gray-600 mt-1">
+                  {item.unitPrice && (
+                    <span className="bg-gray-100 px-2 py-0.5 rounded">
+                      Unit: ${parseFloat(item.unitPrice.toString()).toFixed(2)}
+                    </span>
+                  )}
+                  {item.price && (
+                    <span className="bg-gray-100 px-2 py-0.5 rounded">
+                      Total: ${parseFloat(item.price.toString()).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Notes */}
+                {item.notes && (
+                  <div className="text-xs mt-1 bg-yellow-50 px-2 py-1 rounded">
+                    <span className="font-medium">Notes:</span> {item.notes}
+                  </div>
+                )}
+                
+                {/* Show all other properties */}
+                <div className="text-xs text-gray-500 mt-1">
+                  {Object.entries(item)
+                    .filter(([key]) => !['id', 'productId', 'type', 'name', 'description', 'quantity', 'unitPrice', 'price', 'notes'].includes(key))
+                    .map(([key, value]) => (
+                      <div key={key} className="inline-block mr-3">
+                        <span className="font-medium">{key}:</span> {value?.toString() || 'N/A'}
+                      </div>
+                    ))
+                  }
+                </div>
               </div>
             ))}
           </div>
