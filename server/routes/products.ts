@@ -82,84 +82,34 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
     
-    // Prepare product data, ensuring all numeric fields are properly formatted as strings
-    const productData: InsertProduct = {
-      userId,
-      name: req.body.name,
-      type: req.body.type,
-      description: req.body.description || null,
-      servings: req.body.servings ? parseInt(req.body.servings.toString()) : null,
-      price: req.body.price ? req.body.price.toString() : "0",
-      cost: req.body.cost ? req.body.cost.toString() : null,
-      taxRate: req.body.taxRate ? req.body.taxRate.toString() : "0",
-      laborHours: req.body.laborHours ? req.body.laborHours.toString() : "0",
-      laborRate: req.body.laborRate ? req.body.laborRate.toString() : "0",
-      overhead: req.body.overhead ? req.body.overhead.toString() : "0",
-      imageUrl: req.body.imageUrl || null,
-      sku: req.body.sku || null,
-      bundleId: req.body.bundleId || null,
-      active: req.body.active !== undefined ? req.body.active : true,
-    };
-    
-    console.log("Formatted product data:", JSON.stringify(productData, null, 2));
-    
-    // First check the columns that actually exist in the database
     try {
-      console.log("Checking database columns in products table...");
-      const columnsResult = await pool.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'products'
-      `);
-      
-      console.log("Available columns:", columnsResult.rows.map(row => row.column_name));
-      
-      // Directly use SQL query to ensure product is created successfully
-      console.log("Attempting to insert product with values:", [
-        userId, 
-        productData.name, 
-        productData.type,
-        productData.description,
-        productData.servings,
-        productData.price,
-        productData.cost,
-        productData.taxRate,
-        productData.laborHours,
-        productData.laborRate,
-        productData.overhead,
-        productData.imageUrl,
-        productData.sku,
-        productData.bundleId,
-        productData.active
-      ]);
-      
+      // Use a simplified direct query that works with our DB
       const result = await pool.query(`
         INSERT INTO products (
-          user_id, name, type, description, servings, price, cost, 
-          tax_rate, labor_hours, labor_rate, overhead, image_url, sku, 
-          bundle_id, active
+          user_id, name, type, description, price, cost, 
+          tax_rate, labor_hours, labor_rate, overhead, image_url, 
+          active, created_at, servings, sku, bundle_id
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, 
-          $8, $9, $10, $11, $12, $13,
-          $14, $15
+          $1, $2, $3, $4, $5, $6, 
+          $7, $8, $9, $10, $11,
+          $12, NOW(), $13, $14, $15
         ) RETURNING *
       `, [
         userId, 
-        productData.name, 
-        productData.type,
-        productData.description,
-        productData.servings,
-        productData.price,
-        productData.cost,
-        productData.taxRate,
-        productData.laborHours,
-        productData.laborRate,
-        productData.overhead,
-        productData.imageUrl,
-        productData.sku,
-        productData.bundleId,
-        productData.active
+        req.body.name, 
+        req.body.type,
+        req.body.description || null,
+        req.body.price ? req.body.price.toString() : "0",
+        req.body.cost ? req.body.cost.toString() : null,
+        req.body.taxRate ? req.body.taxRate.toString() : "0",
+        req.body.laborHours ? req.body.laborHours.toString() : "0",
+        req.body.laborRate ? req.body.laborRate.toString() : "0",
+        req.body.overhead ? req.body.overhead.toString() : "0",
+        req.body.imageUrl || null,
+        req.body.active !== undefined ? req.body.active : true,
+        req.body.servings ? parseInt(req.body.servings.toString()) : null,
+        req.body.sku || null,
+        req.body.bundleId || null
       ]);
       
       console.log("Product created successfully:", result.rows[0]);
@@ -178,9 +128,9 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error("Error creating product:", error);
-    return res.status(500).json({ 
-      success: false, 
+    console.error("Error in product creation:", error);
+    return res.status(500).json({
+      success: false,
       error: "Failed to create product",
       details: (error as Error).message
     });
