@@ -147,9 +147,9 @@ const Orders = () => {
     if (search) {
       const searchLower = search.toLowerCase();
       return (
-        order.customer?.toLowerCase().includes(searchLower) ||
-        order.event_type?.toLowerCase().includes(searchLower) ||
-        order.order_number?.toLowerCase().includes(searchLower)
+        // Use the actual properties from the API response
+        (order.event_type && order.event_type.toLowerCase().includes(searchLower)) ||
+        (order.order_number && order.order_number.toLowerCase().includes(searchLower))
       );
     }
     
