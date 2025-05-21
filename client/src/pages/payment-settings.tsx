@@ -6,26 +6,26 @@ export default function PaymentSettings() {
   const [_, setLocation] = useLocation();
 
   return (
-    <div className="container py-6">
-      <div className="flex flex-col md:flex-row gap-6 w-full">
-        {/* Left Panel */}
-        <div className="md:w-1/4 p-5 bg-gray-50 rounded-md">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Receive Payments & Integration</h2>
-          <p className="text-gray-600 text-sm">
-            Add a Payment Provider to allow your customers to pay through BakeGenie.
-          </p>
-        </div>
+    <div className="flex h-full">
+      {/* Left Panel - Light Gray */}
+      <div className="w-1/3 bg-gray-50 p-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-3">Receive Payments & Integration</h2>
+        <p className="text-gray-600">
+          Add a Payment Provider to allow your customers to pay through BakeGenie.
+        </p>
+      </div>
 
-        {/* Right Panel */}
-        <div className="md:w-3/4 bg-white rounded-md shadow-sm border">
+      {/* Right Panel - White */}
+      <div className="w-2/3 bg-white p-5">
+        <div className="border rounded-md shadow-sm overflow-hidden">
           {/* Stripe Payments */}
           <div 
             onClick={() => setLocation("/payment-settings/stripe")}
             className="p-4 flex justify-between items-center border-b cursor-pointer hover:bg-gray-50"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-blue-500 text-white w-6 h-6 rounded-sm flex items-center justify-center">
-                <span className="font-bold text-sm">S</span>
+              <div className="bg-blue-500 text-white w-5 h-5 rounded-sm flex items-center justify-center">
+                <span className="font-bold text-xs">S</span>
               </div>
               <span className="font-medium">Stripe Payments</span>
             </div>
@@ -38,8 +38,8 @@ export default function PaymentSettings() {
             className="p-4 flex justify-between items-center border-b cursor-pointer hover:bg-gray-50"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-black text-white w-6 h-6 rounded-sm flex items-center justify-center">
-                <span className="font-bold text-sm">□</span>
+              <div className="bg-black text-white w-5 h-5 rounded-sm flex items-center justify-center">
+                <span className="font-bold text-xs">□</span>
               </div>
               <span className="font-medium">Square Payments</span>
             </div>
@@ -52,8 +52,8 @@ export default function PaymentSettings() {
             className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-green-500 text-white w-6 h-6 rounded-sm flex items-center justify-center">
-                <span className="font-bold text-sm">$</span>
+              <div className="bg-green-500 text-white w-5 h-5 rounded-sm flex items-center justify-center">
+                <span className="font-bold text-xs">$</span>
               </div>
               <span className="font-medium">Setup Tipping</span>
             </div>
