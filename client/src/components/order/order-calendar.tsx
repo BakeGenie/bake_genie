@@ -37,15 +37,37 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   const monthParam = month || urlParams.get("month");
   const yearParam = year || urlParams.get("year");
 
-  const initialMonth = monthParam
-    ? new Date(
-        parseInt(yearParam || currentDate.getFullYear().toString()),
-        parseInt(monthParam) - 1,
-        1,
-      )
-    : new Date();
-  const [currentMonth, setCurrentMonth] = React.useState(initialMonth);
+  // Create a ref to track if this is the first render
+  const isFirstRender = React.useRef(true);
+  
+  // Set the today's date once
   const [today] = React.useState(new Date());
+  
+  // Calculate the current month to display based on props or URL params
+  const [currentMonth, setCurrentMonth] = React.useState(() => {
+    if (month && year) {
+      return new Date(year, month - 1, 1);
+    } else if (monthParam && yearParam) {
+      return new Date(
+        parseInt(yearParam || ""),
+        parseInt(monthParam || "") - 1,
+        1
+      );
+    }
+    return new Date();
+  });
+  
+  // Update currentMonth when month or year props change
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    
+    if (month && year) {
+      setCurrentMonth(new Date(year, month - 1, 1));
+    }
+  }, [month, year]);
 
   // Navigate calendar month
   const prevMonth = () => {
