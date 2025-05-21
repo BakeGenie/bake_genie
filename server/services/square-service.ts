@@ -4,8 +4,8 @@ import { eq } from 'drizzle-orm';
 import { users, integrations } from '@shared/schema';
 
 // Initialize Square client with credentials from environment variables
-const squareAccessToken = process.env.SQUARE_ACCESS_TOKEN || '';
-const squareAppId = process.env.SQUARE_APPLICATION_ID || '';
+const squareAccessToken = import.meta.env?.SQUARE_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN || '';
+const squareAppId = import.meta.env?.SQUARE_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID || '';
 let squareClient: Client | null = null;
 
 try {
@@ -52,7 +52,7 @@ export class SquareService {
     });
 
     // Different URLs for sandbox and production
-    const baseUrl = process.env.NODE_ENV === 'production'
+    const baseUrl = (import.meta.env?.NODE_ENV || process.env.NODE_ENV) === 'production'
       ? 'https://connect.squareup.com'
       : 'https://connect.squareupsandbox.com';
 
@@ -78,7 +78,7 @@ export class SquareService {
       const response = await squareClient.oAuthApi.obtainToken({
         code,
         clientId: squareAppId,
-        clientSecret: process.env.SQUARE_APPLICATION_SECRET || '',
+        clientSecret: import.meta.env?.SQUARE_APPLICATION_SECRET || process.env.SQUARE_APPLICATION_SECRET || '',
         grantType: 'authorization_code'
       });
 
@@ -91,14 +91,14 @@ export class SquareService {
       // Store Square account in the database
       await this.saveSquareAccount(
         userId, 
-        result.merchantId, 
-        result.accessToken,
-        result.refreshToken || ''
+        merchantId, 
+        accessToken,
+        refreshToken || ''
       );
 
       return { 
         success: true, 
-        squareAccountId: result.merchantId 
+        squareAccountId: merchantId 
       };
     } catch (error: any) {
       console.error('Square OAuth error:', error);
@@ -232,7 +232,9 @@ export class SquareService {
         try {
           await squareClient.oAuthApi.revokeToken({
             clientId: squareAppId,
-            accessToken: integration.accessToken
+            accessToken: integration.accessToken,
+            // Add merchantId if available
+            merchantId: integration.providerAccountId || undefined
           });
         } catch (error) {
           console.error('Error revoking Square token:', error);
