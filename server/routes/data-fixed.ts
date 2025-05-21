@@ -65,7 +65,7 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
         try {
           const result = await db.execute(`
             SELECT o.id, o.order_number, o.status, o.event_type, o.event_date, 
-                    o.delivery_type, o.delivery_details, o.total, o.notes,
+                    o.delivery_type, o.delivery_address, o.total, o.notes,
                     c.first_name, c.last_name, c.email, c.phone  
             FROM orders o
             LEFT JOIN contacts c ON o.contact_id = c.id
