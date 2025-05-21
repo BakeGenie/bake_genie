@@ -157,12 +157,23 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     return savedCustomEventTypes ? JSON.parse(savedCustomEventTypes) : [];
   });
 
-  // Initialize form with default or initial values
+  // Initialize form with properly merged default and initial values
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
       ...defaultValues,
       ...initialValues,
+      // Ensure these values are always set to prevent controlled/uncontrolled input issues
+      orderDate: initialValues?.orderDate || new Date(),
+      eventDate: initialValues?.eventDate || new Date(),
+      customerId: initialValues?.contactId || 0,
+      items: initialValues?.items || defaultValues.items,
+      // Ensure proper nesting for nested objects
+      customer: {
+        ...defaultValues.customer,
+        ...(initialValues?.customer || {}),
+        userId: 1, // Always ensure this is set
+      },
     },
   });
   
