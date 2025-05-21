@@ -1,4 +1,5 @@
-import { ApiError, Client } from 'square';
+import { SquareClient } from 'square';
+import { SquareEnvironment } from 'square';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { users, integrations } from '@shared/schema';
@@ -6,15 +7,15 @@ import { users, integrations } from '@shared/schema';
 // Initialize Square client with credentials from environment variables
 const squareAccessToken = import.meta.env?.SQUARE_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN || '';
 const squareAppId = import.meta.env?.SQUARE_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID || '';
-let squareClient: Client | null = null;
+let squareClient: SquareClient | null = null;
 
 try {
   if (squareAccessToken) {
-    squareClient = new Client({
+    squareClient = new SquareClient({
       accessToken: squareAccessToken,
-      environment: process.env.NODE_ENV === 'production' 
-        ? 'production' 
-        : 'sandbox'
+      environment: (import.meta.env?.NODE_ENV || process.env.NODE_ENV) === 'production' 
+        ? SquareEnvironment.Production 
+        : SquareEnvironment.Sandbox
     });
   } else {
     console.log('Warning: SQUARE_ACCESS_TOKEN not found in environment variables');
