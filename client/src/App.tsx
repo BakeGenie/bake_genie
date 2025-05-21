@@ -11,6 +11,7 @@ import AppLayout from "./layouts/app-layout";
 import Dashboard from "./pages/dashboard";
 import Orders from "./pages/orders";
 import OrderDetails from "./pages/order-details";
+import OrdersSimple from "./pages/OrdersSimple";
 import Contacts from "./pages/contacts";
 import Enquiries from "./pages/enquiries";
 import EnquiryForm from "./pages/enquiry-form";
@@ -57,6 +58,7 @@ function Router() {
         <Route path="/orders/simple" component={SimpleOrder} />
         <Route path="/orders/direct" component={DirectOrder} />
         <Route path="/orders/:id" component={OrderDetails} />
+        <Route path="/orders-simple" component={OrdersSimple} />
         <Route path="/orders" component={Orders} />
         <Route path="/contacts" component={Contacts} />
         <Route path="/enquiries" component={Enquiries} />

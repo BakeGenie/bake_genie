@@ -10,7 +10,6 @@ import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
 import OrderForm from "@/components/order/order-form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { format } from "date-fns";
 
 const Orders = () => {
   const [location, navigate] = useLocation();
@@ -55,40 +54,15 @@ const Orders = () => {
     }
   }, [isNewOrderDialogOpen, location, navigate]);
   
-  // Fetch orders
-  const { data: rawOrders = [], isLoading } = useQuery({
+  // Fetch orders directly
+  const { data, isLoading } = useQuery({
     queryKey: ['/api/orders'],
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
   });
-  
-  // Map the API response to the expected OrderWithItems format
-  const orders = React.useMemo(() => {
-    return (rawOrders as any[]).map((order) => ({
-      id: order.id,
-      userId: order.user_id,
-      contactId: order.contact_id,
-      orderNumber: order.order_number,
-      eventType: order.event_type,
-      eventDate: order.event_date,
-      status: order.status,
-      deliveryType: order.delivery_type,
-      deliveryTime: order.delivery_time,
-      total: order.total_amount,
-      totalAmount: order.total_amount,
-      amount_paid: order.amount_paid,
-      notes: order.notes,
-      createdAt: order.created_at,
-      updatedAt: order.updated_at,
-      
-      // Add empty contact and items arrays to prevent errors
-      contact: { id: order.contact_id, firstName: "", lastName: "" } as any,
-      items: []
-    }));
-  }, [rawOrders]);
+
+  console.log("Raw API response orders:", data);
   
   // Handle order form submission
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (formData: any) => {
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/orders', {
@@ -96,7 +70,7 @@ const Orders = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
       
       if (!res.ok) {
@@ -138,51 +112,65 @@ const Orders = () => {
     setShowCancelled(true);
   };
   
-  // Filter orders based on filter states
-  const filteredOrders = orders.filter((order: any) => {
-    // Filter by order status (Order vs Quote)
-    if (order.status === 'Quote' && !showQuotes) return false;
-    if (order.status !== 'Quote' && !showOrders) return false;
+  // Filter and prepare the orders for display
+  const filteredOrders = React.useMemo(() => {
+    if (!data || !Array.isArray(data)) return [];
     
-    // Filter by payment status
-    // Default to "No Payments" if no amount_paid
-    const amountPaid = parseFloat(order.amount_paid || '0');
-    const totalAmount = parseFloat(order.totalAmount || order.total || '0');
-    
-    let paymentStatus = 'No Payments';
-    if (amountPaid > 0 && amountPaid < totalAmount) {
-      paymentStatus = 'Partial Payment';
-    } else if (amountPaid > 0 && amountPaid === totalAmount) {
-      paymentStatus = 'Paid in Full';
-    }
-    
-    if (paymentStatus === 'No Payments' && !showNoPayments) return false;
-    if (paymentStatus === 'Booking Payment' && !showBookingPayments) return false;
-    if (paymentStatus === 'Partial Payment' && !showPartialPayments) return false;
-    if (paymentStatus === 'Paid in Full' && !showPaidInFull) return false;
-    
-    // Filter by completion status
-    if (order.status === 'Completed' && !showCompleted) return false;
-    if (order.status === 'Cancelled' && !showCancelled) return false;
-    
-    // Always filter by month and year
-    const orderDate = new Date(order.eventDate || order.event_date);
-    if (orderDate.getMonth() + 1 !== month || orderDate.getFullYear() !== year) {
-      return false;
-    }
-    
-    // Filter by search
-    if (search) {
-      const searchLower = search.toLowerCase();
-      return (
-        // Use the actual properties from the API response with fallbacks
-        (order.eventType && order.eventType.toLowerCase().includes(searchLower)) ||
-        (order.orderNumber && order.orderNumber.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    return true;
-  });
+    return data
+      .filter((order: any) => {
+        // Always filter by month and year first
+        const orderDate = new Date(order.event_date);
+        if (orderDate.getMonth() + 1 !== month || orderDate.getFullYear() !== year) {
+          return false;
+        }
+        
+        // Filter by order status (Order vs Quote)
+        if (order.status === 'Quote' && !showQuotes) return false;
+        if (order.status !== 'Quote' && !showOrders) return false;
+        
+        // Filter by payment status
+        const amountPaid = parseFloat(order.amount_paid || '0');
+        const totalAmount = parseFloat(order.total_amount || '0');
+        
+        let paymentStatus = 'No Payments';
+        if (amountPaid > 0 && amountPaid < totalAmount) {
+          paymentStatus = 'Partial Payment';
+        } else if (amountPaid > 0 && amountPaid === totalAmount) {
+          paymentStatus = 'Paid in Full';
+        }
+        
+        if (paymentStatus === 'No Payments' && !showNoPayments) return false;
+        if (paymentStatus === 'Booking Payment' && !showBookingPayments) return false;
+        if (paymentStatus === 'Partial Payment' && !showPartialPayments) return false;
+        if (paymentStatus === 'Paid in Full' && !showPaidInFull) return false;
+        
+        // Filter by completion status
+        if (order.status === 'Completed' && !showCompleted) return false;
+        if (order.status === 'Cancelled' && !showCancelled) return false;
+        
+        // Filter by search term
+        if (search) {
+          const searchLower = search.toLowerCase();
+          const matchesSearch = (
+            (order.order_number && order.order_number.toLowerCase().includes(searchLower)) ||
+            (order.event_type && order.event_type.toLowerCase().includes(searchLower))
+          );
+          
+          if (!matchesSearch) return false;
+        }
+        
+        return true;
+      })
+      .sort((a: any, b: any) => {
+        // Sort by event date
+        const dateA = new Date(a.event_date);
+        const dateB = new Date(b.event_date);
+        return dateA.getTime() - dateB.getTime();
+      });
+  }, [data, month, year, showQuotes, showOrders, showNoPayments, showBookingPayments, 
+      showPartialPayments, showPaidInFull, showCompleted, showCancelled, search]);
+  
+  console.log("Filtered orders:", filteredOrders);
   
   // Generate month options
   const monthOptions = [
@@ -204,16 +192,7 @@ const Orders = () => {
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
   
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    
-    // Store the selected date in localStorage
-    localStorage.setItem('selectedDate', date.toISOString());
-    
-    console.log('Date selected from calendar:', date.toISOString());
-  };
-  
-  const handleOrderClick = (order: OrderWithItems) => {
+  const handleOrderClick = (order: any) => {
     navigate(`/orders/${order.id}`);
   };
   
@@ -246,41 +225,7 @@ const Orders = () => {
         }
       />
       
-      {/* Calendar and Date Selection Section - Similar to BakeDiary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 mb-6 gap-6">
-        <div className="md:col-span-1 bg-white rounded-md border shadow-sm">
-          <div className="p-4">
-            <div className="text-lg font-semibold mb-2">Today's Date</div>
-            <div className="flex items-center gap-2">
-              <div className="text-5xl font-bold">
-                {new Date().getDate()}
-              </div>
-              <div>
-                <div className="text-lg font-medium">
-                  {format(new Date(), "MMM")}
-                </div>
-                <div className="text-lg">
-                  {format(new Date(), "EEEE")}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="md:col-span-2 bg-white rounded-md border shadow-sm">
-          <div className="p-4">
-            <OrderCalendar
-              orders={orders}
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              month={month}
-              year={year}
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* Order Period and Filter Controls - Similar to BakeDiary */}
+      {/* Order Period and Filter Controls */}
       <div className="bg-white rounded-md border shadow-sm mb-6 p-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -323,7 +268,7 @@ const Orders = () => {
           <div className="relative flex-1 max-w-md">
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search orders by customer, event type or order number"
+              placeholder="Search orders by event type or order number"
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -332,113 +277,94 @@ const Orders = () => {
         </div>
       </div>
       
-      {/* Orders List - Styled like screenshot */}
+      {/* Orders List */}
       <div className="flex-1 bg-white rounded-md border shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full p-8">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" aria-label="Loading" />
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
           </div>
-        ) : filteredOrders.length > 0 ? (
-          <div className="divide-y divide-gray-100">
-            {filteredOrders
-              // Sort orders by event date
-              .sort((a, b) => {
-                const dateA = new Date(a.eventDate || a.event_date);
-                const dateB = new Date(b.eventDate || b.event_date);
-                return dateA.getTime() - dateB.getTime();
-              })
-              .map((order: any) => {
-                // Format price with dollar sign
-                const price = parseFloat(order.totalAmount || order.total_amount || '0').toFixed(2);
-                
-                // Format date for display like in screenshot example
-                const orderDate = new Date(order.eventDate || order.event_date);
-                const dayName = orderDate.toLocaleString('default', { weekday: 'short' });
-                const dayNum = orderDate.getDate();
-                const monthName = orderDate.toLocaleString('default', { month: 'short' });
-                const yearNum = orderDate.getFullYear();
-                
-                // Get order type and customer name/business name 
-                const orderEventType = order.eventType || order.event_type || '';
-                const isBusinessEvent = orderEventType === 'Corporate';
-                
-                // Status badge for paid, quote, cancelled
-                const isPaid = order.status === 'Paid';
-                const isCancelled = order.status === 'Cancelled';
-                const isQuote = order.status === 'Quote';
-                
-                // Background color for cancelled items
-                const itemBgClass = isCancelled ? 'bg-gray-100' : '';
-                
-                // Status badge styling
-                const badgeClass = isCancelled 
-                  ? "bg-gray-500 text-white text-xs py-0.5 px-2 rounded" 
-                  : isPaid 
-                    ? "bg-gray-200 text-gray-800 text-xs py-0.5 px-2 rounded" 
-                    : "bg-blue-100 text-blue-700 text-xs py-0.5 px-2 rounded";
-                
-                return (
-                  <div key={order.id} className={`py-3 px-4 hover:bg-gray-50 ${itemBgClass}`} onClick={() => handleOrderClick(order)}>
-                    <div className="flex justify-between">
-                      <div className="flex items-start">
-                        {/* Order number and icon marker */}
-                        <div className="flex-shrink-0 mt-1 w-6 mr-1">
-                          <div className="w-5 h-5 flex items-center justify-center">
-                            {isCancelled ? (
-                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                            ) : (
-                              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Order details */}
-                        <div>
-                          <div className="text-gray-500 text-sm">
-                            #{order.orderNumber || order.order_number} - {dayName}, {dayNum} {monthName} {yearNum}
-                          </div>
-                          <div className="text-blue-600">
-                            Contact #{order.contactId || order.contact_id} <span className="text-gray-500">({orderEventType})</span>
-                          </div>
-                          <div className="text-gray-500 text-sm">
-                            {order.notes || "No description available"}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Price and status */}
-                      <div className="flex flex-col items-end">
-                        <div className="font-medium">$ {price}</div>
-                        <div className="mt-1">
-                          <span className={badgeClass}>{order.status}</span>
-                        </div>
-                        <div className="flex mt-1">
-                          <button className="text-gray-400 hover:text-gray-600 mr-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                              <polyline points="14 2 14 8 20 8"></polyline>
-                              <line x1="16" y1="13" x2="8" y2="13"></line>
-                              <line x1="16" y1="17" x2="8" y2="17"></line>
-                              <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                          </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                              <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        ) : (
+        ) : !filteredOrders.length ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-500">
             <p className="mb-4">No orders found for the selected filters.</p>
             <Button onClick={resetAllFilters} variant="outline">Reset Filters</Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredOrders.map((order: any) => {
+              // Format date nicely
+              const orderDate = new Date(order.event_date);
+              const dayName = orderDate.toLocaleString('default', { weekday: 'short' });
+              const dayNum = orderDate.getDate();
+              const monthName = orderDate.toLocaleString('default', { month: 'short' });
+              const yearNum = orderDate.getFullYear();
+              
+              // Format price
+              const price = parseFloat(order.total_amount || '0').toFixed(2);
+              
+              // Determine status badge class
+              const isPaid = order.status === 'Paid';
+              const isCancelled = order.status === 'Cancelled';
+              
+              const statusBadgeClass = isCancelled 
+                ? "bg-gray-500 text-white text-xs px-2 py-1 rounded" 
+                : isPaid 
+                  ? "bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded" 
+                  : "bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded";
+              
+              return (
+                <div 
+                  key={order.id} 
+                  className={`p-4 hover:bg-gray-50 cursor-pointer flex justify-between ${isCancelled ? 'bg-gray-100' : ''}`}
+                  onClick={() => handleOrderClick(order)}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-1">
+                      {isCancelled ? (
+                        <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                      ) : (
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <div className="text-gray-500 text-sm">
+                        #{order.order_number} - {dayName}, {dayNum} {monthName} {yearNum}
+                      </div>
+                      <div className="text-blue-600">
+                        Contact #{order.contact_id} <span className="text-gray-500">({order.event_type})</span>
+                      </div>
+                      <div className="text-gray-500 text-sm mt-1">
+                        {order.notes || "No description available"}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-end">
+                    <div className="font-medium">$ {price}</div>
+                    <div className="mt-1">
+                      <span className={statusBadgeClass}>{order.status}</span>
+                    </div>
+                    <div className="flex mt-1">
+                      <button className="text-gray-400 hover:text-gray-600 mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                      </button>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                          <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -453,8 +379,7 @@ const Orders = () => {
           <div className="overflow-y-auto pr-1 flex-1">
             <OrderForm 
               onSubmit={handleFormSubmit} 
-              isSubmitting={isSubmitting}
-              defaultValues={(() => {
+              initialValues={(() => {
                 // Try to get the selected date from localStorage
                 const storedDate = localStorage.getItem('selectedDate');
                 
@@ -570,7 +495,7 @@ const Orders = () => {
               </div>
             </div>
             
-            {/* Order Status Filters */}
+            {/* Status Filters */}
             <div className="space-y-2 border-t border-gray-200 pt-3">
               <div className="flex items-center space-x-2">
                 <input
@@ -600,28 +525,12 @@ const Orders = () => {
             </div>
           </div>
           
-          <div className="flex justify-between mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsFilterDialogOpen(false)}
-            >
-              Cancel
+          <div className="flex justify-between pt-3">
+            <Button variant="outline" onClick={resetAllFilters}>
+              Reset Filters
             </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                // Apply all filters and close dialog
-                setIsFilterDialogOpen(false);
-                
-                // Show success toast
-                toast({
-                  title: "Filters Applied",
-                  description: "Your order filters have been updated."
-                });
-              }}
-            >
-              Save
+            <Button onClick={() => setIsFilterDialogOpen(false)}>
+              Apply Filters
             </Button>
           </div>
         </DialogContent>
