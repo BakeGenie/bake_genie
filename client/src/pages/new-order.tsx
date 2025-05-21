@@ -103,35 +103,51 @@ const NewOrderPage = () => {
     }
   };
 
-  // Create initialValues object for the form based on preselected date
+  // Create initialValues object for the form
   const initialValues = React.useMemo(() => {
-    // Always start with today's date for order date
+    // Start with today's date as the order date
     const today = new Date();
     const values: Partial<OrderFormValues> = {
       orderDate: today
     };
     
-    // If we have a preselected date from the calendar, use it for event date
-    if (preselectedDate) {
+    // First check localStorage for a date that might have been set from the calendar
+    const storedEventDate = localStorage.getItem('pendingEventDate');
+    
+    if (storedEventDate) {
       try {
-        console.log("Processing preselected date:", preselectedDate);
+        console.log("Found stored event date:", storedEventDate);
+        const selectedDate = new Date(storedEventDate);
+        
+        if (!isNaN(selectedDate.getTime())) {
+          // Use the stored event date
+          values.eventDate = selectedDate;
+          console.log("Using stored event date:", selectedDate);
+          
+          // Clear the localStorage item now that we've used it
+          localStorage.removeItem('pendingEventDate');
+        }
+      } catch (e) {
+        console.error("Invalid stored date format:", storedEventDate);
+      }
+    }
+    // If there's nothing in localStorage, try URL parameter as fallback
+    else if (preselectedDate) {
+      try {
+        console.log("Using URL parameter date:", preselectedDate);
         const selectedDate = new Date(preselectedDate);
         
         if (!isNaN(selectedDate.getTime())) {
-          // Set the event date to the selected calendar date
           values.eventDate = selectedDate;
-          
           console.log("Calendar: Selected date for new order:", selectedDate.toISOString().split('T')[0]);
-          // Log the complete values object
-          console.log("Initial values being passed to form:", values);
-        } else {
-          console.error("Invalid date created from:", preselectedDate);
         }
       } catch (e) {
-        console.error("Invalid date format:", preselectedDate);
+        console.error("Invalid date format from URL:", preselectedDate);
       }
     }
     
+    // Log the complete values being passed to form
+    console.log("Initial values being passed to form:", values);
     return values;
   }, [preselectedDate]);
 

@@ -398,13 +398,15 @@ const Calendar = () => {
               onClick={() => {
                 setIsActionDialogOpen(false);
                 if (selectedDate) {
-                  // Navigate directly to the new order page with the date parameter
-                  // Format date as yyyy-MM-dd and ensure it's properly encoded for URL
+                  // Store the selected date in localStorage for easy access
                   const formattedDate = format(selectedDate, "yyyy-MM-dd");
-                  console.log("Calendar: Selected date for new order:", formattedDate);
+                  console.log("Calendar: Storing selected date for new order:", formattedDate);
                   
-                  // Use eventDate to be more explicit in the query parameter
-                  navigate(`/orders/new?eventDate=${encodeURIComponent(formattedDate)}`);
+                  // Use localStorage to pass the date - more reliable than URL parameters
+                  localStorage.setItem('pendingEventDate', formattedDate);
+                  
+                  // Navigate without parameters - we'll get the date from localStorage
+                  navigate('/orders/new');
                 }
               }}
             >
