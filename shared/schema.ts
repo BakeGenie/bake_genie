@@ -58,12 +58,9 @@ export const contacts = pgTable("contacts", {
   phone: text("phone"),
   businessName: text("business_name"),
   address: text("address"),
-  city: text("city"),
-  state: text("state"),
-  zip: text("zip"),
-  country: text("country"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Orders table
