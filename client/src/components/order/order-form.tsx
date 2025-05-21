@@ -308,8 +308,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     
     // Update item with product details
     item.productId = product.id;
-    item.recipeId = undefined; // Clear recipe ID if previously selected
-    item.itemType = 'product';
+    // These fields aren't in our database schema, so we'll use the 'type' field instead
+    item.type = 'Product';
     item.description = product.name;
     item.productName = product.name;
     
@@ -342,9 +342,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     const item = currentItems[index];
     
     // Update item with recipe details
-    item.recipeId = recipe.id;
+    // Use standard fields that match our database structure
     item.productId = undefined; // Clear product ID if previously selected
-    item.itemType = 'recipe';
+    item.type = 'Recipe';
     item.description = recipe.name;
     item.productName = recipe.name;
     
@@ -978,12 +978,11 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <div className="col-span-12 md:col-span-4 lg:col-span-3">
                       <Label className="text-xs mb-1 block">Item Type</Label>
                       <Select
-                        value={watch(`items.${index}.itemType`) || 'product'} 
+                        value={watch(`items.${index}.type`) || 'Product'} 
                         onValueChange={(value) => {
-                          setValue(`items.${index}.itemType`, value);
+                          setValue(`items.${index}.type`, value);
                           // Clear existing selections when changing type
                           setValue(`items.${index}.productId`, undefined);
-                          setValue(`items.${index}.recipeId`, undefined);
                         }}
                       >
                         <SelectTrigger className="w-full">

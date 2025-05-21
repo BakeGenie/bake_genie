@@ -151,21 +151,27 @@ router.post("/api/orders", async (req, res) => {
         for (const item of items) {
           console.log("Processing item:", item);
           
-          await client.query(
-            `INSERT INTO order_items (
-              order_id, product_id, description, quantity, price, name, type, unit_price
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [
-              newOrder.id,
-              item.productId || null,
-              item.description || '',
-              item.quantity || 1,
-              item.price ? item.price.toString() : '0',
-              item.name || item.description || 'Product', // Name field is required
-              item.type || 'Product', // Type field is required
-              item.unitPrice ? item.unitPrice.toString() : (item.price ? item.price.toString() : '0') // UnitPrice field is required
-            ]
-          );
+          try {
+            await client.query(
+              `INSERT INTO order_items (
+                order_id, product_id, description, quantity, price, name, type, unit_price
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [
+                newOrder.id,
+                item.productId || null,
+                item.description || '',
+                item.quantity || 1,
+                item.price ? item.price.toString() : '0',
+                item.name || item.description || 'Product', // Name field is required
+                item.type || 'Product', // Type field is required
+                item.unitPrice ? item.unitPrice.toString() : (item.price ? item.price.toString() : '0') // UnitPrice field is required
+              ]
+            );
+          } catch (itemError) {
+            console.error("Error inserting order item:", itemError);
+            console.error("Problem item data:", JSON.stringify(item, null, 2));
+            throw itemError; // Re-throw to trigger transaction rollback
+          }
         }
       }
       
