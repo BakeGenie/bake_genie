@@ -495,9 +495,6 @@ const Orders = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-    {/* Filter Dialog */}
-    <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogTitle>Change Order Filters</DialogTitle>
         <div className="space-y-3 py-3">
