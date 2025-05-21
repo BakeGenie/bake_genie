@@ -118,7 +118,7 @@ const Contacts = () => {
       header: "Last Name",
     },
     {
-      accessorKey: "company",
+      accessorKey: "businessName",
       header: "Company",
     },
     {
@@ -210,7 +210,7 @@ const Contacts = () => {
               
               <FormField
                 control={form.control}
-                name="company"
+                name="businessName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Business</FormLabel>
