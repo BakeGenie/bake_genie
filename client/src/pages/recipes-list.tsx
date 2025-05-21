@@ -62,7 +62,14 @@ const RecipesList = () => {
         backLink="/recipes" 
         backLabel="Back to Recipes & Ingredients"
         actions={
-          <Button className="ml-auto" size="sm">
+          <Button 
+            className="ml-auto" 
+            size="sm" 
+            onClick={() => {
+              // Create a new recipe and display add recipe form
+              navigate("/recipes/add-recipe");
+            }}
+          >
             <PlusIcon className="mr-2 h-4 w-4" /> Add New Recipe
           </Button>
         }

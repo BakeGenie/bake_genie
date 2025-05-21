@@ -18,6 +18,7 @@ import TaskList from "./pages/task-list";
 import Calendar from "./pages/calendar";
 import Recipes from "./pages/recipes-new";
 import RecipesList from "./pages/recipes-list";
+import AddRecipe from "./pages/add-recipe";
 import IngredientsList from "./pages/ingredients-list";
 import SuppliesList from "./pages/supplies-list";
 import MasterIngredients from "./pages/master-ingredients";
@@ -57,6 +58,7 @@ function Router() {
         <Route path="/calendar" component={Calendar} />
         <Route path="/recipes" component={Recipes} />
         <Route path="/recipes/recipes-list" component={RecipesList} />
+        <Route path="/recipes/add-recipe" component={AddRecipe} />
         <Route path="/recipes/ingredients-list" component={IngredientsList} />
         <Route path="/recipes/supplies-list" component={SuppliesList} />
         <Route path="/recipes/master-ingredients" component={MasterIngredients} />
