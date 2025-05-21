@@ -475,42 +475,51 @@ export default function DataImportExport() {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-2">
-                <Button 
-                  onClick={handleImport} 
-                  disabled={!importFile || isImporting}
-                  className="w-full"
-                >
-                  {isImporting ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Import Data
-                    </>
-                  )}
-                </Button>
+                {importFile && importFile.name.toLowerCase().endsWith('.csv') && (
+                  <Button 
+                    onClick={handleImportFromCakeDiary} 
+                    disabled={isImporting}
+                    className="w-full"
+                  >
+                    {isImporting ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Importing CSV...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Bake Diary CSV
+                      </>
+                    )}
+                  </Button>
+                )}
                 
-                <Button 
-                  onClick={handleImportFromCakeDiary} 
-                  disabled={!importFile || isImporting}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {isImporting ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Import from Bake Diary
-                    </>
-                  )}
-                </Button>
+                {importFile && importFile.type === "application/json" && (
+                  <Button 
+                    onClick={handleImport} 
+                    disabled={isImporting}
+                    className="w-full"
+                  >
+                    {isImporting ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Importing JSON...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import JSON Backup
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {!importFile && (
+                  <div className="w-full py-2 text-center text-muted-foreground">
+                    Please select a file to import
+                  </div>
+                )}
               </CardFooter>
             </Card>
           </TabsContent>
