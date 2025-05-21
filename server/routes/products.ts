@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { products, type InsertProduct } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
