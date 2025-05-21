@@ -2,7 +2,7 @@ import React from "react";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { FormatCurrency } from "@/components/ui/format-currency";
-import { Mail, FileText, Info, Calendar, Tag, DollarSign, Percent } from "lucide-react";
+import { Mail, FileText, Info, Calendar, Tag, DollarSign, Clock, Truck, MapPin } from "lucide-react";
 
 interface OrderCardProps {
   order: OrderWithItems;
@@ -24,6 +24,12 @@ const formatOrderDate = (dateString: string | Date | null | undefined) => {
   });
 };
 
+// Format currency with $ sign and 2 decimal places
+const formatCurrency = (value: string | number | undefined | null): string => {
+  if (value === undefined || value === null) return "$0.00";
+  return `$${parseFloat(value.toString()).toFixed(2)}`;
+};
+
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected = false,
@@ -31,8 +37,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEmailClick,
   onDownloadClick,
 }) => {
-  const isQuote = order.status === 'Quote';
-  const isPaid = order.status === 'Paid';
+  const isQuote = order.status === 'Quote' || order.isQuote;
+  const isPaid = order.status === 'Paid' || (order.balancePaid && order.depositPaid);
   const isCancelled = order.status === "Cancelled";
   
   // Generate order number with padded zeros
@@ -48,7 +54,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     : '';
   
   // Get business name if available
-  const businessName = order.contact?.business || '';
+  const businessName = order.contact?.businessName || '';
   
   // Combine customer with event type (like in screenshot)
   const customerDisplay = customerName + (order.eventType ? ` (${order.eventType})` : '');
@@ -113,51 +119,105 @@ const OrderCard: React.FC<OrderCardProps> = ({
             {descriptionText}
           </div>
           
-          {/* Order Financial Details */}
+          {/* Order Financial and Delivery Details */}
           <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
-            {/* Amount Paid */}
-            {order.amount_paid && (
+            {/* Tax Amount */}
+            {order.tax && (
               <div className="flex items-center">
-                <DollarSign className="h-3 w-3 mr-1" />
-                <span>Paid: ${parseFloat(order.amount_paid.toString()).toFixed(2)}</span>
+                <Tag className="h-3 w-3 mr-1" />
+                <span>Tax: {formatCurrency(order.tax)}</span>
               </div>
             )}
             
             {/* Tax Rate */}
             {order.taxRate && (
               <div className="flex items-center">
-                <Percent className="h-3 w-3 mr-1" />
-                <span>Tax: {parseFloat(order.taxRate.toString()).toFixed(2)}%</span>
+                <Info className="h-3 w-3 mr-1" />
+                <span>Rate: {parseFloat(order.taxRate.toString()).toFixed(2)}%</span>
+              </div>
+            )}
+            
+            {/* Discount */}
+            {order.discount && parseFloat(order.discount.toString()) > 0 && (
+              <div className="flex items-center">
+                <Tag className="h-3 w-3 mr-1" />
+                <span>Discount: {formatCurrency(order.discount)}</span>
+              </div>
+            )}
+            
+            {/* Deposit information */}
+            {order.depositAmount && (
+              <div className="flex items-center">
+                <DollarSign className="h-3 w-3 mr-1" />
+                <span>Deposit: {formatCurrency(order.depositAmount)}</span>
+                {order.depositPaid && <span className="ml-1 text-green-600">✓</span>}
+              </div>
+            )}
+            
+            {/* Deposit Paid Date */}
+            {order.depositPaidDate && (
+              <div className="flex items-center">
+                <Calendar className="h-3 w-3 mr-1" />
+                <span>Paid on: {new Date(order.depositPaidDate).toLocaleDateString()}</span>
+              </div>
+            )}
+            
+            {/* Balance Paid Date */}
+            {order.balancePaidDate && (
+              <div className="flex items-center">
+                <Calendar className="h-3 w-3 mr-1" />
+                <span>Fully paid: {new Date(order.balancePaidDate).toLocaleDateString()}</span>
+              </div>
+            )}
+            
+            {/* Subtotal (if different from total) */}
+            {order.subtotal && order.subtotal !== order.total && (
+              <div className="flex items-center">
+                <DollarSign className="h-3 w-3 mr-1" />
+                <span>Subtotal: {formatCurrency(order.subtotal)}</span>
               </div>
             )}
             
             {/* Delivery Type */}
             {order.deliveryType && (
               <div className="flex items-center col-span-2">
-                <span>Delivery: {order.deliveryType}</span>
-                {order.deliveryTime && <span className="ml-1">at {order.deliveryTime}</span>}
+                <Truck className="h-3 w-3 mr-1" />
+                <span>{order.deliveryType}</span>
+                {order.deliveryFee && <span className="ml-2">Fee: {formatCurrency(order.deliveryFee)}</span>}
               </div>
             )}
             
-            {/* Delivery Address/Details */}
-            {order.delivery_address && (
+            {/* Delivery Date/Time */}
+            {(order.deliveryDate || order.deliveryTime) && (
               <div className="flex items-center col-span-2">
-                <span>Address: {order.delivery_address}</span>
+                <Clock className="h-3 w-3 mr-1" />
+                <span>
+                  {order.deliveryDate && `${new Date(order.deliveryDate).toLocaleDateString()}`}
+                  {order.deliveryDate && order.deliveryTime && " at "}
+                  {order.deliveryTime && order.deliveryTime}
+                </span>
               </div>
             )}
             
-            {/* Delivery Details */}
-            {order.deliveryDetails && (
+            {/* Delivery Address */}
+            {order.deliveryAddress && (
               <div className="flex items-center col-span-2">
-                <span>Details: {order.deliveryDetails}</span>
+                <MapPin className="h-3 w-3 mr-1" />
+                <span>{order.deliveryAddress}</span>
               </div>
             )}
             
-            {/* Special Instructions */}
-            {order.special_instructions && (
-              <div className="flex items-center col-span-2">
-                <Info className="h-3 w-3 mr-1" />
-                <span>Instructions: {order.special_instructions}</span>
+            {/* Item summary */}
+            {order.items && order.items.length > 0 && (
+              <div className="flex items-start col-span-2 mt-1 border-t border-gray-100 pt-1">
+                <div className="font-medium">Items ({order.items.length}):</div>
+                <div className="ml-1">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="mb-0.5">
+                      {item.quantity}× {item.name} ({formatCurrency(item.price)})
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -166,20 +226,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
         {/* Right column - Price and Status */}
         <div className="flex flex-col items-end ml-4 min-w-[80px]">
           {/* Price */}
-          <div className="text-base font-medium">
-            {order.total ? 
-              `$ ${parseFloat(order.total.toString()).toFixed(2)}` : 
-              order.total_amount ? 
-              `$ ${parseFloat(order.total_amount.toString()).toFixed(2)}` :
-              '$ 0.00'
-            }
+          <div className="text-base font-medium text-right">
+            {formatCurrency(order.total)}
           </div>
           
           {/* Status Badge */}
           <div className="mt-1 mb-auto">
             {isCancelled && <Badge variant="destructive" className="text-xs">Cancelled</Badge>}
-            {isPaid && <Badge variant="default" className="text-xs py-1 px-2 bg-gray-200 hover:bg-gray-300 text-gray-800">Paid</Badge>}
+            {isPaid && <Badge variant="default" className="text-xs py-1 px-2 bg-green-100 hover:bg-green-200 text-green-800">Paid</Badge>}
             {isQuote && <Badge variant="outline" className="text-xs">Quote</Badge>}
+            {!isQuote && !isPaid && !isCancelled && <Badge variant="secondary" className="text-xs">Pending</Badge>}
           </div>
           
           {/* Action Icons */}
