@@ -2,6 +2,7 @@ import React from "react";
 import PageHeader from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -61,6 +62,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 const Account = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState("profile");
+  const [setLocation] = useLocation();
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -426,7 +428,7 @@ const Account = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div 
                   className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
-                  onClick={() => navigate("/manage-subscription")}
+                  onClick={() => setLocation("/manage-subscription")}
                 >
                   <div className="flex items-center">
                     <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
