@@ -372,7 +372,7 @@ const Orders = () => {
             <h2 className="text-lg font-semibold text-gray-800 mb-6">New Order</h2>
             <OrderForm
               onSubmit={handleNewOrderSubmit}
-              initialValues={() => {
+              initialValues={(() => {
                 // First check localStorage for a date from the calendar
                 const storedEventDate = localStorage.getItem('pendingEventDate');
                 
@@ -389,7 +389,7 @@ const Orders = () => {
                 
                 // Fall back to the URL parameter if localStorage is empty
                 return preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined;
-              }}
+              })()}
             />
           </div>
         </DialogContent>
