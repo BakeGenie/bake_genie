@@ -22,8 +22,7 @@ router.get("/", async (req: Request, res: Response) => {
       phone: contacts.phone,
       address: contacts.address,
       notes: contacts.notes,
-      createdAt: contacts.createdAt,
-      updatedAt: contacts.updatedAt
+      createdAt: contacts.createdAt
     }).from(contacts).orderBy(contacts.lastName);
     
     return res.status(200).json(allContacts);
@@ -49,8 +48,7 @@ router.get("/:id", async (req: Request, res: Response) => {
       phone: contacts.phone,
       address: contacts.address,
       notes: contacts.notes,
-      createdAt: contacts.createdAt,
-      updatedAt: contacts.updatedAt
+      createdAt: contacts.createdAt
     }).from(contacts).where(eq(contacts.id, id));
     
     if (!contact) {

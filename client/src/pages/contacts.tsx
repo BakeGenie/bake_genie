@@ -62,12 +62,8 @@ const Contacts = () => {
       lastName: "",
       email: "",
       phone: "",
-      company: "",
+      businessName: "",
       address: "",
-      city: "",
-      state: "",
-      zip: "",
-      country: "",
       notes: "",
     },
   });

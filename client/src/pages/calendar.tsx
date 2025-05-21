@@ -201,6 +201,58 @@ const Calendar = () => {
               <SelectItem value="day">Day</SelectItem>
             </SelectContent>
           </Select>
+          
+          <Select 
+            value={format(currentDate, "MMMM")}
+            onValueChange={(selectedMonth) => {
+              // Get the index of the selected month (0-11)
+              const monthIndex = new Date(Date.parse(`${selectedMonth} 1, 2000`)).getMonth();
+              // Create a new date with the selected month but keep the current year
+              const newDate = new Date(currentDate);
+              newDate.setMonth(monthIndex);
+              // Update the current date
+              setCurrentDate(newDate);
+            }}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }).map((_, index) => {
+                const monthDate = new Date(currentDate.getFullYear(), index, 1);
+                return (
+                  <SelectItem key={index} value={format(monthDate, "MMMM")}>
+                    {format(monthDate, "MMMM")}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          
+          <Select 
+            value={currentDate.getFullYear().toString()}
+            onValueChange={(selectedYear) => {
+              // Create a new date with the selected year but keep the current month
+              const newDate = new Date(currentDate);
+              newDate.setFullYear(parseInt(selectedYear));
+              // Update the current date
+              setCurrentDate(newDate);
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 10 }).map((_, index) => {
+                const year = new Date().getFullYear() - 3 + index;
+                return (
+                  <SelectItem key={index} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
