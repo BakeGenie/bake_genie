@@ -403,10 +403,37 @@ const OrderDetails: React.FC = () => {
                     <div className="font-medium text-sm">Action</div>
                   </div>
                   <div className="divide-y">
+                    {/* Simple log entries for now, with fixed dates to avoid errors */}
                     <div className="grid grid-cols-2 p-3">
-                      <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy - HH:mm')}</div>
+                      <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
                       <div className="text-sm">Order Created</div>
                     </div>
+                    
+                    {/* If there's a contact email, show email sent entry */}
+                    {order.contact?.email && (
+                      <div className="grid grid-cols-2 p-3">
+                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
+                        <div className="text-sm">Email Sent - Recipient: {order.contact.email}</div>
+                      </div>
+                    )}
+                    
+                    {/* Show different statuses based on order status */}
+                    {isQuote ? (
+                      <div className="grid grid-cols-2 p-3">
+                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
+                        <div className="text-sm">Quote Created</div>
+                      </div>
+                    ) : order.status === 'Paid' ? (
+                      <div className="grid grid-cols-2 p-3">
+                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
+                        <div className="text-sm">Payment Received</div>
+                      </div>
+                    ) : order.status === 'Cancelled' ? (
+                      <div className="grid grid-cols-2 p-3">
+                        <div className="text-sm">{format(new Date(), 'EEE, dd MMM yyyy')}</div>
+                        <div className="text-sm">Order Cancelled</div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </CardContent>

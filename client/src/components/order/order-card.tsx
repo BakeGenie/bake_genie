@@ -69,50 +69,45 @@ const OrderCard: React.FC<OrderCardProps> = ({
 
   return (
     <div
-      className={`flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer ${
+      className={`relative flex items-start px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
         isSelected ? "bg-blue-50" : isCancelled ? "bg-gray-50" : ""
-      } ${isCancelled ? "" : "border-l-4 border-l-red-500"}`}
+      }`}
       onClick={onClick}
     >
-      <div className="flex-1">
-        <div className="flex items-start">
-          <input 
-            type="checkbox" 
-            className="mr-3 mt-1.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-            readOnly
-            checked={isSelected}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <div className="flex-1">
-            <div className="flex items-center">
-              <div className={`text-sm font-medium ${
-                isCancelled ? "text-gray-400 line-through" : "text-gray-800"
-              }`}>
-                #{formattedOrderNumber} - {formattedDate}
-              </div>
+      {/* Small colored circle indicating event type */}
+      <div className="absolute top-4 left-4 w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+      
+      <div className="flex-1 pl-6">
+        <div className="flex flex-col">
+          <div className="flex items-baseline mb-1">
+            <div className={`text-sm font-medium ${
+              isCancelled ? "text-gray-400 line-through" : "text-gray-800"
+            }`}>
+              #{formattedOrderNumber} - {formattedDate}
             </div>
-            <div className={`text-sm mt-0.5 ${isCancelled ? "text-gray-400 line-through" : "text-gray-600"}`}>
-              <span className="font-medium">
-                {order.contact?.firstName || ''} {order.contact?.lastName || ''}
+          </div>
+          
+          <div className={`text-sm font-medium ${isCancelled ? "text-gray-400 line-through" : "text-gray-600"}`}>
+            {order.contact?.firstName || ''} {order.contact?.lastName || ''}
+            {order.eventType && (
+              <span className={`ml-1 ${isCancelled ? "text-gray-400" : "text-blue-600"}`}>
+                ({order.eventType})
               </span>
-              {order.eventType && (
-                <span className={`ml-1 ${isCancelled ? "text-gray-400" : "text-blue-600"}`}>
-                  ({order.eventType})
-                </span>
-              )}
-            </div>
-            {order.title && (
-              <div className={`text-sm mt-0.5 ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
-                {order.title}
-              </div>
             )}
+          </div>
+          
+          {/* Order description or title - like "Pink Peppa Pink - Own Topper" */}
+          <div className={`text-sm mt-0.5 ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
+            {order.title || order.items?.[0]?.description || order.items?.[0]?.name || ''}
           </div>
         </div>
       </div>
-      <div className="flex flex-col items-end">
+      
+      <div className="flex flex-col items-end min-w-[140px]">
         <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
           <FormatCurrency amount={order.total_amount || order.total || 0} />
         </div>
+        
         <div className="mt-1">
           {order.status && (
             <div className="inline-flex items-center">
@@ -120,6 +115,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
             </div>
           )}
         </div>
+        
         <div className="flex mt-1">
           {onDownloadClick && (
             <Button
