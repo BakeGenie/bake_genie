@@ -39,6 +39,9 @@ import TaxRates from "./pages/tax-rates";
 import NewOrder from "./pages/new-order";
 import ManageFeatures from "./pages/manage-features";
 import InvoicePreview from "./pages/invoice-preview";
+import StripePaymentProvider from "./pages/payment-settings/stripe";
+import SquarePaymentProvider from "./pages/payment-settings/square";
+import TippingSettings from "./pages/payment-settings/tipping";
 
 function Router() {
   return (
@@ -72,6 +75,9 @@ function Router() {
         <Route path="/data" component={DataImportExport} />
         <Route path="/import" component={Import} />
         <Route path="/integrations" component={Integrations} />
+        <Route path="/payment-settings/stripe" component={StripePaymentProvider} />
+        <Route path="/payment-settings/square" component={SquarePaymentProvider} />
+        <Route path="/payment-settings/tipping" component={TippingSettings} />
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/manage-features" component={ManageFeatures} />
         <Route path="/invoice-preview" component={InvoicePreview} />
