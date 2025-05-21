@@ -1,7 +1,6 @@
 import React from "react";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { Mail, FileText } from "lucide-react";
 import { FormatCurrency } from "@/components/ui/format-currency";
 
 interface OrderCardProps {
@@ -12,141 +11,146 @@ interface OrderCardProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
 }
 
+// Label formatting helpers
+const formatLabel = (key: string) => {
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+};
+
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected = false,
   onClick,
-  onEmailClick,
-  onDownloadClick,
 }) => {
-  const isQuote = order.status === 'Quote';
-  const isPaid = order.status === 'Paid';
-  const isCancelled = order.status === "Cancelled";
-  
-  // Format order number and date in the exact style from the screenshot
-  const formatOrderNumberAndDate = () => {
-    // Get order number
-    const orderNum = order.orderNumber || (order.id ? order.id.toString().padStart(2, '0') : '');
+  // Display all direct order fields from the database
+  const renderOrderFields = () => {
+    // Fields to exclude from rendering directly
+    const excludeFields = ['items', 'contact', 'createdAt', 'updatedAt', 'imageUrls'];
     
-    // Format date like "Tue, 06 May 2025"
-    const eventDate = order.eventDate ? new Date(order.eventDate) : null;
-    const formattedDate = eventDate ? eventDate.toLocaleDateString('en-US', {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }) : '';
-    
-    // Return in format "#21 - Tue, 06 May 2025"
-    return `#${orderNum} - ${formattedDate}`;
+    return Object.entries(order).map(([key, value]) => {
+      // Skip excluded fields and null/undefined values
+      if (excludeFields.includes(key) || value === null || value === undefined) {
+        return null;
+      }
+      
+      // Format dates
+      if (key === 'eventDate' || key === 'dueDate') {
+        const dateValue = value ? new Date(value).toLocaleDateString() : '';
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+            <span className="text-gray-600">{dateValue}</span>
+          </div>
+        );
+      }
+      
+      // Format special fields like status
+      if (key === 'status') {
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+            <Badge 
+              variant={
+                value === 'Paid' ? 'default' : 
+                value === 'Quote' ? 'outline' :
+                value === 'Cancelled' ? 'destructive' : 'secondary'
+              }
+              className="text-xs"
+            >
+              {value?.toString()}
+            </Badge>
+          </div>
+        );
+      }
+      
+      // Format price/money fields
+      if (key === 'total' || key === 'discount' || key === 'setupFee' || key === 'taxRate') {
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+            <span className="text-gray-600">
+              {typeof value === 'number' || typeof value === 'string' && !isNaN(parseFloat(value?.toString())) ? 
+                `$${parseFloat(value?.toString()).toFixed(2)}` : value?.toString()}
+            </span>
+          </div>
+        );
+      }
+      
+      // Format customer name from contact_id if available
+      if (key === 'contactId' && order.contact) {
+        return (
+          <div key={key} className="text-sm flex mb-1">
+            <span className="font-medium text-gray-700 w-32">Customer:</span>
+            <span className="text-blue-600">
+              {order.contact.firstName} {order.contact.lastName}
+            </span>
+          </div>
+        );
+      }
+      
+      // Default rendering for other fields
+      return (
+        <div key={key} className="text-sm flex mb-1">
+          <span className="font-medium text-gray-700 w-32">{formatLabel(key)}:</span>
+          <span className="text-gray-600">{value?.toString()}</span>
+        </div>
+      );
+    }).filter(Boolean); // Remove null entries
   };
   
-  // Get the customer name with event type in parentheses
-  const customerDisplay = () => {
-    if (!order.contact) return '';
-    
-    const name = `${order.contact.firstName || ''} ${order.contact.lastName || ''}`;
-    const eventType = order.eventType ? `(${order.eventType})` : '';
-    
-    return (
-      <div className={`${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
-        {name} {eventType}
-      </div>
-    );
-  };
-  
-  // Get the description text (first item description or notes)
-  const descriptionText = order.items && order.items.length > 0 
-    ? (order.items[0].description || order.items[0].name) 
-    : order.notes || '';
-  
-  // Handle email click
-  const handleEmailClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onEmailClick) onEmailClick(e);
-  };
-  
-  // Handle document click
-  const handleDocClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDownloadClick) onDownloadClick(e);
-  };
-
   return (
     <div
-      className={`relative flex items-start px-4 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
-        isSelected ? "bg-blue-50" : ""
+      className={`relative px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
+        isSelected ? "bg-blue-50" : order.status === "Cancelled" ? "bg-gray-50" : ""
       }`}
       onClick={onClick}
     >
-      {/* Red/Gray indicator dot based on status */}
-      <div className="mr-3 pt-1">
-        {order.status === 'Quote' || order.status === 'Cancelled' ? (
-          <div className="w-5 h-5 rounded-sm bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-medium text-gray-600 border border-gray-300">
-            Q
+      {/* Red indicator dot */}
+      <div className="absolute left-1.5 top-5 w-2 h-2 rounded-full bg-red-500"></div>
+      
+      {/* Order header */}
+      <div className="mb-3 pb-2 border-b border-gray-100">
+        <div className="flex justify-between">
+          <div className="flex">
+            <div className="ml-3 font-medium">
+              {order.orderNumber ? `#${order.orderNumber}` : `#${order.id?.toString().padStart(2, '0')}`}
+            </div>
           </div>
-        ) : (
-          <div className="w-5 h-5 rounded-full bg-red-500 flex-shrink-0"></div>
-        )}
-      </div>
-      
-      {/* Order details left column */}
-      <div className="flex-1">
-        {/* Order number and date */}
-        <div className={`text-sm font-medium ${isCancelled ? "text-gray-400 line-through" : "text-gray-700"}`}>
-          {formatOrderNumberAndDate()}
-        </div>
-        
-        {/* Customer and event type */}
-        {customerDisplay()}
-        
-        {/* Description/theme */}
-        <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-600"}`}>
-          {descriptionText}
+          <div className="text-base font-medium">
+            $ <FormatCurrency amount={order.total || 0} showSymbol={false} />
+          </div>
         </div>
       </div>
       
-      {/* Right column with price and buttons */}
-      <div className="flex flex-col items-end ml-2">
-        {/* Price */}
-        <div className="text-base font-medium text-right mb-1">
-          {order.total ? 
-            `$ ${parseFloat(order.total.toString() || '0').toFixed(2)}` : 
-            '$ 0.00'
-          }
-        </div>
-        
-        {/* Status badge */}
-        <div className="mb-1">
-          {isCancelled ? (
-            <Badge variant="destructive" className="text-xs">Cancelled</Badge>
-          ) : isPaid ? (
-            <Badge variant="default" className="text-xs py-1 px-2 bg-gray-200 hover:bg-gray-300 text-gray-800">Paid</Badge>
-          ) : isQuote ? (
-            <Badge variant="outline" className="text-xs">Quote</Badge>
-          ) : null}
-        </div>
-        
-        {/* Action icons */}
-        <div className="flex space-x-1">
-          {onDownloadClick && (
-            <button 
-              onClick={handleDocClick}
-              className="text-gray-400 hover:text-gray-600 p-1"
-            >
-              <FileText className="h-4 w-4" />
-            </button>
-          )}
-          {onEmailClick && (
-            <button 
-              onClick={handleEmailClick}
-              className="text-gray-400 hover:text-gray-600 p-1"
-            >
-              <Mail className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+      {/* Display ALL fields from the order record */}
+      <div className="pl-3">
+        {renderOrderFields()}
       </div>
+      
+      {/* Display order items if available */}
+      {order.items && order.items.length > 0 && (
+        <div className="mt-2 pl-3">
+          <div className="font-medium mb-1 text-sm">Order Items:</div>
+          {order.items.map((item, index) => (
+            <div key={index} className="mb-2 pb-2 border-b border-gray-100 text-sm">
+              <div className="font-medium">
+                Item #{index + 1}: {item.quantity}x {item.name || item.description}
+              </div>
+              <div className="text-xs text-gray-600 mt-1">
+                {Object.entries(item).map(([key, value]) => 
+                  value !== null && value !== undefined && (
+                    <div key={key} className="flex mb-0.5">
+                      <span className="font-medium w-24">{formatLabel(key)}:</span> 
+                      <span>{value?.toString()}</span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
