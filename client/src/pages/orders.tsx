@@ -330,15 +330,16 @@ const Orders = () => {
       
       {/* New Order Dialog */}
       <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogTitle>New Order</DialogTitle>
           <DialogDescription>
             Enter the details for the new order.
           </DialogDescription>
-          <OrderForm 
-            onSubmit={handleFormSubmit} 
-            isSubmitting={isSubmitting}
-            defaultValues={(() => {
+          <div className="overflow-y-auto pr-1 flex-1">
+            <OrderForm 
+              onSubmit={handleFormSubmit} 
+              isSubmitting={isSubmitting}
+              defaultValues={(() => {
               // Try to get the selected date from localStorage
               const storedDate = localStorage.getItem('selectedDate');
               
@@ -357,6 +358,7 @@ const Orders = () => {
               return preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined;
             })()}
           />
+          </div>
         </DialogContent>
       </Dialog>
       
