@@ -15,7 +15,7 @@ router.get("/api/orders/:orderId/logs", async (req, res) => {
     // Get user ID from session for security
     const userId = req.session?.userId || 1;
     
-    // Fetch logs with creator info
+    // Fetch logs with creator info and order details
     const logs = await db
       .select({
         id: orderLogs.id,

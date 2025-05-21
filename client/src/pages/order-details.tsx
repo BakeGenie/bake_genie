@@ -17,10 +17,19 @@ interface OrderLogHistoryProps {
 }
 
 const OrderLogHistory: React.FC<OrderLogHistoryProps> = ({ orderId }) => {
-  const { data: logs, isLoading, refetch } = useQuery({
+  // Fetch order logs
+  const { data: logs, isLoading: logsLoading } = useQuery({
     queryKey: [`/api/orders/${orderId}/logs`],
     enabled: !!orderId,
   });
+
+  // Fetch order details for event info
+  const { data: order, isLoading: orderLoading } = useQuery({
+    queryKey: [`/api/orders/${orderId}`],
+    enabled: !!orderId,
+  });
+
+  const isLoading = logsLoading || orderLoading;
 
   if (isLoading) {
     return (
@@ -62,13 +71,6 @@ const OrderLogHistory: React.FC<OrderLogHistoryProps> = ({ orderId }) => {
           </div>
         </div>
       ))}
-      
-      {/* If no logs, show empty state */}
-      {(!logs || logs.length === 0) && (
-        <div className="text-center py-6 text-gray-500">
-          <p>No order history available</p>
-        </div>
-      )}
     </div>
   );
 };
