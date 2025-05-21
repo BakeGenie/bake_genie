@@ -10,7 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -27,7 +38,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertContactSchema } from "@shared/schema";
 import { ColumnDef } from "@tanstack/react-table";
-import { PlusIcon, MailIcon, PhoneIcon } from "lucide-react";
+import { PlusIcon, MailIcon, PhoneIcon, Trash2Icon, EditIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
@@ -45,8 +56,10 @@ const Contacts = () => {
   const { toast } = useToast();
   const [isNewContactDialogOpen, setIsNewContactDialogOpen] = React.useState(false);
   const [isViewContactDialogOpen, setIsViewContactDialogOpen] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false); 
   const [selectedContact, setSelectedContact] = React.useState<Contact | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isDeletingContact, setIsDeletingContact] = React.useState(false);
 
   // Fetch contacts with refetch capability and debug
   const { data: contacts = [], isLoading, refetch } = useQuery<Contact[]>({
@@ -135,6 +148,57 @@ const Contacts = () => {
     setSelectedContact(contact);
     setIsViewContactDialogOpen(true);
   };
+  
+  // Handle initiating contact deletion
+  const handleDeleteClick = (contact: Contact, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the row click
+    setSelectedContact(contact);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Handle actual contact deletion
+  const handleDeleteConfirm = async () => {
+    if (!selectedContact) return;
+    
+    setIsDeletingContact(true);
+    
+    try {
+      // Make DELETE request to API
+      const response = await fetch(`/api/contacts/${selectedContact.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error deleting contact: ${response.status}`);
+      }
+      
+      // Update the cache to remove the deleted contact
+      queryClient.setQueryData(["/api/contacts"], (oldData: Contact[] = []) => {
+        return oldData.filter(contact => contact.id !== selectedContact.id);
+      });
+      
+      // Also trigger a background refetch for consistency
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      
+      toast({
+        title: "Contact Deleted",
+        description: `${selectedContact.firstName} ${selectedContact.lastName} has been removed from your contacts.`,
+      });
+      
+      // Close the dialog
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+      toast({
+        title: "Error",
+        description: "There was an error deleting the contact. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingContact(false);
+    }
+  };
 
   // Table columns definition
   const columns: ColumnDef<Contact>[] = [
@@ -174,6 +238,24 @@ const Contacts = () => {
             {phone}
           </a>
         ) : null;
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const contact = row.original;
+        return (
+          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => handleDeleteClick(contact, e)}
+              title="Delete contact"
+            >
+              <Trash2Icon className="h-4 w-4 text-red-500" />
+            </Button>
+          </div>
+        );
       },
     },
   ];
