@@ -97,6 +97,9 @@ const NewOrderPage = () => {
       // Create a unique order number
       const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
       
+      // Log the complete form data we received
+      console.log("STEP 1 - Raw form data received:", JSON.stringify(data, null, 2));
+      
       // Format the form data for the API request to match what the server expects
       const formattedData = {
         contactId: data.customer?.id || data.contactId || 12, // Make sure contactId is properly sent
@@ -124,9 +127,15 @@ const NewOrderPage = () => {
         }))
       };
       
+      // Log the formatted data before sending to API
+      console.log("STEP 2 - Formatted data for API:", JSON.stringify(formattedData, null, 2));
+      
+      // Make the API request
       const response = await apiRequest("POST", "/api/orders", formattedData);
+      console.log("STEP 3 - API response status:", response.status);
       
       const newOrder = await response.json();
+      console.log("STEP 4 - API response data:", JSON.stringify(newOrder, null, 2));
       
       // Invalidate orders query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
