@@ -91,8 +91,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
               {formattedDate}
             </div>
             
+            {/* Customer information */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
-              {order.contact?.firstName || ''} {order.contact?.lastName || ''}
+              {order.contact?.firstName || ''} {order.contact?.lastName || ''} 
+              {order.contact?.businessName && ` - ${order.contact.businessName}`}
               {order.eventType && (
                 <span className="text-gray-600">
                   {" "}({order.eventType})
@@ -104,11 +106,13 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
               {order.items?.[0]?.description || order.items?.[0]?.name || order.title || ''}
             </div>
-            {/* Delivery information */}
+            {/* Delivery information with icon */}
             {order.delivery_type && (
-              <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-400"}`}>
-                {order.delivery_type} {order.delivery_time ? `- ${order.delivery_time}` : ''}
+              <div className={`text-xs flex items-center ${isCancelled ? "text-gray-400 line-through" : "text-gray-400"}`}>
+                <span className="font-medium mr-1">Delivery:</span> {order.delivery_type} 
+                {order.delivery_time ? ` - ${order.delivery_time}` : ''}
                 {order.delivery_address && ` - ${order.delivery_address}`}
+                {order.delivery_fee > 0 && ` (+${order.delivery_fee})`}
               </div>
             )}
             
