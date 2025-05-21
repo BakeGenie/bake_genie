@@ -11,7 +11,21 @@ export const router = Router();
  */
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const allContacts = await db.select().from(contacts).orderBy(contacts.lastName);
+    // Select only the columns that definitely exist in the schema
+    const allContacts = await db.select({
+      id: contacts.id,
+      userId: contacts.userId,
+      firstName: contacts.firstName,
+      lastName: contacts.lastName,
+      businessName: contacts.businessName,
+      email: contacts.email,
+      phone: contacts.phone,
+      address: contacts.address,
+      notes: contacts.notes,
+      createdAt: contacts.createdAt,
+      updatedAt: contacts.updatedAt
+    }).from(contacts).orderBy(contacts.lastName);
+    
     return res.status(200).json(allContacts);
   } catch (error) {
     console.error("Error fetching contacts:", error);
@@ -25,7 +39,19 @@ router.get("/", async (req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
+    const [contact] = await db.select({
+      id: contacts.id,
+      userId: contacts.userId,
+      firstName: contacts.firstName,
+      lastName: contacts.lastName,
+      businessName: contacts.businessName,
+      email: contacts.email,
+      phone: contacts.phone,
+      address: contacts.address,
+      notes: contacts.notes,
+      createdAt: contacts.createdAt,
+      updatedAt: contacts.updatedAt
+    }).from(contacts).where(eq(contacts.id, id));
     
     if (!contact) {
       return res.status(404).json({ message: "Contact not found" });

@@ -160,11 +160,21 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   useEffect(() => {
     if (initialValues?.eventDate) {
       console.log("Setting event date from initialValues:", initialValues.eventDate);
-      setValue("eventDate", initialValues.eventDate);
+      // Force update the eventDate field with the date from initialValues
+      setValue("eventDate", initialValues.eventDate, { 
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
     }
     if (initialValues?.orderDate) {
       console.log("Setting order date from initialValues:", initialValues.orderDate);
-      setValue("orderDate", initialValues.orderDate);
+      // Force update the orderDate field with the date from initialValues
+      setValue("orderDate", initialValues.orderDate, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
     }
   }, [initialValues, setValue]);
 
