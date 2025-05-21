@@ -10,7 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import React, { useState } from "react";
 
 export default function CancelSubscription() {
-  const [setLocation] = useLocation();
+  const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [cancellationProcessing, setCancellationProcessing] = useState(false);
@@ -49,7 +49,7 @@ export default function CancelSubscription() {
   };
 
   const handleBack = () => {
-    setLocation("/manage-subscription");
+    window.location.href = "/manage-subscription";
   };
 
   // Format date to display
@@ -98,7 +98,7 @@ export default function CancelSubscription() {
                   as soon as possible.
                 </p>
               </div>
-              <Button onClick={() => setLocation("/account")} className="mt-4">
+              <Button onClick={() => window.location.href = "/account"} className="mt-4">
                 Return to Account
               </Button>
             </CardContent>

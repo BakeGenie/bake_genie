@@ -26,7 +26,7 @@ export default function ManageSubscription() {
   };
 
   const handleCancelSubscription = () => {
-    setLocation("/cancel-subscription");
+    window.location.href = "/cancel-subscription";
   };
 
   return (
@@ -36,7 +36,7 @@ export default function ManageSubscription() {
           variant="ghost" 
           size="sm" 
           className="flex items-center gap-2"
-          onClick={() => setLocation("/account")}
+          onClick={() => window.location.href = "/account"}
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Back to Account

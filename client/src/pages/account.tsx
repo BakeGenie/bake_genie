@@ -428,7 +428,7 @@ const Account = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div 
                   className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
-                  onClick={() => setLocation("/manage-subscription")}
+                  onClick={() => window.location.href = "/manage-subscription"}
                 >
                   <div className="flex items-center">
                     <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
