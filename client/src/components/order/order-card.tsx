@@ -2,7 +2,6 @@ import React from "react";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Mail, FileText } from "lucide-react";
-import { FormatCurrency } from "@/components/ui/format-currency";
 
 interface OrderCardProps {
   order: OrderWithItems;
@@ -19,66 +18,46 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEmailClick,
   onDownloadClick,
 }) => {
-  const isQuote = order.status === 'Quote';
-  const isPaid = order.status === 'Paid';
-  const isCancelled = order.status === "Cancelled";
+  // Format order number properly with # prefix
+  const orderNum = order.orderNumber || (order.id ? order.id.toString().padStart(2, '0') : '');
   
-  // Format order number and date in the exact style from the screenshot
-  const formatOrderNumberAndDate = () => {
-    // Get order number
-    const orderNum = order.orderNumber || (order.id ? order.id.toString().padStart(2, '0') : '');
-    
-    // Format date like "Tue, 06 May 2025"
-    const eventDate = order.eventDate ? new Date(order.eventDate) : null;
-    const formattedDate = eventDate ? eventDate.toLocaleDateString('en-US', {
+  // Format date to Tue, 06 May 2025 format
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
       weekday: 'short',
       day: '2-digit',
       month: 'short',
       year: 'numeric'
-    }) : '';
-    
-    // Return in format "#21 - Tue, 06 May 2025"
-    return `#${orderNum} - ${formattedDate}`;
+    });
   };
   
-  // Get the customer name with event type in parentheses
-  const customerDisplay = () => {
-    if (!order.contact) return '';
-    
-    const name = `${order.contact.firstName || ''} ${order.contact.lastName || ''}`;
-    const eventType = order.eventType ? `(${order.eventType})` : '';
-    
-    return (
-      <div className={`${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
-        {name} {eventType}
-      </div>
-    );
+  // Format money values to show $ and 2 decimal places
+  const formatMoney = (value: any) => {
+    if (value === undefined || value === null) return '';
+    return `$${parseFloat(value.toString()).toFixed(2)}`;
   };
   
-  // Get the description text (first item description or order notes)
-  const descriptionText = order.notes || 
-    (order.items && order.items.length > 0 ? (order.items[0].description || order.items[0].name) : '');
-  
-  // Handle email click
+  // Handle email and doc clicks
   const handleEmailClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onEmailClick) onEmailClick(e);
   };
   
-  // Handle document click
   const handleDocClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDownloadClick) onDownloadClick(e);
   };
 
   return (
-    <div
+    <div 
       className={`relative flex items-start px-4 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
         isSelected ? "bg-blue-50" : ""
       }`}
       onClick={onClick}
     >
-      {/* Red/Gray indicator dot based on status */}
+      {/* Status indicator dot */}
       <div className="mr-3 pt-1">
         {order.status === 'Quote' || order.status === 'Cancelled' ? (
           <div className="w-5 h-5 rounded-sm bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-medium text-gray-600 border border-gray-300">
@@ -89,41 +68,62 @@ const OrderCard: React.FC<OrderCardProps> = ({
         )}
       </div>
       
-      {/* Order details left column */}
+      {/* Order details column */}
       <div className="flex-1">
         {/* Order number and date */}
-        <div className={`text-sm font-medium ${isCancelled ? "text-gray-400 line-through" : "text-gray-700"}`}>
-          {formatOrderNumberAndDate()}
+        <div className="text-sm font-medium text-gray-700">
+          #{orderNum} - {formatDate(order.eventDate)}
         </div>
         
-        {/* Customer and event type */}
-        {customerDisplay()}
+        {/* Customer name with event type */}
+        <div className="text-blue-600">
+          {order.contact && `${order.contact.firstName} ${order.contact.lastName}`} 
+          {order.eventType && ` (${order.eventType})`}
+        </div>
         
-        {/* Description/theme */}
-        <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-600"}`}>
-          {descriptionText}
+        {/* Description text */}
+        <div className="text-sm text-gray-600">
+          {order.notes}
+        </div>
+        
+        {/* Display ALL order data without titles */}
+        <div className="mt-1 text-xs text-gray-500 grid grid-cols-2 gap-x-2 gap-y-1">
+          {order.deliveryType && <div>{order.deliveryType}</div>}
+          {order.deliveryTime && <div>{order.deliveryTime}</div>}
+          {order.deliveryAddress && <div>{order.deliveryAddress}</div>}
+          {order.deliveryFee && <div>{formatMoney(order.deliveryFee)}</div>}
+          {order.tax && <div>{formatMoney(order.tax)}</div>}
+          {order.taxRate && <div>{order.taxRate}%</div>}
+          {order.discount && <div>Discount: {formatMoney(order.discount)}</div>}
+          {order.depositAmount && (
+            <div>
+              Deposit: {formatMoney(order.depositAmount)}
+              {order.depositPaid && " ✓"}
+            </div>
+          )}
+          {order.subtotal && <div>{formatMoney(order.subtotal)}</div>}
+          {order.jobSheetNotes && <div className="col-span-2">{order.jobSheetNotes}</div>}
         </div>
       </div>
       
-      {/* Right column with price and buttons */}
+      {/* Right column with price, status and actions */}
       <div className="flex flex-col items-end ml-2">
-        {/* Price */}
-        <div className="text-base font-medium text-right mb-1">
-          {order.total ? 
-            `$ ${parseFloat(order.total.toString()).toFixed(2)}` : 
-            '$ 0.00'
-          }
+        {/* Total price */}
+        <div className="text-base font-medium">
+          {formatMoney(order.total)}
         </div>
         
         {/* Status badge */}
         <div className="mb-1">
-          {isCancelled ? (
+          {order.status === 'Cancelled' && (
             <Badge variant="destructive" className="text-xs">Cancelled</Badge>
-          ) : isPaid ? (
+          )}
+          {order.status === 'Paid' && (
             <Badge variant="default" className="text-xs py-1 px-2 bg-gray-200 hover:bg-gray-300 text-gray-800">Paid</Badge>
-          ) : isQuote ? (
+          )}
+          {order.status === 'Quote' && (
             <Badge variant="outline" className="text-xs">Quote</Badge>
-          ) : null}
+          )}
         </div>
         
         {/* Action icons */}
