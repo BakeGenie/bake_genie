@@ -1,14 +1,78 @@
 import React from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardFooter
 } from "@/components/ui/card";
-import { PlusIcon, ClockIcon, UtensilsCrossedIcon, SearchIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  PlusIcon, 
+  ClockIcon, 
+  UtensilsCrossedIcon, 
+  SearchIcon, 
+  ArrowLeftIcon,
+  MinusCircleIcon,
+  XIcon
+} from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { 
+  Recipe, 
+  Ingredient, 
+  insertRecipeSchema, 
+  insertIngredientSchema 
+} from "@shared/schema";
+
+// Type for a recipe with its ingredients
+interface RecipeWithIngredients extends Recipe {
+  ingredients?: {
+    id: number;
+    recipeId: number;
+    ingredientId: number;
+    quantity: number;
+    notes?: string;
+  }[];
+}
+
+// Extended schema with validation rules for recipe
+const recipeFormSchema = insertRecipeSchema.extend({
+  name: z.string().min(1, "Name is required"),
   servings: z.coerce.number().int().positive("Servings must be a positive number"),
   ingredients: z.array(
     z.object({
