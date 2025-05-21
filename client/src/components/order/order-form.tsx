@@ -1197,12 +1197,11 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                           <FormItem className="space-y-0">
                             <FormControl>
                               <Input
-                                {...field}
                                 type="number"
                                 min="0"
                                 step="0.01"
                                 className="w-20 h-8"
-                                defaultValue="0.00"
+                                value={field.value || 0}
                                 onChange={(e) => {
                                   const value = parseFloat(e.target.value) || 0;
                                   field.onChange(value);
