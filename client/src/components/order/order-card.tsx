@@ -65,15 +65,19 @@ const OrderCard: React.FC<OrderCardProps> = ({
       
       {/* Order details left column */}
       <div className="flex-1">
-        {/* Order number and date */}
+        {/* Order number and event date */}
         <div className="text-sm font-medium text-gray-700">
           #{orderNumber} - {formatDisplayDate(order.eventDate)}
         </div>
         
-        {/* Customer name and event type */}
+        {/* Contact ID and event type */}
         <div className="text-blue-600">
-          {order.contact && `${order.contact.firstName} ${order.contact.lastName}`} 
-          {order.eventType && ` (${order.eventType})`}
+          {order.contactId} {order.eventType && ` (${order.eventType})`}
+        </div>
+        
+        {/* Description (notes) */}
+        <div className="text-gray-600 text-sm mt-1">
+          {order.notes || "No description available"}
         </div>
         
         {/* Order details - direct database content display */}
