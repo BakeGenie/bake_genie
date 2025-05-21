@@ -90,6 +90,18 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
           csvData = await exportService.exportEnquiriesAsCsv(userId);
           filename = `enquiries-export-${Date.now()}.csv`;
           break;
+        case "template_orders":
+          csvData = await exportService.exportOrdersTemplate();
+          filename = `bake-diary-orders-template.csv`;
+          break;
+        case "template_quotes":
+          csvData = await exportService.exportQuotesTemplate();
+          filename = `bake-diary-quotes-template.csv`;
+          break;
+        case "template_order_items":
+          csvData = await exportService.exportOrderItemsTemplate();
+          filename = `bake-diary-order-items-template.csv`;
+          break;
         case "settings":
           // Settings don't have a CSV export
           return res.status(400).json({ 

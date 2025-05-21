@@ -33,6 +33,101 @@ export class ExportService {
       throw new Error('Failed to export data');
     }
   }
+  
+  /**
+   * Export template for orders CSV import from Bake Diary
+   */
+  async exportOrdersTemplate() {
+    try {
+      // Create a template with all expected columns from Bake Diary
+      const templateData = [{
+        'Order Number': '1001',
+        'Customer': 'Sample Customer',
+        'Customer First Name': 'John',
+        'Customer Surname': 'Doe',
+        'Customer Email': 'john.doe@example.com',
+        'Customer Phone': '0123456789',
+        'Customer Address': '123 Sample St, Sample City',
+        'Event Type': 'Birthday',
+        'Event Date': '2025-06-01',
+        'Order Date': '2025-05-15',
+        'Order Total': '150.00',
+        'Status': 'Quote',
+        'Delivery Type': 'Pickup',
+        'Notes': 'Sample notes about the order',
+        'Theme': 'Sample theme for the event'
+      }];
+      
+      // Generate CSV from the template data
+      return stringify(templateData, { header: true });
+    } catch (error) {
+      console.error('Error creating orders template:', error);
+      throw new Error('Failed to create orders template');
+    }
+  }
+  
+  /**
+   * Export template for quotes CSV import from Bake Diary
+   */
+  async exportQuotesTemplate() {
+    try {
+      // Create a template with all expected columns from Bake Diary
+      const templateData = [{
+        'Order Number': '2001',
+        'Customer': 'Sample Customer',
+        'Customer First Name': 'Jane',
+        'Customer Surname': 'Smith',
+        'Customer Email': 'jane.smith@example.com',
+        'Customer Phone': '0123456789',
+        'Customer Address': '456 Example St, Sample City',
+        'Event Type': 'Wedding',
+        'Event Date': '2025-07-15',
+        'Order Date': '2025-05-20',
+        'Order Total': '250.00',
+        'Status': 'Draft',
+        'Notes': 'Sample quote notes',
+        'Theme': 'Rustic wedding theme'
+      }];
+      
+      // Generate CSV from the template data
+      return stringify(templateData, { header: true });
+    } catch (error) {
+      console.error('Error creating quotes template:', error);
+      throw new Error('Failed to create quotes template');
+    }
+  }
+  
+  /**
+   * Export template for order items CSV import from Bake Diary
+   */
+  async exportOrderItemsTemplate() {
+    try {
+      // Create a template with all expected columns from Bake Diary
+      const templateData = [{
+        'Order Number': '1001',
+        'Item Number': '1',
+        'Product Name': 'Sample Cake',
+        'Description': 'Chocolate cake with vanilla frosting',
+        'Quantity': '1',
+        'Price': '120.00',
+        'Total': '120.00'
+      }, {
+        'Order Number': '1001',
+        'Item Number': '2',
+        'Product Name': 'Cupcakes',
+        'Description': 'Vanilla cupcakes with sprinkles',
+        'Quantity': '12',
+        'Price': '2.50',
+        'Total': '30.00'
+      }];
+      
+      // Generate CSV from the template data
+      return stringify(templateData, { header: true });
+    } catch (error) {
+      console.error('Error creating order items template:', error);
+      throw new Error('Failed to create order items template');
+    }
+  }
 
   /**
    * Export orders for a specific user

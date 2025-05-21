@@ -295,6 +295,9 @@ export default function DataImportExport() {
                         <SelectItem value="tasks">Tasks</SelectItem>
                         <SelectItem value="enquiries">Enquiries</SelectItem>
                         <SelectItem value="settings">Settings</SelectItem>
+                        <SelectItem value="template_orders">Orders Template</SelectItem>
+                        <SelectItem value="template_quotes">Quotes Template</SelectItem>
+                        <SelectItem value="template_order_items">Order Items Template</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -341,6 +344,17 @@ export default function DataImportExport() {
                       <li>Quote List - To import quotes and their basic details</li>
                       <li>Detailed Order Items - To import order items and details</li>
                     </ul>
+                    <div className="mt-2">
+                      <p className="text-sm font-medium">Need a template?</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Download a CSV template from the Export tab by selecting one of these options:
+                      </p>
+                      <ul className="list-disc pl-5 mt-1 text-xs text-muted-foreground space-y-1">
+                        <li>Orders Template - For Order List imports</li>
+                        <li>Quotes Template - For Quote List imports</li>
+                        <li>Order Items Template - For Detailed Order Items imports</li>
+                      </ul>
+                    </div>
                   </AlertDescription>
                 </Alert>
               </div>
