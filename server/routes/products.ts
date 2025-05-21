@@ -84,6 +84,7 @@ router.post("/", async (req: Request, res: Response) => {
     
     try {
       // Use a simplified direct query that works with our DB
+      console.log("Starting product insert with SQL...");
       const result = await pool.query(`
         INSERT INTO products (
           user_id, name, type, description, price, cost, 
@@ -111,6 +112,11 @@ router.post("/", async (req: Request, res: Response) => {
         req.body.sku || null,
         req.body.bundleId || null
       ]);
+      
+      // Make sure we have the product in the result
+      if (!result.rows || result.rows.length === 0) {
+        throw new Error('Insert query did not return the created product');
+      }
       
       console.log("Product created successfully:", result.rows[0]);
       

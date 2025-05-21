@@ -94,8 +94,11 @@ const Products = () => {
   const [selectedBundleName, setSelectedBundleName] = React.useState<string | null>(null);
 
   // Fetch products
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+  const { data: products = [], isLoading, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+    staleTime: 0, // Always get fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
   
   // Fetch bundle if a product has bundleId
@@ -236,13 +239,14 @@ const Products = () => {
       const response = await apiRequest("POST", "/api/products", formattedData);
       console.log("Product creation response:", response);
       
-      // Fetch the products again directly to ensure we have the updated list
-      const updatedProducts = await fetch("/api/products").then(res => res.json());
-      console.log("Updated products list:", updatedProducts);
+      // Force update the products list
+      await refetch();
       
-      // Force invalidate the products query to refresh the list
-      await queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/products"] });
+      // For extra safety, force a complete reload of products
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        refetch();
+      }, 500);
       
       // Reset form and close dialog
       form.reset();
