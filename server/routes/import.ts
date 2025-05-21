@@ -1,10 +1,21 @@
-import { Router, Request, Response } from "express";
+import { Router, Request as ExpressRequest, Response } from "express";
 import { importService } from "../services/import-service";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { db } from "../db";
 import { AuthRequest } from "../middleware/auth";
+import { Session } from "express-session";
+
+// Define custom request type with session
+interface Request extends ExpressRequest {
+  session: Session & {
+    user?: {
+      id: number;
+      [key: string]: any;
+    };
+  };
+}
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -104,7 +115,13 @@ export const registerImportRoutes = (router: Router) => {
         return res.status(400).json({ success: false, message: "No file uploaded" });
       }
 
-      const result = await importService.importOrderItems(req.file.path, req.user.id);
+      // Check if user session exists
+      if (!req.session || !req.session.user) {
+        return res.status(401).json({ success: false, message: "User not authenticated" });
+      }
+
+      const userId = req.session.user.id;
+      const result = await importService.importOrderItems(req.file.path, userId);
       return res.json(result);
     } catch (error) {
       console.error("Error importing order items:", error);
