@@ -91,7 +91,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               {formattedDate}
             </div>
             
-            {/* Customer information with event type in same style as screenshot */}
+            {/* Customer information expanded with contact details */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-blue-600"}`}>
               {order.contact?.firstName || ''} {order.contact?.lastName || ''} 
               {order.eventType && (
@@ -101,10 +101,25 @@ const OrderCard: React.FC<OrderCardProps> = ({
               )}
             </div>
             
+            {/* Customer additional information */}
+            {order.contact && (
+              <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
+                {order.contact.email && `${order.contact.email} · `}
+                {order.contact.phone && `${order.contact.phone}`}
+              </div>
+            )}
+            
             {/* Order description or title - exactly like screenshot */}
             <div className={`text-sm ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
               {order.items?.[0]?.description || order.items?.[0]?.name || order.title || ''}
             </div>
+            
+            {/* Event date shown clearly if different from order date */}
+            {order.eventDate && formattedDate && (
+              <div className={`text-xs ${isCancelled ? "text-gray-400 line-through" : "text-gray-500"}`}>
+                Event date: {new Date(order.eventDate).toLocaleDateString()}
+              </div>
+            )}
             {/* Delivery information with icon */}
             {order.delivery_type && (
               <div className={`text-xs flex items-center ${isCancelled ? "text-gray-400 line-through" : "text-gray-400"}`}>
