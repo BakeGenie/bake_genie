@@ -95,7 +95,7 @@ const ingredientFormSchema = insertIngredientSchema.extend({
 type RecipeFormValues = z.infer<typeof recipeFormSchema>;
 type IngredientFormValues = z.infer<typeof ingredientFormSchema>;
 
-const Recipes = () => {
+const RecipesPage = () => {
   const { toast } = useToast();
   const [location, navigate] = useLocation();
   const [matched, params] = useRoute('/recipes/:section');
@@ -1080,4 +1080,4 @@ const Recipes = () => {
   );
 };
 
-export default Recipes;
+export default RecipesPage;
