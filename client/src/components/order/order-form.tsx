@@ -173,6 +173,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       // Handle event date from calendar selection
       if (initialValues.eventDate) {
         console.log("Setting event date:", initialValues.eventDate);
+        // Force update eventDate regardless of its current value
         setValue("eventDate", initialValues.eventDate, { 
           shouldValidate: true,
           shouldDirty: true,
@@ -191,6 +192,15 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       }
     }
   }, [initialValues, setValue]);
+  
+  // Debug current form values
+  useEffect(() => {
+    const values = getValues();
+    console.log("Current form values:", {
+      eventDate: values.eventDate,
+      orderDate: values.orderDate
+    });
+  }, [getValues]);
 
   // Initialize items field array
   const { fields, append, remove } = useFieldArray({
