@@ -163,10 +163,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     defaultValues: {
       ...defaultValues,
       ...initialValues,
-      // Ensure these values are always set to prevent controlled/uncontrolled input issues
-      orderDate: initialValues?.orderDate || new Date(),
-      eventDate: initialValues?.eventDate || new Date(),
-      customerId: initialValues?.contactId || 0,
+      // We'll set dates in the useEffect to ensure they are properly handled
       items: initialValues?.items || defaultValues.items,
       // Ensure proper nesting for nested objects
       customer: {
@@ -189,16 +186,23 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     }
   }, []);
   
-  // Handle initialValues separately to ensure they override default values
+  // Set dates as soon as the component mounts
   useEffect(() => {
+    // Set default date values first
+    setValue("orderDate", new Date());
+    setValue("eventDate", new Date());
+    
+    // Then apply any provided initialValues
     if (initialValues) {
       console.log("Received initialValues:", initialValues);
       
       // Handle event date from calendar selection
       if (initialValues.eventDate) {
-        console.log("Setting event date:", initialValues.eventDate);
-        // Force update eventDate regardless of its current value
-        setValue("eventDate", new Date(initialValues.eventDate), { 
+        const eventDate = new Date(initialValues.eventDate);
+        console.log("Setting event date:", eventDate);
+        
+        // Force update eventDate
+        setValue("eventDate", eventDate, { 
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true 
@@ -206,16 +210,18 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         
         // Also set the orderDate to match if not explicitly provided
         if (!initialValues.orderDate) {
-          setValue("orderDate", new Date(initialValues.eventDate), {
+          console.log("Also setting order date to match event date:", eventDate);
+          setValue("orderDate", eventDate, {
             shouldValidate: true
           });
         }
       }
       
-      // Handle order date (usually today's date)
+      // Handle explicit order date if provided
       if (initialValues.orderDate) {
-        console.log("Setting order date:", initialValues.orderDate);
-        setValue("orderDate", initialValues.orderDate, {
+        const orderDate = new Date(initialValues.orderDate);
+        console.log("Setting order date:", orderDate);
+        setValue("orderDate", orderDate, {
           shouldValidate: true, 
           shouldDirty: true,
           shouldTouch: true
