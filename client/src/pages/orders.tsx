@@ -201,7 +201,15 @@ const Orders = () => {
         title="Orders & Quotes"
         actions={
           <div className="flex space-x-2">
-            <Button onClick={() => setIsNewOrderDialogOpen(true)}>
+            <Button onClick={() => {
+              // Store the selected date in localStorage if available
+              if (selectedDate) {
+                const formattedDate = selectedDate.toISOString().split('T')[0];
+                console.log("Orders: Storing selected date for new order:", formattedDate);
+                localStorage.setItem('pendingEventDate', formattedDate);
+              }
+              setIsNewOrderDialogOpen(true);
+            }}>
               <PlusIcon className="h-4 w-4 mr-2" /> New Order
             </Button>
           </div>
@@ -364,7 +372,24 @@ const Orders = () => {
             <h2 className="text-lg font-semibold text-gray-800 mb-6">New Order</h2>
             <OrderForm
               onSubmit={handleNewOrderSubmit}
-              initialValues={preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined}
+              initialValues={() => {
+                // First check localStorage for a date from the calendar
+                const storedEventDate = localStorage.getItem('pendingEventDate');
+                
+                if (storedEventDate) {
+                  // Use the stored event date from localStorage
+                  const selectedDate = new Date(storedEventDate);
+                  console.log("Orders dialog: Using stored event date:", selectedDate);
+                  
+                  // Clear localStorage since we're using it now
+                  localStorage.removeItem('pendingEventDate');
+                  
+                  return { eventDate: selectedDate };
+                }
+                
+                // Fall back to the URL parameter if localStorage is empty
+                return preselectedDate ? { eventDate: new Date(preselectedDate) } : undefined;
+              }}
             />
           </div>
         </DialogContent>
