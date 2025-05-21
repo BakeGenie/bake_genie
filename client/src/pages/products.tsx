@@ -237,22 +237,56 @@ const Products = () => {
       console.log("Submitting product with formatted data:", formattedData);
       
       // Make the product creation request and handle the response
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error creating product:", errorData);
-        throw new Error(errorData.error || "Failed to create product");
+      try {
+        const response = await fetch("/api/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedData),
+        });
+        
+        // Clone the response so we can read it multiple times if needed
+        const clonedResponse = response.clone();
+        
+        // Try to parse the response body
+        let responseText = '';
+        try {
+          responseText = await clonedResponse.text();
+        } catch (e) {
+          console.warn("Couldn't read response text:", e);
+        }
+        
+        // Check if response is OK
+        if (!response.ok) {
+          console.error("Error creating product. Status:", response.status, "Text:", responseText);
+          throw new Error("Failed to create product. Please try again.");
+        }
+        
+        // If there's no content, just return
+        if (response.status === 204 || !responseText.trim()) {
+          console.log("Product created successfully, but no data returned");
+          return;
+        }
+        
+        // Try to parse the JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+          console.log("Product creation successful:", data);
+        } catch (e) {
+          console.warn("Response is not valid JSON:", responseText);
+          throw new Error("Server returned an invalid response");
+        }
+      } catch (error) {
+        console.error("Product creation error:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create product",
+          variant: "destructive",
+        });
+        throw error;
       }
-      
-      const data = await response.json();
-      console.log("Product creation response:", data);
       
       // Force update the products list with both methods to ensure it appears
       await refetch();
