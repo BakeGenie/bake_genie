@@ -63,16 +63,16 @@ const Account = () => {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      firstName: "Jane",
-      lastName: "Baker",
-      email: "jane@bakediary.com",
-      phone: "555-123-4567",
-      businessName: "Jane's Bakery",
-      address: "123 Main St",
-      city: "Bakerville",
-      state: "CA",
-      zip: "90210",
-      country: "United States",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      businessName: "",
+      address: "",
+      city: "",
+      state: "",
+      zip: "",
+      country: "",
     },
   });
 
