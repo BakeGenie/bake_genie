@@ -88,7 +88,7 @@ router.post("/", async (req: Request, res: Response) => {
       name: req.body.name,
       type: req.body.type,
       description: req.body.description || null,
-      servings: req.body.servings ? parseInt(req.body.servings) : null,
+      servings: req.body.servings ? parseInt(req.body.servings.toString()) : null,
       price: req.body.price ? req.body.price.toString() : "0",
       cost: req.body.cost ? req.body.cost.toString() : null,
       taxRate: req.body.taxRate ? req.body.taxRate.toString() : "0",
@@ -103,13 +103,51 @@ router.post("/", async (req: Request, res: Response) => {
     
     console.log("Formatted product data:", JSON.stringify(productData, null, 2));
     
-    // Insert the product
-    const [newProduct] = await db.insert(products).values(productData).returning();
-    
-    return res.status(201).json({ 
-      success: true, 
-      product: newProduct 
-    });
+    // Directly use SQL query to ensure product is created successfully
+    try {
+      const result = await pool.query(`
+        INSERT INTO products (
+          user_id, name, type, description, servings, price, cost, 
+          tax_rate, labor_hours, labor_rate, overhead, image_url, sku, 
+          bundle_id, active, created_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, 
+          $8, $9, $10, $11, $12, $13,
+          $14, $15, NOW()
+        ) RETURNING *
+      `, [
+        userId, 
+        productData.name, 
+        productData.type,
+        productData.description,
+        productData.servings,
+        productData.price,
+        productData.cost,
+        productData.taxRate,
+        productData.laborHours,
+        productData.laborRate,
+        productData.overhead,
+        productData.imageUrl,
+        productData.sku,
+        productData.bundleId,
+        productData.active
+      ]);
+      
+      console.log("Product created successfully:", result.rows[0]);
+      
+      return res.status(201).json({ 
+        success: true, 
+        product: result.rows[0] 
+      });
+    } catch (dbError) {
+      console.error("Database error creating product:", dbError);
+      console.error("Error details:", (dbError as any).detail, (dbError as any).code);
+      return res.status(500).json({
+        success: false,
+        error: "Database error creating product",
+        details: (dbError as Error).message
+      });
+    }
   } catch (error) {
     console.error("Error creating product:", error);
     return res.status(500).json({ 
