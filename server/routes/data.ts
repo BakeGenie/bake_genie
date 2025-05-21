@@ -52,6 +52,7 @@ router.get("/export", async (req: Request, res: Response) => {
 /**
  * Export specific data type for the current user
  */
+// CSV Export endpoint
 router.get("/export/:dataType", async (req: Request, res: Response) => {
   try {
     // Use user ID from session
@@ -82,8 +83,8 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
             try {
               const result = await db.execute(`
                 SELECT o.id, o.order_number, o.status, o.event_type, o.event_date, 
-                       o.delivery_type, o.delivery_details, o.total,
-                       c.first_name, c.last_name, c.email, c.phone
+                       o.delivery_type, o.delivery_details, o.total, o.notes,
+                       c.first_name, c.last_name, c.email, c.phone  
                 FROM orders o
                 LEFT JOIN contacts c ON o.contact_id = c.id
                 WHERE o.user_id = $1
@@ -98,6 +99,7 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
                 'Customer Name': row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
                 'Customer Email': row.email || '',
                 'Delivery Type': row.delivery_type || '',
+                'Notes': row.notes || '',
                 'Delivery Details': row.delivery_details || '',
                 'Total': row.total || ''
               }));
@@ -129,7 +131,7 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
           // Directly use SQL for tasks export
           try {
             const result = await db.execute(`
-              SELECT id, title, description, due_date, completed, priority, created_at
+              SELECT id, title, description, due_date, completed, priority, created_at, user_id
               FROM tasks
               WHERE user_id = $1
             `, [userId]);
@@ -217,8 +219,12 @@ router.get("/export/:dataType", async (req: Request, res: Response) => {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       return res.send(csvData);
-      
-    } else {
+    }
+  } catch (error) {
+    console.error("Error exporting CSV:", error);
+    return res.status(500).json({ success: false, error: "Failed to export CSV data" });
+  }
+} else {
       // JSON export (fallback for backward compatibility)
       let data: any;
       

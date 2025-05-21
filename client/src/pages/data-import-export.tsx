@@ -210,36 +210,25 @@ export default function DataImportExport() {
     }
   };
 
-  // Handle export
+  // Handle export - simplified approach
   const handleExport = async () => {
     setIsExporting(true);
 
     try {
-      // Create endpoint based on export type
-      const endpoint = exportType === "all" 
-        ? "/api/data/export" 
-        : `/api/data/export/${exportType}`;
-      
-      // Create a link to download the file with correct content type header
-      const appName = "bakegenie"; // Updated app name from cakehub
+      // Create filename with proper extension
+      const appName = "bakegenie";
       const fileExtension = exportType === "all" ? "json" : "csv";
       const filename = `${appName}-export-${exportType}-${new Date().toISOString().slice(0, 10)}.${fileExtension}`;
       
-      // Use fetch with blob to handle content type properly
-      const response = await fetch(endpoint, {
-        headers: {
-          'Accept': exportType === "all" ? 'application/json' : 'text/csv',
-        },
-      });
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Create direct download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = exportType === "all" 
+        ? `/api/data/export?filename=${filename}` 
+        : `/api/data/export/${exportType}?filename=${filename}`;
+        
+      // Force download by opening in new tab (browsers handle this as download for non-HTML content)
+      downloadLink.target = '_blank';
+      downloadLink.click();
 
       toast({
         title: "Export started",

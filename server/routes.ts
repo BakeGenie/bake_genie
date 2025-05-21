@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { router as dataRoutes } from "./routes/data";
+import { router as dataRoutes } from "./routes/data-fixed";
 import { router as xeroRoutes } from "./routes/xero";
 import { router as uploadRoutes } from "./routes/upload";
 import { router as bundlesRoutes } from "./routes/bundles";
