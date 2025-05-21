@@ -420,28 +420,32 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
       }
 
       // Format the data for submission with date conversion
+      // We need to match the actual database column names
       const formattedData = {
-        ...data,
-        total: totalAmount.toString(), // Convert to string as required by the server
-        // Ensure dates are properly formatted for API submission
-        orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : new Date().toISOString(),
-        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
-        // Set contactId from the customer selection
-        contactId: data.customer?.id || 12, // Default to a known contact if needed
-        // Generate a customer name for display
-        customerName: `${data.customer.firstName} ${data.customer.lastName}`,
-        // Add additional defaults required by server
         userId: 1,
-        status: data.status || 'Quote', 
+        contactId: data.customer?.id || 12,
+        orderNumber: data.orderNumber || `ORD-${Math.floor(Math.random() * 10000)}`,
+        title: data.title || '', 
         eventType: data.eventType || 'Birthday',
+        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
+        status: data.status || 'Quote',
         deliveryType: data.deliveryType || 'Pickup',
-        // Ensure required fields for items
+        deliveryAddress: data.deliveryAddress || '',
+        deliveryFee: data.deliveryFee?.toString() || '0', // Match database column
+        deliveryTime: data.deliveryTime || '',
+        totalAmount: totalAmount.toString(), // Match database column
+        amountPaid: '0', // Required field in database
+        specialInstructions: data.notes || '', // Match database column
+        taxRate: data.taxRate?.toString() || '0', // Required field in database
+        notes: data.notes || '',
         items: data.items.map(item => ({
-          ...item,
           description: item.description || 'Product',
           price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
           quantity: item.quantity || 1,
-          total: typeof item.total === 'number' ? item.total.toString() : (item.total || '0')
+          productId: item.productId || null,
+          name: item.productName || item.description || 'Product', // Required field
+          type: 'Product', // Required field
+          unitPrice: typeof item.price === 'number' ? item.price.toString() : (item.price || '0') // Required field
         }))
       };
       

@@ -114,24 +114,30 @@ router.post("/api/orders", async (req, res) => {
       console.log("Using parsedEventDate:", parsedEventDate);
       console.log("Using totalAmount:", totalAmount);
       
-      // Insert the order
+      // Insert the order - using all required fields based on the actual database schema
       const insertOrderResult = await client.query(
         `INSERT INTO orders (
           user_id, contact_id, event_date, event_type, status, 
-          delivery_type, delivery_address, delivery_time, total_amount, notes, order_number
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+          delivery_type, delivery_address, delivery_time, total_amount, notes, order_number,
+          title, delivery_fee, amount_paid, special_instructions, tax_rate
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
         [
           userId, 
           contactId, 
           parsedEventDate,
-          eventType || 'Other',
+          eventType || 'Birthday',
           status || 'Quote',
           deliveryType || 'Pickup',
           deliveryAddress || '',
           deliveryTime || '',
           totalAmount,
           notes || '',
-          orderNum
+          orderNum,
+          req.body.title || '', // Optional title field
+          req.body.deliveryFee || '0', // Required delivery_fee field
+          req.body.amountPaid || '0', // Required amount_paid field
+          req.body.specialInstructions || '', // Optional special_instructions field
+          req.body.taxRate || '0' // Required tax_rate field
         ]
       );
       
@@ -147,14 +153,17 @@ router.post("/api/orders", async (req, res) => {
           
           await client.query(
             `INSERT INTO order_items (
-              order_id, product_id, description, quantity, price
-            ) VALUES ($1, $2, $3, $4, $5)`,
+              order_id, product_id, description, quantity, price, name, type, unit_price
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
             [
               newOrder.id,
               item.productId || null,
               item.description || '',
               item.quantity || 1,
-              item.price ? item.price.toString() : '0'
+              item.price ? item.price.toString() : '0',
+              item.name || item.description || 'Product', // Name field is required
+              item.type || 'Product', // Type field is required
+              item.unitPrice ? item.unitPrice.toString() : (item.price ? item.price.toString() : '0') // UnitPrice field is required
             ]
           );
         }

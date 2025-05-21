@@ -137,23 +137,33 @@ const Orders = () => {
       // Generate order number (normally this would be done on the server)
       const orderNumber = `O${Math.floor(Math.random() * 10000)}`;
       
-      // Convert Date objects to strings to avoid type issues
+      // Convert data to match server-side database columns
       const formattedData = {
-        ...data,
-        orderNumber,
-        userId: 1, // In a real app, this would be the current user's ID
-        contactId: data.contactId || 12, // Default to a known contact if not provided
-        status: data.status || "Quote",
-        // Convert Date objects to ISO strings
-        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : data.eventDate,
-        orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : data.orderDate,
-        deliveryDate: data.deliveryDate instanceof Date ? data.deliveryDate.toISOString() : data.deliveryDate,
-        // Ensure items are properly formatted
+        userId: 1,
+        contactId: data.contactId || 12,
+        orderNumber: orderNumber,
+        title: data.title || '',
+        eventType: data.eventType || 'Birthday',
+        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : (data.eventDate || new Date().toISOString()),
+        status: data.status || 'Quote',
+        deliveryType: data.deliveryType || 'Pickup',
+        deliveryAddress: data.deliveryAddress || '',
+        deliveryFee: data.deliveryFee?.toString() || '0', // Match database column
+        deliveryTime: data.deliveryTime || '',
+        totalAmount: data.total?.toString() || '0', // Match database column name
+        amountPaid: '0', // Required field in database
+        specialInstructions: data.notes || '', // Match database column
+        taxRate: data.taxRate?.toString() || '0', // Required field in database
+        notes: data.notes || '',
+        // Ensure items are properly formatted with all required fields
         items: Array.isArray(data.items) ? data.items.map((item: any) => ({
-          ...item,
           description: item.description || 'Product',
           price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
-          quantity: item.quantity || 1
+          quantity: item.quantity || 1,
+          productId: item.productId || null,
+          name: item.productName || item.description || 'Product', // Required field
+          type: 'Product', // Required field
+          unitPrice: typeof item.price === 'number' ? item.price.toString() : (item.price || '0') // Required field
         })) : []
       };
       
