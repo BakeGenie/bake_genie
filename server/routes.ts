@@ -16,7 +16,7 @@ import { router as contactsRouter } from "./routes/contacts";
 import { router as productsRouter } from "./routes/products";
 import subscriptionRouter from "./routes/subscription";
 import integrationsRouter from "./routes/integrations";
-import ordersRouter from "./routes/orders-direct";
+import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 
