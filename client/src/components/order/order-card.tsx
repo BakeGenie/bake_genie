@@ -21,7 +21,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEmailClick,
   onDownloadClick,
 }) => {
-  const isQuote = order.orderNumber.startsWith("Q");
+  const isQuote = order.status === 'Quote' || (order.orderNumber && order.orderNumber.startsWith("Q"));
   const isCancelled = order.status === "Cancelled";
 
   // Format date to display
