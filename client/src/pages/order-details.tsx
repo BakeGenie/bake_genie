@@ -49,12 +49,15 @@ const OrderLogHistory: React.FC<OrderLogHistoryProps> = ({ orderId }) => {
       {logs.map((log: any) => (
         <div key={log.id} className="border-b pb-2">
           <div className="text-sm">
-            <span className="font-medium">{format(parseISO(log.createdAt), 'EEE, dd MMM yyyy')}</span>
+            <span className="font-medium">
+              {format(order?.eventDate ? new Date(order.eventDate) : new Date(), 'EEE, dd MMM yyyy')}
+              {order?.eventType && <span className="text-gray-700"> ({order.eventType})</span>}
+            </span>
             {log.action && (
-              <span className="text-gray-700"> ({log.action})</span>
+              <span className="text-gray-600"> - {log.action}</span>
             )}
             {log.details && (
-              <span className="text-gray-600"> - {log.details}</span>
+              <span className="text-gray-500 text-xs block mt-1">{log.details}</span>
             )}
           </div>
           <div className="text-xs text-gray-500 mt-1">
