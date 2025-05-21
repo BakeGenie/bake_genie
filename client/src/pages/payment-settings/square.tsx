@@ -1,19 +1,118 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckIcon } from "lucide-react";
+import { ArrowLeft, AlertCircle, CheckIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function SquarePaymentProvider() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
 
+  // Get the connection status
+  const { data: statusData, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
+    queryKey: ['/api/integrations/square/status'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/integrations/square/status');
+      return response.json();
+    },
+  });
+
+  // Generate OAuth link for connecting to Square
+  const { mutate: generateLink, isPending: isGeneratingLink } = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/integrations/square/connect', {
+        redirectUri: `${window.location.origin}/api/integrations/square/callback`
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Redirect to Square authorization page
+      if (data && data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        toast({
+          title: "Connection Error",
+          description: "Unable to generate Square authorization URL",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Connection Error",
+        description: error.message || "Failed to connect with Square",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Disconnect from Square
+  const { mutate: disconnect, isPending: isDisconnecting } = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/integrations/square/disconnect');
+      return response.json();
+    },
+    onSuccess: () => {
+      setConnectionStatus('disconnected');
+      toast({
+        title: "Disconnected",
+        description: "Your Square account has been disconnected successfully."
+      });
+      refetchStatus();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Disconnection Error",
+        description: error.message || "Failed to disconnect from Square",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle clicking the Connect with Square button
   const handleConnectWithSquare = () => {
-    toast({
-      title: "Square Connection",
-      description: "This would connect to your Square account. API integration will be implemented."
-    });
+    generateLink();
   };
+  
+  // Update connection status when data is loaded
+  useEffect(() => {
+    if (!statusLoading && statusData) {
+      if (statusData.connected) {
+        setConnectionStatus('connected');
+      } else {
+        setConnectionStatus('disconnected');
+      }
+    }
+  }, [statusData, statusLoading]);
+  
+  // Parse URL parameters to show success/error messages
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    
+    if (success) {
+      toast({
+        title: "Connection Successful",
+        description: "Your Square account has been connected successfully.",
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      refetchStatus();
+    } else if (error) {
+      toast({
+        title: "Connection Error",
+        description: `Failed to connect: ${error}`,
+        variant: "destructive"
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast, refetchStatus]);
 
   return (
     <div className="h-full bg-gray-50">
@@ -62,15 +161,48 @@ export default function SquarePaymentProvider() {
                 </div>
               </div>
             </div>
-            <Button 
-              className="bg-gray-900 hover:bg-black transition-colors"
-              onClick={handleConnectWithSquare}
-            >
-              <div className="bg-white rounded-sm text-black w-5 h-5 flex items-center justify-center mr-2">
-                <div className="bg-black w-3 h-3"></div>
+            {connectionStatus === 'disconnected' ? (
+              <Button 
+                className="bg-gray-900 hover:bg-black transition-colors"
+                onClick={handleConnectWithSquare}
+                disabled={isGeneratingLink}
+              >
+                <div className="bg-white rounded-sm text-black w-5 h-5 flex items-center justify-center mr-2">
+                  <div className="bg-black w-3 h-3"></div>
+                </div>
+                {isGeneratingLink ? "Connecting..." : "Connect with Square"}
+              </Button>
+            ) : connectionStatus === 'connected' ? (
+              <div className="space-y-3">
+                <div className="flex items-center text-green-600 font-medium">
+                  <CheckIcon className="h-5 w-5 mr-2" />
+                  Connected to Square
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => disconnect()}
+                  disabled={isDisconnecting}
+                >
+                  {isDisconnecting ? "Disconnecting..." : "Disconnect from Square"}
+                </Button>
               </div>
-              Connect with Square
-            </Button>
+            ) : (
+              <Button disabled className="bg-gray-900">
+                <div className="w-5 h-5 mr-2 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                Loading...
+              </Button>
+            )}
+            
+            {/* API Key Information */}
+            {connectionStatus === 'disconnected' && (
+              <Alert className="mt-4 bg-amber-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-800">API Keys Required</AlertTitle>
+                <AlertDescription className="text-amber-700">
+                  Square API keys may be required to complete the connection. If you have trouble connecting, please ensure your Square API keys are properly configured.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           {/* Benefits of using Square */}
