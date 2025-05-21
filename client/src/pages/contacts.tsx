@@ -101,11 +101,13 @@ const Contacts = () => {
       const newContact = await response.json();
       console.log("Contact created successfully:", newContact);
       
-      // Manually add the new contact to the local data while we wait for the refetch
-      const updatedContacts = [...contacts, newContact];
+      // Use the React Query setQueryData method to manually update the contacts in the cache
+      // This avoids the need for a page refresh
+      queryClient.setQueryData(["/api/contacts"], (oldData: Contact[] = []) => {
+        return [...oldData, newContact];
+      });
       
-      // Force invalidate all queries to ensure UI updates
-      queryClient.clear();
+      // Also trigger a background refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
       
       // Reset form and close dialog
@@ -116,9 +118,6 @@ const Contacts = () => {
         title: "Contact Created",
         description: `${data.firstName} ${data.lastName} has been added to your contacts.`,
       });
-      
-      // Force reload to ensure UI updates
-      window.location.reload();
     } catch (error) {
       console.error("Error creating contact:", error);
       toast({
