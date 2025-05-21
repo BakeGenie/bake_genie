@@ -3,12 +3,21 @@ import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { users, integrations } from '@shared/schema';
 
-// Initialize Stripe with the secret key
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Initialize Stripe with the secret key from environment variables
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+let stripe: Stripe | null = null;
+
+try {
+  if (stripeSecretKey) {
+    stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
-    })
-  : null;
+    });
+  } else {
+    console.log('Warning: STRIPE_SECRET_KEY not found in environment variables');
+  }
+} catch (error) {
+  console.error('Error initializing Stripe:', error);
+}
 
 export class StripeService {
   /**
@@ -30,8 +39,10 @@ export class StripeService {
     const state = this.generateStateParam(userId);
     
     // Standard OAuth parameters
+    // Using default placeholder client ID if environment variable isn't set
+    const clientId = process.env.STRIPE_CLIENT_ID || 'ca_placeholder';
     const params = new URLSearchParams({
-      client_id: process.env.STRIPE_CLIENT_ID || '',
+      client_id: clientId,
       redirect_uri: redirectUri,
       state: state,
       response_type: 'code',

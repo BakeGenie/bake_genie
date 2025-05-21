@@ -20,7 +20,6 @@ export default function StripePaymentProvider() {
       const response = await apiRequest('GET', '/api/integrations/stripe/status');
       return response.json();
     },
-    enabled: !!process.env.STRIPE_SECRET_KEY,
   });
 
   // Generate OAuth link for connecting to Stripe
@@ -77,14 +76,6 @@ export default function StripePaymentProvider() {
 
   // Handle clicking the Connect with Stripe button
   const handleConnectWithStripe = () => {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      toast({
-        title: "Configuration Missing",
-        description: "Stripe API keys need to be configured first.",
-        variant: "destructive"
-      });
-      return;
-    }
     generateLink();
   };
 
@@ -177,13 +168,13 @@ export default function StripePaymentProvider() {
               </div>
             )}
             
-            {/* Missing API Key Warning */}
-            {!process.env.STRIPE_SECRET_KEY && (
+            {/* API Key Information */}
+            {connectionStatus === 'disconnected' && (
               <Alert className="mt-4 bg-amber-50 border-amber-200">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
                 <AlertTitle className="text-amber-800">API Keys Required</AlertTitle>
                 <AlertDescription className="text-amber-700">
-                  Stripe API keys are required to complete the connection. Please contact your administrator to set up the Stripe API keys.
+                  Stripe API keys may be required to complete the connection. If you have trouble connecting, please ensure your Stripe API keys are properly configured.
                 </AlertDescription>
               </Alert>
             )}
