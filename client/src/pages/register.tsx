@@ -16,7 +16,6 @@ const registerSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  businessName: z.string().optional(),
 }).refine((data) => {
   return data.password.length >= 8;
 }, {
@@ -38,7 +37,6 @@ export default function Register() {
       password: '',
       firstName: '',
       lastName: '',
-      businessName: '',
     },
   });
 
@@ -144,19 +142,7 @@ export default function Register() {
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="businessName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Name (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Sweet Treats Bakery" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
                   <FormField
                     control={form.control}
                     name="email"
