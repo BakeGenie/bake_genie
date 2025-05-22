@@ -98,7 +98,7 @@ const TaskList = () => {
   });
 
   // Form for editing task
-  const editForm = useForm<TaskFormValues>({
+  const editForm = useForm<TaskFormValues & { hasDueDate: boolean }>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       userId: 1,
@@ -107,12 +107,18 @@ const TaskList = () => {
       dueDate: undefined,
       completed: false,
       priority: "Medium",
+      hasDueDate: false,
     },
   });
 
   // Set edit form values when selected task changes
   React.useEffect(() => {
     if (selectedTask) {
+      console.log("Selected task for editing:", selectedTask);
+      
+      // Check if there's a due date to properly set the hasDueDate field
+      const hasDueDate = selectedTask.dueDate ? true : false;
+      
       editForm.reset({
         userId: selectedTask.userId,
         relatedOrderId: selectedTask.relatedOrderId,
@@ -120,7 +126,14 @@ const TaskList = () => {
         description: selectedTask.description || "",
         dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined,
         completed: selectedTask.completed,
-        priority: selectedTask.priority as "Low" | "Medium" | "High",
+        priority: selectedTask.priority || "Normal",
+        hasDueDate: hasDueDate,
+      });
+      
+      console.log("Reset form with:", { 
+        ...selectedTask, 
+        hasDueDate,
+        dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined 
       });
     }
   }, [selectedTask, editForm]);
@@ -664,37 +677,37 @@ const TaskList = () => {
                 <div className="flex space-x-2">
                   <Button 
                     type="button"
-                    variant={editForm.getValues("priority") === "None" ? "default" : "outline"}
+                    variant={editForm.watch("priority") === "None" ? "default" : "outline"}
                     size="sm"
                     className="flex-1"
-                    onClick={() => editForm.setValue("priority", "None")}
+                    onClick={() => editForm.setValue("priority", "None", { shouldDirty: true })}
                   >
                     None
                   </Button>
                   <Button 
                     type="button"
-                    variant={editForm.getValues("priority") === "Normal" ? "default" : "outline"}
+                    variant={editForm.watch("priority") === "Normal" ? "default" : "outline"}
                     size="sm"
-                    className={`flex-1 ${editForm.getValues("priority") === "Normal" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-                    onClick={() => editForm.setValue("priority", "Normal")}
+                    className={`flex-1 ${editForm.watch("priority") === "Normal" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+                    onClick={() => editForm.setValue("priority", "Normal", { shouldDirty: true })}
                   >
                     Normal
                   </Button>
                   <Button 
                     type="button"
-                    variant={editForm.getValues("priority") === "Medium" ? "default" : "outline"}
+                    variant={editForm.watch("priority") === "Medium" ? "default" : "outline"}
                     size="sm"
                     className="flex-1"
-                    onClick={() => editForm.setValue("priority", "Medium")}
+                    onClick={() => editForm.setValue("priority", "Medium", { shouldDirty: true })}
                   >
                     Medium
                   </Button>
                   <Button 
                     type="button"
-                    variant={editForm.getValues("priority") === "High" ? "default" : "outline"}
+                    variant={editForm.watch("priority") === "High" ? "default" : "outline"}
                     size="sm" 
                     className="flex-1"
-                    onClick={() => editForm.setValue("priority", "High")}
+                    onClick={() => editForm.setValue("priority", "High", { shouldDirty: true })}
                   >
                     High
                   </Button>
@@ -703,18 +716,28 @@ const TaskList = () => {
               
               <FormField
                 control={editForm.control}
-                name="completed"
+                name="hasDueDate"
                 render={({ field }) => (
                   <FormItem className="flex items-start space-x-2">
                     <FormControl>
                       <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        id="due-date-checkbox"
+                        checked={field.value || editForm.watch("dueDate") !== undefined}
+                        onCheckedChange={(value) => {
+                          field.onChange(value);
+                          if (!value) {
+                            editForm.setValue("dueDate", undefined);
+                          } else if (!editForm.getValues("dueDate")) {
+                            // Set default due date to tomorrow if none exists
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            editForm.setValue("dueDate", tomorrow);
+                          }
+                        }}
+                        id="due-date-checkbox-edit"
                       />
                     </FormControl>
                     <label 
-                      htmlFor="due-date-checkbox" 
+                      htmlFor="due-date-checkbox-edit" 
                       className="text-sm font-medium leading-none cursor-pointer"
                     >
                       Add a due date
@@ -723,7 +746,7 @@ const TaskList = () => {
                 )}
               />
               
-              {editForm.watch("completed") && (
+              {(editForm.watch("hasDueDate") || editForm.watch("dueDate")) && (
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <h3 className="text-sm font-medium">Date</h3>
@@ -733,22 +756,28 @@ const TaskList = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <div className="relative">
-                              <Input
-                                type="text"
-                                value={field.value ? formatDate(field.value) : ""}
-                                readOnly
-                                className="pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-0 top-0 h-full"
-                              >
-                                <CalendarIcon className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal flex justify-between",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? formatDate(field.value) : "Select date"}
+                                  <CalendarIcon className="h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={(date) => field.onChange(date)}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
                           </FormControl>
                         </FormItem>
                       )}
