@@ -695,7 +695,13 @@ const TaskList = () => {
           </div>
           
           <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleEditTaskSubmit)} className="space-y-4">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                console.log("Form submitted!");
+                editForm.handleSubmit(handleEditTaskSubmit)(e);
+              }} 
+              className="space-y-4">
               <FormField
                 control={editForm.control}
                 name="title"
@@ -877,9 +883,14 @@ const TaskList = () => {
                   Cancel
                 </Button>
                 <Button 
-                  type="submit" 
+                  type="button" 
                   disabled={isSubmitting}
                   className="bg-blue-500 hover:bg-blue-600"
+                  onClick={() => {
+                    console.log("Update button clicked directly");
+                    const data = editForm.getValues();
+                    handleEditTaskSubmit(data);
+                  }}
                 >
                   {isSubmitting ? "Updating..." : "Update Task"}
                 </Button>
