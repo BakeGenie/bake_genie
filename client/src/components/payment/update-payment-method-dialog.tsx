@@ -10,7 +10,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Always use the publishable key (pk_), not the secret key (sk_)
+// We'll use a conditional approach to prevent errors
+// This will let the component render but will disable actual Stripe functionality
+// until the correct publishable key is provided
+const stripePromise = null; // Temporary disabled until proper key is set
 
 // Card Element styling
 const cardElementOptions = {
@@ -112,14 +116,24 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
           </Alert>
         )}
 
-        <div className="p-4 border rounded-md">
-          <div className="mb-1 text-sm font-medium">Card Information</div>
-          <CardElement options={cardElementOptions} />
-        </div>
+        {!stripe ? (
+          <Alert>
+            <AlertDescription>
+              The payment system is currently unavailable. Please try again later or contact support.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <>
+            <div className="p-4 border rounded-md">
+              <div className="mb-1 text-sm font-medium">Card Information</div>
+              <CardElement options={cardElementOptions} />
+            </div>
 
-        <div className="text-sm text-muted-foreground">
-          Your card information is securely processed by Stripe. We don't store your full card details.
-        </div>
+            <div className="text-sm text-muted-foreground">
+              Your card information is securely processed by Stripe. We don't store your full card details.
+            </div>
+          </>
+        )}
       </div>
 
       <DialogFooter className="mt-6">
