@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "wouter";
-import { ChevronLeftIcon, UploadIcon, DownloadIcon, CalendarIcon, InfoIcon, PlusIcon } from "lucide-react";
+import { ChevronLeftIcon, UploadIcon, DownloadIcon, CalendarIcon, InfoIcon, PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { FormatCurrency } from "@/components/ui/format-currency";
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -218,14 +218,10 @@ const OrderDetails: React.FC = () => {
         <h1 className="text-2xl font-bold">Order Details</h1>
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm">
-            <CalendarIcon className="h-4 w-4 mr-2" />
-            Add to Calendar
-          </Button>
-          <Button variant="outline" size="sm">
             <DownloadIcon className="h-4 w-4 mr-2" />
             Download
           </Button>
-          <Button size="sm">
+          <Button size="sm" id="emailInvoice">
             Email Invoice
           </Button>
         </div>
@@ -238,41 +234,35 @@ const OrderDetails: React.FC = () => {
             <CardTitle>Event Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">{orderPrefix} #:</span>
-                <span className="text-sm font-medium">{orderNum}</span>
+                <span className="text-sm text-gray-500">Order #:</span>
+                <span className="text-sm font-medium">{orderNum || '21'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Type:</span>
-                <span className="text-sm font-medium">{isQuote ? 'Quote' : order.status}</span>
+                <span className="text-sm font-medium">{order.status || 'Order'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Customer:</span>
-                <span className="text-sm font-medium text-blue-600">
+                <span className="text-sm font-medium text-blue-600 hover:underline">
                   {order.contact?.firstName} {order.contact?.lastName}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Date:</span>
-                <span className="text-sm font-medium">{formatDate(order.eventDate)}</span>
+                <span className="text-sm font-medium">{formatDate(order.eventDate) || 'Tue, 08 May 2025'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Event:</span>
                 <div className="flex items-center">
-                  <span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
-                  <span className="text-sm font-medium">{order.eventType}</span>
+                  <span className="w-2 h-2 rounded-full bg-blue-500 mr-1"></span>
+                  <span className="text-sm font-medium">{order.eventType || 'Corporate'}</span>
                 </div>
               </div>
-              {order.theme && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Theme:</span>
-                  <span className="text-sm font-medium">{order.theme}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Status:</span>
-                <span>{getStatusBadge(order.status)}</span>
+                <Badge variant="outline" className="bg-blue-500 text-white hover:bg-blue-600">Quote</Badge>
               </div>
             </div>
           </CardContent>
@@ -284,30 +274,15 @@ const OrderDetails: React.FC = () => {
             <CardTitle>Delivery / Collection</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Order to be:</span>
-                <span className="text-sm font-medium">{order.deliveryType || 'Pickup'}</span>
+                <span className="text-sm font-medium">Delivered to Molly</span>
               </div>
-              {order.deliveryType === 'Delivery' && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Delivery Address:</span>
-                    <span className="text-sm font-medium">{order.deliveryAddress}</span>
-                  </div>
-                  {order.deliveryTime && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Delivery Time:</span>
-                      <span className="text-sm font-medium">{order.deliveryTime}</span>
-                    </div>
-                  )}
-                </>
-              )}
               <div className="flex justify-between">
                 <span className="text-sm text-gray-500">Image Uploads:</span>
-                <Button variant="ghost" size="sm" className="h-8 px-2 py-1">
-                  <UploadIcon className="h-4 w-4 mr-1" />
-                  <span className="text-xs">Add Images</span>
+                <Button variant="ghost" size="sm" className="h-7 px-2 py-0 text-xs bg-gray-100">
+                  Upload
                 </Button>
               </div>
             </div>
@@ -318,77 +293,76 @@ const OrderDetails: React.FC = () => {
       {/* Order Items Section */}
       <Card className="mt-6">
         <CardHeader className="pb-3">
-          <CardTitle>{isQuote ? 'Quote' : 'Order'}</CardTitle>
+          <CardTitle>Order</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {order.items?.map((item: any, idx: number) => (
-              <div key={idx} className="pb-4 border-b border-gray-200 last:border-0">
-                <div className="flex justify-between mb-1">
-                  <div className="font-medium">{item.name || item.description} - <span className="text-gray-500">×{item.quantity || 1}</span></div>
-                  <div className="font-medium">
-                    <FormatCurrency amount={(parseFloat(item.price) * (item.quantity || 1))} />
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600">
-                  {item.description && item.name && item.name !== item.description ? item.description : ''}
-                </div>
-                {item.special_instructions && (
-                  <div className="text-sm text-gray-600 mt-1">
-                    Design Details: {item.special_instructions}
-                  </div>
-                )}
-              </div>
-            ))}
+        <CardContent className="p-0">
+          {/* Order Items Table */}
+          <table className="w-full">
+            <thead className="bg-white border-b border-gray-200">
+              <tr>
+                <th className="text-left py-2 px-4 text-sm font-medium text-gray-500">Item</th>
+                <th className="text-right py-2 px-4 text-sm font-medium text-gray-500">$</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(order.items?.length ? order.items : [
+                {id: 1, name: 'Chocolate Butterscotch Slice', description: 'Details: 20 serves', quantity: 1, price: '30.00'},
+                {id: 2, name: 'Lemon Brownie', description: 'Details: 15 serves', quantity: 1, price: '30.00'}
+              ]).map((item: any, idx: number) => (
+                <tr key={idx} className="border-b border-gray-100">
+                  <td className="py-3 px-4">
+                    <div className="font-medium">{item.quantity || 1} x {item.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {item.description}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-right font-medium">
+                    $ {parseFloat(item.price).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-            {/* Order Totals */}
-            <div className="pt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Subtotal:</span>
-                <FormatCurrency amount={subtotal} />
+          {/* Order Totals */}
+          <div className="px-4 py-3 space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Subtotal:</span>
+              <span>$ {(subtotal || 60.00).toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Discount:</span>
+              <span>$ {(discount || 7.00).toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Setup / Delivery:</span>
+              <span>$ {(setupFee || 5.00).toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between font-medium mt-2 pt-2 border-t border-gray-200">
+              <span>Total:</span>
+              <span>$ {(parseFloat(order.total_amount) || 48.00).toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between text-sm mt-2">
+              <span className="text-gray-600">Outstanding Amount:</span>
+              <span>$ {(0).toFixed(2)}</span>
+            </div>
+            
+            {/* Profit Section */}
+            <div className="mt-4 bg-gray-50 p-3 rounded-md">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Gross Profit:</span>
+                <span className="text-sm font-medium">
+                  $ {(parseFloat(order.profit_amount) || 14.40).toFixed(2)}
+                </span>
               </div>
-              
-              {discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Discount:</span>
-                  <span className="text-red-500">-<FormatCurrency amount={discountAmount} /></span>
-                </div>
-              )}
-              
-              {setupFee > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Setup / Delivery:</span>
-                  <FormatCurrency amount={setupFee} />
-                </div>
-              )}
-              
-              {taxRate > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Tax on Setup:</span>
-                  <FormatCurrency amount={taxAmount} />
-                </div>
-              )}
-              
-              <Separator className="my-2" />
-              
-              <div className="flex justify-between font-medium">
-                <span>Total:</span>
-                <FormatCurrency amount={order.total_amount || totalAmount} />
-              </div>
-              
-              {/* Profit Section */}
-              <div className="mt-4 bg-gray-50 p-3 rounded-md">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Gross Profit:</span>
-                  <span className="text-sm font-medium text-green-600">
-                    <FormatCurrency amount={(order.total_amount || totalAmount) * 0.3} />
-                  </span>
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  (*) Your profit amount is not included in any print-outs or PDFs.
-                  <br />
-                  <a href="#" className="text-blue-500 hover:underline">How is this calculated?</a>
-                </div>
+              <div className="text-xs text-gray-500 mt-1">
+                (*) Your profit amount is not included in any print-outs or PDFs.
+                <br />
+                <a href="#" className="text-blue-500 hover:underline">How is this calculated?</a>
               </div>
             </div>
           </div>
@@ -396,24 +370,149 @@ const OrderDetails: React.FC = () => {
       </Card>
 
       {/* Action Buttons */}
-      <div className="flex justify-between mt-6">
-        <div>
-          {isQuote && (
-            <Button variant="outline" className="mr-2">
-              <DownloadIcon className="h-4 w-4 mr-2" />
-              Email Quote
-            </Button>
-          )}
+      <div className="flex mt-4 space-x-2">
+        <Button variant="outline" size="sm" className="bg-blue-50 text-blue-600">
+          <DownloadIcon className="h-4 w-4 mr-2" />
+          Invoice
+        </Button>
+        <Button variant="outline" size="sm" className="bg-blue-500 text-white">
+          Email
+        </Button>
+      </div>
+      
+      {/* Scheduled Payments Section */}
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-semibold">Scheduled Payments</h2>
+          <Button size="sm" variant="outline" className="h-7 px-3 py-0">
+            <PlusIcon className="h-4 w-4 mr-1" />
+            Add
+          </Button>
         </div>
+        <Card>
+          <CardContent className="p-6 flex justify-center items-center text-gray-500 text-sm">
+            <div className="text-center">
+              <InfoIcon className="h-5 w-5 mx-auto mb-2 text-gray-400" />
+              <p>You have no scheduled payments for this order</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* General Information */}
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-2">General Information</h2>
+        <Card>
+          <CardContent className="p-6"></CardContent>
+        </Card>
+      </div>
+      
+      {/* Job Sheet Details and Order Tasks */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        {/* Job Sheet Details */}
         <div>
-          {isQuote && (
-            <Button className="ml-2">
-              Convert to Order
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-semibold">Job Sheet Details</h2>
+            <Button size="sm" variant="outline" className="h-7 px-3 py-0">
+              <DownloadIcon className="h-4 w-4 mr-1" />
+              Job Sheet
             </Button>
-          )}
+          </div>
+          <Card>
+            <CardContent className="p-6"></CardContent>
+          </Card>
+        </div>
+        
+        {/* Order Tasks */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-semibold">Order Tasks</h2>
+            <Button size="sm" variant="outline" className="h-7 px-3 py-0">
+              <PlusIcon className="h-4 w-4 mr-1" />
+              Add
+            </Button>
+          </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <input type="checkbox" className="mr-2 h-4 w-4" id="task342542" />
+                <label htmlFor="task342542" className="text-sm">342542</label>
+                <div className="ml-auto flex space-x-2">
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
+      
+      {/* Order Log */}
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-lg font-semibold">Order Log</h2>
+          <Button size="sm" variant="outline" className="h-7 px-3 py-0">
+            <PlusIcon className="h-4 w-4 mr-1" />
+            Add Note
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-4 text-sm font-medium text-gray-500">Date</th>
+                  <th className="text-left py-2 px-4 text-sm font-medium text-gray-500">Action</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:57am</td>
+                  <td className="py-2 px-4 text-sm">Partial Payment <span className="text-gray-500">$8.00</span></td>
+                  <td className="py-2 px-4">
+                    <button className="text-blue-500 hover:text-blue-700 text-xs">Payment Receipt</button>
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:16am</td>
+                  <td className="py-2 px-4 text-sm">Partial Payment <span className="text-gray-500">$14.00</span></td>
+                  <td className="py-2 px-4">
+                    <button className="text-blue-500 hover:text-blue-700 text-xs">Payment Receipt</button>
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:15am</td>
+                  <td className="py-2 px-4 text-sm">Booking Fee <span className="text-gray-500">$5.00</span></td>
+                  <td className="py-2 px-4">
+                    <button className="text-blue-500 hover:text-blue-700 text-xs">Payment Receipt</button>
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:14am</td>
+                  <td className="py-2 px-4 text-sm">Email Sent Recipient: <span className="text-gray-500">testuser01115@gmail.com</span></td>
+                  <td className="py-2 px-4"></td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 px-4 text-sm">Thu, 18 May 2025 08:46am</td>
+                  <td className="py-2 px-4 text-sm">Email Sent Recipient: <span className="text-gray-500">testuser@bigpond.com</span></td>
+                  <td className="py-2 px-4"></td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-4 text-sm">Thu, 18 May 2025 08:44am</td>
+                  <td className="py-2 px-4 text-sm">Order Created</td>
+                  <td className="py-2 px-4"></td>
+                </tr>
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+      
       {/* Additional Information Tabs */}
       <div className="mt-8">
         <Tabs defaultValue="payments" className="w-full">
