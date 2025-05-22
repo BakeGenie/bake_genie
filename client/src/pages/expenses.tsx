@@ -158,30 +158,37 @@ const ExpensesPage = () => {
   const {
     data: expenses,
     isLoading: expensesLoading,
+    error: expensesError,
     refetch: refetchExpenses,
   } = useQuery({
     queryKey: ["/api/expenses"],
     queryFn: async () => {
-      let url = "/api/expenses";
-      const params = new URLSearchParams();
-      
-      if (dateRange.from) {
-        params.append("startDate", dateRange.from.toISOString().split("T")[0]);
+      try {
+        let url = "/api/expenses";
+        const params = new URLSearchParams();
+        
+        if (dateRange.from) {
+          params.append("startDate", dateRange.from.toISOString().split("T")[0]);
+        }
+        
+        if (dateRange.to) {
+          params.append("endDate", dateRange.to.toISOString().split("T")[0]);
+        }
+        
+        if (categoryFilter) {
+          params.append("category", categoryFilter);
+        }
+        
+        if (params.toString()) {
+          url += "?" + params.toString();
+        }
+        
+        console.log("Fetching expenses from:", url);
+        return await apiRequest<Expense[]>({ url });
+      } catch (error) {
+        console.error("Error fetching expenses:", error);
+        throw error;
       }
-      
-      if (dateRange.to) {
-        params.append("endDate", dateRange.to.toISOString().split("T")[0]);
-      }
-      
-      if (categoryFilter) {
-        params.append("category", categoryFilter);
-      }
-      
-      if (params.toString()) {
-        url += "?" + params.toString();
-      }
-      
-      return apiRequest<Expense[]>({ url });
     },
   });
 
