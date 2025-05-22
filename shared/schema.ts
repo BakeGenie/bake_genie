@@ -31,25 +31,16 @@ export type QuoteStatus = typeof quoteStatusTypes[number];
 export const deliveryTypes = ['Pickup', 'Delivery'] as const;
 export type DeliveryType = typeof deliveryTypes[number];
 
-// Users table
+// Users table - updated to match actual database structure
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").unique(),
   password: text("password").notNull(),
-  email: text("email").notNull().unique(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
+  email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
-  businessName: text("business_name"),
-  phone: text("phone"),
-  address: text("address"),
-  city: text("city"),
-  state: text("state"),
-  zip: text("zip"),
-  country: text("country"),
-  avatar: text("avatar"),
-  lastLogin: timestamp("last_login"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Contacts table

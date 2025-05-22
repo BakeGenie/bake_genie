@@ -108,7 +108,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const { email, password, firstName, lastName } = validation.data;
 
-    // Check if email already exists using direct connection
+    // Check if email already exists
     const checkResult = await pool.query(
       `SELECT * FROM users WHERE email = $1`, 
       [email]
@@ -124,47 +124,26 @@ router.post('/register', async (req: Request, res: Response) => {
     // Generate a username from the email
     const username = email.split('@')[0];
 
-    try {
-      // Use Drizzle ORM for insertion
-      const [newUser] = await db.insert(users).values({
-        username,
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        role: "user",
-      }).returning();
+    // Directly use SQL query for registration to ensure all required fields are set
+    // Avoid column errors by only using columns we know exist
+    const insertResult = await pool.query(
+      `INSERT INTO users (username, email, password, first_name, last_name, role) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, username, email, first_name, last_name, role, created_at`,
+      [username, email, hashedPassword, firstName, lastName, "user"]
+    );
 
-      // Create session
-      (req.session as any).user = {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        role: newUser.role,
-      };
-    } catch (dbError) {
-      console.error("Database insertion error:", dbError);
-        
-      // Fallback to raw SQL if needed
-      const insertResult = await pool.query(
-        `INSERT INTO users (username, email, password, first_name, last_name, role) 
-         VALUES ($1, $2, $3, $4, $5, $6) 
-         RETURNING id, username, email, first_name, last_name, role, created_at`,
-        [username, email, hashedPassword, firstName, lastName, "user"]
-      );
-  
-      const newUser = insertResult.rows[0];
-  
-      // Create session
-      (req.session as any).user = {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.first_name,
-        lastName: newUser.last_name,
-        role: newUser.role,
-      };
-    }
+    // Get the newly created user
+    const user = insertResult.rows[0];
+
+    // Create session with correct field mapping
+    (req.session as any).user = {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role,
+    };
     
     await new Promise<void>((resolve, reject) => {
       req.session.save((err) => {
@@ -178,12 +157,12 @@ router.post('/register', async (req: Request, res: Response) => {
 
     // Return user data (excluding password)
     return res.status(201).json({
-      id: newUser.id,
-      username: newUser.username,
-      email: newUser.email,
-      firstName: newUser.first_name,
-      lastName: newUser.last_name,
-      createdAt: newUser.created_at
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      createdAt: user.created_at
     });
 
   } catch (error) {
