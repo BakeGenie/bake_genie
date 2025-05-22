@@ -190,7 +190,7 @@ const Products = () => {
   // Handle image upload
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file);
     
     try {
       const response = await fetch("/api/upload", {
@@ -236,28 +236,16 @@ const Products = () => {
       
       console.log("Submitting product with formatted data:", formattedData);
       
-      // Make the product creation request and handle the response using apiRequest
+      // Make the product creation request and handle the response
       try {
         console.log("Sending product data to API:", formattedData);
 
-        const response = await apiRequest("POST", "/api/products", formattedData);
+        // Use the correct format for apiRequest
+        const data = await apiRequest("/api/products", {
+          method: "POST",
+          body: formattedData
+        });
         
-        // Check if response is OK
-        if (!response.ok) {
-          console.error("Error creating product. Status:", response.status);
-          const errorText = await response.text();
-          console.error("Error response:", errorText);
-          throw new Error("Failed to create product. Please try again.");
-        }
-        
-        // If there's no content, just return
-        if (response.status === 204) {
-          console.log("Product created successfully, but no data returned");
-          return;
-        }
-        
-        // Parse the JSON response
-        const data = await response.json();
         console.log("Product creation successful:", data);
       } catch (error) {
         console.error("Product creation error:", error);
