@@ -495,42 +495,50 @@ const TaskList = () => {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Priority</h3>
                 <div className="flex space-x-2">
-                  <Button 
-                    type="button"
-                    variant={form.getValues("priority") === "None" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => form.setValue("priority", "None")}
-                  >
-                    None
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={form.getValues("priority") === "Normal" ? "default" : "outline"}
-                    size="sm"
-                    className={`flex-1 ${form.getValues("priority") === "Normal" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-                    onClick={() => form.setValue("priority", "Normal")}
-                  >
-                    Normal
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={form.getValues("priority") === "Medium" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => form.setValue("priority", "Medium")}
-                  >
-                    Medium
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={form.getValues("priority") === "High" ? "default" : "outline"}
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => form.setValue("priority", "High")}
-                  >
-                    High
-                  </Button>
+                  {/* Use watch to ensure the buttons update when priority changes */}
+                  {(() => {
+                    const currentPriority = form.watch("priority");
+                    return (
+                      <>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "None" ? "default" : "outline"}
+                          size="sm"
+                          className={`flex-1 ${currentPriority === "None" ? "bg-gray-300 hover:bg-gray-400" : ""}`}
+                          onClick={() => form.setValue("priority", "None")}
+                        >
+                          None
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "Normal" ? "default" : "outline"}
+                          size="sm"
+                          className={`flex-1 ${currentPriority === "Normal" ? "bg-blue-500 hover:bg-blue-600 text-white" : ""}`}
+                          onClick={() => form.setValue("priority", "Normal")}
+                        >
+                          Normal
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "Medium" ? "default" : "outline"}
+                          size="sm"
+                          className={`flex-1 ${currentPriority === "Medium" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
+                          onClick={() => form.setValue("priority", "Medium")}
+                        >
+                          Medium
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "High" ? "default" : "outline"}
+                          size="sm" 
+                          className={`flex-1 ${currentPriority === "High" ? "bg-red-500 hover:bg-red-600 text-white" : ""}`}
+                          onClick={() => form.setValue("priority", "High")}
+                        >
+                          High
+                        </Button>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               
@@ -733,42 +741,50 @@ const TaskList = () => {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium">Priority</h3>
                 <div className="flex space-x-2">
-                  <Button 
-                    type="button"
-                    variant={editForm.watch("priority") === "None" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => editForm.setValue("priority", "None", { shouldDirty: true })}
-                  >
-                    None
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={editForm.watch("priority") === "Normal" ? "default" : "outline"}
-                    size="sm"
-                    className={`flex-1 ${editForm.watch("priority") === "Normal" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-                    onClick={() => editForm.setValue("priority", "Normal", { shouldDirty: true })}
-                  >
-                    Normal
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={editForm.watch("priority") === "Medium" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => editForm.setValue("priority", "Medium", { shouldDirty: true })}
-                  >
-                    Medium
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant={editForm.watch("priority") === "High" ? "default" : "outline"}
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => editForm.setValue("priority", "High", { shouldDirty: true })}
-                  >
-                    High
-                  </Button>
+                  {/* Use an IIFE to ensure the buttons update when priority changes */}
+                  {(() => {
+                    const currentPriority = editForm.watch("priority");
+                    return (
+                      <>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "None" ? "default" : "outline"}
+                          size="sm"
+                          className={`flex-1 ${currentPriority === "None" ? "bg-gray-300 hover:bg-gray-400" : ""}`}
+                          onClick={() => editForm.setValue("priority", "None", { shouldDirty: true })}
+                        >
+                          None
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "Normal" ? "default" : "outline"}
+                          size="sm"
+                          className={`flex-1 ${currentPriority === "Normal" ? "bg-blue-500 hover:bg-blue-600 text-white" : ""}`}
+                          onClick={() => editForm.setValue("priority", "Normal", { shouldDirty: true })}
+                        >
+                          Normal
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "Medium" ? "default" : "outline"}
+                          size="sm"
+                          className={`flex-1 ${currentPriority === "Medium" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
+                          onClick={() => editForm.setValue("priority", "Medium", { shouldDirty: true })}
+                        >
+                          Medium
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={currentPriority === "High" ? "default" : "outline"}
+                          size="sm" 
+                          className={`flex-1 ${currentPriority === "High" ? "bg-red-500 hover:bg-red-600 text-white" : ""}`}
+                          onClick={() => editForm.setValue("priority", "High", { shouldDirty: true })}
+                        >
+                          High
+                        </Button>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               
