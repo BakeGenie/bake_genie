@@ -94,12 +94,13 @@ ${values.source ? `Source: ${values.source}` : ''}
 
 Message: ${values.message}`;
       
-      // Format data to match the database structure (snake_case fields)
+      // Format data to match the server expectations
+      // The server is looking for 'message' and 'eventType', even though it 
+      // stores them as 'details' and 'event_type' in the database
       const serverData = {
-        details: formattedMessage,           // 'details' field in database stores the message
-        event_type: values.eventType,        // 'event_type' field in database
-        date: new Date().toISOString(),      // 'date' field for when the enquiry was created
-        event_date: values.eventDate ? values.eventDate.toISOString() : null,
+        message: formattedMessage,         // Server expects 'message' but stores as 'details'
+        eventType: values.eventType,       // Server expects 'eventType' but stores as 'event_type'
+        eventDate: values.eventDate ? values.eventDate.toISOString() : null,
         status: "New"
       };
       
