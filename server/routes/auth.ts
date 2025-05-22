@@ -19,8 +19,8 @@ const registerSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  businessName: z.string().optional(),
-  phone: z.string().optional(),
+  businessName: z.string().optional(), // We'll still accept this but won't use it in the database operation
+  phone: z.string().optional(), // We'll still accept this but won't use it in the database operation
 });
 
 // Login route
@@ -110,14 +110,13 @@ router.post('/register', async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user - only including fields that we're sure exist in the database
+    // Create new user - only using fields that exist in the actual database
     const [newUser] = await db.insert(users).values({
       username: email.split('@')[0], // Generate a username from the email
       email,
       password: hashedPassword,
-      firstName,
-      lastName,
-      lastLogin: new Date(),
+      first_name: firstName, // Use the actual column name from the database 
+      last_name: lastName,   // Use the actual column name from the database
     }).returning();
 
     // Create session
