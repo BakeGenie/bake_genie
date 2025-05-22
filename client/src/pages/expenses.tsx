@@ -769,20 +769,96 @@ const ExpensesPage = () => {
       {/* Expense Dialog */}
       <Dialog open={openExpenseDialog} onOpenChange={setOpenExpenseDialog}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Expense</DialogTitle>
-            <DialogDescription>
-              Record a new business expense. Fill out the details below.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="flex justify-between items-center mb-4">
+            <DialogTitle className="text-xl">Add Expense</DialogTitle>
+            <button 
+              onClick={() => setOpenExpenseDialog(false)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              ✕
+            </button>
+          </div>
           <Form {...expenseForm}>
             <form onSubmit={expenseForm.handleSubmit(onSubmitExpense)} className="space-y-4">
+              <FormField
+                control={expenseForm.control}
+                name="paymentSource"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-normal text-gray-500">Payment Source</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || "Cash"}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                        <SelectItem value="Debit Card">Debit Card</SelectItem>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="PayPal">PayPal</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={expenseForm.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-normal text-gray-500">Expense Date</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input 
+                          type="text"
+                          value={field.value ? format(field.value, "EEE, dd MMM yyyy") : ""}
+                          onClick={() => document.getElementById("expense-calendar-toggle")?.click()}
+                          readOnly
+                          className="pr-10"
+                        />
+                      </FormControl>
+                      <button 
+                        type="button" 
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                        onClick={() => document.getElementById("expense-calendar-toggle")?.click()}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                      </button>
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button id="expense-calendar-toggle" type="button" variant="outline" className="hidden">
+                          Open
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={expenseForm.control}
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel className="text-sm font-normal text-gray-500">Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value || expenseCategories[0]}>
                       <FormControl>
                         <SelectTrigger>
@@ -803,10 +879,44 @@ const ExpensesPage = () => {
               />
               <FormField
                 control={expenseForm.control}
-                name="amount"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount</FormLabel>
+                    <FormLabel className="text-sm font-normal text-gray-500">Description</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter description"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={expenseForm.control}
+                name="supplier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-normal text-gray-500">Supplier</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter supplier name"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={expenseForm.control}
+                name="vat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-normal text-gray-500">VAT (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="0.00"
@@ -822,54 +932,70 @@ const ExpensesPage = () => {
               />
               <FormField
                 control={expenseForm.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      className="rounded-md border"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={expenseForm.control}
-                name="description"
+                name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormLabel className="text-sm font-normal text-gray-500">Total Inc. Tax</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter a description" {...field} value={field.value || ''} />
+                      <Input
+                        placeholder="0.00"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              <div className="space-y-2">
+                <FormLabel className="text-sm font-normal text-gray-500">Attach Receipt</FormLabel>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Choose file to upload"
+                    readOnly
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="secondary"
+                    className="whitespace-nowrap bg-blue-500 text-white hover:bg-blue-600 px-3"
+                  >
+                    Choose File
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-400 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 mr-1">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                  Attachments larger than 3mb may take longer to upload when saving an expense.
+                </p>
+              </div>
+              
               <FormField
                 control={expenseForm.control}
-                name="taxDeductible"
+                name="isRecurring"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Tax Deductible</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        Mark this expense as tax deductible
-                      </p>
+                    <div>
+                      <FormLabel className="text-sm font-normal cursor-pointer">Add as a recurring expense</FormLabel>
                     </div>
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              
+              <div className="flex justify-between pt-2 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -880,10 +1006,11 @@ const ExpensesPage = () => {
                 <Button
                   type="submit"
                   disabled={createExpenseMutation.isPending}
+                  className="bg-blue-500 hover:bg-blue-600"
                 >
-                  {createExpenseMutation.isPending ? "Saving..." : "Save Expense"}
+                  {createExpenseMutation.isPending ? "Saving..." : "Add Expense"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </Form>
         </DialogContent>
