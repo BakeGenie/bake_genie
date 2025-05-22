@@ -116,16 +116,32 @@ const IngredientsList = () => {
   );
   
   // Handle delete ingredient
-  const handleDeleteIngredient = (id: number) => {
-    const ingredientToDelete = ingredients.find(i => i.id === id);
-    if (ingredientToDelete) {
-      toast({
-        title: "Ingredient deleted",
-        description: `"${ingredientToDelete.name}" has been removed`,
-        duration: 3000,
+  const handleDeleteIngredient = async (id: number) => {
+    try {
+      const response = await fetch(`/api/ingredients/${id}`, {
+        method: "DELETE",
       });
       
-      setIngredients(ingredients.filter(i => i.id !== id));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete ingredient");
+      }
+      
+      // Invalidate the query to refresh the list
+      await queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
+      
+      toast({
+        title: "Ingredient deleted",
+        description: `Ingredient has been removed`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error deleting ingredient:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete ingredient",
+        variant: "destructive"
+      });
     }
   };
   
