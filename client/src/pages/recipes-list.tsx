@@ -119,7 +119,8 @@ const RecipesList = () => {
   // Calculate recipe cost
   const calculateRecipeCost = (recipe: RecipeWithIngredients): string => {
     if (!recipe.ingredients || recipe.ingredients.length === 0) {
-      return recipe.totalCost ? `$${Number(recipe.totalCost).toFixed(2)}` : '-';
+      // Use cost price if available, otherwise return dash
+      return recipe.costPrice ? `$${Number(recipe.costPrice).toFixed(2)}` : '-';
     }
     
     const total = recipe.ingredients.reduce((sum, item) => {

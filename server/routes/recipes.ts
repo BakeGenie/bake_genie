@@ -34,15 +34,29 @@ router.get("/", async (req, res) => {
     // Get all recipe ingredients for these recipes
     const recipeIngredientsData = await db.select()
       .from(recipeIngredients)
-      .where(recipeIngredients.recipeId.in(recipeIds));
+      .where(
+        recipeIds.length > 0 
+          ? eq(recipeIngredients.recipeId, recipeIds[0]) 
+          : eq(recipeIngredients.recipeId, -1)  // Return nothing if no recipes
+      );
     
     // Get all ingredient IDs from recipe ingredients
     const ingredientIds = recipeIngredientsData.map(ri => ri.ingredientId);
     
     // Get all ingredients for these recipe ingredients
-    const ingredientsData = ingredientIds.length > 0 
-      ? await db.select().from(ingredients).where(ingredients.id.in(ingredientIds))
-      : [];
+    let ingredientsData = [];
+    
+    // We need to fetch each ingredient individually since we can't use .in()
+    if (ingredientIds.length > 0) {
+      // Create an array of promises for each ingredient fetch
+      const ingredientPromises = ingredientIds.map(id => 
+        db.select().from(ingredients).where(eq(ingredients.id, id))
+      );
+      
+      // Execute all promises and flatten the resulting array
+      const results = await Promise.all(ingredientPromises);
+      ingredientsData = results.flat();
+    }
     
     // Create lookup maps
     const ingredientsMap = ingredientsData.reduce((acc, ingredient) => {
@@ -105,9 +119,19 @@ router.get("/:id", async (req, res) => {
     const ingredientIds = recipeIngredientsData.map(ri => ri.ingredientId);
     
     // Get all ingredients for these recipe ingredients
-    const ingredientsData = ingredientIds.length > 0
-      ? await db.select().from(ingredients).where(ingredients.id.in(ingredientIds))
-      : [];
+    let ingredientsData = [];
+    
+    // We need to fetch each ingredient individually since we can't use .in()
+    if (ingredientIds.length > 0) {
+      // Create an array of promises for each ingredient fetch
+      const ingredientPromises = ingredientIds.map(id => 
+        db.select().from(ingredients).where(eq(ingredients.id, id))
+      );
+      
+      // Execute all promises and flatten the resulting array
+      const results = await Promise.all(ingredientPromises);
+      ingredientsData = results.flat();
+    }
     
     // Create lookup map for ingredients
     const ingredientsMap = ingredientsData.reduce((acc, ingredient) => {
