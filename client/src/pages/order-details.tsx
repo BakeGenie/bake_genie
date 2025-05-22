@@ -457,6 +457,10 @@ const TaskModal = ({
   );
 };
 
+
+
+
+
 // Note Modal Component
 const NoteModal = ({
   open,
@@ -483,7 +487,9 @@ const NoteModal = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Note</DialogTitle>
-          <DialogDescription>Add a note to the order log.</DialogDescription>
+          <DialogDescription>
+            Add a note to the order log
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -495,12 +501,12 @@ const NoteModal = ({
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Note Content</FormLabel>
+                  <FormLabel>Note</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter your note here"
+                      placeholder="Enter your note"
                       {...field}
-                      className="min-h-[120px]"
+                      className="min-h-[100px]"
                     />
                   </FormControl>
                   <FormMessage />
@@ -1541,6 +1547,12 @@ const OrderDetails: React.FC = () => {
         open={isPaymentModalOpen}
         onOpenChange={setIsPaymentModalOpen}
         onSubmit={handleAddPayment}
+      />
+
+      <ScheduledPaymentModal
+        open={isScheduledPaymentModalOpen}
+        onOpenChange={setIsScheduledPaymentModalOpen}
+        onSubmit={handleAddScheduledPayment}
       />
 
       <TaskModal
