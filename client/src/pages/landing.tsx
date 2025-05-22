@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { 
   Cake, 
   Calendar, 
@@ -11,77 +12,152 @@ import {
   ChevronRight, 
   CreditCard,
   BarChart4,
-  Users
+  Users,
+  Menu,
+  X
 } from "lucide-react";
 
 export default function LandingPage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto flex items-center justify-between p-4">
           <div className="flex items-center">
             <img
               src="https://placehold.co/40x40/e2e8f0/475569?text=BD"
               alt="BakeDiary Logo"
-              className="h-10 w-10 mr-2"
+              className="h-10 w-10 mr-2 rounded-md"
             />
-            <span className="text-xl font-semibold text-blue-800">BakeDiary</span>
+            <span className="text-xl font-semibold text-blue-800 dark:text-blue-400">BakeDiary</span>
           </div>
-          <nav className="hidden md:flex space-x-8">
-            <a href="#" className="text-gray-600 hover:text-blue-600">Home</a>
-            <a href="#features" className="text-gray-600 hover:text-blue-600">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-blue-600">Pricing</a>
-            <a href="#faq" className="text-gray-600 hover:text-blue-600">FAQs</a>
-            <a href="#contact" className="text-gray-600 hover:text-blue-600">Contact Us</a>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">Home</a>
+            <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">Features</a>
+            <a href="#pricing" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">Pricing</a>
+            <a href="#faq" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">FAQs</a>
+            <a href="#contact" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">Contact Us</a>
+            <ThemeToggle />
+            <Button 
+              size="sm" 
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              asChild
+            >
+              <Link to="/login">LOGIN</Link>
+            </Button>
           </nav>
-          <Button 
-            size="sm" 
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            asChild
-          >
-            <Link to="/login">LOGIN</Link>
-          </Button>
+          
+          {/* Mobile Menu Button */}
+          <div className="flex items-center space-x-3 md:hidden">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMobileMenu}
+              className="md:hidden"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              ) : (
+                <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              )}
+            </Button>
+          </div>
         </div>
+        
+        {/* Mobile Navigation */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 py-2">
+            <nav className="flex flex-col space-y-3 py-3">
+              <a href="#" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Home
+              </a>
+              <a href="#features" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Features
+              </a>
+              <a href="#pricing" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pricing
+              </a>
+              <a href="#faq" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                FAQs
+              </a>
+              <a href="#contact" 
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Contact Us
+              </a>
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 text-white w-full mt-2"
+                asChild
+              >
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>LOGIN</Link>
+              </Button>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Notice Banner */}
-      <div className="bg-red-600 text-white text-center py-2 px-4">
+      <div className="bg-red-600 dark:bg-red-700 text-white text-center py-2 px-4 animate-fade-in">
         We regret to inform you that Bake Diary will be permanently closing soon. For further details, please contact us.
       </div>
 
       {/* Hero Section */}
-      <div className="relative bg-gray-50">
-        <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
+      <div className="relative bg-gray-50 dark:bg-gray-800">
+        <div className="container mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 items-center">
             <div className="flex flex-col justify-center">
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl uppercase">
-                <span className="block text-blue-800">CAKE PRICING &</span>
-                <span className="block text-blue-800">ORDER MANAGEMENT</span>
-                <span className="block text-blue-800">SOFTWARE APP</span>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl uppercase">
+                <span className="block text-blue-700 dark:text-blue-400">CAKE PRICING &</span>
+                <span className="block text-blue-700 dark:text-blue-400">ORDER MANAGEMENT</span>
+                <span className="block text-blue-700 dark:text-blue-400">SOFTWARE APP</span>
               </h1>
-              <p className="mt-6 max-w-lg text-gray-600">
+              <p className="mt-6 max-w-lg text-gray-600 dark:text-gray-300 text-lg">
                 Bake Diary is the leading cloud based software for Cake Decorators & Bakers all over the world to help manage the admin side of your cake business.
               </p>
-              <div className="mt-6">
+              <div className="mt-8">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white uppercase"
+                  className="bg-blue-600 hover:bg-blue-700 text-white uppercase shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   FIND OUT MORE
                 </Button>
               </div>
-              <div className="mt-4 text-xs text-gray-500">
+              <div className="mt-6 space-y-1 text-sm text-gray-500 dark:text-gray-400">
                 <p>* 2 week free trial for all new users.</p>
                 <p>** Subscription after free trial is $4.95 pm / €5.50 pm</p>
                 <p>*** We currently support over 37 currencies incl. USD, AUD, GBP, CAD & EUR</p>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
               <img
                 src="https://placehold.co/600x400/e2e8f0/475569?text=Baker+Image"
                 alt="Baker working in kitchen"
-                className="h-auto w-full object-cover rounded-md"
+                className="relative h-auto w-full object-cover rounded-lg shadow-xl"
               />
             </div>
           </div>
@@ -89,49 +165,52 @@ export default function LandingPage() {
       </div>
 
       {/* What is Bake Diary Section */}
-      <div id="features" className="py-16 bg-white">
+      <div id="features" className="py-24 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <img
-                src="https://placehold.co/600x400/e2e8f0/475569?text=Dashboard+Preview"
-                alt="BakeDiary Dashboard"
-                className="rounded-lg shadow-md w-full"
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="order-2 lg:order-1">
+              <div className="relative rounded-xl overflow-hidden shadow-2xl group transition-all duration-300 hover:shadow-blue-200/50 dark:hover:shadow-blue-900/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <img
+                  src="https://placehold.co/600x400/e2e8f0/475569?text=Dashboard+Preview"
+                  alt="BakeDiary Dashboard"
+                  className="w-full h-auto"
+                />
+              </div>
             </div>
-            <div>
-              <h2 className="text-3xl font-bold text-blue-800 mb-4">What is Bake Diary?</h2>
-              <p className="text-gray-600 mb-6">
+            <div className="order-1 lg:order-2">
+              <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-6">What is Bake Diary?</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">
                 Bake Diary is an online web application created to help cake decorators 
                 and home bakers easily manage the important day to day tasks associated 
                 with running a successful home or small baking business.
               </p>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 rounded-full p-2 mt-1">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 rounded-full p-3 mt-1">
+                    <CheckCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="ml-3">
-                    <h3 className="font-semibold text-gray-900">Streamline Orders</h3>
-                    <p className="text-gray-600">Keep track of all your orders in one place</p>
+                  <div className="ml-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Streamline Orders</h3>
+                    <p className="text-gray-600 dark:text-gray-300">Keep track of all your orders in one place with our intuitive interface</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 rounded-full p-2 mt-1">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 rounded-full p-3 mt-1">
+                    <CheckCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="ml-3">
-                    <h3 className="font-semibold text-gray-900">Manage Your Calendar</h3>
-                    <p className="text-gray-600">Never double-book or overcommit again</p>
+                  <div className="ml-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Manage Your Calendar</h3>
+                    <p className="text-gray-600 dark:text-gray-300">Never double-book or overcommit again with visual scheduling tools</p>
                   </div>
                 </div>
                 <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 rounded-full p-2 mt-1">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/30 rounded-full p-3 mt-1">
+                    <CheckCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="ml-3">
-                    <h3 className="font-semibold text-gray-900">Track Finances</h3>
-                    <p className="text-gray-600">Monitor income, expenses, and profitability</p>
+                  <div className="ml-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">Track Finances</h3>
+                    <p className="text-gray-600 dark:text-gray-300">Monitor income, expenses, and profitability with detailed reporting</p>
                   </div>
                 </div>
               </div>
@@ -141,81 +220,81 @@ export default function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <div className="py-16 bg-gray-50">
+      <div className="py-24 bg-gray-50 dark:bg-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-blue-800 sm:text-4xl">
+            <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400 sm:text-4xl">
               Everything You Need to Run Your Bakery
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
               Streamline your operations, save time, and grow your baking business
             </p>
           </div>
 
           <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {/* Feature 1 */}
-            <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-blue-500 text-white">
+            <div className="rounded-xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-blue-900/5 border border-gray-100 dark:border-gray-800 hover:shadow-xl dark:hover:shadow-blue-900/10 transition-all duration-300 group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-800 text-white shadow-md group-hover:shadow-blue-500/20 transition-all duration-300">
                 <Cake className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Order Management</h3>
-              <p className="mt-2 text-gray-600">
-                Track orders, quotes, and custom requests. Manage order statuses from inquiry to delivery.
+              <h3 className="mt-5 text-xl font-semibold text-gray-900 dark:text-white">Order Management</h3>
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Track orders, quotes, and custom requests. Manage order statuses from inquiry to delivery with our intuitive dashboard.
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-500 text-white">
+            <div className="rounded-xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-purple-900/5 border border-gray-100 dark:border-gray-800 hover:shadow-xl dark:hover:shadow-purple-900/10 transition-all duration-300 group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-800 text-white shadow-md group-hover:shadow-purple-500/20 transition-all duration-300">
                 <Calendar className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Calendar & Scheduling</h3>
-              <p className="mt-2 text-gray-600">
-                Visual calendar for production planning. Avoid overbooking and manage your time efficiently.
+              <h3 className="mt-5 text-xl font-semibold text-gray-900 dark:text-white">Calendar & Scheduling</h3>
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Visual calendar for production planning. Avoid overbooking and manage your time efficiently with color-coded events.
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-green-500 text-white">
+            <div className="rounded-xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-green-900/5 border border-gray-100 dark:border-gray-800 hover:shadow-xl dark:hover:shadow-green-900/10 transition-all duration-300 group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-800 text-white shadow-md group-hover:shadow-green-500/20 transition-all duration-300">
                 <DollarSign className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Payment Processing</h3>
-              <p className="mt-2 text-gray-600">
-                Accept deposits and payments online. Connect with Stripe or Square for secure transactions.
+              <h3 className="mt-5 text-xl font-semibold text-gray-900 dark:text-white">Payment Processing</h3>
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Accept deposits and payments online. Connect with Stripe or Square for secure transactions and automatic invoicing.
               </p>
             </div>
 
             {/* Feature 4 */}
-            <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-yellow-500 text-white">
+            <div className="rounded-xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-yellow-900/5 border border-gray-100 dark:border-gray-800 hover:shadow-xl dark:hover:shadow-yellow-900/10 transition-all duration-300 group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-amber-600 dark:from-yellow-600 dark:to-amber-700 text-white shadow-md group-hover:shadow-yellow-500/20 transition-all duration-300">
                 <Clock className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Recipe Management</h3>
-              <p className="mt-2 text-gray-600">
-                Store and organize recipes, calculate costs, and scale ingredients for any order size.
+              <h3 className="mt-5 text-xl font-semibold text-gray-900 dark:text-white">Recipe Management</h3>
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Store and organize recipes, calculate costs, and scale ingredients for any order size with our powerful recipe tools.
               </p>
             </div>
 
             {/* Feature 5 */}
-            <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-red-500 text-white">
+            <div className="rounded-xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-red-900/5 border border-gray-100 dark:border-gray-800 hover:shadow-xl dark:hover:shadow-red-900/10 transition-all duration-300 group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-800 text-white shadow-md group-hover:shadow-red-500/20 transition-all duration-300">
                 <BarChart4 className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Business Insights</h3>
-              <p className="mt-2 text-gray-600">
-                Track expenses, revenue, and profit margins. Generate reports to analyze your business.
+              <h3 className="mt-5 text-xl font-semibold text-gray-900 dark:text-white">Business Insights</h3>
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Track expenses, revenue, and profit margins. Generate detailed reports to analyze and grow your business.
               </p>
             </div>
 
             {/* Feature 6 */}
-            <div className="rounded-xl bg-white p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-teal-500 text-white">
+            <div className="rounded-xl bg-white dark:bg-gray-900 p-8 shadow-lg dark:shadow-teal-900/5 border border-gray-100 dark:border-gray-800 hover:shadow-xl dark:hover:shadow-teal-900/10 transition-all duration-300 group">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 dark:from-teal-600 dark:to-teal-800 text-white shadow-md group-hover:shadow-teal-500/20 transition-all duration-300">
                 <Users className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Customer Management</h3>
-              <p className="mt-2 text-gray-600">
-                Build a customer database with order history, preferences, and communication logs.
+              <h3 className="mt-5 text-xl font-semibold text-gray-900 dark:text-white">Customer Management</h3>
+              <p className="mt-3 text-gray-600 dark:text-gray-300">
+                Build a comprehensive customer database with order history, preferences, and communication logs for better relationships.
               </p>
             </div>
           </div>
@@ -223,45 +302,68 @@ export default function LandingPage() {
       </div>
 
       {/* How It Works */}
-      <div className="bg-gray-50 py-16 sm:py-24">
+      <div className="bg-white dark:bg-gray-900 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
               How BakeDiary Works
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
               Streamline your workflow in just a few simple steps
             </p>
           </div>
 
-          <div className="mt-16 flow-root">
-            <ul className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <li className="flex flex-col items-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white text-xl font-bold">
+          <div className="mt-20 flow-root">
+            <ul className="grid grid-cols-1 gap-12 md:grid-cols-3">
+              <li className="relative flex flex-col items-center text-center group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 text-white text-2xl font-bold shadow-xl">
                   1
                 </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900">Capture Orders</h3>
-                <p className="mt-2 text-base text-gray-600">
-                  Easily log customer details, order requirements, and delivery dates in one place.
+                <div className="relative w-px h-12 bg-gradient-to-b from-blue-500 to-transparent mt-6"></div>
+                <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Capture Orders</h3>
+                <p className="mt-3 text-base text-gray-600 dark:text-gray-300 max-w-md">
+                  Easily log customer details, order requirements, and delivery dates in one place with our intuitive order forms.
                 </p>
+                <div className="mt-6">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-700 dark:text-blue-400 inline-flex items-center text-sm">
+                    <CheckCircle className="h-4 w-4 mr-2" /> Customer-friendly forms
+                  </div>
+                </div>
               </li>
-              <li className="flex flex-col items-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white text-xl font-bold">
+              
+              <li className="relative flex flex-col items-center text-center group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 dark:from-purple-600 dark:to-pink-700 text-white text-2xl font-bold shadow-xl">
                   2
                 </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900">Manage Production</h3>
-                <p className="mt-2 text-base text-gray-600">
-                  Plan your production schedule, track ingredients, and manage team tasks efficiently.
+                <div className="relative w-px h-12 bg-gradient-to-b from-purple-500 to-transparent mt-6"></div>
+                <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Manage Production</h3>
+                <p className="mt-3 text-base text-gray-600 dark:text-gray-300 max-w-md">
+                  Plan your production schedule, track ingredients, and manage team tasks efficiently with our visual calendar.
                 </p>
+                <div className="mt-6">
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-700 dark:text-purple-400 inline-flex items-center text-sm">
+                    <CheckCircle className="h-4 w-4 mr-2" /> Visual scheduling tools
+                  </div>
+                </div>
               </li>
-              <li className="flex flex-col items-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white text-xl font-bold">
+              
+              <li className="relative flex flex-col items-center text-center group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-teal-600 rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-teal-600 dark:from-green-600 dark:to-teal-700 text-white text-2xl font-bold shadow-xl">
                   3
                 </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900">Get Paid Faster</h3>
-                <p className="mt-2 text-base text-gray-600">
-                  Send professional invoices and enable online payments to improve your cash flow.
+                <div className="relative w-px h-12 bg-gradient-to-b from-green-500 to-transparent mt-6"></div>
+                <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Get Paid Faster</h3>
+                <p className="mt-3 text-base text-gray-600 dark:text-gray-300 max-w-md">
+                  Send professional invoices and enable online payments through Stripe or Square to improve your cash flow.
                 </p>
+                <div className="mt-6">
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-400 inline-flex items-center text-sm">
+                    <CheckCircle className="h-4 w-4 mr-2" /> Secure payment processing
+                  </div>
+                </div>
               </li>
             </ul>
           </div>
@@ -269,49 +371,52 @@ export default function LandingPage() {
       </div>
 
       {/* Testimonials */}
-      <div className="py-16 sm:py-24">
+      <div className="py-24 bg-gray-50 dark:bg-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
               Loved by Bakers Everywhere
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
               See why bakery owners choose BakeDiary to grow their business
             </p>
           </div>
 
           <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {/* Testimonial 1 */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
-                  SW
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="relative">
+                <div className="absolute -top-2 -left-2 text-blue-600 dark:text-blue-400 text-5xl opacity-20">"</div>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 flex items-center justify-center text-white font-bold shadow-md">
+                    SW
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 dark:text-white text-lg">Sarah Williams</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Custom Cake Creator</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Sarah Williams</h4>
-                  <p className="text-sm text-gray-600">Custom Cake Creator</p>
+                <p className="mt-6 text-gray-600 dark:text-gray-300 relative z-10">
+                  "BakeDiary has transformed how I manage my custom cake business. I can track orders, 
+                  schedule production, and handle payments all in one place. It's saved me hours of admin work!"
+                </p>
+                <div className="mt-6 flex text-yellow-400">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
                 </div>
-              </div>
-              <p className="mt-4 text-gray-600">
-                "BakeDiary has transformed how I manage my custom cake business. I can track orders, 
-                schedule production, and handle payments all in one place. It's saved me hours of admin work!"
-              </p>
-              <div className="mt-4 flex text-yellow-400">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
               </div>
             </div>
 
