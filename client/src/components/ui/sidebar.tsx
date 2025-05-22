@@ -254,21 +254,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             <li className="mt-6 border-t border-[#3A4956] pt-2">
               <button 
                 onClick={() => {
-                  const { theme, setTheme } = useTheme();
                   setTheme(theme === "dark" ? "light" : "dark");
                 }}
                 className="w-full flex items-center justify-between px-4 py-3 text-sm text-white transition-colors"
               >
                 <div className="flex items-center">
                   <span className="w-5 text-white">
-                    {useTheme().theme === "dark" ? (
+                    {theme === "dark" ? (
                       <Sun className="h-5 w-5" />
                     ) : (
                       <Moon className="h-5 w-5" />
                     )}
                   </span>
                   <span className="ml-3 font-medium">
-                    {useTheme().theme === "dark" ? "Light Mode" : "Dark Mode"}
+                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
                   </span>
                 </div>
               </button>
