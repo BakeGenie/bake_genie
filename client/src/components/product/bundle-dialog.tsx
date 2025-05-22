@@ -177,16 +177,23 @@ export function BundleDialog({ onBundleSelected, trigger }: BundleDialogProps) {
       return;
     }
 
+    // Add console log to debug
+    console.log("Creating bundle with items:", bundleItems);
+    
     const bundle: Bundle = {
       name: bundleName,
       description: bundleDescription || null,
       totalCost: calculateTotalCost(bundleItems),
+      userId: 1, // Ensure userId is included
       items: bundleItems.map(item => ({
         productId: item.productId,
         quantity: item.quantity
       }))
     };
 
+    // Log the bundle data being sent
+    console.log("Submitting bundle data:", bundle);
+    
     createBundleMutation.mutate(bundle);
   };
 
