@@ -517,7 +517,7 @@ const ExpensesPage = () => {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem key="all" value="all">All Categories</SelectItem>
                   {activeTab === "expenses"
                     ? expenseCategories.map((category) => (
                         <SelectItem key={category} value={category}>
@@ -771,7 +771,7 @@ const ExpensesPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || expenseCategories[0]}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
@@ -894,7 +894,7 @@ const ExpensesPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || incomeCategories[0]}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
