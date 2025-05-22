@@ -363,11 +363,25 @@ const TaskList = () => {
           </button>
           
           <div className="flex flex-col items-center text-center mb-4">
-            <div className="bg-blue-500 rounded-full p-3 mb-2">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                <path d="M11 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18 2L22 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M15 9L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <div className="mb-2">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g>
+                  {/* Notepad with checkmark */}
+                  <rect x="8" y="6" width="30" height="35" rx="2" fill="#f5f5f5" />
+                  <line x1="14" y1="16" x2="32" y2="16" stroke="#ddd" strokeWidth="2" />
+                  <line x1="14" y1="22" x2="32" y2="22" stroke="#ddd" strokeWidth="2" />
+                  <line x1="14" y1="28" x2="32" y2="28" stroke="#ddd" strokeWidth="2" />
+                  <path d="M20 16L22 18L27 13" stroke="#ffa500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                
+                  {/* Orange pencil */}
+                  <path d="M35 12L16 31L14 37L20 35L39 16L35 12Z" fill="#FFA066" />
+                  <path d="M35 12L39 16L42 13L38 9L35 12Z" fill="#FF7F3F" />
+                  <path d="M14 37L16 31L20 35L14 37Z" fill="#FFD2B3" />
+                  
+                  {/* Blue plus button */}
+                  <circle cx="42" cy="38" r="10" fill="#2563EB" />
+                  <path d="M42 33V43M37 38H47" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                </g>
               </svg>
             </div>
             <h2 className="text-xl font-semibold mb-1">Add Task</h2>
@@ -581,11 +595,25 @@ const TaskList = () => {
           </button>
           
           <div className="flex flex-col items-center text-center mb-4">
-            <div className="bg-blue-500 rounded-full p-3 mb-2">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                <path d="M11 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18 2L22 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M15 9L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <div className="mb-2">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g>
+                  {/* Notepad with checkmark */}
+                  <rect x="8" y="6" width="30" height="35" rx="2" fill="#f5f5f5" />
+                  <line x1="14" y1="16" x2="32" y2="16" stroke="#ddd" strokeWidth="2" />
+                  <line x1="14" y1="22" x2="32" y2="22" stroke="#ddd" strokeWidth="2" />
+                  <line x1="14" y1="28" x2="32" y2="28" stroke="#ddd" strokeWidth="2" />
+                  <path d="M20 16L22 18L27 13" stroke="#ffa500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                
+                  {/* Orange pencil */}
+                  <path d="M35 12L16 31L14 37L20 35L39 16L35 12Z" fill="#FFA066" />
+                  <path d="M35 12L39 16L42 13L38 9L35 12Z" fill="#FF7F3F" />
+                  <path d="M14 37L16 31L20 35L14 37Z" fill="#FFD2B3" />
+                  
+                  {/* Blue plus button */}
+                  <circle cx="42" cy="38" r="10" fill="#2563EB" />
+                  <path d="M42 33V43M37 38H47" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                </g>
               </svg>
             </div>
             <h2 className="text-xl font-semibold mb-1">Edit Task</h2>
