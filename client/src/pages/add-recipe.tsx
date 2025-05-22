@@ -164,7 +164,7 @@ const AddRecipePage = () => {
       ...data,
       userId: 1, // Set the user ID
       servings: Number(data.servings),
-      totalCost: Number(totalCost),
+      totalCost: totalCost.toString(),
       prepTime: data.prepTime ? Number(data.prepTime) : null,
       cookTime: data.cookTime ? Number(data.cookTime) : null,
       ingredients: data.ingredients.map(ingredient => ({
