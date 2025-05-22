@@ -6,6 +6,13 @@ import { insertSupplySchema } from "@shared/schema";
 
 const router = Router();
 
+// For TypeScript type safety
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
+}
+
 // Get all supplies for the user
 router.get("/", async (req, res) => {
   try {
