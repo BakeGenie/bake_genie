@@ -142,7 +142,7 @@ const Orders = () => {
   };
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-auto">
       <PageHeader
         title="Orders & Quotes"
         actions={
