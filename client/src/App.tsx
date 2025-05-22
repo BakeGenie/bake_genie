@@ -9,6 +9,7 @@ import { FeaturesProvider } from "./contexts/features-context";
 import NotFound from "@/pages/not-found";
 import AppLayout from "./layouts/app-layout";
 import Login from "./pages/login";
+import LandingPage from "./pages/landing";
 import Dashboard from "./pages/dashboard";
 import Orders from "./pages/orders";
 import OrderDetails from "./pages/order-details";
@@ -61,7 +62,8 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/login" component={Login} />
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={LandingPage} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route path="/orders/new" component={NewOrder} />
         <Route path="/orders/test" component={CreateTestOrder} />
         <Route path="/orders/simple" component={SimpleOrder} />
