@@ -131,7 +131,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   };
   
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-[320px] bg-white rounded-md shadow-sm border border-gray-100">
       {/* Calendar header - Days of week */}
       <div className="bg-gray-50 grid grid-cols-7 rounded-t-md">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
