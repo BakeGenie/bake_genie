@@ -281,8 +281,41 @@ const Orders = () => {
         
         {/* Order List */}
         <div className="bg-white rounded-md border shadow-sm overflow-visible flex flex-col">
-          <div className="p-4 border-b">
+          <div className="p-4 border-b flex justify-between items-center">
             <h3 className="text-lg font-semibold">Order List</h3>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-500 mr-2">Order Period:</span>
+              <Select value={month.toString()} onValueChange={(value) => setMonth(parseInt(value))}>
+                <SelectTrigger className="w-[100px] h-8">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <SelectItem key={m} value={m.toString()}>
+                      {getMonthName(m)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={year.toString()} onValueChange={(value) => setYear(parseInt(value))} className="ml-2">
+                <SelectTrigger className="w-[100px] h-8">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" className="ml-2 h-8">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                <span className="ml-1">Filter Orders</span>
+              </Button>
+            </div>
           </div>
           <div className="flex-grow overflow-visible">
             {isLoading ? (
@@ -313,13 +346,11 @@ const Orders = () => {
                   // Format the date
                   const orderDate = new Date(order.eventDate);
                   const formattedDate = format(orderDate, 'dd MMM yyyy');
-                  const dayName = format(orderDate, 'EEE');
                   
                   // Format price
                   const price = parseFloat(order.totalAmount || '0').toFixed(2);
                   
                   // Determine status style
-                  const isPaid = order.status === 'Paid';
                   const isCancelled = order.status === 'Cancelled';
                   
                   return (
@@ -328,37 +359,54 @@ const Orders = () => {
                       className={`p-4 hover:bg-gray-50 cursor-pointer ${isCancelled ? 'bg-gray-100' : ''}`}
                       onClick={() => handleOrderClick(order)}
                     >
-                      <div className="flex justify-between">
-                        <div className="flex space-x-3">
-                          <div className="mt-1">
-                            <div className={`w-3 h-3 rounded-full ${isCancelled ? 'bg-gray-400' : 'bg-red-500'}`}></div>
-                          </div>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-start space-x-2">
+                          {order.status === 'Quote' && (
+                            <div className="mt-1.5">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            </div>
+                          )}
+                          {order.status === 'In Progress' && (
+                            <div className="mt-1.5">
+                              <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+                            </div>
+                          )}
                           
                           <div>
-                            <div className="text-gray-500 text-sm">
-                              #{order.orderNumber} - {dayName}, {formattedDate}
+                            <div className="text-gray-500 text-xs">
+                              #{order.orderNumber} - {formattedDate}
                             </div>
-                            <div className="text-blue-600">
-                              Contact #{order.contactId} <span className="text-gray-500">({order.eventType})</span>
+                            <div className="text-blue-600 font-medium">
+                              {order.contact ? `${order.contact.firstName} ${order.contact.lastName}` : `Contact #${order.contactId}`}
+                              <span className="text-gray-500 font-normal ml-1">({order.eventType})</span>
                             </div>
-                            <div className="text-gray-700 text-sm">
+                            <div className="text-gray-700 text-sm mt-1 line-clamp-1">
                               {order.notes || "No description available"}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="text-right">
-                          <div className="font-medium">$ {price}</div>
-                          <div className="mt-1">
+                        <div className="flex flex-col items-end">
+                          <div className="font-medium text-right">$ {price}</div>
+                          <div className="mt-1 flex space-x-1 items-center">
                             <span className={
                               isCancelled 
                                 ? "bg-gray-500 text-white text-xs px-2 py-0.5 rounded" 
-                                : isPaid 
+                                : order.status === 'Paid'
                                   ? "bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded" 
-                                  : "bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
+                                  : order.status === 'Quote'
+                                    ? "bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
+                                    : "bg-orange-100 text-orange-800 text-xs px-2 py-0.5 rounded"
                             }>
                               {order.status}
                             </span>
+                          </div>
+                          <div className="flex space-x-1 mt-2">
+                            <button className="text-gray-400 hover:text-gray-600">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                            </button>
                           </div>
                         </div>
                       </div>
