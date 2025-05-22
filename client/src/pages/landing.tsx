@@ -151,7 +151,7 @@ export default function LandingPage() {
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
               <img
-                src="/attached_assets/home_baker@2x.jpg"
+                src="https://ik.imagekit.io/demo/img/image4.jpeg"
                 alt="Baker working in kitchen"
                 className="relative h-auto w-full object-cover rounded-lg shadow-xl"
               />
