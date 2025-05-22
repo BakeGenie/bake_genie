@@ -209,7 +209,7 @@ export const ingredients = pgTable("ingredients", {
   userId: integer("user_id").notNull(),
   name: text("name").notNull(),
   unit: text("unit").notNull(),
-  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }),
+  costPerUnit: decimal("cost_per_unit", { precision: 10, scale: 2 }),
   packSize: decimal("pack_size", { precision: 10, scale: 2 }),
   packCost: decimal("pack_cost", { precision: 10, scale: 2 }),
   supplier: text("supplier"),
