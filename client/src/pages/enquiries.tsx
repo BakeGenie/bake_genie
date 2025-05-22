@@ -112,7 +112,7 @@ const Enquiries = () => {
   };
 
   // Table columns definition
-  const columns: ColumnDef<Enquiry>[] = [
+  const columns: ColumnDef<DatabaseEnquiry>[] = [
     {
       accessorFn: (row) => {
         // Extract name from details field
@@ -144,7 +144,7 @@ const Enquiries = () => {
       },
     },
     {
-      accessorKey: "eventType",
+      accessorKey: "event_type",
       header: "Event Type",
       enableSorting: true,
     },
@@ -283,7 +283,7 @@ const Enquiries = () => {
                   {getStatusBadge(selectedEnquiry.status)}
                 </div>
                 <CardDescription>
-                  Received on {formatDate(new Date(selectedEnquiry.createdAt), { withTime: true })}
+                  Received on {formatDate(new Date(selectedEnquiry.created_at), { withTime: true })}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -331,16 +331,16 @@ const Enquiries = () => {
                 )}
                 
                 <div className="grid grid-cols-2 gap-4">
-                  {selectedEnquiry.eventType && (
+                  {selectedEnquiry.event_type && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-500">Event Type</h4>
-                      <p>{selectedEnquiry.eventType}</p>
+                      <p>{selectedEnquiry.event_type}</p>
                     </div>
                   )}
-                  {selectedEnquiry.eventDate && (
+                  {selectedEnquiry.date && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-500">Event Date</h4>
-                      <p>{formatDate(new Date(selectedEnquiry.eventDate))}</p>
+                      <p>{formatDate(new Date(selectedEnquiry.date))}</p>
                     </div>
                   )}
                 </div>

@@ -94,11 +94,12 @@ ${values.source ? `Source: ${values.source}` : ''}
 
 Message: ${values.message}`;
       
-      // Based on server/routes/enquiries.ts, we provide data matching the simplifiedValues array
+      // Format data to match the database structure (snake_case fields)
       const serverData = {
-        message: formattedMessage,
-        eventType: values.eventType,
-        eventDate: values.eventDate ? values.eventDate.toISOString() : null,
+        details: formattedMessage,           // 'details' field in database stores the message
+        event_type: values.eventType,        // 'event_type' field in database
+        date: new Date().toISOString(),      // 'date' field for when the enquiry was created
+        event_date: values.eventDate ? values.eventDate.toISOString() : null,
         status: "New"
       };
       
