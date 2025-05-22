@@ -87,7 +87,9 @@ router.post("/", async (req: AuthRequest, res: Response) => {
         userId,
         name,
         description,
-        totalCost
+        price: req.body.price || null,
+        category: req.body.category || null,
+        totalCost: req.body.totalCost || null
       })
       .returning();
     
@@ -124,7 +126,9 @@ router.put("/:id", async (req: AuthRequest, res: Response) => {
       .set({
         name,
         description,
-        totalCost
+        price: req.body.price || null,
+        category: req.body.category || null,
+        totalCost: req.body.totalCost || null
       })
       .where(
         and(
