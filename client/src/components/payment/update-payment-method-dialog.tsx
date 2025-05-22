@@ -78,7 +78,7 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
       // Send the payment method to the server
       const response = await apiRequest("POST", "/api/subscription/update-payment-method", {
         paymentMethodId: paymentMethod.id
-      });
+      }, false);
 
       if (!response.ok) {
         const errorData = await response.json();

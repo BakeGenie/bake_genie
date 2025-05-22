@@ -20,6 +20,12 @@ export default function ManageSubscription() {
     refetchOnWindowFocus: false,
   });
   
+  // Fetch current payment method information
+  const { data: paymentMethodData, isLoading: isLoadingPaymentMethod, refetch: refetchPaymentMethod } = useQuery({
+    queryKey: ['/api/subscription/payment-method'],
+    refetchOnWindowFocus: false,
+  });
+  
   const handleChangePlan = () => {
     toast({
       title: "Change Plan",
@@ -30,6 +36,18 @@ export default function ManageSubscription() {
   const handleCancelSubscription = () => {
     window.location.href = "/cancel-subscription";
   };
+  
+  const handleUpdatePaymentMethod = () => {
+    setIsUpdatePaymentDialogOpen(true);
+  };
+  
+  const handlePaymentMethodUpdated = () => {
+    refetchPaymentMethod();
+    toast({
+      title: "Payment Method Updated",
+      description: "Your payment information has been successfully updated.",
+    });
+  };
 
   return (
     <div className="container py-6">
@@ -38,13 +56,19 @@ export default function ManageSubscription() {
           variant="ghost" 
           size="sm" 
           className="flex items-center gap-2"
-          onClick={() => window.location.href = "/account"}
+          onClick={() => setLocation("/account")}
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Back to Account
         </Button>
         <h1 className="text-2xl font-bold">Manage Subscription</h1>
       </div>
+      
+      {/* Update Payment Method Dialog */}
+      <UpdatePaymentMethodDialog 
+        open={isUpdatePaymentDialogOpen} 
+        onOpenChange={setIsUpdatePaymentDialogOpen} 
+      />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
@@ -55,8 +79,59 @@ export default function ManageSubscription() {
                 Your subscription will automatically renew itself unless you cancel it or your card expires.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center mb-2">
+            <CardContent className="space-y-4">
+              {/* Payment Method */}
+              <div>
+                <h3 className="text-sm font-medium mb-2">Payment Method</h3>
+                <div className="p-3 border rounded-md">
+                  {isLoadingPaymentMethod ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                      <span className="text-sm text-muted-foreground">Loading payment information...</span>
+                    </div>
+                  ) : paymentMethodData?.paymentMethod ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <CreditCardIcon className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium capitalize">
+                            {paymentMethodData.paymentMethod.brand} **** {paymentMethodData.paymentMethod.last4}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Expires {paymentMethodData.paymentMethod.expMonth}/{paymentMethodData.paymentMethod.expYear}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={handleUpdatePaymentMethod}
+                      >
+                        Update
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <CreditCardIcon className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">Visa **** 4242</p>
+                          <p className="text-xs text-muted-foreground">Expires 12/2025</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={handleUpdatePaymentMethod}
+                      >
+                        Update
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
                 <Button 
                   variant="outline" 
                   className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
@@ -147,12 +222,7 @@ export default function ManageSubscription() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Update Payment",
-                      description: "This feature will allow updating your payment method.",
-                    });
-                  }}
+                  onClick={handleUpdatePaymentMethod}
                 >
                   <CreditCardIcon className="h-4 w-4 mr-2" /> Update Payment Method
                 </Button>
