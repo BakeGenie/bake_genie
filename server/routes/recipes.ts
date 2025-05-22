@@ -269,15 +269,18 @@ router.put("/:id", async (req, res) => {
     const recipeData = {
       name: req.body.name,
       description: req.body.description,
-      servings: req.body.servings,
+      servings: Number(req.body.servings),
       instructions: req.body.instructions,
-      totalCost: req.body.totalCost,
-      prepTime: req.body.prepTime,
-      cookTime: req.body.cookTime,
+      totalCost: req.body.totalCost || "0",
+      // Convert to string for TEXT columns in database
+      prepTime: req.body.prepTime != null ? String(req.body.prepTime) : null,
+      cookTime: req.body.cookTime != null ? String(req.body.cookTime) : null,
       imageUrl: req.body.imageUrl,
       category: req.body.category,
-      updatedAt: new Date()
+      updated_at: new Date() // Use snake_case to match column name
     };
+    
+    console.log("Updating recipe with data:", recipeData);
     
     // Extract ingredients from request
     const ingredientsList = req.body.ingredients || [];

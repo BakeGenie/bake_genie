@@ -181,7 +181,14 @@ const EditRecipePage = () => {
       
       console.log("Submitting data:", formattedData);
       
-      await apiRequest("PUT", `/api/recipes/${recipeId}`, formattedData);
+      // Add detailed logging to trace the API request
+      try {
+        const response = await apiRequest("PUT", `/api/recipes/${recipeId}`, formattedData);
+        console.log("Update response:", response);
+      } catch (err) {
+        console.error("API request error details:", err);
+        throw err;
+      }
       
       // Invalidate recipes query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
