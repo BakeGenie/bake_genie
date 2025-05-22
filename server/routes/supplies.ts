@@ -68,9 +68,10 @@ router.post("/", async (req, res) => {
     const supplyData = {
       ...req.body,
       userId,
-      price: req.body.price ? parseFloat(req.body.price) : null,
-      quantity: req.body.quantity ? parseInt(req.body.quantity) : 0,
-      reorder_level: req.body.reorder_level ? parseInt(req.body.reorder_level) : 5
+      // Convert number fields and ensure they're the right type
+      price: req.body.price ? req.body.price.toString() : null, // Ensure price is a string for decimal
+      quantity: req.body.quantity ? Number(req.body.quantity) : 0,
+      reorder_level: req.body.reorder_level ? Number(req.body.reorder_level) : 5
     };
     
     const validatedData = insertSupplySchema.parse(supplyData);
