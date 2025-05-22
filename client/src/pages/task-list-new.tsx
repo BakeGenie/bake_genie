@@ -347,7 +347,12 @@ const TaskList = () => {
 
       {/* New Task Dialog */}
       <Dialog open={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby="create-task-description">
+          <DialogTitle className="sr-only">Create New Task</DialogTitle>
+          <DialogDescription id="create-task-description" className="sr-only">
+            Create a new task for your order management
+          </DialogDescription>
+          
           <button 
             className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100" 
             onClick={() => setIsNewTaskDialogOpen(false)}
@@ -365,7 +370,7 @@ const TaskList = () => {
                 <path d="M15 9L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h2 className="text-xl font-semibold mb-1">Edit Task</h2>
+            <h2 className="text-xl font-semibold mb-1">Add Task</h2>
             <p className="text-gray-500 text-sm">
               Add tasks to help keep organised<br/>and on top of all your orders
             </p>
@@ -560,7 +565,12 @@ const TaskList = () => {
 
       {/* Edit Task Dialog */}
       <Dialog open={isEditTaskDialogOpen} onOpenChange={setIsEditTaskDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby="edit-task-description">
+          <DialogTitle className="sr-only">Edit Task</DialogTitle>
+          <DialogDescription id="edit-task-description" className="sr-only">
+            Edit your task details
+          </DialogDescription>
+          
           <button 
             className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100" 
             onClick={() => setIsEditTaskDialogOpen(false)}
