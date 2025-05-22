@@ -212,7 +212,23 @@ export const ingredients = pgTable("ingredients", {
   unitCost: decimal("unit_cost", { precision: 10, scale: 2 }),
   packSize: decimal("pack_size", { precision: 10, scale: 2 }),
   packCost: decimal("pack_cost", { precision: 10, scale: 2 }),
+  supplier: text("supplier"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Supplies table
+export const supplies = pgTable("supplies", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  supplier: text("supplier"),
+  category: text("category"),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  description: text("description"),
+  quantity: integer("quantity").default(0),
+  reorder_level: integer("reorder_level").default(5),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Recipe Ingredients table
@@ -339,6 +355,7 @@ export const insertOrderLogSchema = createInsertSchema(orderLogs).omit({ id: tru
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
 export const insertRecipeSchema = createInsertSchema(recipes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({ id: true, createdAt: true });
+export const insertSupplySchema = createInsertSchema(supplies).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRecipeIngredientSchema = createInsertSchema(recipeIngredients).omit({ id: true });
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true, createdAt: true });
 export const insertIncomeSchema = createInsertSchema(income).omit({ id: true, createdAt: true });
@@ -358,6 +375,7 @@ export type InsertOrderLog = z.infer<typeof insertOrderLogSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type InsertIngredient = z.infer<typeof insertIngredientSchema>;
+export type InsertSupply = z.infer<typeof insertSupplySchema>;
 export type InsertRecipeIngredient = z.infer<typeof insertRecipeIngredientSchema>;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
