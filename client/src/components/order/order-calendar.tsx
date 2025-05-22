@@ -108,8 +108,8 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   
   const viewCalendar = () => {
     if (clickedDate) {
-      // Navigate to the standalone calendar view with the date
-      window.location.href = `/calendar-standalone?date=${clickedDate.toISOString()}`;
+      // Navigate to the calendar view with the date
+      window.location.href = `/calendar?date=${clickedDate.toISOString()}`;
       setIsSelectionDialogOpen(false);
     }
   };
@@ -219,8 +219,8 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             >
               <div
                 className={`
-                  flex items-center justify-center h-6 w-6 rounded-full
-                  my-0.5 font-medium text-xs transition-colors
+                  flex items-center justify-center h-7 w-7 rounded-full
+                  my-0.5 font-medium text-sm transition-colors
                   ${dayToday ? "bg-blue-500 text-white" : "text-gray-700"}
                   ${daySelected ? "ring-1 ring-blue-400 ring-offset-1" : ""}
                 `}
