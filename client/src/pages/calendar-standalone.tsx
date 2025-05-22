@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { OrderWithItems } from "@/types";
 import OrderDetailsDialog from "@/components/order/order-details-dialog";
 import CalendarDateDialog from "@/components/calendar/calendar-date-dialog";
+import CalendarOrderDialog from "@/components/calendar/calendar-order-dialog";
 import { Badge } from "@/components/ui/badge";
 import { eventTypeColors } from "@/lib/constants";
 import { EventType, eventTypes } from "@shared/schema";
