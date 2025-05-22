@@ -100,24 +100,28 @@ const Enquiries = () => {
   // Table columns definition
   const columns: ColumnDef<Enquiry>[] = [
     {
+      accessorFn: (row) => {
+        // Extract name from details field
+        const details = row.details || "";
+        const nameMatch = details.match(/Name: (.+?)(?:\n|$)/);
+        return nameMatch ? nameMatch[1] : "Unknown";
+      },
       id: "name",
       header: "Name",
       enableSorting: true,
-      cell: ({ row }) => {
-        const details = row.original.details as string;
-        if (!details) return "N/A";
-        const { name } = parseEnquiryDetails(details);
-        return name;
-      },
     },
     {
+      accessorFn: (row) => {
+        // Extract email from details field
+        const details = row.details || "";
+        const emailMatch = details.match(/Email: (.+?)(?:\n|$)/);
+        return emailMatch && emailMatch[1] !== "Not provided" ? emailMatch[1] : null;
+      },
       id: "email",
       header: "Email",
       enableSorting: true,
-      cell: ({ row }) => {
-        const details = row.original.details as string;
-        if (!details) return "N/A";
-        const { email } = parseEnquiryDetails(details);
+      cell: ({ getValue }) => {
+        const email = getValue() as string;
         return email ? (
           <a href={`mailto:${email}`} className="text-primary-600 hover:text-primary-800">
             {email}
@@ -131,23 +135,24 @@ const Enquiries = () => {
       enableSorting: true,
     },
     {
-      accessorKey: "eventDate",
+      accessorKey: "date",
       header: "Event Date",
       enableSorting: true,
       cell: ({ row }) => {
-        const date = row.getValue("eventDate") as string;
+        // In your database, 'date' appears to be the event date field
+        const date = row.original.date as string;
         return date ? formatDate(new Date(date)) : "Not specified";
       },
       sortingFn: (rowA, rowB, columnId) => {
-        const dateA = rowA.getValue(columnId) as string;
-        const dateB = rowB.getValue(columnId) as string;
+        const rowADate = rowA.original.date as string;
+        const rowBDate = rowB.original.date as string;
         
         // Handle case where one or both dates are null/undefined
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return -1;
-        if (!dateB) return 1;
+        if (!rowADate && !rowBDate) return 0;
+        if (!rowADate) return -1;
+        if (!rowBDate) return 1;
         
-        return new Date(dateA).getTime() - new Date(dateB).getTime();
+        return new Date(rowADate).getTime() - new Date(rowBDate).getTime();
       },
     },
     {
@@ -160,43 +165,29 @@ const Enquiries = () => {
       },
     },
     {
-      accessorKey: "createdAt",
+      accessorKey: "created_at",
       header: "Received",
       enableSorting: true,
       cell: ({ row }) => {
-        const date = row.getValue("createdAt") as string;
-        return formatDate(new Date(date), { withTime: true });
+        const date = row.original.created_at as string;
+        return date ? formatDate(new Date(date), { withTime: true }) : "N/A";
       },
       sortingFn: (rowA, rowB, columnId) => {
-        const dateA = rowA.getValue(columnId) as string;
-        const dateB = rowB.getValue(columnId) as string;
-        return new Date(dateA).getTime() - new Date(dateB).getTime();
+        const rowADate = rowA.original.created_at as string;
+        const rowBDate = rowB.original.created_at as string;
+        
+        if (!rowADate && !rowBDate) return 0;
+        if (!rowADate) return -1;
+        if (!rowBDate) return 1;
+        
+        return new Date(rowADate).getTime() - new Date(rowBDate).getTime();
       },
     },
   ];
 
-  // Custom function to search enquiry details
-  const searchEnquiry = (enquiry: Enquiry, searchTerm: string): boolean => {
-    if (!searchTerm) return true;
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    
-    // Search in details
-    if (enquiry.details && enquiry.details.toLowerCase().includes(lowerSearchTerm)) {
-      return true;
-    }
-    
-    // Search in eventType
-    if (enquiry.eventType && enquiry.eventType.toLowerCase().includes(lowerSearchTerm)) {
-      return true;
-    }
-    
-    // Search in status
-    if (enquiry.status && enquiry.status.toLowerCase().includes(lowerSearchTerm)) {
-      return true;
-    }
-    
-    return false;
-  };
+  // We'll keep this function, but just make it empty since we're not using it anymore
+  // and the data table doesn't support customFilter
+  const searchEnquiry = () => true;
 
   // Handle enquiry click to view details
   const handleEnquiryClick = (enquiry: Enquiry) => {
@@ -264,8 +255,6 @@ const Enquiries = () => {
           columns={columns}
           data={enquiries}
           searchPlaceholder="Search enquiries..."
-          searchKey="details"
-          customFilter={searchEnquiry}
           onRowClick={handleEnquiryClick}
         />
       </div>
