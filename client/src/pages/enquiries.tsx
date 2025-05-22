@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { formatDate } from "@/lib/utils";
 import AddEnquiryDialog from "@/components/enquiry/add-enquiry-dialog";
+import EnquiryDialog from "@/components/enquiry-details/enquiry-dialog";
 
 // Define DatabaseEnquiry type to match the actual database structure (snake_case fields)
 interface DatabaseEnquiry {
