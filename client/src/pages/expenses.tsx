@@ -389,9 +389,9 @@ const ExpensesPage = () => {
                 {dateExpenses.map((expense) => (
                   <div key={expense.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-md">
                     <div className="flex items-center">
-                      <span className="text-blue-500 font-medium mr-4">
+                      <div className="bg-gray-100 text-blue-500 font-medium mr-4 px-2 py-1 rounded">
                         {expense.id} ({expense.id})
-                      </span>
+                      </div>
                       <span>{expense.category}</span>
                     </div>
                     <div className="flex items-center space-x-2">
