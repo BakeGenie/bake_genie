@@ -75,6 +75,9 @@ const AddRecipePage = () => {
   // Create recipe mutation
   const createRecipeMutation = useMutation({
     mutationFn: async (data: RecipeFormValues) => {
+      // Calculate the total cost
+      const calculatedTotalCost = calculateTotalCost();
+      
       // Ensure all numbers are properly typed
       const processedData = {
         ...data,
@@ -82,7 +85,8 @@ const AddRecipePage = () => {
         servings: Number(data.servings),
         prepTime: data.prepTime ? Number(data.prepTime) : null,
         cookTime: data.cookTime ? Number(data.cookTime) : null,
-        totalCost: data.totalCost ? Number(data.totalCost) : null,
+        // Always send totalCost as string for decimal column compatibility
+        totalCost: calculatedTotalCost.toString(),
         ingredients: data.ingredients.map(ingredient => ({
           ...ingredient,
           ingredientId: Number(ingredient.ingredientId),
@@ -157,14 +161,14 @@ const AddRecipePage = () => {
   // Handle form submission
   const onSubmit = (data: RecipeFormValues) => {
     // Calculate and set total cost
-    const totalCost = calculateTotalCost();
+    const calculatedCost = calculateTotalCost();
     
     // Prepare the data with explicit typing for better compatibility
     const submissionData = {
       ...data,
       userId: 1, // Set the user ID
       servings: Number(data.servings),
-      totalCost: totalCost.toString(),
+      totalCost: calculatedCost.toString(), // Always send as string for decimal compatibility
       prepTime: data.prepTime ? Number(data.prepTime) : null,
       cookTime: data.cookTime ? Number(data.cookTime) : null,
       ingredients: data.ingredients.map(ingredient => ({
