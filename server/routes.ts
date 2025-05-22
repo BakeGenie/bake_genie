@@ -32,6 +32,7 @@ import mileageRouter from "./routes/mileage";
 import orderTasksRouter from "./routes/order-tasks";
 import orderNotesRouter from "./routes/order-notes";
 import scheduledPaymentsRouter from "./routes/scheduled-payments";
+import paymentsRouter from "./routes/payments";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
@@ -123,6 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(orderTasksRouter);
   app.use(orderNotesRouter);
   app.use(scheduledPaymentsRouter);
+  
+  // Register payment processing routes
+  app.use('/api/payments', paymentsRouter);
   
   // Register import routes
   const importRouter = Router();

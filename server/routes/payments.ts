@@ -1,147 +1,104 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import * as stripeIntegration from '../integrations/stripe';
-import * as squareIntegration from '../integrations/square';
+import stripeService from '../integrations/stripe';
+
+// Create payment intent schema
+const createPaymentIntentSchema = z.object({
+  amount: z.number().positive(),
+  currency: z.string().default('AUD'),
+  metadata: z.record(z.string(), z.any()).optional(),
+  orderId: z.number().optional(),
+  description: z.string().optional()
+});
+
+// Create customer schema
+const createCustomerSchema = z.object({
+  email: z.string().email(),
+  name: z.string().optional()
+});
 
 const router = Router();
 
-// Schema validation for Stripe payment request
-const createStripePaymentSchema = z.object({
-  amount: z.number().positive(),
-  currency: z.string().default('usd'),
-  metadata: z.record(z.string()).optional(),
-  orderId: z.number().optional(),
+/**
+ * Route to get payment provider information
+ */
+router.get('/providers', (req, res) => {
+  res.json({
+    providers: [
+      {
+        id: 'stripe',
+        name: 'Stripe',
+        isConfigured: stripeService.isConfigured,
+        publicKey: stripeService.publicKey || null
+      }
+    ]
+  });
 });
 
-// Schema validation for Square payment request
-const createSquarePaymentSchema = z.object({
-  sourceId: z.string(),
-  amount: z.number().positive(),
-  currency: z.string().default('USD'),
-  note: z.string().optional(),
-  referenceId: z.string().optional(),
-  orderId: z.number().optional(),
-});
-
-// Create Stripe payment intent
-router.post('/stripe/create-payment-intent', async (req, res) => {
+/**
+ * Route to create a payment intent
+ */
+router.post('/create-intent', async (req, res) => {
   try {
-    const validation = createStripePaymentSchema.safeParse(req.body);
-    
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.format() });
-    }
-    
-    const { amount, currency, metadata, orderId } = validation.data;
-    
-    // Add order ID to metadata if provided
+    const { amount, currency, metadata, orderId, description } = createPaymentIntentSchema.parse(req.body);
+
+    // Additional metadata with order info
     const paymentMetadata = {
-      ...metadata,
+      ...(metadata || {}),
       ...(orderId ? { orderId: orderId.toString() } : {}),
+      ...(req.user ? { userId: req.user.id.toString() } : {})
     };
+
+    // Create Stripe payment intent
+    const intent = await stripeService.createPaymentIntent(amount, currency, paymentMetadata);
     
-    const paymentIntent = await stripeIntegration.createPaymentIntent(
-      amount,
-      currency,
-      paymentMetadata
-    );
-    
-    res.json({ 
-      clientSecret: paymentIntent.clientSecret,
-      paymentIntentId: paymentIntent.id 
+    return res.json({
+      clientSecret: intent.client_secret,
+      intentId: intent.id
     });
   } catch (error: any) {
-    console.error('Error creating Stripe payment intent:', error.message);
-    res.status(500).json({ error: error.message });
+    console.error('Error creating payment intent:', error);
+    return res.status(400).json({ error: error.message });
   }
 });
 
-// Retrieve Stripe payment intent
-router.get('/stripe/payment-intent/:id', async (req, res) => {
+/**
+ * Route to create a customer
+ */
+router.post('/create-customer', async (req, res) => {
   try {
-    const paymentIntentId = req.params.id;
+    const { email, name } = createCustomerSchema.parse(req.body);
+
+    // Create Stripe customer
+    const customer = await stripeService.createCustomer(email, name);
     
-    if (!paymentIntentId) {
-      return res.status(400).json({ error: 'Payment intent ID is required' });
-    }
-    
-    const paymentIntent = await stripeIntegration.retrievePaymentIntent(paymentIntentId);
-    res.json(paymentIntent);
+    return res.json({
+      customerId: customer.id,
+      email: customer.email
+    });
   } catch (error: any) {
-    console.error('Error retrieving Stripe payment intent:', error.message);
-    res.status(500).json({ error: error.message });
+    console.error('Error creating customer:', error);
+    return res.status(400).json({ error: error.message });
   }
 });
 
-// Create Square payment
-router.post('/square/create-payment', async (req, res) => {
+/**
+ * Route to get payment status
+ */
+router.get('/status/:id', async (req, res) => {
   try {
-    const validation = createSquarePaymentSchema.safeParse(req.body);
-    
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.format() });
-    }
-    
-    const { sourceId, amount, currency, note, referenceId, orderId } = validation.data;
-    
-    // Create a reference ID that includes order ID if provided
-    const paymentReferenceId = orderId 
-      ? `order-${orderId}-${referenceId || Date.now().toString()}`
-      : (referenceId || Date.now().toString());
-    
-    const payment = await squareIntegration.createPayment(
-      sourceId,
-      amount,
-      currency,
-      note || '',
-      paymentReferenceId
-    );
-    
-    res.json(payment);
-  } catch (error: any) {
-    console.error('Error creating Square payment:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
+    const { id } = req.params;
 
-// Retrieve Square payment
-router.get('/square/payment/:id', async (req, res) => {
-  try {
-    const paymentId = req.params.id;
-    
-    if (!paymentId) {
-      return res.status(400).json({ error: 'Payment ID is required' });
-    }
-    
-    const payment = await squareIntegration.getPayment(paymentId);
-    res.json(payment);
+    const intent = await stripeService.retrievePaymentIntent(id);
+    return res.json({
+      id: intent.id,
+      status: intent.status,
+      amount: intent.amount / 100,
+      currency: intent.currency
+    });
   } catch (error: any) {
-    console.error('Error retrieving Square payment:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get payment provider settings (to determine which payment provider to use)
-router.get('/settings', async (req, res) => {
-  try {
-    // In a real application, you might fetch this from a settings database
-    // For now, we'll return both Stripe and Square based on environment variables
-    const providers = {
-      stripe: {
-        enabled: !!process.env.STRIPE_SECRET_KEY,
-        public_key: process.env.VITE_STRIPE_PUBLIC_KEY || null
-      },
-      square: {
-        enabled: !!(process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_APPLICATION_ID && process.env.SQUARE_LOCATION_ID),
-        application_id: process.env.SQUARE_APPLICATION_ID || null,
-        location_id: process.env.SQUARE_LOCATION_ID || null
-      }
-    };
-    
-    res.json(providers);
-  } catch (error: any) {
-    console.error('Error retrieving payment settings:', error.message);
-    res.status(500).json({ error: error.message });
+    console.error('Error retrieving payment status:', error);
+    return res.status(404).json({ error: error.message });
   }
 });
 
