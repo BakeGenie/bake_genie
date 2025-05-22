@@ -80,17 +80,22 @@ router.get("/:id", async (req: Request, res: Response) => {
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    console.log("Received enquiry form data:", req.body);
+    console.log("------------------------------------");
+    console.log("ADD ENQUIRY REQUEST RECEIVED");
+    console.log("Received enquiry form data:", JSON.stringify(req.body, null, 2));
     
     const userId = 1;
     const now = new Date();
     
+    // Set default values for required fields
+    const message = req.body.message || '';
+    if (!message) {
+      console.error("Message field is required but missing");
+      return res.status(400).json({ error: "Message is required" });
+    }
+    
     // Find or create a contact ID based on the name and email
     let contactId = null;
-    if (req.body.name && req.body.email) {
-      // In a real implementation, we would look up or create a contact here
-      // For now, we'll just use null for contact_id
-    }
     
     // Map the form fields to the actual database structure
     const enquiryData = {
@@ -99,31 +104,60 @@ router.post("/", async (req: Request, res: Response) => {
       date: now, // Current date as enquiry date
       event_type: req.body.eventType || 'Other',
       event_date: req.body.eventDate || null,
-      details: req.body.message || '',
-      status: req.body.status || 'New',
+      details: message,
+      status: 'New', // Always use 'New' for initial status
       follow_up_date: null, // No follow-up date initially
       created_at: now,
       updated_at: now
     };
     
-    console.log("Mapped to DB structure:", enquiryData);
+    console.log("Mapped to DB structure:", JSON.stringify(enquiryData, null, 2));
     
-    // Insert the new enquiry using raw SQL with only the fields that exist in the database
-    const result = await db.execute(
-      sql`INSERT INTO enquiries
+    const query = `
+      INSERT INTO enquiries
         (user_id, contact_id, date, event_type, event_date, details, status, follow_up_date, created_at, updated_at)
-        VALUES
-        (${enquiryData.user_id}, ${enquiryData.contact_id}, ${enquiryData.date}, 
-         ${enquiryData.event_type}, ${enquiryData.event_date}, ${enquiryData.details}, 
-         ${enquiryData.status}, ${enquiryData.follow_up_date}, ${enquiryData.created_at}, ${enquiryData.updated_at})
-        RETURNING *`
-    );
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *
+    `;
     
+    const values = [
+      enquiryData.user_id,
+      enquiryData.contact_id,
+      enquiryData.date,
+      enquiryData.event_type,
+      enquiryData.event_date,
+      enquiryData.details,
+      enquiryData.status,
+      enquiryData.follow_up_date,
+      enquiryData.created_at,
+      enquiryData.updated_at
+    ];
+    
+    console.log("Executing SQL query:", query);
+    console.log("With values:", JSON.stringify(values, null, 2));
+    
+    // Instead of using db.execute with sql template literals, use the native query method
+    const result = await db.$client.query(query, values);
+    
+    console.log("Query executed successfully");
     console.log("Inserted enquiry:", result.rows[0]);
+    console.log("------------------------------------");
+    
     res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error("Error creating enquiry:", error);
-    res.status(500).json({ error: "Failed to create enquiry", details: error.message });
+  } catch (error: any) { // Explicitly type error as any to avoid TypeScript errors
+    console.error("------------------------------------");
+    console.error("ERROR CREATING ENQUIRY:");
+    console.error(error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("------------------------------------");
+    
+    res.status(500).json({ 
+      error: "Failed to create enquiry", 
+      details: error.message,
+      stack: error.stack
+    });
   }
 });
 
