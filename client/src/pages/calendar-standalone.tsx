@@ -287,138 +287,262 @@ const CalendarStandalone = () => {
         </div>
       </div>
       
-      <div className="bg-white rounded-md shadow-sm border">
-        {/* Calendar Controls */}
-        <div className="p-4 border-b flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="text-sm font-medium">Period:</div>
-            <Select
-              value={getMonthName(month)}
-              onValueChange={(value) => {
-                const monthIndex = [
-                  'January', 'February', 'March', 'April', 'May', 'June',
-                  'July', 'August', 'September', 'October', 'November', 'December'
-                ].indexOf(value) + 1;
-                setMonth(monthIndex);
-              }}
-            >
-              <SelectTrigger className="w-[120px] h-8 bg-white">
-                <SelectValue placeholder="Month" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <SelectItem key={i + 1} value={getMonthName(i + 1)}>
-                    {getMonthName(i + 1)}
-                  </SelectItem>
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Calendar Column - Takes 2/3 width on md screens and larger */}
+        <div className="md:col-span-2">
+          <div className="bg-white rounded-md shadow-sm border">
+            {/* Calendar Controls */}
+            <div className="p-4 border-b flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <div className="text-sm font-medium">Period:</div>
+                <Select
+                  value={getMonthName(month)}
+                  onValueChange={(value) => {
+                    const monthIndex = [
+                      'January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'
+                    ].indexOf(value) + 1;
+                    setMonth(monthIndex);
+                  }}
+                >
+                  <SelectTrigger className="w-[120px] h-8 bg-white">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <SelectItem key={i + 1} value={getMonthName(i + 1)}>
+                        {getMonthName(i + 1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select
+                  value={year.toString()}
+                  onValueChange={(value) => setYear(parseInt(value))}
+                >
+                  <SelectTrigger className="w-[100px] h-8 bg-white">
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 5 }).map((_, i) => {
+                      const yearValue = new Date().getFullYear() - 2 + i;
+                      return (
+                        <SelectItem key={yearValue} value={yearValue.toString()}>
+                          {yearValue}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                
+                <Button variant="outline" size="icon" onClick={handlePreviousMonth} className="h-8 w-8">
+                  &lt;
+                </Button>
+                <Button variant="outline" size="icon" onClick={handleNextMonth} className="h-8 w-8">
+                  &gt;
+                </Button>
+              </div>
+            </div>
+            
+            {/* Calendar Grid */}
+            <div>
+              {/* Days of week */}
+              <div className="grid grid-cols-7 bg-gray-700 text-white">
+                {daysOfWeek.map((day) => (
+                  <div key={day} className="p-2 text-center font-medium">
+                    {day}
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={year.toString()}
-              onValueChange={(value) => setYear(parseInt(value))}
-            >
-              <SelectTrigger className="w-[100px] h-8 bg-white">
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 5 }).map((_, i) => {
-                  const yearValue = new Date().getFullYear() - 2 + i;
-                  return (
-                    <SelectItem key={yearValue} value={yearValue.toString()}>
-                      {yearValue}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline" size="icon" onClick={handlePreviousMonth} className="h-8 w-8">
-              &lt;
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleNextMonth} className="h-8 w-8">
-              &gt;
-            </Button>
+              </div>
+              
+              {/* Calendar cells */}
+              <div className="grid grid-cols-7">
+                {calendarGrid.map((week, weekIndex) => (
+                  week.map((dayData, dayIndex) => {
+                    const dayOrders = getOrdersForDay(dayData.date);
+                    const isCurrentDay = isToday(dayData.date);
+                    const isSelected = isSelectedDate(dayData.date);
+                    
+                    return (
+                      <div
+                        key={`${weekIndex}-${dayIndex}`}
+                        className={`border border-gray-200 p-2 h-32 overflow-y-auto relative cursor-pointer ${
+                          dayData.currentMonth ? 'bg-white' : 'bg-gray-50'
+                        } ${isCurrentDay ? 'bg-blue-50' : ''} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                        onClick={() => handleDateSelect(dayData.date)}
+                      >
+                        {/* Day number */}
+                        <div className={`absolute top-1 left-1 text-sm ${isCurrentDay ? 'text-blue-600 font-bold' : 'text-gray-500'}`}>
+                          {formatDateNumber(dayData.day)}
+                        </div>
+                        
+                        {/* Today indicator */}
+                        {isCurrentDay && (
+                          <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
+                            Today
+                          </div>
+                        )}
+                        
+                        {/* Order items */}
+                        <div className="mt-6 space-y-1">
+                          {dayOrders.map((order) => (
+                            <div
+                              key={order.id}
+                              className={`text-xs p-1 rounded border-l-2 bg-white mb-1 hover:bg-gray-50`}
+                              style={{ borderLeftColor: getEventTypeColor(order.eventType || 'Other') }}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent opening date dialog
+                                handleOrderSelect(order);
+                              }}
+                            >
+                              <div className="flex items-start">
+                                <div 
+                                  className="w-2 h-2 rounded-full mt-0.5 mr-1"
+                                  style={{ backgroundColor: getEventTypeColor(order.eventType || 'Other') }}
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium truncate">
+                                    #{order.orderNumber?.split('-')[1]} - {order.contact?.firstName} {order.contact?.lastName}
+                                  </div>
+                                  <div className="text-gray-500 truncate">
+                                    {order.eventType} - {order.status}
+                                  </div>
+                                  {order.items && order.items.length > 0 && (
+                                    <div className="text-gray-500 truncate">
+                                      {order.items[0].description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })
+                ))}
+              </div>
+            </div>
           </div>
         </div>
         
-        {/* Calendar Grid */}
-        <div>
-          {/* Days of week */}
-          <div className="grid grid-cols-7 bg-gray-700 text-white">
-            {daysOfWeek.map((day) => (
-              <div key={day} className="p-2 text-center font-medium">
-                {day}
-              </div>
-            ))}
-          </div>
-          
-          {/* Calendar cells */}
-          <div className="grid grid-cols-7">
-            {calendarGrid.map((week, weekIndex) => (
-              week.map((dayData, dayIndex) => {
-                const dayOrders = getOrdersForDay(dayData.date);
-                const isCurrentDay = isToday(dayData.date);
-                const isSelected = isSelectedDate(dayData.date);
-                
-                return (
-                  <div
-                    key={`${weekIndex}-${dayIndex}`}
-                    className={`border border-gray-200 p-2 h-32 overflow-y-auto relative cursor-pointer ${
-                      dayData.currentMonth ? 'bg-white' : 'bg-gray-50'
-                    } ${isCurrentDay ? 'bg-blue-50' : ''} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
-                    onClick={() => handleDateSelect(dayData.date)}
-                  >
-                    {/* Day number */}
-                    <div className={`absolute top-1 left-1 text-sm ${isCurrentDay ? 'text-blue-600 font-bold' : 'text-gray-500'}`}>
-                      {formatDateNumber(dayData.day)}
+        {/* Orders List Column - Takes 1/3 width */}
+        <div className="md:col-span-1">
+          <div className="bg-white rounded-md shadow-sm border h-full">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
+              </h3>
+            </div>
+            
+            <div className="p-4">
+              {selectedDate && (
+                <>
+                  <div className="mb-4 flex justify-between items-center">
+                    <div className="text-sm text-gray-500">
+                      {format(selectedDate, "EEEE, MMMM d, yyyy")}
                     </div>
-                    
-                    {/* Today indicator */}
-                    {isCurrentDay && (
-                      <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded">
-                        Today
-                      </div>
-                    )}
-                    
-                    {/* Order items */}
-                    <div className="mt-6 space-y-1">
-                      {dayOrders.map((order) => (
-                        <div
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        localStorage.setItem('selectedEventDate', selectedDate.toISOString());
+                        navigate('/orders/new');
+                      }}
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" /> Add Order
+                    </Button>
+                  </div>
+                  
+                  {/* Orders for selected date */}
+                  <div className="space-y-3">
+                    {getOrdersForDay(selectedDate).length > 0 ? (
+                      getOrdersForDay(selectedDate).map((order) => (
+                        <div 
                           key={order.id}
-                          className={`text-xs p-1 rounded border-l-2 bg-white mb-1 hover:bg-gray-50`}
-                          style={{ borderLeftColor: getEventTypeColor(order.eventType || 'Other') }}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent opening date dialog
-                            handleOrderSelect(order);
-                          }}
+                          className="border rounded-md p-3 hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleOrderSelect(order)}
                         >
-                          <div className="flex items-start">
-                            <div 
-                              className="w-2 h-2 rounded-full mt-0.5 mr-1"
-                              style={{ backgroundColor: getEventTypeColor(order.eventType || 'Other') }}
-                            />
-                            <div className="flex-1">
-                              <div className="font-medium truncate">
-                                #{order.orderNumber?.split('-')[1]} - {order.contact?.firstName} {order.contact?.lastName}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium">
+                                Order #{order.orderNumber?.split('-')[1]}
                               </div>
-                              <div className="text-gray-500 truncate">
-                                {order.eventType} - {order.status}
+                              <div className="text-sm text-gray-500">
+                                {order.contact?.firstName} {order.contact?.lastName}
                               </div>
-                              {order.items && order.items.length > 0 && (
-                                <div className="text-gray-500 truncate">
-                                  {order.items[0].description}
-                                </div>
-                              )}
                             </div>
+                            <Badge 
+                              className="ml-2"
+                              style={{ 
+                                backgroundColor: getEventTypeColor(order.eventType || 'Other'),
+                                color: '#fff'
+                              }}
+                            >
+                              {order.eventType}
+                            </Badge>
+                          </div>
+                          
+                          <div className="mt-2 text-sm">
+                            <div>Status: <span className="font-medium">{order.status}</span></div>
+                            <div>Total: <span className="font-medium">${parseFloat(order.totalAmount || '0').toFixed(2)}</span></div>
+                            {order.items && order.items.length > 0 && (
+                              <div className="mt-1 text-gray-500">
+                                {order.items.map((item, index) => (
+                                  <div key={index} className="truncate">
+                                    {item.quantity}x {item.description || item.name}
+                                  </div>
+                                )).slice(0, 2)}
+                                {order.items.length > 2 && (
+                                  <div className="text-xs text-blue-500">+ {order.items.length - 2} more items</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="mt-2 flex justify-end">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-blue-500"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                localStorage.setItem('selectedOrder', JSON.stringify(order));
+                                navigate(`/orders/${order.id}`);
+                              }}
+                            >
+                              View Details
+                            </Button>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <div className="mb-2">No orders for this date</div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            localStorage.setItem('selectedEventDate', selectedDate.toISOString());
+                            navigate('/orders/new');
+                          }}
+                        >
+                          <PlusIcon className="h-4 w-4 mr-1" /> Create Order
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                );
-              })
-            ))}
+                </>
+              )}
+              
+              {!selectedDate && (
+                <div className="text-center py-16 text-gray-500">
+                  <div className="mb-2">Select a date on the calendar</div>
+                  <div className="text-sm">to view or create orders</div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
