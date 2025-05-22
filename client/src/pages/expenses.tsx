@@ -145,6 +145,14 @@ const incomeSchema = z.object({
 const ExpensesPage = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("expenses");
+  // Current date for default value
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(format(currentDate, 'MMM'));
+  const [selectedYear, setSelectedYear] = useState(format(currentDate, 'yyyy'));
+  const [searchTerm, setSearchTerm] = useState("");
+  const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
+  const [openIncomeDialog, setOpenIncomeDialog] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -152,13 +160,6 @@ const ExpensesPage = () => {
     from: undefined,
     to: undefined,
   });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
-  const [openIncomeDialog, setOpenIncomeDialog] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-
-  // Current date for default value
-  const currentDate = new Date();
 
   // Query for expenses with optional filtering
   const {
