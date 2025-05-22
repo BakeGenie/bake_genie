@@ -212,15 +212,17 @@ const TaskList = () => {
     if (!selectedTask) return;
     
     setIsSubmitting(true);
-    console.log("Submitting edit form data:", data);
+    console.log("Edit Task Submit Button Clicked!");
+    console.log("Form data:", data);
+    console.log("Selected task:", selectedTask);
     
     try {
-      // Convert fields properly for the API
+      // Use snake_case for the server API which expects due_date not dueDate
       const payload = {
         title: data.title,
         description: data.description || null,
         priority: data.priority || "Medium",
-        dueDate: data.hasDueDate && data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        due_date: data.hasDueDate && data.dueDate ? new Date(data.dueDate).toISOString() : null,
         completed: data.completed || false
       };
       
@@ -248,24 +250,16 @@ const TaskList = () => {
       // Try to parse the response as JSON if possible
       let result;
       try {
-        // First try to parse the JSON directly - this is the preferred method
-        result = await response.json().catch(() => null);
+        // First try to parse the JSON directly
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
         
-        if (result) {
-          console.log("Task updated successfully:", result);
-        } else {
-          // If that fails, use the text method as fallback
-          const responseClone = response.clone();
-          const responseText = await responseClone.text();
-          console.log("Response text:", responseText);
-          
-          if (responseText) {
-            try {
-              result = JSON.parse(responseText);
-              console.log("Task updated successfully (from text):", result);
-            } catch (parseError) {
-              console.log("Response was not valid JSON:", responseText);
-            }
+        if (responseText) {
+          try {
+            result = JSON.parse(responseText);
+            console.log("Task updated successfully:", result);
+          } catch (parseError) {
+            console.log("Response was not valid JSON:", responseText);
           }
         }
       } catch (e) {
