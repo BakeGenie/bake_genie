@@ -223,7 +223,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
                         ? "bg-[#394B5F]"
-                        : "hover:bg-[#394B5F]"
+                        : ""
                     }`}
                   >
                     <div className="flex items-center">
