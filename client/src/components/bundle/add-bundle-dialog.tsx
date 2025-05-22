@@ -100,8 +100,8 @@ const AddBundleDialog: React.FC<AddBundleDialogProps> = ({ onSave, trigger }) =>
 
   // Calculate total price from selected items
   const calculateTotalPrice = () => {
-    const recipeTotal = selectedRecipes.reduce((sum, recipe) => sum + (recipe.price || 0), 0);
-    const supplyTotal = selectedSupplies.reduce((sum, supply) => sum + (supply.price || 0), 0);
+    const recipeTotal = selectedRecipes.reduce((sum, recipe) => sum + (typeof recipe.price === 'string' ? parseFloat(recipe.price) || 0 : recipe.price || 0), 0);
+    const supplyTotal = selectedSupplies.reduce((sum, supply) => sum + (typeof supply.price === 'string' ? parseFloat(supply.price) || 0 : supply.price || 0), 0);
     return recipeTotal + supplyTotal;
   };
 
@@ -141,9 +141,12 @@ const AddBundleDialog: React.FC<AddBundleDialogProps> = ({ onSave, trigger }) =>
 
   // Handle form submission
   const onSubmit = (data: BundleFormValues) => {
-    // Update the price with the calculated total
+    // Calculate and include the total cost in the data
+    const totalCost = calculateTotalPrice().toFixed(2);
     const finalData = {
       ...data,
+      price: data.price,
+      totalCost: totalCost,
       recipes: selectedRecipes,
       supplies: selectedSupplies
     };

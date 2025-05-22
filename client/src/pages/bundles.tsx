@@ -34,10 +34,14 @@ interface Bundle {
   id: number;
   name: string;
   userId: number;
+  user_id?: number; // Database returns snake_case
   category?: string;
   price?: string | number;
   description?: string;
-  createdAt: string;
+  totalCost?: string | number;
+  total_cost?: string | number; // Database returns snake_case
+  createdAt?: string;
+  created_at?: string; // Database returns snake_case
   items?: any[];
 }
 
@@ -73,6 +77,18 @@ const Bundles = () => {
     const matchesCategory = selectedCategory === "All Categories" || bundle.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+  
+  // Helper function to get bundle price
+  const getBundlePrice = (bundle: Bundle) => {
+    if (bundle.price) {
+      return bundle.price;
+    } else if (bundle.totalCost) {
+      return bundle.totalCost;
+    } else if (bundle.total_cost) {
+      return bundle.total_cost;
+    }
+    return null;
+  };
   
   // Handle delete bundle
   const handleDeleteBundle = async (id: number) => {
@@ -122,7 +138,8 @@ const Bundles = () => {
                   name: bundleData.name,
                   category: bundleData.category,
                   price: bundleData.price,
-                  description: ""
+                  totalCost: bundleData.totalCost,
+                  description: bundleData.description || ""
                 };
                 
                 // Send to API
@@ -236,7 +253,11 @@ const Bundles = () => {
                       </TableCell>
                       <TableCell>{bundle.category || '-'}</TableCell>
                       <TableCell>
-                        {bundle.price ? `$${typeof bundle.price === 'string' ? parseFloat(bundle.price).toFixed(2) : bundle.price.toFixed(2)}` : '-'}
+                        {getBundlePrice(bundle) 
+                          ? `$${typeof getBundlePrice(bundle) === 'string' 
+                              ? parseFloat(getBundlePrice(bundle) as string).toFixed(2) 
+                              : (getBundlePrice(bundle) as number).toFixed(2)}` 
+                          : '-'}
                       </TableCell>
                       <TableCell>
                         <Button 
