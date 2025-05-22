@@ -432,7 +432,7 @@ const SuppliesList = () => {
                     </TableCell>
                     <TableCell>{item.supplier || '-'}</TableCell>
                     <TableCell>{item.category || '-'}</TableCell>
-                    <TableCell>{item.price ? `$${item.price.toFixed(2)}` : '-'}</TableCell>
+                    <TableCell>{item.price ? `$${parseFloat(item.price).toFixed(2)}` : '-'}</TableCell>
                     <TableCell>
                       {item.quantity !== undefined ? (
                         <span className={item.reorder_level && item.quantity <= item.reorder_level ? 'text-red-500 font-medium' : ''}>
