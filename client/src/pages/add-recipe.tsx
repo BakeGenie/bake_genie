@@ -77,7 +77,7 @@ const AddRecipePage = () => {
     mutationFn: async (data: RecipeFormValues) => {
       return apiRequest('/api/recipes', {
         method: 'POST',
-        data,
+        body: data,
       });
     },
     onSuccess: () => {
