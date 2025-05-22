@@ -131,6 +131,7 @@ const AddRecipePage = () => {
       cookTime: 0,
       userId: 1, // Default to user 1 for development
     },
+    mode: "onChange"
   });
   
   // Ingredients field array for dynamic ingredients list

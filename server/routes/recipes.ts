@@ -163,11 +163,19 @@ router.post("/", async (req, res) => {
   try {
     const userId = req.session.userId || 1; // Default to user 1 for development
     
-    // Validate recipe data
-    const recipeData = insertRecipeSchema.parse({
+    // Validate recipe data and remove fields that don't exist in the database
+    const recipeDataRaw = {
       ...req.body,
       userId
-    });
+    };
+    
+    // Remove imageUrl if it exists to prevent database error
+    if (recipeDataRaw.imageUrl) {
+      delete recipeDataRaw.imageUrl;
+    }
+    
+    console.log("Recipe data being inserted:", recipeDataRaw);
+    const recipeData = insertRecipeSchema.parse(recipeDataRaw);
     
     // Extract ingredients from request (not part of recipe schema)
     const ingredientsList = req.body.ingredients || [];
