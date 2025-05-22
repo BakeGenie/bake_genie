@@ -267,13 +267,13 @@ const Orders = () => {
           </div>
         </div>
         {/* Calendar and Date Section */}
-        <div className="bg-white rounded-md border shadow-sm">
-          <div className="p-4">
-            <div className="flex flex-row  md:justify-between items-start mb-4">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="flex flex-row md:justify-between items-center mb-4">
               {/* Month Selector */}
-              <div className="flex  items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <button
-                  className="p-1 rounded-full hover:bg-gray-100"
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-150"
                   onClick={() => {
                     const newMonth = month === 1 ? 12 : month - 1;
                     const newYear = month === 1 ? year - 1 : year;
@@ -283,7 +283,7 @@ const Orders = () => {
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-500"
+                    className="h-5 w-5 text-gray-600"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -294,11 +294,11 @@ const Orders = () => {
                     />
                   </svg>
                 </button>
-                <div className="text-lg font-medium">
+                <div className="text-xl font-medium text-gray-800">
                   {getMonthName(month)} {year}
                 </div>
                 <button
-                  className="p-1 rounded-full hover:bg-gray-100"
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-150"
                   onClick={() => {
                     const newMonth = month === 12 ? 1 : month + 1;
                     const newYear = month === 12 ? year + 1 : year;
@@ -308,7 +308,7 @@ const Orders = () => {
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-500"
+                    className="h-5 w-5 text-gray-600"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
@@ -319,6 +319,22 @@ const Orders = () => {
                     />
                   </svg>
                 </button>
+              </div>
+              
+              {/* Legend */}
+              <div className="hidden md:flex items-center space-x-4 text-xs">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
+                  <span>Quote</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-orange-400 mr-2"></div>
+                  <span>In Progress</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 rounded-full bg-gray-400 mr-2"></div>
+                  <span>Completed</span>
+                </div>
               </div>
             </div>
 
@@ -334,83 +350,42 @@ const Orders = () => {
         </div>
 
         {/* Order List */}
-        <div className="bg-white rounded-md border shadow-sm overflow-visible flex flex-col">
-          <div className="p-4 border-b flex justify-between items-center">
-            <h3 className="text-lg font-semibold">Order List</h3>
-            <div className="flex items-center">
-              <span className="text-sm text-gray-500 mr-2">Order Period:</span>
-              <Select
-                value={month.toString()}
-                onValueChange={(value) => setMonth(parseInt(value))}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-gray-800">Orders</h3>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 rounded-full px-4 border-gray-200"
+                onClick={() => setIsFilterDialogOpen(true)}
               >
-                <SelectTrigger className="w-[100px] h-8">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <SelectItem key={m} value={m.toString()}>
-                      {getMonthName(m)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={year.toString()}
-                onValueChange={(value) => setYear(parseInt(value))}
-                className="ml-2"
-              >
-                <SelectTrigger className="w-[100px] h-8">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => year - 2 + i).map(
-                    (y) => (
-                      <SelectItem key={y} value={y.toString()}>
-                        {y}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="sm" className="ml-2 h-8">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                </svg>
-                <span className="ml-1">Filter Orders</span>
+                <FilterIcon className="h-4 w-4 mr-2 text-gray-500" />
+                <span>Filter</span>
               </Button>
             </div>
           </div>
-          <div className="flex-grow overflow-visible">
+          <div className="flex-grow overflow-auto max-h-[500px]">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
               </div>
             ) : filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-center p-6">
-                <div className="text-gray-400 mb-2">
-                  <FilterIcon className="h-8 w-8" />
+              <div className="flex flex-col items-center justify-center h-60 text-center p-6">
+                <div className="text-gray-300 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-xl font-medium text-gray-900">
                   No orders found
                 </h3>
-                <p className="text-gray-500 mt-1 max-w-sm">
+                <p className="text-gray-500 mt-2 max-w-sm">
                   No orders found for {getMonthName(month)} {year}. Try
                   adjusting your filters or create a new order.
                 </p>
                 <Button
-                  variant="outline"
-                  className="mt-4"
+                  className="mt-6 rounded-full bg-blue-600 hover:bg-blue-700"
                   onClick={() => setIsNewOrderDialogOpen(true)}
                 >
                   <PlusIcon className="h-4 w-4 mr-2" />
@@ -418,7 +393,7 @@ const Orders = () => {
                 </Button>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-gray-100">
                 {filteredOrders.map((order: any) => {
                   // Format the date
                   const orderDate = new Date(order.eventDate);
