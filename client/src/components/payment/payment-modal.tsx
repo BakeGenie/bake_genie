@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,8 +24,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import StripePaymentForm from './stripe-payment-form';
-import { Wallet } from 'lucide-react';
+import { Wallet, Loader2 } from 'lucide-react';
+
+// Import Stripe payment form component with lazy loading
+const StripePaymentForm = React.lazy(() => import('./stripe-payment-form'));
 
 // Make sure we have the Stripe public key
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
@@ -88,12 +90,16 @@ export default function PaymentModal({
     setIsLoading(true);
     
     try {
-      const response = await apiRequest('POST', '/api/payments/create-intent', {
-        amount: data.amount,
-        currency: 'aud', // Using AUD for Australian bakery
-        metadata: {
-          ...(orderId && { orderId: orderId.toString() }),
-          ...(data.description && { description: data.description }),
+      const response = await apiRequest({ 
+        method: 'POST', 
+        url: '/api/payments/create-intent', 
+        body: {
+          amount: data.amount,
+          currency: 'aud', // Using AUD for Australian bakery
+          metadata: {
+            ...(orderId && { orderId: orderId.toString() }),
+            ...(data.description && { description: data.description }),
+          }
         }
       });
       

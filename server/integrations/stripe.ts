@@ -1,18 +1,14 @@
 import Stripe from 'stripe';
 
-// Get Stripe secret key from environment variables
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const stripePublicKey = process.env.VITE_STRIPE_PUBLIC_KEY;
-
-// Check if Stripe is configured
-if (!stripeSecretKey) {
-  console.warn("Warning: Stripe API key not found in environment variables");
+// Check if we have the Stripe secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn('Warning: STRIPE_SECRET_KEY is not set. Stripe payments will not work.');
 }
 
-// Initialize Stripe
-const stripe = stripeSecretKey 
-  ? new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16' // Latest supported API version
+// Initialize Stripe with the secret key
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
     })
   : null;
 
@@ -25,29 +21,19 @@ const stripe = stripeSecretKey
  */
 export async function createPaymentIntent(
   amount: number,
-  currency: string = 'AUD',
+  currency: string = 'aud',
   metadata: Record<string, string> = {}
 ) {
   if (!stripe) {
-    throw new Error("Stripe is not configured properly. Please check your environment variables.");
+    throw new Error('Stripe is not initialized. Make sure STRIPE_SECRET_KEY is set.');
   }
 
-  // Convert amount to cents (Stripe requires amounts in cents)
-  const amountInCents = Math.round(amount * 100);
-
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountInCents,
-      currency: currency.toLowerCase(),
-      metadata,
-      payment_method_types: ['card'],
-    });
-
-    return paymentIntent;
-  } catch (error: any) {
-    console.error("Error creating Stripe payment intent:", error);
-    throw error;
-  }
+  return await stripe.paymentIntents.create({
+    amount,
+    currency,
+    metadata,
+    payment_method_types: ['card'],
+  });
 }
 
 /**
@@ -57,16 +43,10 @@ export async function createPaymentIntent(
  */
 export async function retrievePaymentIntent(paymentIntentId: string) {
   if (!stripe) {
-    throw new Error("Stripe is not configured properly. Please check your environment variables.");
+    throw new Error('Stripe is not initialized. Make sure STRIPE_SECRET_KEY is set.');
   }
 
-  try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    return paymentIntent;
-  } catch (error: any) {
-    console.error("Error retrieving Stripe payment intent:", error);
-    throw error;
-  }
+  return await stripe.paymentIntents.retrieve(paymentIntentId);
 }
 
 /**
@@ -78,25 +58,18 @@ export async function retrievePaymentIntent(paymentIntentId: string) {
  */
 export async function createCustomer(
   email: string,
-  name?: string,
+  name: string,
   metadata: Record<string, string> = {}
 ) {
   if (!stripe) {
-    throw new Error("Stripe is not configured properly. Please check your environment variables.");
+    throw new Error('Stripe is not initialized. Make sure STRIPE_SECRET_KEY is set.');
   }
 
-  try {
-    const customer = await stripe.customers.create({
-      email,
-      name,
-      metadata,
-    });
-
-    return customer;
-  } catch (error: any) {
-    console.error("Error creating Stripe customer:", error);
-    throw error;
-  }
+  return await stripe.customers.create({
+    email,
+    name,
+    metadata,
+  });
 }
 
 /**
@@ -106,16 +79,10 @@ export async function createCustomer(
  */
 export async function retrieveCustomer(customerId: string) {
   if (!stripe) {
-    throw new Error("Stripe is not configured properly. Please check your environment variables.");
+    throw new Error('Stripe is not initialized. Make sure STRIPE_SECRET_KEY is set.');
   }
 
-  try {
-    const customer = await stripe.customers.retrieve(customerId);
-    return customer;
-  } catch (error: any) {
-    console.error("Error retrieving Stripe customer:", error);
-    throw error;
-  }
+  return await stripe.customers.retrieve(customerId);
 }
 
 /**
@@ -125,29 +92,11 @@ export async function retrieveCustomer(customerId: string) {
  */
 export async function getPaymentMethods(customerId: string) {
   if (!stripe) {
-    throw new Error("Stripe is not configured properly. Please check your environment variables.");
+    throw new Error('Stripe is not initialized. Make sure STRIPE_SECRET_KEY is set.');
   }
 
-  try {
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: 'card',
-    });
-
-    return paymentMethods;
-  } catch (error: any) {
-    console.error("Error retrieving Stripe payment methods:", error);
-    throw error;
-  }
+  return await stripe.paymentMethods.list({
+    customer: customerId,
+    type: 'card',
+  });
 }
-
-export default {
-  stripe,
-  isConfigured: !!stripe,
-  publicKey: stripePublicKey,
-  createPaymentIntent,
-  retrievePaymentIntent,
-  createCustomer,
-  retrieveCustomer,
-  getPaymentMethods
-};
