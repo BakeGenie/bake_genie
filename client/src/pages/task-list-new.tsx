@@ -10,6 +10,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Form,
   FormControl,
   FormField,
@@ -252,10 +258,31 @@ const TaskList = () => {
               </div>
             </div>
             
-            <Button variant="outline" className="flex items-center gap-1 text-sm font-normal h-9">
-              <span>Open Tasks</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-1 text-sm font-normal h-9">
+                  <span>Open Tasks</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[180px]">
+                <DropdownMenuItem className="cursor-pointer">
+                  Open Tasks
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  High Priority
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  Medium Priority
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  Normal Priority
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  Completed Tasks
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           
           <div className="border rounded-md">
