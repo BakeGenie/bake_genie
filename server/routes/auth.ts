@@ -124,12 +124,12 @@ router.post('/register', async (req: Request, res: Response) => {
     // Generate a username from the email
     const username = email.split('@')[0];
 
-    // Create new user using raw SQL - directly using the column names that exist in the database
+    // Create new user with role explicitly set
     const insertResult = await pool.query(
       `INSERT INTO users (username, email, password, first_name, last_name, role, created_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       VALUES ($1, $2, $3, $4, $5, 'user', $6) 
        RETURNING id, username, email, first_name, last_name, role, created_at`,
-      [username, email, hashedPassword, firstName, lastName, 'user', new Date()]
+      [username, email, hashedPassword, firstName, lastName, new Date()]
     );
 
     const newUser = insertResult.rows[0];
