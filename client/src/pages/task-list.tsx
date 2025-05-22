@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -62,7 +63,26 @@ const TaskList = () => {
   const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = React.useState(false);
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { tasks, isLoading, toggleTaskCompletion } = useTasks();
+  const { tasks, isLoading } = useTasks();
+  
+  // Task toggle function
+  const toggleTaskCompletion = async (id: number, completed: boolean) => {
+    try {
+      await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed }),
+        credentials: 'include'
+      });
+      
+      // Refresh the tasks list
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+    }
+  };
 
   // Form for new task
   const form = useForm<TaskFormValues>({
@@ -108,9 +128,34 @@ const TaskList = () => {
   // Handle new task submission
   const handleNewTaskSubmit = async (data: TaskFormValues) => {
     setIsSubmitting(true);
+    console.log("Submitting task form data:", data);
     
     try {
-      await apiRequest("POST", "/api/tasks", data);
+      // Manually construct the request for better control
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          // Only pass the exact fields needed by the API and use correct field names
+          userId: 1,
+          title: data.title,
+          description: data.description || null,
+          priority: data.priority || "Medium",
+          dueDate: data.dueDate ? data.dueDate.toISOString() : null,
+          completed: false
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create task: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log("Task created successfully:", result);
       
       // Invalidate tasks query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
@@ -124,6 +169,7 @@ const TaskList = () => {
         description: "Your task has been created successfully.",
       });
     } catch (error) {
+      console.error("Error creating task:", error);
       toast({
         title: "Error",
         description: "There was an error creating the task. Please try again.",

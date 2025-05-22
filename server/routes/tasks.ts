@@ -80,48 +80,78 @@ router.get("/:id", async (req: Request, res: Response) => {
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
-    console.log("Creating new task with data:", req.body);
+    console.log("Creating new task with data:", JSON.stringify(req.body, null, 2));
+    
+    // Simple query to check if the tasks table exists
+    try {
+      const checkTable = await db.$client.query("SELECT * FROM tasks LIMIT 1");
+      console.log("Tasks table check result:", checkTable.rowCount);
+    } catch (tableError) {
+      console.error("Error checking tasks table:", tableError);
+    }
     
     const userId = 1; // Default user ID for development
-    const { title, description, dueDate, priority, orderId, completed } = req.body;
+    const { title, description, dueDate, priority, relatedOrderId, completed } = req.body;
     
     // Validate required fields
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
     }
     
-    // Use simpler query with parameterized values for better safety
-    const query = `
-      INSERT INTO tasks (
-        user_id, title, description, due_date, priority, related_order_id, completed, created_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, NOW()
-      ) RETURNING *
-    `;
-    
-    const values = [
-      userId,
-      title,
-      description || null,
-      dueDate ? new Date(dueDate) : null,
-      priority || "Medium",
-      orderId || null,
-      completed || false
-    ];
-    
-    console.log("Executing query with values:", values);
-    
-    // Use the query client directly for better error handling
-    const result = await db.$client.query(query, values);
-    
-    console.log("Task created successfully:", result.rows[0]);
-    res.status(201).json(result.rows[0]);
+    // Use super simple insert statement for highest compatibility
+    try {
+      // First try - simple direct insert
+      const insertQuery = `
+        INSERT INTO tasks (
+          user_id, title, description, due_date, priority, completed
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6
+        ) RETURNING *
+      `;
+      
+      const insertValues = [
+        userId,
+        title,
+        description || null,
+        dueDate ? new Date(dueDate) : null,
+        priority || "Medium",
+        completed || false
+      ];
+      
+      console.log("Executing insert query with values:", insertValues);
+      
+      // Use the query client directly for better error handling
+      const result = await db.$client.query(insertQuery, insertValues);
+      
+      console.log("Task created successfully:", result.rows[0]);
+      res.status(201).json(result.rows[0]);
+    } catch (insertError) {
+      console.error("First insert attempt failed:", insertError);
+      
+      // If first attempt failed, try alternative approach 
+      try {
+        const rawInsert = `
+          INSERT INTO tasks (user_id, title, description, priority, completed)
+          VALUES (1, '${title.replace("'", "''")}', '${(description || "").replace("'", "''")}', '${priority || "Medium"}', ${completed || false})
+          RETURNING *
+        `;
+        
+        console.log("Trying raw insert:", rawInsert);
+        const rawResult = await db.$client.query(rawInsert);
+        console.log("Raw insert succeeded:", rawResult.rows[0]);
+        res.status(201).json(rawResult.rows[0]);
+      } catch (rawError) {
+        console.error("Raw insert also failed:", rawError);
+        throw rawError; // re-throw to be caught by outer catch
+      }
+    }
   } catch (error) {
     console.error("Error creating task:", error);
     if (error instanceof Error) {
       console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
     }
-    res.status(500).json({ error: "Failed to create task" });
+    res.status(500).json({ error: "Failed to create task", details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
