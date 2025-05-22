@@ -117,8 +117,8 @@ const TaskList = () => {
       console.log("Selected task for editing:", selectedTask);
       
       // Check if there's a due date to properly set the hasDueDate field
-      const hasDueDate = selectedTask.dueDate ? true : false;
-      const dueDate = selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined;
+      const hasDueDate = selectedTask.due_date ? true : false;
+      const dueDate = selectedTask.due_date ? new Date(selectedTask.due_date) : undefined;
       
       editForm.reset({
         userId: selectedTask.userId,
@@ -215,7 +215,7 @@ const TaskList = () => {
         title: data.title,
         description: data.description || null,
         priority: data.priority || "Medium",
-        due_date: data.hasDueDate && data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        dueDate: data.hasDueDate && data.dueDate ? new Date(data.dueDate).toISOString() : null,
         completed: data.completed || false
       };
       
