@@ -248,14 +248,28 @@ const TaskList = () => {
       // Try to parse the response as JSON if possible
       let result;
       try {
-        const responseClone = response.clone(); // Clone the response before reading it
-        const responseText = await responseClone.text();
-        if (responseText) {
-          result = JSON.parse(responseText);
+        // First try to parse the JSON directly - this is the preferred method
+        result = await response.json().catch(() => null);
+        
+        if (result) {
           console.log("Task updated successfully:", result);
+        } else {
+          // If that fails, use the text method as fallback
+          const responseClone = response.clone();
+          const responseText = await responseClone.text();
+          console.log("Response text:", responseText);
+          
+          if (responseText) {
+            try {
+              result = JSON.parse(responseText);
+              console.log("Task updated successfully (from text):", result);
+            } catch (parseError) {
+              console.log("Response was not valid JSON:", responseText);
+            }
+          }
         }
       } catch (e) {
-        console.log("Error parsing response:", e);
+        console.log("Error handling response:", e);
       }
       
       // Invalidate tasks query to refresh the list
