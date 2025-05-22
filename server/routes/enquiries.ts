@@ -146,11 +146,27 @@ router.patch("/:id/status", async (req: Request, res: Response) => {
   try {
     const enquiryId = parseInt(req.params.id);
     const userId = 1;
-    const { status } = req.body;
+    let { status } = req.body;
     
     if (!status) {
       return res.status(400).json({ error: "Status is required" });
     }
+    
+    // Log the incoming status request
+    console.log(`Updating enquiry #${enquiryId} status to: "${status}"`);
+    
+    // Handle different status names/formats
+    if (status.toLowerCase() === "in progress") {
+      status = "In Progress";
+    } else if (status.toLowerCase() === "new") {
+      status = "New";
+    } else if (status.toLowerCase() === "responded") {
+      status = "Responded";
+    } else if (status.toLowerCase() === "closed") {
+      status = "Closed";
+    }
+    
+    console.log(`Normalized status to: "${status}"`);
     
     // Update the enquiry status using raw SQL
     const result = await db.execute(
@@ -163,6 +179,9 @@ router.patch("/:id/status", async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Enquiry not found" });
     }
+    
+    // Log the successful status update
+    console.log(`Successfully updated enquiry #${enquiryId} status to "${status}"`);
     
     res.json(result.rows[0]);
   } catch (error) {
