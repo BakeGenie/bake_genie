@@ -572,6 +572,13 @@ const CalendarStandalone = () => {
         onClose={() => setIsOrderDetailsOpen(false)}
         order={selectedOrder}
       />
+      
+      {/* Calendar Order Dialog - shows the selected order details in the calendar view */}
+      <CalendarOrderDialog
+        isOpen={isOrderDetailsOpen}
+        onClose={() => setIsOrderDetailsOpen(false)}
+        order={selectedOrder}
+      />
     </div>
   );
 };

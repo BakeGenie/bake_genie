@@ -1,11 +1,11 @@
 import React from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { ReceiptIcon } from "lucide-react";
+import { DollarSign } from "lucide-react";
 
 interface CalendarOrderDialogProps {
   isOpen: boolean;
@@ -39,10 +39,11 @@ const CalendarOrderDialog: React.FC<CalendarOrderDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="p-4 max-w-sm">
         <DialogTitle className="sr-only">Order Details</DialogTitle>
+        <DialogDescription className="sr-only">View order details</DialogDescription>
         <div className="text-center mb-4">
           <div className="flex justify-center mb-2">
             <div className="p-2 border border-dashed border-gray-300 rounded-lg inline-flex items-center justify-center">
-              <div className="h-6 w-6 text-red-500">$</div>
+              <DollarSign className="h-6 w-6 text-red-500" />
             </div>
           </div>
           <h2 className="text-lg font-semibold">
@@ -75,7 +76,7 @@ const CalendarOrderDialog: React.FC<CalendarOrderDialogProps> = ({
             <span className="text-gray-600">Status:</span>
             <div className="text-right">
               <Badge 
-                className="bg-gray-500 text-white text-xs font-normal"
+                className="bg-gray-500 text-white text-xs px-2 py-1 rounded font-normal"
               >
                 {order.status}
               </Badge>
