@@ -1,219 +1,202 @@
-import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useLocation } from "wouter";
-import { Link } from "wouter";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { apiRequest } from "@/lib/queryClient";
+import React from 'react';
+import { Link, useLocation } from 'wouter';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
-// Form validation schema
 const registerSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string().min(6, { message: "Confirm password is required" }),
   businessName: z.string().optional(),
-  phone: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
+}).refine((data) => {
+  return data.password.length >= 8;
+}, {
+  message: "Password must be at least 8 characters long",
+  path: ["password"],
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-const Register = () => {
+export default function Register() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [loading, setLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      businessName: "",
-      phone: "",
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      businessName: '',
     },
   });
 
-  const onSubmit = async (data: RegisterFormValues) => {
-    setLoading(true);
+  async function onSubmit(data: RegisterFormValues) {
+    setIsLoading(true);
+    
     try {
-      // Remove confirmPassword from the data sent to the server
-      const { confirmPassword, ...registerData } = data;
-      
-      const response = await apiRequest("POST", "/api/auth/register", registerData);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
-      
-      toast({
-        title: "Registration successful",
-        description: "Your account has been created successfully.",
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
       });
-      
-      // Redirect to dashboard after successful registration
-      navigate("/dashboard");
-      
-    } catch (error: any) {
+
+      if (response.ok) {
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created. Welcome to BakeDiary!",
+        });
+        
+        // Refresh auth state
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Registration failed",
+          description: errorData.message || "There was an error creating your account. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration failed",
-        description: error.message || "An error occurred during registration.",
+        description: "An error occurred during registration. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
-          <CardDescription className="text-center">
-            Enter your information to create an account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="john.doe@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="businessName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Business Name (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your Cake Business" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+1 (555) 123-4567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span className="mr-2">Creating account...</span>
-                    <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
-                  </>
-                ) : "Create Account"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col">
-          <div className="mt-2 text-center text-sm">
-            Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-              Sign in
-            </Link>
+    <div className="flex flex-col md:flex-row min-h-screen">
+      {/* Left side - Image with Baker */}
+      <div className="hidden md:block md:w-1/2 bg-cover bg-center" 
+           style={{ 
+             backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), url('/attached_assets/home_baker.jpg')",
+             backgroundSize: "cover", 
+             backgroundPosition: "center" 
+           }}>
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="max-w-md p-8 text-white">
+            <h2 className="text-3xl font-bold mb-4">Simplify your bakery business</h2>
+            <p className="text-lg">Join thousands of bakers who use BakeDiary to manage their orders, recipes, and finances in one place.</p>
           </div>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
+      
+      {/* Right side - Registration Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 bg-gradient-to-b from-background to-secondary/20">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+            <CardDescription className="text-center">
+              Enter your details to create your BakeDiary account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="businessName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business Name (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sweet Treats Bakery" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="you@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating account..." : "Create account"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-sm text-center text-muted-foreground">
+              Already have an account?{' '}
+              <Link href="/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
-};
-
-export default Register;
+}
