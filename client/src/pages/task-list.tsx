@@ -185,9 +185,32 @@ const TaskList = () => {
     if (!selectedTask) return;
     
     setIsSubmitting(true);
+    console.log("Submitting edit form data:", data);
     
     try {
-      await apiRequest("PATCH", `/api/tasks/${selectedTask.id}`, data);
+      // Use fetch directly for more control
+      const response = await fetch(`/api/tasks/${selectedTask.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description || null,
+          priority: data.priority || "Medium",
+          dueDate: data.dueDate ? data.dueDate.toISOString() : null,
+          completed: data.completed || false
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update task: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log("Task updated successfully:", result);
       
       // Invalidate tasks query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
@@ -200,6 +223,7 @@ const TaskList = () => {
         description: "Your task has been updated successfully.",
       });
     } catch (error) {
+      console.error("Error updating task:", error);
       toast({
         title: "Error",
         description: "There was an error updating the task. Please try again.",
