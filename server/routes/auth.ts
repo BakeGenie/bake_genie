@@ -110,14 +110,13 @@ router.post('/register', async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create new user - only including fields that we're sure exist in the database
     const [newUser] = await db.insert(users).values({
+      username: email.split('@')[0], // Generate a username from the email
       email,
       password: hashedPassword,
       firstName,
       lastName,
-      businessName,
-      phone,
       lastLogin: new Date(),
     }).returning();
 
