@@ -108,6 +108,7 @@ Message: ${values.message}`;
         method: "POST",
         body: serverData
       });
+      
       console.log("Response from server:", response);
       
       // Invalidate the enquiries cache to refresh the list
@@ -176,7 +177,7 @@ Message: ${values.message}`;
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="customer@example.com" {...field} value={field.value || ""} />
+                      <Input type="email" placeholder="customer@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -192,7 +193,7 @@ Message: ${values.message}`;
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="Phone number" {...field} value={field.value || ""} />
+                      <Input placeholder="Phone number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -207,7 +208,7 @@ Message: ${values.message}`;
                     <FormLabel>Source</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value || undefined}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -234,10 +235,10 @@ Message: ${values.message}`;
                 name="eventType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Event Type</FormLabel>
+                    <FormLabel>Event Type*</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value || undefined}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
