@@ -377,7 +377,7 @@ const Mileage = () => {
                 <div className="text-sm text-gray-600">Total Miles:</div>
                 <div className="text-xl font-bold">
                   {mileageData
-                    .reduce((total: number, record: Mileage) => total + record.miles, 0)
+                    .reduce((total: number, record: Mileage) => total + Number(record.miles), 0)
                     .toFixed(1)}
                 </div>
               </div>
