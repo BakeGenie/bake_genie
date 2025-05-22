@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +25,40 @@ import {
   Search, 
   Trash2, 
   FilterIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  Edit,
+  Eye
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Recipe } from "@shared/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-// Define recipe type
+// Define recipe type with ingredients
+interface RecipeWithIngredients extends Recipe {
+  ingredients?: {
+    id: number;
+    recipeId: number;
+    ingredientId: number;
+    quantity: number;
+    notes?: string;
+    ingredient?: {
+      id: number;
+      name: string;
+      unit: string;
+      unitCost?: number;
+    };
+  }[];
+}
 interface Recipe {
   id: number;
   name: string;
