@@ -122,6 +122,8 @@ const ExpensesPage = () => {
   const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
 
   // Expense form
   const expenseForm = useForm<z.infer<typeof expenseSchema>>({
@@ -444,10 +446,10 @@ const ExpensesPage = () => {
                       setOpenExpenseDialog(true);
                     }}
                   >
-                    {/* Date (already shown in the group header, but we could show time here) */}
+                    {/* Date */}
                     <div className="w-1/6 flex items-center">
                       <div className="bg-gray-100 text-blue-500 font-medium px-2 py-1 rounded">
-                        {expense.id} ({expense.id})
+                        {format(new Date(expense.date), 'dd MMM yyyy')}
                       </div>
                     </div>
                     
@@ -472,9 +474,8 @@ const ExpensesPage = () => {
                         className="text-gray-400 hover:text-red-500"
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent row click
-                          if (window.confirm("Are you sure you want to delete this expense?")) {
-                            deleteExpenseMutation.mutate(expense.id);
-                          }
+                          setExpenseToDelete(expense.id);
+                          setConfirmDeleteDialogOpen(true);
                         }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -766,6 +767,56 @@ const ExpensesPage = () => {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmDeleteDialogOpen} onOpenChange={setConfirmDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <div className="p-6 text-center">
+            <svg 
+              className="mx-auto mb-4 text-red-500 w-12 h-12" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth="2" 
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <h3 className="mb-5 text-lg font-normal text-gray-600">
+              Are you sure you want to remove this item?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <button
+                type="button"
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                onClick={() => {
+                  if (expenseToDelete) {
+                    deleteExpenseMutation.mutate(expenseToDelete);
+                  }
+                  setConfirmDeleteDialogOpen(false);
+                  setExpenseToDelete(null);
+                }}
+              >
+                Remove Item
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                onClick={() => {
+                  setConfirmDeleteDialogOpen(false);
+                  setExpenseToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
