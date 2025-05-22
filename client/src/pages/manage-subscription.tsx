@@ -6,11 +6,13 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeftIcon, CreditCardIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import UpdatePaymentMethodDialog from "@/components/payment/update-payment-method-dialog";
 import { format } from "date-fns";
 
 export default function ManageSubscription() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [isUpdatePaymentDialogOpen, setIsUpdatePaymentDialogOpen] = useState(false);
   
   // Fetch user data to get account creation date
   const { data: userData, isLoading } = useQuery({

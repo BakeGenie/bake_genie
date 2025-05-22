@@ -33,6 +33,7 @@ import orderTasksRouter from "./routes/order-tasks";
 import orderNotesRouter from "./routes/order-notes";
 import scheduledPaymentsRouter from "./routes/scheduled-payments";
 import paymentsRouter from "./routes/payments";
+import { router as subscriptionPaymentRouter } from "./routes/subscription-payment";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
@@ -127,6 +128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register payment processing routes
   app.use('/api/payments', paymentsRouter);
+  
+  // Register subscription payment routes
+  app.use('/api/subscription', subscriptionPaymentRouter);
   
   // Register import routes
   const importRouter = Router();
