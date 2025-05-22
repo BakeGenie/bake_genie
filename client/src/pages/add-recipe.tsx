@@ -75,12 +75,30 @@ const AddRecipePage = () => {
   // Create recipe mutation
   const createRecipeMutation = useMutation({
     mutationFn: async (data: RecipeFormValues) => {
+      // Ensure all numbers are properly typed
+      const processedData = {
+        ...data,
+        userId: 1,
+        servings: Number(data.servings),
+        prepTime: data.prepTime ? Number(data.prepTime) : null,
+        cookTime: data.cookTime ? Number(data.cookTime) : null,
+        totalCost: data.totalCost ? Number(data.totalCost) : null,
+        ingredients: data.ingredients.map(ingredient => ({
+          ...ingredient,
+          ingredientId: Number(ingredient.ingredientId),
+          quantity: Number(ingredient.quantity)
+        }))
+      };
+      
+      console.log("Submitting recipe:", processedData);
+      
       return apiRequest('/api/recipes', {
         method: 'POST',
-        body: data,
+        body: processedData,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Recipe created successfully:", data);
       toast({
         title: "Recipe created",
         description: "Your recipe has been created successfully.",
@@ -88,7 +106,8 @@ const AddRecipePage = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/recipes'] });
       navigate('/recipes/recipes-list');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Failed to create recipe:", error);
       toast({
         title: "Error",
         description: "Failed to create recipe. Please try again.",
@@ -138,10 +157,24 @@ const AddRecipePage = () => {
   const onSubmit = (data: RecipeFormValues) => {
     // Calculate and set total cost
     const totalCost = calculateTotalCost();
-    createRecipeMutation.mutate({
+    
+    // Prepare the data with explicit typing for better compatibility
+    const submissionData = {
       ...data,
-      totalCost,
-    });
+      userId: 1, // Set the user ID
+      servings: Number(data.servings),
+      totalCost: Number(totalCost),
+      prepTime: data.prepTime ? Number(data.prepTime) : null,
+      cookTime: data.cookTime ? Number(data.cookTime) : null,
+      ingredients: data.ingredients.map(ingredient => ({
+        ingredientId: Number(ingredient.ingredientId),
+        quantity: Number(ingredient.quantity),
+        notes: ingredient.notes || ""
+      }))
+    };
+    
+    console.log("Submitting recipe with data:", submissionData);
+    createRecipeMutation.mutate(submissionData);
   };
   
   return (
