@@ -76,6 +76,9 @@ const EmailFormSchema = z.object({
   attachInvoice: z.boolean().optional(),
 });
 
+// Import the wallet icon
+import walletImagePath from "@assets/image_1747932976720.png";
+
 // Payment Modal Component
 const PaymentModal = ({ open, onOpenChange, onSubmit }: { open: boolean, onOpenChange: (open: boolean) => void, onSubmit: (data: any) => void }) => {
   const form = useForm<z.infer<typeof PaymentFormSchema>>({
@@ -96,11 +99,14 @@ const PaymentModal = ({ open, onOpenChange, onSubmit }: { open: boolean, onOpenC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add Payment</DialogTitle>
-          <DialogDescription>
-            Enter the payment details below.
-          </DialogDescription>
+        <DialogHeader className="text-center">
+          <div className="flex flex-col items-center mb-4">
+            <img src={walletImagePath} alt="Wallet" className="h-16 w-16 mb-2" />
+            <DialogTitle>Add Payment</DialogTitle>
+            <DialogDescription>
+              Choose a payment type.
+            </DialogDescription>
+          </div>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -538,37 +544,18 @@ const OrderDetails: React.FC = () => {
   // Function to generate invoice
   const generateInvoice = async () => {
     try {
-      const response = await fetch(`/api/orders/${id}/invoice`, {
-        method: 'GET',
+      toast({
+        title: "Generating invoice",
+        description: "Please wait while we prepare your invoice...",
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to generate invoice');
-      }
-      
-      // Get the blob from the response
-      const blob = await response.blob();
-      
-      // Create a URL for the blob
-      const url = window.URL.createObjectURL(blob);
-      
-      // Create a temporary link element
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Invoice-${order?.orderNumber || id}.pdf`;
-      
-      // Append the link to the body
-      document.body.appendChild(link);
-      
-      // Click the link
-      link.click();
-      
-      // Remove the link
-      document.body.removeChild(link);
+      // Open invoice in a new tab instead of downloading
+      const url = `/sample-invoice?orderId=${id}`;
+      window.open(url, '_blank');
       
       toast({
-        title: "Invoice generated",
-        description: "Invoice has been generated successfully",
+        title: "Invoice opened",
+        description: "Invoice has been opened in a new tab",
       });
     } catch (error) {
       toast({
