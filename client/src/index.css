@@ -107,7 +107,7 @@
 
 /* Calendar styles */
 .calendar-day {
-  @apply h-6 w-6 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm transition-all duration-200;
+  @apply h-8 w-8 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm transition-all duration-200;
 }
 
 .calendar-day.today {
