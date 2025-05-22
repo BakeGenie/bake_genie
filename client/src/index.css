@@ -107,15 +107,46 @@
 
 /* Calendar styles */
 .calendar-day {
-  @apply h-8 w-8 flex items-center justify-center mx-auto rounded-full cursor-pointer;
+  @apply h-10 w-10 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm;
 }
 
 .calendar-day.today {
-  @apply bg-primary-500 text-white;
+  @apply bg-white border border-green-300 text-green-600;
+}
+
+.calendar-day.selected {
+  @apply bg-blue-500 text-white;
 }
 
 .calendar-day.has-events {
-  @apply border border-primary-300;
+  @apply relative;
+}
+
+.calendar-day.has-events::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: #9CA3AF;
+  border-radius: 50%;
+}
+
+.calendar-day.has-red-events::before {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: calc(50% - 6px);
+  width: 4px;
+  height: 4px;
+  background-color: #EF4444;
+  border-radius: 50%;
+}
+
+.calendar-day.has-orange-events::after {
+  background-color: #F59E0B;
 }
 
 .calendar-day.other-month {
