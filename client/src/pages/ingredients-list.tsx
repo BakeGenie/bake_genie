@@ -258,11 +258,27 @@ const IngredientsList = () => {
               <label htmlFor="purchaseSize" className="text-right text-sm font-medium">
                 Purchase Size
               </label>
-              <Input
-                id="purchaseSize"
-                placeholder="500g, 1L, etc."
-                className="col-span-3"
-              />
+              <div className="col-span-3 flex gap-2">
+                <Input
+                  id="purchaseSize"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="flex-1"
+                />
+                <select 
+                  className="h-9 w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  defaultValue="g"
+                >
+                  <option value="ml">ml</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="lb">lb</option>
+                  <option value="oz">oz</option>
+                  <option value="each">each</option>
+                  <option value="pack">pack</option>
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="costPrice" className="text-right text-sm font-medium">
@@ -281,13 +297,49 @@ const IngredientsList = () => {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="unit" className="text-right text-sm font-medium">
-                Unit*
+                Measurement
               </label>
-              <Input
-                id="unit"
-                placeholder="g, ml, each, etc."
-                className="col-span-3"
-              />
+              <div className="col-span-3">
+                <select 
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  defaultValue="g"
+                  id="unit"
+                >
+                  <option value="ml">ml</option>
+                  <option value="mg">mg</option>
+                  <option value="st">st</option>
+                  <option value="lb">lb</option>
+                  <option value="oz">oz</option>
+                  <option value="gal">gal (US)</option>
+                  <option value="gal_uk">gal (UK)</option>
+                  <option value="qt">qt</option>
+                  <option value="pint_us">pint (US)</option>
+                  <option value="pint">pint</option>
+                  <option value="cup_us">cup (US)</option>
+                  <option value="cup">cup</option>
+                  <option value="fl_oz_us">fl oz (US)</option>
+                  <option value="fl_oz">fl oz</option>
+                  <option value="tbl_us">Tbl (US)</option>
+                  <option value="tbl">Tbl</option>
+                  <option value="tsp_us">tsp (US)</option>
+                  <option value="tsp">tsp</option>
+                  <option value="g">g</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <div className="col-span-1"></div>
+              <div className="flex items-center space-x-2 col-span-3">
+                <input 
+                  type="checkbox" 
+                  id="specificVolume"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="specificVolume" className="text-sm font-medium text-gray-700">
+                  Add specific Volume to each portion
+                </label>
+              </div>
             </div>
           </div>
           
