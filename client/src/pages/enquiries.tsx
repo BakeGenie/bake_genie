@@ -54,7 +54,9 @@ const Enquiries = () => {
   // Apply status filter if selected
   const enquiries = React.useMemo(() => {
     if (!statusFilter) return allEnquiries;
-    return allEnquiries.filter(enquiry => enquiry.status === statusFilter);
+    return allEnquiries.filter(enquiry => 
+      enquiry.status.toLowerCase() === statusFilter.toLowerCase()
+    );
   }, [allEnquiries, statusFilter]);
 
   // Handle enquiry status update
@@ -86,14 +88,17 @@ const Enquiries = () => {
 
   // Get status badge component based on enquiry status
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "New":
+    // Normalize status to handle case differences
+    const normalizedStatus = status.toLowerCase();
+    
+    switch (normalizedStatus) {
+      case "new":
         return <Badge className="bg-blue-500">New</Badge>;
-      case "In Progress":
+      case "in progress":
         return <Badge className="bg-amber-500">In Progress</Badge>;
-      case "Responded":
+      case "responded":
         return <Badge className="bg-green-500">Responded</Badge>;
-      case "Closed":
+      case "closed":
         return <Badge variant="outline">Closed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
