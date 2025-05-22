@@ -10,17 +10,17 @@ export function AuthFooter() {
           <p>&copy; {currentYear} BakeDiary. All rights reserved.</p>
         </div>
         <nav className="flex items-center gap-4 text-sm">
-          <Link href="/about">
-            <a className="text-muted-foreground hover:text-foreground transition-colors">About</a>
+          <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+            About
           </Link>
-          <Link href="/terms">
-            <a className="text-muted-foreground hover:text-foreground transition-colors">Terms</a>
+          <Link href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+            Terms
           </Link>
-          <Link href="/privacy">
-            <a className="text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
+          <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+            Privacy
           </Link>
-          <Link href="/contact">
-            <a className="text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+          <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
+            Contact
           </Link>
         </nav>
       </div>

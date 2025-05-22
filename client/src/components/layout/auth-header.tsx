@@ -13,12 +13,12 @@ export function AuthHeader() {
         </div>
         <nav className="flex items-center gap-2">
           <ModeToggle />
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href="/register">Sign Up</Link>
-          </Button>
+          <Link href="/login">
+            <Button variant="ghost" size="sm">Sign In</Button>
+          </Link>
+          <Link href="/register">
+            <Button size="sm">Sign Up</Button>
+          </Link>
         </nav>
       </div>
     </header>
