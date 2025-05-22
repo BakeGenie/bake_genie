@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,8 @@ import {
   Trash2, 
   Plus,
   Edit,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import {
   Dialog,
@@ -35,59 +37,64 @@ interface Ingredient {
   name: string;
   supplier?: string;
   purchaseSize?: string;
+  purchaseSizeUnit?: string;
   costPrice?: number;
   unit?: string;
+  hasSpecificVolume?: boolean;
+}
+
+// Define the form data type
+interface IngredientFormData {
+  name: string;
+  supplier: string;
+  purchaseSize: string;
+  purchaseSizeUnit: string;
+  costPrice: string;
+  unit: string;
+  hasSpecificVolume: boolean;
 }
 
 const IngredientsList = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Sample ingredient data for the UI
-  const [ingredients, setIngredients] = useState<Ingredient[]>([
-    { 
-      id: 1, 
-      name: "All-Purpose Flour", 
-      supplier: "Baker's Supply Co", 
-      purchaseSize: "5kg bag", 
-      costPrice: 12.99,
-      unit: "grams" 
+  // Form state for new ingredient
+  const [formData, setFormData] = useState<IngredientFormData>({
+    name: "",
+    supplier: "",
+    purchaseSize: "",
+    purchaseSizeUnit: "g",
+    costPrice: "",
+    unit: "g",
+    hasSpecificVolume: false
+  });
+  
+  // Use React Query to fetch ingredients
+  const { 
+    data: ingredients = [], 
+    isLoading, 
+    isError, 
+    refetch 
+  } = useQuery({
+    queryKey: ["/api/ingredients"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/ingredients");
+        if (!response.ok) {
+          throw new Error("Failed to fetch ingredients");
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching ingredients:", error);
+        // Return an empty array for now if there's an error
+        return [];
+      }
     },
-    { 
-      id: 2, 
-      name: "Granulated Sugar", 
-      supplier: "Sweet Supplies", 
-      purchaseSize: "2kg bag", 
-      costPrice: 8.50,
-      unit: "grams" 
-    },
-    { 
-      id: 3, 
-      name: "Unsalted Butter", 
-      supplier: "Dairy Fresh", 
-      purchaseSize: "454g block", 
-      costPrice: 6.75,
-      unit: "grams" 
-    },
-    { 
-      id: 4, 
-      name: "Vanilla Extract", 
-      supplier: "Flavor Essence", 
-      purchaseSize: "500ml bottle", 
-      costPrice: 18.99,
-      unit: "ml" 
-    },
-    { 
-      id: 5, 
-      name: "Eggs", 
-      supplier: "Farm Fresh", 
-      purchaseSize: "12 count", 
-      costPrice: 5.25,
-      unit: "count" 
-    }
-  ]);
+  });
   
   // Filter ingredients based on search query
   const filteredIngredients = ingredients.filter(ingredient => 

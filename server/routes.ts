@@ -23,6 +23,7 @@ import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 import enquiriesRouter from "./routes/enquiries";
 import tasksRouter from "./routes/tasks";
+import ingredientsRouter from "./routes/ingredients";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
@@ -88,6 +89,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register tasks routes
   app.use('/api/tasks', tasksRouter);
+  
+  // Register ingredients routes
+  app.use('/api/ingredients', ingredientsRouter);
   
   // Register auth routes
   app.use('/api/auth', authRouter);
