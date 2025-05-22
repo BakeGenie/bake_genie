@@ -117,17 +117,14 @@ const TaskList = () => {
       console.log("Selected task for editing:", selectedTask);
       
       // Handle different property names in the backend response
-      // The server returns data with due_date but our form uses dueDate
-      const hasDueDate = (selectedTask.due_date || selectedTask.dueDate) ? true : false;
-      const dueDate = selectedTask.due_date 
-        ? new Date(selectedTask.due_date) 
-        : selectedTask.dueDate 
-          ? new Date(selectedTask.dueDate) 
-          : undefined;
+      // The server returns data with snake_case but our form uses camelCase
+      const taskDueDate = selectedTask.dueDate || (selectedTask as any).due_date;
+      const hasDueDate = taskDueDate ? true : false;
+      const dueDate = taskDueDate ? new Date(taskDueDate) : undefined;
       
       editForm.reset({
-        userId: selectedTask.user_id || selectedTask.userId,
-        relatedOrderId: selectedTask.related_order_id || selectedTask.relatedOrderId,
+        userId: selectedTask.userId || (selectedTask as any).user_id,
+        relatedOrderId: selectedTask.relatedOrderId || (selectedTask as any).related_order_id,
         title: selectedTask.title,
         description: selectedTask.description || "",
         dueDate: dueDate,
@@ -170,7 +167,14 @@ const TaskList = () => {
           title: data.title,
           description: data.description || null,
           priority: data.priority || "Medium",
-          dueDate: data.dueDate ? data.dueDate.toISOString() : null,
+          // Handle date conversion safely
+          dueDate: data.dueDate 
+            ? (typeof data.dueDate === 'string' 
+                ? data.dueDate 
+                : data.dueDate instanceof Date 
+                  ? data.dueDate.toISOString() 
+                  : null)
+            : null,
           completed: false
         }),
         credentials: 'include'
@@ -217,12 +221,19 @@ const TaskList = () => {
     console.log("Selected task:", selectedTask);
     
     try {
-      // Use snake_case for the server API which expects due_date not dueDate
+      // Convert form data to the format expected by the server
       const payload = {
         title: data.title,
         description: data.description || null,
         priority: data.priority || "Medium",
-        due_date: data.hasDueDate && data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        // Handle date conversion properly
+        due_date: data.hasDueDate && data.dueDate 
+          ? (typeof data.dueDate === 'string' 
+              ? new Date(data.dueDate).toISOString() 
+              : data.dueDate instanceof Date 
+                ? data.dueDate.toISOString() 
+                : null)
+          : null,
         completed: data.completed || false
       };
       

@@ -24,12 +24,16 @@ const SidebarDateDialog: React.FC<SidebarDateDialogProps> = ({
   if (!selectedDate) return null;
   
   const handleCreateOrder = () => {
-    // Save the selected date in localStorage for the new order form to use
-    localStorage.setItem('selectedEventDate', selectedDate.toISOString());
-    
-    // Navigate to the new order page
-    navigate(`/orders/new?eventDate=${selectedDate.toISOString()}&date=${selectedDate.toISOString()}`);
-    onClose();
+    if (selectedDate) {
+      // Save the selected date in localStorage for the new order form to use
+      localStorage.setItem('selectedEventDate', selectedDate.toISOString());
+      
+      // Navigate to the new order page with date parameters
+      navigate(`/orders/new?eventDate=${selectedDate.toISOString()}&date=${selectedDate.toISOString()}`);
+      onClose();
+    } else {
+      console.error('No date selected for new order');
+    }
   };
   
   const handleAddEvent = () => {
