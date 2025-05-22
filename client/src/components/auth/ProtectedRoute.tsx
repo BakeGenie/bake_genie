@@ -1,5 +1,5 @@
 import React from 'react';
-import { Redirect } from 'wouter';
+import { Redirect, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -7,14 +7,18 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
-  // Show loading spinner while checking authentication
+  // If still loading, show a loading spinner
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center w-full h-screen bg-background">
-        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+      <div className="h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -24,6 +28,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Redirect to="/login" />;
   }
 
-  // Render children if authenticated
+  // If authenticated, render the children
   return <>{children}</>;
-};
+}

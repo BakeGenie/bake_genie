@@ -4,7 +4,7 @@ import Sidebar from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import useMobile from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 interface AppLayoutProps {
   children: React.ReactNode;

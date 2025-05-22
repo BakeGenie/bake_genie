@@ -12,7 +12,7 @@ import { queryClient } from '@/lib/queryClient';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -21,20 +21,6 @@ export default function Login() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
-  
-  // Get search params for redirect functionality
-  const searchParams = new URLSearchParams(window.location.search);
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
-  const loggedOut = searchParams.get('logged_out') === 'true';
-  
-  React.useEffect(() => {
-    if (loggedOut) {
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
-    }
-  }, [loggedOut, toast]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -66,13 +52,13 @@ export default function Login() {
         // Refresh auth state
         await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
         
-        // Redirect to dashboard or intended destination
-        navigate(redirectTo);
+        // Redirect to dashboard
+        navigate('/dashboard');
       } else {
         const errorData = await response.json();
         toast({
           title: "Login failed",
-          description: errorData.message || "Invalid credentials. Please try again.",
+          description: errorData.message || "Invalid email or password. Please try again.",
           variant: "destructive",
         });
       }
@@ -89,58 +75,73 @@ export default function Login() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/20 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Sign in to BakeDiary</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <div className="text-sm text-center text-muted-foreground">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-primary hover:underline">
-              Sign up
-            </Link>
+    <div className="flex flex-col md:flex-row min-h-screen">
+      {/* Left side - BakeDiary Brand */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary to-primary-dark items-center justify-center">
+        <div className="text-center text-white p-8">
+          <h1 className="text-4xl font-bold mb-2">BakeDiary</h1>
+          <p className="text-xl mb-8">Your complete bakery management solution</p>
+          <div className="max-w-md mx-auto bg-white/10 p-6 rounded-lg backdrop-blur-sm">
+            <p className="text-lg italic mb-4">"BakeDiary has completely transformed how I run my cake business. I can't imagine going back to spreadsheets!"</p>
+            <p className="font-medium">— Sarah Johnson, Sweet Delights Bakery</p>
           </div>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
+      
+      {/* Right side - Login Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 bg-gradient-to-b from-background to-secondary/20">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+            <CardDescription className="text-center">
+              Enter your credentials to access your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="you@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign in"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-sm text-center text-muted-foreground">
+              Don't have an account?{' '}
+              <Link href="/register" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

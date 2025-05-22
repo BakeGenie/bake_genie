@@ -59,60 +59,250 @@ import SquarePaymentProvider from "./pages/payment-settings/square";
 import TippingSettings from "./pages/payment-settings/tipping";
 import PaymentSuccess from "./pages/payment-success";
 
+// Import ProtectedRoute component
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+
 function Router() {
   return (
     <AppLayout>
       <Switch>
+        {/* Public routes - no authentication required */}
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/" component={LandingPage} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/orders/new" component={NewOrder} />
-        <Route path="/orders/test" component={CreateTestOrder} />
-        <Route path="/orders/simple" component={SimpleOrder} />
-        <Route path="/orders/direct" component={DirectOrder} />
-        <Route path="/orders/:id" component={OrderDetails} />
-        <Route path="/orders-simple" component={OrdersSimple} />
-        <Route path="/orders" component={Orders} />
-        <Route path="/contacts" component={Contacts} />
-        <Route path="/enquiries" component={Enquiries} />
-        <Route path="/tasks" component={TaskList} />
-        <Route path="/calendar" component={Calendar} />
-        <Route path="/recipes" component={Recipes} />
-        <Route path="/recipes/recipes-list" component={RecipesList} />
-        <Route path="/recipes/add-recipe" component={AddRecipe} />
-        <Route path="/recipes/view/:id" component={ViewRecipe} />
-        <Route path="/recipes/edit/:id" component={EditRecipe} />
-        <Route path="/recipes/ingredients-list" component={IngredientsList} />
-        <Route path="/recipes/supplies-list" component={SuppliesList} />
-        <Route path="/recipes/master-ingredients" component={MasterIngredients} />
-        <Route path="/recipes/bundles" component={Bundles} />
-        <Route path="/products" component={Products} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/business-expenses" component={BusinessExpenses} />
-        <Route path="/expenses" component={Expenses} />
-        <Route path="/income" component={Income} />
-        <Route path="/mileage" component={Mileage} />
-        <Route path="/printables" component={Printables} />
-        <Route path="/tools" component={Tools} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/settings/email-templates" component={EmailTemplates} />
-        <Route path="/tax-rates" component={TaxRates} />
-        <Route path="/account" component={Account} />
-        <Route path="/manage-subscription" component={ManageSubscription} />
-        <Route path="/cancel-subscription" component={CancelSubscription} />
-        <Route path="/data" component={DataImportExport} />
-        <Route path="/import" component={Import} />
-        <Route path="/integrations" component={Integrations} />
-        <Route path="/payment-settings" component={PaymentSettings} />
-        <Route path="/payment-settings/stripe" component={StripePaymentProvider} />
-        <Route path="/payment-settings/square" component={SquarePaymentProvider} />
-        <Route path="/payment-settings/tipping" component={TippingSettings} />
         <Route path="/enquiry-form" component={EnquiryForm} />
-        <Route path="/manage-features" component={ManageFeatures} />
-        <Route path="/invoice-preview" component={InvoicePreview} />
-        <Route path="/payment-success" component={PaymentSuccess} />
-        <Route component={NotFound} />
+        
+        {/* Protected routes - require authentication */}
+        <Route path="/dashboard">
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders/new">
+          <ProtectedRoute>
+            <NewOrder />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders/test">
+          <ProtectedRoute>
+            <CreateTestOrder />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders/simple">
+          <ProtectedRoute>
+            <SimpleOrder />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders/direct">
+          <ProtectedRoute>
+            <DirectOrder />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders/:id">
+          <ProtectedRoute>
+            <OrderDetails />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders-simple">
+          <ProtectedRoute>
+            <OrdersSimple />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/orders">
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/contacts">
+          <ProtectedRoute>
+            <Contacts />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/enquiries">
+          <ProtectedRoute>
+            <Enquiries />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/tasks">
+          <ProtectedRoute>
+            <TaskList />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/calendar">
+          <ProtectedRoute>
+            <Calendar />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes">
+          <ProtectedRoute>
+            <Recipes />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/recipes-list">
+          <ProtectedRoute>
+            <RecipesList />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/add-recipe">
+          <ProtectedRoute>
+            <AddRecipe />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/view/:id">
+          <ProtectedRoute>
+            <ViewRecipe />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/edit/:id">
+          <ProtectedRoute>
+            <EditRecipe />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/ingredients-list">
+          <ProtectedRoute>
+            <IngredientsList />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/supplies-list">
+          <ProtectedRoute>
+            <SuppliesList />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/master-ingredients">
+          <ProtectedRoute>
+            <MasterIngredients />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/recipes/bundles">
+          <ProtectedRoute>
+            <Bundles />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/products">
+          <ProtectedRoute>
+            <Products />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/reports">
+          <ProtectedRoute>
+            <Reports />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/business-expenses">
+          <ProtectedRoute>
+            <BusinessExpenses />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/expenses">
+          <ProtectedRoute>
+            <Expenses />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/income">
+          <ProtectedRoute>
+            <Income />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/mileage">
+          <ProtectedRoute>
+            <Mileage />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/printables">
+          <ProtectedRoute>
+            <Printables />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/tools">
+          <ProtectedRoute>
+            <Tools />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/settings">
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/settings/email-templates">
+          <ProtectedRoute>
+            <EmailTemplates />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/tax-rates">
+          <ProtectedRoute>
+            <TaxRates />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/account">
+          <ProtectedRoute>
+            <Account />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/manage-subscription">
+          <ProtectedRoute>
+            <ManageSubscription />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/cancel-subscription">
+          <ProtectedRoute>
+            <CancelSubscription />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/data">
+          <ProtectedRoute>
+            <DataImportExport />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/import">
+          <ProtectedRoute>
+            <Import />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/integrations">
+          <ProtectedRoute>
+            <Integrations />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/payment-settings">
+          <ProtectedRoute>
+            <PaymentSettings />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/payment-settings/stripe">
+          <ProtectedRoute>
+            <StripePaymentProvider />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/payment-settings/square">
+          <ProtectedRoute>
+            <SquarePaymentProvider />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/payment-settings/tipping">
+          <ProtectedRoute>
+            <TippingSettings />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/manage-features">
+          <ProtectedRoute>
+            <ManageFeatures />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/invoice-preview">
+          <ProtectedRoute>
+            <InvoicePreview />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/payment-success">
+          <ProtectedRoute>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        </Route>
+        <Route>
+          <ProtectedRoute>
+            <NotFound />
+          </ProtectedRoute>
+        </Route>
       </Switch>
     </AppLayout>
   );

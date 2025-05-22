@@ -1,86 +1,97 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth as useAuthHook } from '@/hooks/useAuth';
-import { useLocation } from 'wouter';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { queryClient } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
-interface User {
-  id: number;
-  email: string;
-  firstName: string;
-  lastName: string;
-  businessName?: string;
-  avatar?: string;
+// Define User type
+export interface User {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  businessName?: string | null;
+  profileImageUrl?: string | null;
 }
 
+// Define AuthContext type
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create context with default values
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  logout: async () => {},
+});
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { user, isLoading, isAuthenticated, refetch } = useAuthHook();
-  const [, navigate] = useLocation();
+// Create provider component
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Fetch user data
+  const { data: user, isLoading: isUserLoading, error } = useQuery({
+    queryKey: ['/api/auth/user'],
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Update loading state based on query
+  useEffect(() => {
+    setIsLoading(isUserLoading);
+  }, [isUserLoading]);
+
+  // Handle error logging
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching user:', error);
+    }
+  }, [error]);
+
+  // Logout function
   const logout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
+      await fetch('/api/auth/logout', { 
         method: 'POST',
         credentials: 'include',
       });
       
-      if (response.ok) {
-        toast({
-          title: 'Logged out',
-          description: 'You have been successfully logged out.',
-        });
-        navigate('/login?logged_out=true');
-        await refetch();
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to log out. Please try again.',
-          variant: 'destructive',
-        });
-      }
+      // Clear auth data from cache
+      await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      await queryClient.setQueryData(['/api/auth/user'], null);
+      
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      
+      // Redirect to home page
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to log out. Please try again.',
-        variant: 'destructive',
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
-  const refreshUser = async () => {
-    await refetch();
+  // Use type assertion to ensure user matches our expected type
+  const value: AuthContextType = {
+    user: (user as User) || null,
+    isLoading,
+    isAuthenticated: !!user,
+    logout,
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated,
-        logout,
-        refreshUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+// Create hook for using auth context
+export const useAuth = () => useContext(AuthContext);
