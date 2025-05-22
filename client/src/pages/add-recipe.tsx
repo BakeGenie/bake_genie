@@ -128,7 +128,7 @@ const AddRecipePage = () => {
       description: "",
       servings: 1,
       category: "Other",
-      ingredients: [{ ingredientId: 0, quantity: 1, notes: "" }],
+      ingredients: [{ ingredientId: 0, quantity: 1, unit: "", cost: "0" }],
       instructions: "",
       totalCost: 0,
       prepTime: 0,
@@ -177,8 +177,8 @@ const AddRecipePage = () => {
       ingredients: formValues.ingredients.map(ingredient => ({
         ingredientId: Number(ingredient.ingredientId),
         quantity: String(ingredient.quantity), // Database expects TEXT
-        unit: "", // Required by database schema
-        cost: "0" // Required by database schema
+        unit: ingredient.unit || "", // Required by database schema
+        cost: ingredient.cost || "0" // Required by database schema
       }))
     };
     
@@ -473,7 +473,7 @@ const AddRecipePage = () => {
                     variant="outline"
                     size="sm"
                     className="mt-2"
-                    onClick={() => append({ ingredientId: 0, quantity: 1, notes: "" })}
+                    onClick={() => append({ ingredientId: 0, quantity: 1, unit: "", cost: "0" })}
                   >
                     <PlusIcon className="h-4 w-4 mr-2" /> Add Ingredient
                   </Button>

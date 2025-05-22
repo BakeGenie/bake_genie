@@ -236,8 +236,9 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
   id: serial("id").primaryKey(),
   recipeId: integer("recipe_id").notNull(),
   ingredientId: integer("ingredient_id").notNull(),
-  quantity: decimal("quantity", { precision: 10, scale: 3 }).notNull(),
-  notes: text("notes"),
+  quantity: text("quantity").notNull(),
+  unit: text("unit").notNull(), 
+  cost: text("cost").notNull(),
 });
 
 // Expenses table
