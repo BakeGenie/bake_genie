@@ -63,10 +63,17 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const userId = req.session.userId || 1; // Default to 1 for development
-    const validatedData = insertSupplySchema.parse({
+    
+    // Convert number strings to actual numbers
+    const supplyData = {
       ...req.body,
       userId,
-    });
+      price: req.body.price ? parseFloat(req.body.price) : null,
+      quantity: req.body.quantity ? parseInt(req.body.quantity) : 0,
+      reorder_level: req.body.reorder_level ? parseInt(req.body.reorder_level) : 5
+    };
+    
+    const validatedData = insertSupplySchema.parse(supplyData);
     
     // Insert the new supply
     const [createdSupply] = await db
