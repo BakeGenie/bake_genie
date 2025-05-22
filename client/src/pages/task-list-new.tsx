@@ -62,6 +62,7 @@ const TaskList = () => {
   const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = React.useState(false);
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [taskFilter, setTaskFilter] = React.useState<string>("Open Tasks");
   const { tasks, isLoading } = useTasks();
   
   // Task toggle function
@@ -261,24 +262,24 @@ const TaskList = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-1 text-sm font-normal h-9">
-                  <span>Open Tasks</span>
+                  <span>{taskFilter}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[180px]">
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setTaskFilter("Open Tasks")}>
                   Open Tasks
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setTaskFilter("High Priority")}>
                   High Priority
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setTaskFilter("Medium Priority")}>
                   Medium Priority
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setTaskFilter("Normal Priority")}>
                   Normal Priority
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer" onClick={() => setTaskFilter("Completed Tasks")}>
                   Completed Tasks
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -297,7 +298,24 @@ const TaskList = () => {
               </div>
             ) : tasks.length > 0 ? (
               <div>
-                {tasks.map((task) => (
+                {tasks
+                  .filter(task => {
+                    switch (taskFilter) {
+                      case 'Open Tasks':
+                        return !task.completed;
+                      case 'High Priority':
+                        return task.priority?.toLowerCase() === 'high';
+                      case 'Medium Priority':
+                        return task.priority?.toLowerCase() === 'medium';
+                      case 'Normal Priority':
+                        return task.priority?.toLowerCase() === 'normal';
+                      case 'Completed Tasks':
+                        return task.completed;
+                      default:
+                        return true;
+                    }
+                  })
+                  .map((task) => (
                   <div key={task.id} className="grid grid-cols-2 py-3 px-4 border-b hover:bg-gray-50 last:border-b-0">
                     <div className="flex items-center gap-3">
                       <Checkbox
