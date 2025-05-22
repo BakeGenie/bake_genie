@@ -243,10 +243,13 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
                   {Array.from({ length: Math.min(ordersOnDay.length, 5) }).map((_, index) => (
                     <div 
                       key={index} 
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        ordersOnDay[index]?.status === "Quote" ? "bg-red-500" :
-                        ordersOnDay[index]?.status === "In Progress" ? "bg-orange-400" :
-                        ordersOnDay[index]?.status === "Completed" ? "bg-green-500" :
+                      className={`h-2 w-2 rounded-full ${
+                        ordersOnDay[index]?.status === "Quote" ? "bg-blue-500" :
+                        ordersOnDay[index]?.status === "In Progress" ? "bg-orange-500" :
+                        ordersOnDay[index]?.status === "Confirmed" ? "bg-purple-500" :
+                        ordersOnDay[index]?.status === "Paid" ? "bg-green-500" :
+                        ordersOnDay[index]?.status === "Cancelled" ? "bg-gray-500" :
+                        ordersOnDay[index]?.status === "Completed" ? "bg-green-600" :
                         "bg-gray-400"
                       }`}
                     ></div>
