@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db, pool } from '../db';
+import { pool } from '../db';
 import { users, type User } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -109,7 +109,7 @@ router.post('/register', async (req: Request, res: Response) => {
     const { email, password, firstName, lastName } = validation.data;
 
     // Check if email already exists using direct connection
-    const checkResult = await db.pool.query(
+    const checkResult = await pool.query(
       `SELECT * FROM users WHERE email = $1`, 
       [email]
     );
@@ -125,7 +125,7 @@ router.post('/register', async (req: Request, res: Response) => {
     const username = email.split('@')[0];
 
     // Create new user using raw SQL - directly using the column names that exist in the database
-    const insertResult = await db.pool.query(
+    const insertResult = await pool.query(
       `INSERT INTO users (username, email, password, first_name, last_name, created_at) 
        VALUES ($1, $2, $3, $4, $5, $6) 
        RETURNING id, username, email, first_name, last_name, created_at`,
