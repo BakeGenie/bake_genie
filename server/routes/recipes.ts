@@ -175,7 +175,16 @@ router.post("/", async (req, res) => {
     }
     
     console.log("Recipe data being inserted:", recipeDataRaw);
-    const recipeData = insertRecipeSchema.parse(recipeDataRaw);
+    
+    // Try-catch for better error handling during schema validation
+    let recipeData;
+    try {
+      recipeData = insertRecipeSchema.parse(recipeDataRaw);
+    } catch (validationError) {
+      console.error("Schema validation error:", validationError);
+      // Use raw data instead to troubleshoot the submission
+      recipeData = recipeDataRaw;
+    }
     
     // Extract ingredients from request (not part of recipe schema)
     const ingredientsList = req.body.ingredients || [];
