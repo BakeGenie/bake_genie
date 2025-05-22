@@ -120,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       featureId: "reports",
     },
     {
-      path: "/expenses",
+      path: "/business-expenses",
       label: "Business & Expenses",
       icon: <DollarSignIcon className="w-5 h-5" />,
       sublinks: true,

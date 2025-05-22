@@ -30,7 +30,10 @@ import MasterIngredients from "./pages/master-ingredients";
 import Bundles from "./pages/bundles";
 import Products from "./pages/products";
 import Reports from "./pages/reports";
+import BusinessExpenses from "./pages/business-expenses";
 import Expenses from "./pages/expenses";
+import Income from "./pages/income";
+import Mileage from "./pages/mileage";
 import Printables from "./pages/printables";
 import Tools from "./pages/tools";
 import Account from "./pages/account";
@@ -75,8 +78,10 @@ function Router() {
         <Route path="/recipes/bundles" component={Bundles} />
         <Route path="/products" component={Products} />
         <Route path="/reports" component={Reports} />
-        <Route path="/business-expenses" component={() => import("./pages/business-expenses").then(module => module.default)} />
+        <Route path="/business-expenses" component={BusinessExpenses} />
         <Route path="/expenses" component={Expenses} />
+        <Route path="/income" component={Income} />
+        <Route path="/mileage" component={Mileage} />
         <Route path="/printables" component={Printables} />
         <Route path="/tools" component={Tools} />
         <Route path="/settings" component={Settings} />
