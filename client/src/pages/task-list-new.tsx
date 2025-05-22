@@ -320,11 +320,30 @@ const TaskList = () => {
 
       {/* New Task Dialog */}
       <Dialog open={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
-            <DialogDescription>Add a new task to your list</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[425px]">
+          <button 
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100" 
+            onClick={() => setIsNewTaskDialogOpen(false)}
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+            </svg>
+          </button>
+          
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="bg-blue-500 rounded-full p-3 mb-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                <path d="M11 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 2L22 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 9L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold mb-1">Edit Task</h2>
+            <p className="text-gray-500 text-sm">
+              Add tasks to help keep organised<br/>and on top of all your orders
+            </p>
+          </div>
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleNewTaskSubmit)} className="space-y-4">
               <FormField
@@ -332,100 +351,166 @@ const TaskList = () => {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Task title" {...field} />
+                      <Textarea 
+                        placeholder="Enter Task Description" 
+                        className="resize-none min-h-[100px]" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Priority</h3>
+                <div className="flex space-x-2">
+                  <Button 
+                    type="button"
+                    variant={form.getValues("priority") === "None" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => form.setValue("priority", "None")}
+                  >
+                    None
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={form.getValues("priority") === "Normal" ? "default" : "outline"}
+                    size="sm"
+                    className={`flex-1 ${form.getValues("priority") === "Normal" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+                    onClick={() => form.setValue("priority", "Normal")}
+                  >
+                    Normal
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={form.getValues("priority") === "Medium" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => form.setValue("priority", "Medium")}
+                  >
+                    Medium
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={form.getValues("priority") === "High" ? "default" : "outline"}
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => form.setValue("priority", "High")}
+                  >
+                    High
+                  </Button>
+                </div>
+              </div>
               
               <FormField
                 control={form.control}
-                name="description"
+                name="dueDate"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
+                  <FormItem className="flex items-start space-x-2">
                     <FormControl>
-                      <Textarea placeholder="Task description" {...field} />
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            field.onChange(new Date());
+                          } else {
+                            field.onChange(undefined);
+                          }
+                        }}
+                        id="add-due-date-checkbox"
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <label 
+                      htmlFor="add-due-date-checkbox" 
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      Add a due date
+                    </label>
                   </FormItem>
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Due Date</FormLabel>
+              {form.watch("dueDate") && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium">Date</h3>
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        value={form.getValues("dueDate") ? formatDate(form.getValues("dueDate") as Date) : ""}
+                        readOnly
+                        className="pr-10"
+                      />
                       <Popover>
                         <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                formatDate(field.value)
-                              ) : (
-                                <span>Select date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0 h-full"
+                          >
+                            <CalendarIcon className="h-4 w-4" />
+                          </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0" align="end">
                           <Calendar
                             mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date < new Date(new Date().setHours(0, 0, 0, 0))
-                            }
+                            selected={form.getValues("dueDate") as Date}
+                            onSelect={(date) => form.setValue("dueDate", date)}
                             initialFocus
                           />
                         </PopoverContent>
                       </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Priority</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                        </FormControl>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium">Time</h3>
+                    <div className="grid grid-cols-3 gap-1">
+                      <Select defaultValue="1">
+                        <SelectTrigger>
+                          <SelectValue placeholder="1" />
+                        </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="Medium">Medium</SelectItem>
-                          <SelectItem value="High">High</SelectItem>
+                          {[...Array(12)].map((_, i) => (
+                            <SelectItem key={i} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      
+                      <Select defaultValue="00">
+                        <SelectTrigger>
+                          <SelectValue placeholder="00" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["00", "15", "30", "45"].map((min) => (
+                            <SelectItem key={min} value={min}>
+                              {min}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select defaultValue="AM">
+                        <SelectTrigger>
+                          <SelectValue placeholder="AM" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <DialogFooter>
+              <div className="flex justify-between pt-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -433,10 +518,14 @@ const TaskList = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
                   {isSubmitting ? "Creating..." : "Create Task"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </Form>
         </DialogContent>
@@ -444,11 +533,30 @@ const TaskList = () => {
 
       {/* Edit Task Dialog */}
       <Dialog open={isEditTaskDialogOpen} onOpenChange={setIsEditTaskDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-            <DialogDescription>Update task details</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[425px]">
+          <button 
+            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100" 
+            onClick={() => setIsEditTaskDialogOpen(false)}
+          >
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+            </svg>
+          </button>
+          
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="bg-blue-500 rounded-full p-3 mb-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                <path d="M11 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 2L22 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 9L20 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold mb-1">Edit Task</h2>
+            <p className="text-gray-500 text-sm">
+              Add tasks to help keep organised<br/>and on top of all your orders
+            </p>
+          </div>
+          
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(handleEditTaskSubmit)} className="space-y-4">
               <FormField
@@ -456,115 +564,158 @@ const TaskList = () => {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Task title" {...field} />
+                      <Textarea 
+                        placeholder="Enter Task Description" 
+                        className="resize-none min-h-[100px]" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <FormField
-                control={editForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Task description" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Due Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                formatDate(field.value)
-                              ) : (
-                                <span>Select date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={editForm.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Priority</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="Medium">Medium</SelectItem>
-                          <SelectItem value="High">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Priority</h3>
+                <div className="flex space-x-2">
+                  <Button 
+                    type="button"
+                    variant={editForm.getValues("priority") === "None" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => editForm.setValue("priority", "None")}
+                  >
+                    None
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={editForm.getValues("priority") === "Normal" ? "default" : "outline"}
+                    size="sm"
+                    className={`flex-1 ${editForm.getValues("priority") === "Normal" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+                    onClick={() => editForm.setValue("priority", "Normal")}
+                  >
+                    Normal
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={editForm.getValues("priority") === "Medium" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => editForm.setValue("priority", "Medium")}
+                  >
+                    Medium
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant={editForm.getValues("priority") === "High" ? "default" : "outline"}
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => editForm.setValue("priority", "High")}
+                  >
+                    High
+                  </Button>
+                </div>
               </div>
               
               <FormField
                 control={editForm.control}
                 name="completed"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="flex items-start space-x-2">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        id="due-date-checkbox"
                       />
                     </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Mark as completed</FormLabel>
-                    </div>
+                    <label 
+                      htmlFor="due-date-checkbox" 
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      Add a due date
+                    </label>
                   </FormItem>
                 )}
               />
               
-              <DialogFooter>
+              {editForm.watch("completed") && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium">Date</h3>
+                    <FormField
+                      control={editForm.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="text"
+                                value={field.value ? formatDate(field.value) : ""}
+                                readOnly
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-full"
+                              >
+                                <CalendarIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium">Time</h3>
+                    <div className="grid grid-cols-3 gap-1">
+                      <Select defaultValue="1">
+                        <SelectTrigger>
+                          <SelectValue placeholder="1" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...Array(12)].map((_, i) => (
+                            <SelectItem key={i} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select defaultValue="00">
+                        <SelectTrigger>
+                          <SelectValue placeholder="00" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["00", "15", "30", "45"].map((min) => (
+                            <SelectItem key={min} value={min}>
+                              {min}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select defaultValue="AM">
+                        <SelectTrigger>
+                          <SelectValue placeholder="AM" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-between pt-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -572,10 +723,14 @@ const TaskList = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
                   {isSubmitting ? "Updating..." : "Update Task"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </Form>
         </DialogContent>
