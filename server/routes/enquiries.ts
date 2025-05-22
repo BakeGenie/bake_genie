@@ -94,12 +94,12 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Message is required" });
     }
     
-    // Try a simpler approach with minimal fields
+    // Add required fields based on database constraints
     const simplifiedQuery = `
       INSERT INTO enquiries
-        (user_id, date, details, status, created_at, updated_at)
+        (user_id, date, details, status, created_at, updated_at, event_type)
       VALUES
-        ($1, $2, $3, $4, $5, $6)
+        ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
     
@@ -109,7 +109,8 @@ router.post("/", async (req: Request, res: Response) => {
       message,
       'New',
       now,
-      now
+      now,
+      req.body.eventType || 'Other' // Make sure event_type is included
     ];
     
     console.log("Executing simplified SQL query:", simplifiedQuery);
