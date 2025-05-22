@@ -82,19 +82,42 @@ const Enquiries = () => {
     }
   };
 
+  // Extract name and contact info from details field
+  const parseEnquiryDetails = (details: string) => {
+    const nameMatch = details.match(/Name: (.+?)(?:\n|$)/);
+    const emailMatch = details.match(/Email: (.+?)(?:\n|$)/);
+    const phoneMatch = details.match(/Phone: (.+?)(?:\n|$)/);
+    const messageMatch = details.match(/Message: ([\s\S]+?)(?:\n\n|$)/);
+    
+    return {
+      name: nameMatch ? nameMatch[1] : "Unknown",
+      email: emailMatch && emailMatch[1] !== "Not provided" ? emailMatch[1] : null,
+      phone: phoneMatch && phoneMatch[1] !== "Not provided" ? phoneMatch[1] : null,
+      message: messageMatch ? messageMatch[1] : details
+    };
+  };
+
   // Table columns definition
   const columns: ColumnDef<Enquiry>[] = [
     {
-      accessorKey: "name",
+      id: "name",
       header: "Name",
       enableSorting: true,
+      cell: ({ row }) => {
+        const details = row.original.details as string;
+        if (!details) return "N/A";
+        const { name } = parseEnquiryDetails(details);
+        return name;
+      },
     },
     {
-      accessorKey: "email",
+      id: "email",
       header: "Email",
       enableSorting: true,
       cell: ({ row }) => {
-        const email = row.getValue("email") as string;
+        const details = row.original.details as string;
+        if (!details) return "N/A";
+        const { email } = parseEnquiryDetails(details);
         return email ? (
           <a href={`mailto:${email}`} className="text-primary-600 hover:text-primary-800">
             {email}
@@ -152,6 +175,29 @@ const Enquiries = () => {
     },
   ];
 
+  // Custom function to search enquiry details
+  const searchEnquiry = (enquiry: Enquiry, searchTerm: string): boolean => {
+    if (!searchTerm) return true;
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    
+    // Search in details
+    if (enquiry.details && enquiry.details.toLowerCase().includes(lowerSearchTerm)) {
+      return true;
+    }
+    
+    // Search in eventType
+    if (enquiry.eventType && enquiry.eventType.toLowerCase().includes(lowerSearchTerm)) {
+      return true;
+    }
+    
+    // Search in status
+    if (enquiry.status && enquiry.status.toLowerCase().includes(lowerSearchTerm)) {
+      return true;
+    }
+    
+    return false;
+  };
+
   // Handle enquiry click to view details
   const handleEnquiryClick = (enquiry: Enquiry) => {
     setSelectedEnquiry(enquiry);
@@ -178,36 +224,36 @@ const Enquiries = () => {
         <div className="text-sm font-medium">Filter by status:</div>
         <Button 
           variant={statusFilter === null ? "default" : "outline"} 
-          className="text-xs h-8 bg-yellow-500 hover:bg-yellow-600"
           onClick={() => setStatusFilter(null)}
+          className="text-xs h-8 bg-yellow-500 hover:bg-yellow-600"
         >
           All
         </Button>
         <Button 
           variant={statusFilter === "New" ? "default" : "outline"} 
-          className="text-xs h-8 bg-sky-500 hover:bg-sky-600"
           onClick={() => setStatusFilter("New")}
+          className="text-xs h-8 bg-sky-500 hover:bg-sky-600"
         >
           New
         </Button>
         <Button 
           variant={statusFilter === "In Progress" ? "default" : "outline"} 
-          className="text-xs h-8 bg-amber-500 hover:bg-amber-600"
           onClick={() => setStatusFilter("In Progress")}
+          className="text-xs h-8 bg-amber-500 hover:bg-amber-600"
         >
           In Progress
         </Button>
         <Button 
           variant={statusFilter === "Responded" ? "default" : "outline"} 
-          className="text-xs h-8 bg-green-500 hover:bg-green-600"
           onClick={() => setStatusFilter("Responded")}
+          className="text-xs h-8 bg-green-500 hover:bg-green-600"
         >
           Responded
         </Button>
         <Button 
           variant={statusFilter === "Closed" ? "default" : "outline"} 
-          className="text-xs h-8"
           onClick={() => setStatusFilter("Closed")}
+          className="text-xs h-8"
         >
           Closed
         </Button>
@@ -218,7 +264,8 @@ const Enquiries = () => {
           columns={columns}
           data={enquiries}
           searchPlaceholder="Search enquiries..."
-          searchKey="name"
+          searchKey="details"
+          customFilter={searchEnquiry}
           onRowClick={handleEnquiryClick}
         />
       </div>
@@ -228,7 +275,11 @@ const Enquiries = () => {
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Enquiry from {selectedEnquiry.name}</DialogTitle>
+              <DialogTitle>
+                Enquiry {selectedEnquiry.details ? 
+                  `from ${parseEnquiryDetails(selectedEnquiry.details).name}` : 
+                  `#${selectedEnquiry.id}`}
+              </DialogTitle>
             </DialogHeader>
             
             <Card>
@@ -242,26 +293,47 @@ const Enquiries = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Name</h4>
-                    <p>{selectedEnquiry.name}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Email</h4>
-                    <a href={`mailto:${selectedEnquiry.email}`} className="text-primary-600 hover:text-primary-800">
-                      {selectedEnquiry.email}
-                    </a>
-                  </div>
-                </div>
-                
-                {selectedEnquiry.phone && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Phone</h4>
-                    <a href={`tel:${selectedEnquiry.phone}`} className="text-primary-600 hover:text-primary-800">
-                      {selectedEnquiry.phone}
-                    </a>
-                  </div>
+                {selectedEnquiry.details && (
+                  <>
+                    {(() => {
+                      const { name, email, phone, message } = parseEnquiryDetails(selectedEnquiry.details);
+                      
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-500">Name</h4>
+                              <p>{name}</p>
+                            </div>
+                            {email && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-500">Email</h4>
+                                <a href={`mailto:${email}`} className="text-primary-600 hover:text-primary-800">
+                                  {email}
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {phone && (
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-500">Phone</h4>
+                              <a href={`tel:${phone}`} className="text-primary-600 hover:text-primary-800">
+                                {phone}
+                              </a>
+                            </div>
+                          )}
+                          
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Message</h4>
+                            <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                              <p className="whitespace-pre-line">{message}</p>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </>
                 )}
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -277,13 +349,6 @@ const Enquiries = () => {
                       <p>{formatDate(new Date(selectedEnquiry.eventDate))}</p>
                     </div>
                   )}
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Message</h4>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    <p className="whitespace-pre-line">{selectedEnquiry.message}</p>
-                  </div>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
@@ -306,24 +371,34 @@ const Enquiries = () => {
                   </Button>
                 </div>
                 <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      window.location.href = `mailto:${selectedEnquiry.email}?subject=Re: Your Enquiry`;
-                    }}
-                  >
-                    <MailIcon className="h-4 w-4 mr-1" /> Reply via Email
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      window.location.href = `mailto:${selectedEnquiry.email}?subject=Re: Your Enquiry`;
-                      updateEnquiryStatus(selectedEnquiry.id, "Responded");
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    <CheckCircleIcon className="h-4 w-4 mr-1" /> Mark as Responded
-                  </Button>
+                  {parseEnquiryDetails(selectedEnquiry.details || "").email && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const email = parseEnquiryDetails(selectedEnquiry.details || "").email;
+                          if (email) {
+                            window.location.href = `mailto:${email}?subject=Re: Your Enquiry`;
+                          }
+                        }}
+                      >
+                        <MailIcon className="h-4 w-4 mr-1" /> Reply via Email
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const email = parseEnquiryDetails(selectedEnquiry.details || "").email;
+                          if (email) {
+                            window.location.href = `mailto:${email}?subject=Re: Your Enquiry`;
+                          }
+                          updateEnquiryStatus(selectedEnquiry.id, "Responded");
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        <CheckCircleIcon className="h-4 w-4 mr-1" /> Mark as Responded
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardFooter>
             </Card>
