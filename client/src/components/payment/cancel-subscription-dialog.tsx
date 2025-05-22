@@ -41,10 +41,19 @@ export const CancelSubscriptionDialog: React.FC<CancelSubscriptionDialogProps> =
       const response = await apiRequest("POST", "/api/subscription/cancel", {
         cancelImmediately: cancellationType === "immediate"
       });
+      
+      // Handle the response properly
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        // If response is not JSON, use response text instead
+        const text = await response.text();
+        responseData = { success: response.ok, message: text };
+      }
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to cancel subscription");
+        throw new Error(responseData.message || "Failed to cancel subscription");
       }
 
       toast({
