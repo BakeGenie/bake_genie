@@ -1,14 +1,20 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Expense, Income } from "@shared/schema";
-import PageHeader from "@/components/ui/page-header";
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -18,8 +24,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -27,748 +31,892 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/ui/data-table";
-import { ColumnDef } from "@tanstack/react-table";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { insertExpenseSchema, insertIncomeSchema } from "@shared/schema";
-import { cn, formatDate } from "@/lib/utils";
-import { FormatCurrency } from "@/components/ui/format-currency";
 import {
-  PlusIcon,
-  CalendarIcon,
-  DollarSignIcon,
-  ReceiptIcon,
-  PieChartIcon,
-  FileTextIcon,
-  TrendingUpIcon,
-  ChevronDownIcon,
-  UploadIcon,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Plus,
+  Search,
+  Upload,
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+// No layout needed - AppLayout is handled by the Router component
+import { Link } from "wouter";
 
-// Extended schema with validation rules for expense
-const expenseFormSchema = insertExpenseSchema.extend({
-  category: z.string().min(1, "Category is required"),
-  amount: z.coerce.number().positive("Amount must be a positive number"),
-  date: z.date(),
-  description: z.string().optional(),
-});
+// Define the expense and income types
+type Expense = {
+  id: number;
+  userId: number;
+  category: string;
+  amount: string;
+  date: string;
+  description: string | null;
+  taxDeductible: boolean;
+  receiptUrl: string | null;
+  createdAt: string;
+};
 
-// Extended schema with validation rules for income
-const incomeFormSchema = insertIncomeSchema.extend({
-  category: z.string().min(1, "Category is required"),
-  amount: z.coerce.number().positive("Amount must be a positive number"),
-  date: z.date(),
-  description: z.string().optional(),
-});
+type Income = {
+  id: number;
+  userId: number;
+  category: string;
+  amount: string;
+  date: string;
+  description: string | null;
+  createdAt: string;
+};
 
-type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
-type IncomeFormValues = z.infer<typeof incomeFormSchema>;
-
-// Sample expense categories
+// Define expense categories
 const expenseCategories = [
   "Ingredients",
+  "Supplies",
   "Packaging",
+  "Equipment",
   "Rent",
   "Utilities",
-  "Equipment",
   "Marketing",
-  "Transportation",
+  "Shipping",
   "Insurance",
-  "Taxes",
+  "Office",
+  "Travel",
+  "Professional Services",
+  "Salaries",
   "Other",
 ];
 
-// Sample income categories
+// Define income categories
 const incomeCategories = [
-  "Cake Sales",
-  "Cupcake Sales",
-  "Cookie Sales",
-  "Workshop Fees",
-  "Delivery Fees",
-  "Consultation",
+  "Sales",
+  "Custom Orders",
+  "Classes",
+  "Consulting",
+  "Affiliate",
+  "Events",
   "Other",
 ];
 
-const Expenses = () => {
-  const { toast } = useToast();
-  const [isNewExpenseDialogOpen, setIsNewExpenseDialogOpen] = React.useState(false);
-  const [isNewIncomeDialogOpen, setIsNewIncomeDialogOpen] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState("expenses");
-  const [month, setMonth] = React.useState(new Date().getMonth() + 1);
-  const [year, setYear] = React.useState(new Date().getFullYear());
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+// Define expense schema
+const expenseSchema = z.object({
+  category: z.string().min(1, "Category is required"),
+  amount: z.string().min(1, "Amount is required"),
+  date: z.date({
+    required_error: "Date is required",
+  }),
+  description: z.string().optional().nullable(),
+  taxDeductible: z.boolean().optional().default(false),
+});
 
-  // Fetch expenses
-  const { data: expenses = [], isLoading: isLoadingExpenses } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses", { month, year }],
+// Define income schema
+const incomeSchema = z.object({
+  category: z.string().min(1, "Category is required"),
+  amount: z.string().min(1, "Amount is required"),
+  date: z.date({
+    required_error: "Date is required",
+  }),
+  description: z.string().optional().nullable(),
+});
+
+const ExpensesPage = () => {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("expenses");
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
+  const [openIncomeDialog, setOpenIncomeDialog] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
+  // Current date for default value
+  const currentDate = new Date();
+
+  // Query for expenses with optional filtering
+  const {
+    data: expenses,
+    isLoading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useQuery({
+    queryKey: ["/api/expenses"],
+    queryFn: async () => {
+      let url = "/api/expenses";
+      const params = new URLSearchParams();
+      
+      if (dateRange.from) {
+        params.append("startDate", dateRange.from.toISOString().split("T")[0]);
+      }
+      
+      if (dateRange.to) {
+        params.append("endDate", dateRange.to.toISOString().split("T")[0]);
+      }
+      
+      if (categoryFilter) {
+        params.append("category", categoryFilter);
+      }
+      
+      if (params.toString()) {
+        url += "?" + params.toString();
+      }
+      
+      return apiRequest<Expense[]>({ url });
+    },
   });
 
-  // Fetch income
-  const { data: incomes = [], isLoading: isLoadingIncomes } = useQuery<Income[]>({
-    queryKey: ["/api/income", { month, year }],
+  // Query for income with optional filtering
+  const {
+    data: income,
+    isLoading: incomeLoading,
+    refetch: refetchIncome,
+  } = useQuery({
+    queryKey: ["/api/income"],
+    queryFn: async () => {
+      let url = "/api/income";
+      const params = new URLSearchParams();
+      
+      if (dateRange.from) {
+        params.append("startDate", dateRange.from.toISOString().split("T")[0]);
+      }
+      
+      if (dateRange.to) {
+        params.append("endDate", dateRange.to.toISOString().split("T")[0]);
+      }
+      
+      if (categoryFilter) {
+        params.append("category", categoryFilter);
+      }
+      
+      if (params.toString()) {
+        url += "?" + params.toString();
+      }
+      
+      return apiRequest<Income[]>({ url });
+    },
   });
 
   // Expense form
-  const expenseForm = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseFormSchema),
+  const expenseForm = useForm<z.infer<typeof expenseSchema>>({
+    resolver: zodResolver(expenseSchema),
     defaultValues: {
-      userId: 1, // In a real app, this would be the current user's ID
       category: "",
-      amount: 0,
-      date: new Date(),
+      amount: "",
+      date: currentDate,
       description: "",
       taxDeductible: false,
     },
   });
 
   // Income form
-  const incomeForm = useForm<IncomeFormValues>({
-    resolver: zodResolver(incomeFormSchema),
+  const incomeForm = useForm<z.infer<typeof incomeSchema>>({
+    resolver: zodResolver(incomeSchema),
     defaultValues: {
-      userId: 1, // In a real app, this would be the current user's ID
       category: "",
-      amount: 0,
-      date: new Date(),
+      amount: "",
+      date: currentDate,
       description: "",
     },
   });
 
-  // Handle new expense submission
-  const handleNewExpenseSubmit = async (data: ExpenseFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      await apiRequest("POST", "/api/expenses", data);
-      
-      // Invalidate expenses query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
-      
-      // Reset form and close dialog
+  // Create expense mutation
+  const createExpenseMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof expenseSchema>) => {
+      return apiRequest({
+        method: "POST",
+        url: "/api/expenses",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense added",
+        description: "Your expense has been successfully recorded.",
+      });
+      setOpenExpenseDialog(false);
       expenseForm.reset();
-      setIsNewExpenseDialogOpen(false);
-      
-      toast({
-        title: "Expense Added",
-        description: `Expense of $${data.amount.toFixed(2)} has been recorded.`,
-      });
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "There was an error adding the expense. Please try again.",
+        description: error.message || "Failed to add expense. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
-  // Handle new income submission
-  const handleNewIncomeSubmit = async (data: IncomeFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      await apiRequest("POST", "/api/income", data);
-      
-      // Invalidate income query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/income"] });
-      
-      // Reset form and close dialog
+  // Create income mutation
+  const createIncomeMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof incomeSchema>) => {
+      return apiRequest({
+        method: "POST",
+        url: "/api/income",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Income added",
+        description: "Your income has been successfully recorded.",
+      });
+      setOpenIncomeDialog(false);
       incomeForm.reset();
-      setIsNewIncomeDialogOpen(false);
-      
-      toast({
-        title: "Income Added",
-        description: `Income of $${data.amount.toFixed(2)} has been recorded.`,
-      });
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ["/api/income"] });
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "There was an error adding the income. Please try again.",
+        description: error.message || "Failed to add income. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
-  // Expense columns for data table
-  const expenseColumns: ColumnDef<Expense>[] = [
-    {
-      accessorKey: "date",
-      header: "Date",
-      cell: ({ row }) => {
-        const date = row.getValue("date") as string;
-        return formatDate(new Date(date));
-      },
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest({
+        method: "DELETE",
+        url: "/api/expenses/" + id,
+      });
     },
-    {
-      accessorKey: "category",
-      header: "Category",
+    onSuccess: () => {
+      toast({
+        title: "Expense deleted",
+        description: "The expense has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
     },
-    {
-      accessorKey: "description",
-      header: "Description",
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete expense. Please try again.",
+        variant: "destructive",
+      });
     },
-    {
-      accessorKey: "amount",
-      header: "Amount",
-      cell: ({ row }) => {
-        const amount = row.getValue("amount") as number;
-        return <FormatCurrency amount={amount} />;
-      },
-    },
-    {
-      accessorKey: "taxDeductible",
-      header: "Tax Deductible",
-      cell: ({ row }) => {
-        const taxDeductible = row.getValue("taxDeductible") as boolean;
-        return taxDeductible ? "Yes" : "No";
-      },
-    },
-  ];
+  });
 
-  // Income columns for data table
-  const incomeColumns: ColumnDef<Income>[] = [
-    {
-      accessorKey: "date",
-      header: "Date",
-      cell: ({ row }) => {
-        const date = row.getValue("date") as string;
-        return formatDate(new Date(date));
-      },
+  // Delete income mutation
+  const deleteIncomeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest({
+        method: "DELETE",
+        url: "/api/income/" + id,
+      });
     },
-    {
-      accessorKey: "category",
-      header: "Category",
+    onSuccess: () => {
+      toast({
+        title: "Income deleted",
+        description: "The income entry has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/income"] });
     },
-    {
-      accessorKey: "description",
-      header: "Description",
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete income. Please try again.",
+        variant: "destructive",
+      });
     },
-    {
-      accessorKey: "amount",
-      header: "Amount",
-      cell: ({ row }) => {
-        const amount = row.getValue("amount") as number;
-        return <FormatCurrency amount={amount} />;
-      },
-    },
-  ];
+  });
 
   // Calculate totals
-  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const totalIncome = incomes.reduce((sum, income) => sum + Number(income.amount), 0);
-  const profit = totalIncome - totalExpenses;
+  const calculateTotals = () => {
+    if (activeTab === "expenses" && expenses) {
+      return expenses.reduce((total, expense) => total + parseFloat(expense.amount), 0).toFixed(2);
+    }
+    if (activeTab === "income" && income) {
+      return income.reduce((total, income) => total + parseFloat(income.amount), 0).toFixed(2);
+    }
+    return "0.00";
+  };
 
-  // Generate month options
-  const monthOptions = [
-    { value: 1, label: "January" },
-    { value: 2, label: "February" },
-    { value: 3, label: "March" },
-    { value: 4, label: "April" },
-    { value: 5, label: "May" },
-    { value: 6, label: "June" },
-    { value: 7, label: "July" },
-    { value: 8, label: "August" },
-    { value: 9, label: "September" },
-    { value: 10, label: "October" },
-    { value: 11, label: "November" },
-    { value: 12, label: "December" },
-  ];
+  // Function to handle expense submission
+  const onSubmitExpense = (data: z.infer<typeof expenseSchema>) => {
+    createExpenseMutation.mutate(data);
+  };
 
-  // Generate year options (5 years back, 5 years ahead)
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
+  // Function to handle income submission
+  const onSubmitIncome = (data: z.infer<typeof incomeSchema>) => {
+    createIncomeMutation.mutate(data);
+  };
+
+  // Filter data based on search term
+  const filteredExpenses = expenses?.filter(expense => 
+    expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    expense.category.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const filteredIncome = income?.filter(income => 
+    income.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    income.category.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Clear all filters
+  const clearFilters = () => {
+    setDateRange({ from: undefined, to: undefined });
+    setSearchTerm("");
+    setCategoryFilter(null);
+    refetchExpenses();
+    refetchIncome();
+  };
 
   return (
-    <div className="p-6">
-      <PageHeader
-        title="Business & Expenses"
-        actions={
-          <div className="flex space-x-2">
-            {activeTab === "expenses" ? (
-              <Button onClick={() => setIsNewExpenseDialogOpen(true)}>
-                <PlusIcon className="h-4 w-4 mr-2" /> New Expense
-              </Button>
-            ) : (
-              <Button onClick={() => setIsNewIncomeDialogOpen(true)}>
-                <PlusIcon className="h-4 w-4 mr-2" /> New Income
-              </Button>
-            )}
+    <SidebarLayout>
+      <div className="container mx-auto p-4 mb-20">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Reports & Expenses</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => setOpenExpenseDialog(true)} className="bg-primary">
+              <Plus className="mr-2 h-4 w-4" /> Add Expense
+            </Button>
+            <Button onClick={() => setOpenIncomeDialog(true)} className="bg-green-600 hover:bg-green-700">
+              <Plus className="mr-2 h-4 w-4" /> Add Income
+            </Button>
           </div>
-        }
-      />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <Card className="bg-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <ReceiptIcon className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">
-              <FormatCurrency amount={totalExpenses} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              For {monthOptions.find(m => m.value === month)?.label} {year}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <TrendingUpIcon className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">
-              <FormatCurrency amount={totalIncome} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              For {monthOptions.find(m => m.value === month)?.label} {year}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-            <DollarSignIcon className="h-4 w-4 text-primary-500" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              <FormatCurrency amount={profit} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              For {monthOptions.find(m => m.value === month)?.label} {year}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Period Selector */}
-      <div className="flex items-center space-x-4 mt-6 mb-4">
-        <div className="flex items-center">
-          <span className="text-sm text-gray-500 mr-2">Period:</span>
-          <Select
-            value={month.toString()}
-            onValueChange={(value) => setMonth(parseInt(value))}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Month" />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={year.toString()}
-            onValueChange={(value) => setYear(parseInt(value))}
-            className="ml-2"
-          >
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              {yearOptions.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <Tabs
-        defaultValue="expenses"
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="mt-6"
-      >
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="expenses">
-            <ReceiptIcon className="h-4 w-4 mr-2" /> Expenses
-          </TabsTrigger>
-          <TabsTrigger value="income">
-            <TrendingUpIcon className="h-4 w-4 mr-2" /> Income
-          </TabsTrigger>
-        </TabsList>
-        
-        {/* Expenses Tab */}
-        <TabsContent value="expenses">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <CardTitle>Expenses</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Download Report",
-                      description: "Expense report download will be implemented soon.",
-                    });
+        {/* Filters Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Filters</CardTitle>
+            <CardDescription>Filter your financial records</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Date Range</h3>
+                <div className="flex gap-2">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: dateRange.from,
+                      to: dateRange.to,
+                    }}
+                    onSelect={(range) => {
+                      setDateRange(range || { from: undefined, to: undefined });
+                      refetchExpenses();
+                      refetchIncome();
+                    }}
+                    className="border rounded-md p-2"
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Search</h3>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by description or category"
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Category</h3>
+                <Select
+                  value={categoryFilter || ""}
+                  onValueChange={(value) => {
+                    setCategoryFilter(value === "" ? null : value);
+                    refetchExpenses();
+                    refetchIncome();
                   }}
                 >
-                  <FileTextIcon className="h-4 w-4 mr-2" /> Export
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                columns={expenseColumns}
-                data={expenses}
-                isLoading={isLoadingExpenses}
-                searchPlaceholder="Search expenses..."
-                searchKey="description"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Income Tab */}
-        <TabsContent value="income">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <CardTitle>Income</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Download Report",
-                      description: "Income report download will be implemented soon.",
-                    });
-                  }}
-                >
-                  <FileTextIcon className="h-4 w-4 mr-2" /> Export
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DataTable
-                columns={incomeColumns}
-                data={incomes}
-                isLoading={isLoadingIncomes}
-                searchPlaceholder="Search income..."
-                searchKey="description"
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* New Expense Dialog */}
-      <Dialog open={isNewExpenseDialogOpen} onOpenChange={setIsNewExpenseDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Expense</DialogTitle>
-          </DialogHeader>
-          <Form {...expenseForm}>
-            <form onSubmit={expenseForm.handleSubmit(handleNewExpenseSubmit)} className="space-y-4">
-              <FormField
-                control={expenseForm.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {expenseCategories.map((category) => (
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Categories</SelectItem>
+                    {activeTab === "expenses"
+                      ? expenseCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))
+                      : incomeCategories.map((category) => (
                           <SelectItem key={category} value={category}>
                             {category}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <div>
+              <Badge variant="outline" className="text-lg">
+                Total: ${calculateTotals()}
+              </Badge>
+            </div>
+            <Button variant="outline" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </CardFooter>
+        </Card>
+
+        {/* Tabs for Expenses and Income */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="income">Income</TabsTrigger>
+          </TabsList>
+
+          {/* Expenses Tab */}
+          <TabsContent value="expenses">
+            <Card>
+              <CardHeader>
+                <CardTitle>Expenses</CardTitle>
+                <CardDescription>Manage your business expenses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {expensesLoading ? (
+                  <div className="flex justify-center p-6">Loading expenses...</div>
+                ) : filteredExpenses.length === 0 ? (
+                  <div className="text-center p-6">
+                    <p className="text-muted-foreground">No expenses found</p>
+                    <Button
+                      className="mt-2"
+                      variant="outline"
+                      onClick={() => setOpenExpenseDialog(true)}
+                    >
+                      Add your first expense
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Tax Deductible</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredExpenses.map((expense) => (
+                          <TableRow key={expense.id}>
+                            <TableCell>
+                              {format(new Date(expense.date), "MMM d, yyyy")}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{expense.category}</Badge>
+                            </TableCell>
+                            <TableCell>{expense.description || "-"}</TableCell>
+                            <TableCell>${parseFloat(expense.amount).toFixed(2)}</TableCell>
+                            <TableCell>
+                              {expense.taxDeductible ? (
+                                <Badge className="bg-green-50 text-green-700 border-green-200">
+                                  Yes
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline">No</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (
+                                    window.confirm(
+                                      "Are you sure you want to delete this expense?"
+                                    )
+                                  ) {
+                                    deleteExpenseMutation.mutate(expense.id);
+                                  }
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
-              />
-              
-              <FormField
-                control={expenseForm.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount ($)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Income Tab */}
+          <TabsContent value="income">
+            <Card>
+              <CardHeader>
+                <CardTitle>Income</CardTitle>
+                <CardDescription>Manage your business income</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {incomeLoading ? (
+                  <div className="flex justify-center p-6">Loading income...</div>
+                ) : filteredIncome.length === 0 ? (
+                  <div className="text-center p-6">
+                    <p className="text-muted-foreground">No income entries found</p>
+                    <Button
+                      className="mt-2"
+                      variant="outline"
+                      onClick={() => setOpenIncomeDialog(true)}
+                    >
+                      Add your first income
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredIncome.map((income) => (
+                          <TableRow key={income.id}>
+                            <TableCell>
+                              {format(new Date(income.date), "MMM d, yyyy")}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{income.category}</Badge>
+                            </TableCell>
+                            <TableCell>{income.description || "-"}</TableCell>
+                            <TableCell>${parseFloat(income.amount).toFixed(2)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (
+                                    window.confirm(
+                                      "Are you sure you want to delete this income entry?"
+                                    )
+                                  ) {
+                                    deleteIncomeMutation.mutate(income.id);
+                                  }
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
-              />
-              
-              <FormField
-                control={expenseForm.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Reports Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Financial Reports</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link href="/reports/income-statement">
+              <Card className="hover:bg-accent/50 cursor-pointer transition-colors">
+                <CardHeader>
+                  <CardTitle>Income Statement</CardTitle>
+                  <CardDescription>View your profit and loss statement</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    A summary of your revenue, expenses, and profit over a specified period.
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link href="/reports/detailed-expense">
+              <Card className="hover:bg-accent/50 cursor-pointer transition-colors">
+                <CardHeader>
+                  <CardTitle>Detailed Expense Report</CardTitle>
+                  <CardDescription>Breakdown of all business expenses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    A detailed analysis of your expenses by category and date.
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link href="/reports/business-performance">
+              <Card className="hover:bg-accent/50 cursor-pointer transition-colors">
+                <CardHeader>
+                  <CardTitle>Business Performance</CardTitle>
+                  <CardDescription>Track your overall business growth</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Visualize your business performance with charts and trends.
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
+
+        {/* Expense Dialog */}
+        <Dialog open={openExpenseDialog} onOpenChange={setOpenExpenseDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Expense</DialogTitle>
+              <DialogDescription>
+                Record a new business expense. Fill out the details below.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...expenseForm}>
+              <form onSubmit={expenseForm.handleSubmit(onSubmitExpense)} className="space-y-4">
+                <FormField
+                  control={expenseForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              formatDate(field.value)
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
+                        <SelectContent>
+                          {expenseCategories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={expenseForm.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="0.00"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
                         />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={expenseForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter expense details..."
-                        {...field}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={expenseForm.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date</FormLabel>
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        className="rounded-md border"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={expenseForm.control}
-                name="taxDeductible"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={field.onChange}
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Tax Deductible</FormLabel>
-                      <p className="text-sm text-gray-500">
-                        Mark this expense as tax deductible for your business
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="pt-4 border-t border-gray-200">
-                <div className="flex items-center">
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={expenseForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Enter a description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={expenseForm.control}
+                  name="taxDeductible"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Tax Deductible</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Mark this expense as tax deductible
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
                   <Button
                     type="button"
                     variant="outline"
-                    className="mr-2"
-                    onClick={() => {
-                      toast({
-                        title: "Receipt Upload",
-                        description: "Receipt upload functionality will be implemented soon.",
-                      });
-                    }}
+                    onClick={() => setOpenExpenseDialog(false)}
                   >
-                    <UploadIcon className="h-4 w-4 mr-2" /> Upload Receipt
+                    Cancel
                   </Button>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsNewExpenseDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Adding..." : "Add Expense"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                  <Button
+                    type="submit"
+                    disabled={createExpenseMutation.isPending}
+                  >
+                    {createExpenseMutation.isPending ? "Saving..." : "Save Expense"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
-      {/* New Income Dialog */}
-      <Dialog open={isNewIncomeDialogOpen} onOpenChange={setIsNewIncomeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Income</DialogTitle>
-          </DialogHeader>
-          <Form {...incomeForm}>
-            <form onSubmit={incomeForm.handleSubmit(handleNewIncomeSubmit)} className="space-y-4">
-              <FormField
-                control={incomeForm.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {incomeCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={incomeForm.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount ($)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={incomeForm.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+        {/* Income Dialog */}
+        <Dialog open={openIncomeDialog} onOpenChange={setOpenIncomeDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Income</DialogTitle>
+              <DialogDescription>
+                Record a new income entry. Fill out the details below.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...incomeForm}>
+              <form onSubmit={incomeForm.handleSubmit(onSubmitIncome)} className="space-y-4">
+                <FormField
+                  control={incomeForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              formatDate(field.value)
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
+                        <SelectContent>
+                          {incomeCategories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={incomeForm.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="0.00"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
                         />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={incomeForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter income details..."
-                        {...field}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={incomeForm.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date</FormLabel>
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        className="rounded-md border"
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsNewIncomeDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Adding..." : "Add Income"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={incomeForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Enter a description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOpenIncomeDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createIncomeMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {createIncomeMutation.isPending ? "Saving..." : "Save Income"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </SidebarLayout>
   );
 };
 
-export default Expenses;
+export default ExpensesPage;
