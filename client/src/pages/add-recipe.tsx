@@ -159,7 +159,7 @@ const AddRecipePage = () => {
   };
   
   // Handle form submission
-  const onSubmit = async (data: RecipeFormValues) => {
+  const onSubmit = async (data: any) => {
     try {
       // Calculate and set total cost
       const calculatedCost = calculateTotalCost();
@@ -207,7 +207,7 @@ const AddRecipePage = () => {
       />
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+        <form onSubmit={form.handleSubmit((data) => onSubmit(data))} className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Main recipe details */}
             <div className="md:col-span-2 space-y-6">
