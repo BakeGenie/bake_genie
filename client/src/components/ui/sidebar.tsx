@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
 
   const allLinks: SidebarLink[] = [
     {
-      path: "/",
+      path: "/dashboard",
       label: "Dashboard",
       icon: <HomeIcon className="w-5 h-5" />,
       featureId: "dashboard",
