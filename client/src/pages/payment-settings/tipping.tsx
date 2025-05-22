@@ -1,25 +1,96 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
+import { ArrowLeft, CheckIcon, InfoIcon } from "lucide-react";
 import { useLocation } from "wouter";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle } from "lucide-react";
 
 export default function TippingSettings() {
-  const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
+  
+  // Local state
   const [enableTipping, setEnableTipping] = useState(false);
-  const [defaultTipPercentage, setDefaultTipPercentage] = useState(15);
-  const [tipOptions, setTipOptions] = useState("10,15,20");
-
-  const handleSave = () => {
-    toast({
-      title: "Settings Saved",
-      description: "Your tipping settings have been updated successfully."
+  const [defaultTipPercentages, setDefaultTipPercentages] = useState(["10", "15", "20"]);
+  const [customTipAllowed, setCustomTipAllowed] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Fetch tipping settings
+  const { data: tippingSettings, isLoading } = useQuery({
+    queryKey: ['/api/payment-settings/tipping'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/payment-settings/tipping');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data) {
+        setEnableTipping(data.enabled || false);
+        setDefaultTipPercentages(data.defaultPercentages || ["10", "15", "20"]);
+        setCustomTipAllowed(data.allowCustomTip !== false);
+      }
+    },
+  });
+  
+  // Update tipping settings
+  const { mutate: updateSettings, isPending: isSaving } = useMutation({
+    mutationFn: async (settings: any) => {
+      const response = await apiRequest('POST', '/api/payment-settings/tipping', settings);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Your tipping settings have been updated successfully.",
+      });
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "There was a problem updating your tipping settings.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle form submission
+  const handleSaveSettings = () => {
+    // Validate percentages are numbers between 0-100
+    const validPercentages = defaultTipPercentages
+      .map(p => parseInt(p))
+      .filter(p => !isNaN(p) && p >= 0 && p <= 100)
+      .map(p => p.toString());
+    
+    if (validPercentages.length !== defaultTipPercentages.length) {
+      toast({
+        title: "Invalid Percentages",
+        description: "Tip percentages must be numbers between 0 and 100.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Save settings
+    updateSettings({
+      enabled: enableTipping,
+      defaultPercentages: validPercentages,
+      allowCustomTip: customTipAllowed,
     });
+  };
+  
+  // Handle tip percentage changes
+  const handleTipPercentageChange = (index: number, value: string) => {
+    const newPercentages = [...defaultTipPercentages];
+    newPercentages[index] = value;
+    setDefaultTipPercentages(newPercentages);
+    setIsEditing(true);
   };
 
   return (
@@ -30,107 +101,160 @@ export default function TippingSettings() {
           variant="ghost" 
           size="sm" 
           className="flex items-center gap-1"
-          onClick={() => setLocation("/integrations")}
+          onClick={() => setLocation("/payment-settings")}
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Setup Tipping</span>
+          <span>Tipping Settings</span>
         </Button>
       </div>
 
       {/* Content */}
-      <div className="flex flex-col md:flex-row">
-        {/* Left Column */}
-        <div className="md:w-1/3 bg-gray-50 p-6">
-          <h2 className="text-lg font-semibold mb-2">Configure Customer Tipping</h2>
-          <p className="text-gray-600 text-sm">
-            Allow your customers to add tips when they pay for their orders online through BakeGenie.
+      <div className="container mx-auto py-8 px-4 max-w-3xl">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-2">Tipping Options</h1>
+          <p className="text-gray-600">
+            Configure how customers can add tips during checkout.
           </p>
         </div>
 
-        {/* Right Column */}
-        <div className="md:w-2/3 bg-white">
-          {/* Tipping Settings */}
-          <div className="border-b p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Enable Tipping</h3>
-                <p className="text-gray-600 text-sm">
-                  Allow customers to add a tip when paying online
-                </p>
+        {isLoading ? (
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
               </div>
-              <div className="relative flex-shrink-0">
-                <div className="h-16 w-16 rounded-full bg-green-500 flex items-center justify-center">
-                  <span className="text-white text-4xl font-bold">$</span>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Enable Tipping</CardTitle>
+                <CardDescription>
+                  Allow customers to add a tip during checkout
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="enable-tipping" className="flex items-center gap-2">
+                    Enable tipping at checkout
+                  </Label>
+                  <Switch 
+                    id="enable-tipping" 
+                    checked={enableTipping}
+                    onCheckedChange={(checked) => {
+                      setEnableTipping(checked);
+                      setIsEditing(true);
+                    }}
+                  />
                 </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between mb-6">
-              <Label className="text-base" htmlFor="enable-tipping">Enable Tipping Feature</Label>
-              <Switch 
-                id="enable-tipping" 
-                checked={enableTipping} 
-                onCheckedChange={setEnableTipping} 
-              />
-            </div>
+              </CardContent>
+            </Card>
 
             {enableTipping && (
               <>
-                <div className="border-t pt-4 mb-4">
-                  <Label className="mb-2 block font-medium">Default Tip Percentage</Label>
-                  <div className="flex items-center gap-4 mt-2">
-                    <Slider
-                      value={[defaultTipPercentage]}
-                      onValueChange={(values) => setDefaultTipPercentage(values[0])}
-                      max={30}
-                      step={1}
-                      className="flex-1"
-                    />
-                    <div className="w-16 text-center font-medium">{defaultTipPercentage}%</div>
-                  </div>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Default Tip Percentages</CardTitle>
+                    <CardDescription>
+                      Set the tip percentage options customers will see
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        {defaultTipPercentages.map((percentage, index) => (
+                          <div key={index} className="space-y-2">
+                            <Label htmlFor={`tip-percentage-${index}`}>
+                              Option {index + 1}
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id={`tip-percentage-${index}`}
+                                value={percentage}
+                                onChange={(e) => handleTipPercentageChange(index, e.target.value)}
+                                className="pr-8"
+                              />
+                              <span className="absolute right-3 top-2 text-gray-500">%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <InfoIcon className="h-4 w-4 mr-2" />
+                        <span>These options will appear as buttons during checkout</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                <div className="border-t pt-4">
-                  <Label htmlFor="tip-options" className="mb-2 block font-medium">Tip Percentage Options</Label>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Enter percentage values separated by commas (e.g., 10,15,20)
-                  </p>
-                  <Input 
-                    id="tip-options" 
-                    value={tipOptions} 
-                    onChange={(e) => setTipOptions(e.target.value)} 
-                    placeholder="10,15,20" 
-                    className="max-w-xs"
-                  />
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Custom Tip Amount</CardTitle>
+                    <CardDescription>
+                      Allow customers to enter their own tip amount
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="custom-tip" className="flex items-center gap-2">
+                        Allow custom tip amount
+                      </Label>
+                      <Switch 
+                        id="custom-tip" 
+                        checked={customTipAllowed}
+                        onCheckedChange={(checked) => {
+                          setCustomTipAllowed(checked);
+                          setIsEditing(true);
+                        }}
+                      />
+                    </div>
+                    {customTipAllowed && (
+                      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md flex items-start">
+                        <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
+                        <p className="text-sm text-amber-800">
+                          Custom tip amounts will be validated to ensure they are reasonable 
+                          (less than 100% of the order value).
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </>
             )}
 
-            <div className="mt-6">
-              <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-                Save Tipping Settings
+            <div className="flex justify-end space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setLocation("/payment-settings")}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveSettings}
+                disabled={!isEditing || isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="mr-2">Saving...</span>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </div>
           </div>
-
-          {/* Tipping Best Practices */}
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Tipping Best Practices</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-gray-700">Offer reasonable tip percentages that make sense for your business and product prices</span>
-              </li>
-              <li className="flex items-start">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-gray-700">Make sure your default tip amount is in the middle of your options to give customers a fair choice</span>
-              </li>
-              <li className="flex items-start">
-                <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                <span className="text-gray-700">Consider your products and services when setting tip values - delivery services may warrant higher tips than simple pickups</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

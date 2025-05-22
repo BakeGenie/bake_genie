@@ -1184,31 +1184,57 @@ const Settings = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="border rounded-md">
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
-                  <div className="flex items-center">
-                    <CreditCardIcon className="mr-3 h-5 w-5 text-gray-800" />
-                    <span>Stripe Payments</span>
+                <Link to="/payment-settings" className="block">
+                  <div className="flex items-center justify-between p-4 hover:bg-blue-50 bg-blue-50 cursor-pointer">
+                    <div className="flex items-center">
+                      <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center mr-3">
+                        <CreditCardIcon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Payment Settings</div>
+                        <div className="text-xs text-gray-500">Configure payment providers and options</div>
+                      </div>
+                    </div>
+                    <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
-                </div>
+                </Link>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
-                  <div className="flex items-center">
-                    <CreditCardIcon className="mr-3 h-5 w-5 text-gray-800" />
-                    <span>Square Payments</span>
+                <Link to="/payment-settings/stripe" className="block">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center">
+                      <div className="h-7 w-7 flex items-center justify-center bg-blue-500 text-white rounded-full mr-3">
+                        <span className="text-sm font-bold">S</span>
+                      </div>
+                      <span>Stripe Payments</span>
+                    </div>
+                    <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
-                </div>
+                </Link>
                 <Separator />
                 
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer" onClick={handleNotImplemented}>
-                  <div className="flex items-center">
-                    <DollarSignIcon className="mr-3 h-5 w-5 text-primary-500" />
-                    <span>Setup Tipping</span>
+                <Link to="/payment-settings/square" className="block">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center">
+                      <div className="h-7 w-7 flex items-center justify-center bg-black text-white rounded-full mr-3">
+                        <span className="text-xs font-bold">□</span>
+                      </div>
+                      <span>Square Payments</span>
+                    </div>
+                    <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
                   </div>
-                  <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
-                </div>
+                </Link>
+                <Separator />
+                
+                <Link to="/payment-settings/tipping" className="block">
+                  <div className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center">
+                      <DollarSignIcon className="mr-3 h-5 w-5 text-primary-500" />
+                      <span>Setup Tipping</span>
+                    </div>
+                    <ChevronRightIcon className="ml-2 h-5 w-5 text-gray-600" />
+                  </div>
+                </Link>
               </div>
             </div>
           </CardContent>
