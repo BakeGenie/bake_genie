@@ -64,18 +64,36 @@ const Enquiries = () => {
     setIsSubmitting(true);
     
     try {
-      await apiRequest("PATCH", `/api/enquiries/${id}/status`, { status });
+      // Using the correct method format for apiRequest
+      await fetch(`/api/enquiries/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+        credentials: "include"
+      });
       
       // Invalidate enquiries query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/enquiries"] });
+      
+      // Also update the status in the current view to avoid showing stale data
+      if (selectedEnquiry && selectedEnquiry.id === id) {
+        setSelectedEnquiry({
+          ...selectedEnquiry,
+          status
+        });
+      }
       
       toast({
         title: "Enquiry Updated",
         description: `Enquiry status has been updated to ${status}.`,
       });
       
-      setIsViewDialogOpen(false);
+      // Don't automatically close the dialog to let users see the changes
+      // setIsViewDialogOpen(false);
     } catch (error) {
+      console.error("Error updating status:", error);
       toast({
         title: "Error",
         description: "There was an error updating the enquiry. Please try again.",
