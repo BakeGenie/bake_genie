@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db';
+import { db, pool } from '../db';
 import { users, type User } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -37,12 +37,21 @@ router.post('/login', async (req: Request, res: Response) => {
 
     const { email, password } = validation.data;
 
-    // Find user by email
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-
-    if (!user) {
+    // Use direct SQL query to avoid schema issues
+    const result = await pool.query(
+      `SELECT id, username, email, password, first_name, last_name, created_at 
+       FROM users 
+       WHERE email = $1`,
+      [email]
+    );
+    
+    const users = result.rows;
+    
+    if (users.length === 0) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    const user = users[0];
 
     // Verify password
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -51,19 +60,12 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Update last login time
-    await db.update(users)
-      .set({ lastLogin: new Date() })
-      .where(eq(users.id, user.id));
-
-    // Create session
-    // TypeScript will complain about this, but our session.d.ts file
-    // has the proper type definitions for the session
+    // Create session with user data mapped to camelCase for frontend compatibility
     (req.session as any).user = {
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.first_name,
+      lastName: user.last_name,
     };
     
     await new Promise<void>((resolve, reject) => {
@@ -76,9 +78,15 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     });
 
-    // Return user data (excluding password)
-    const { password: _, ...userData } = user;
-    return res.status(200).json(userData);
+    // Return user data (excluding password) with proper camelCase keys for frontend
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      createdAt: user.created_at
+    });
 
   } catch (error) {
     console.error('Login error:', error);
@@ -98,33 +106,40 @@ router.post('/register', async (req: Request, res: Response) => {
       });
     }
 
-    const { email, password, firstName, lastName, businessName, phone } = validation.data;
+    const { email, password, firstName, lastName } = validation.data;
 
-    // Check if email already exists
-    const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+    // Check if email already exists using direct connection
+    const checkResult = await db.pool.query(
+      `SELECT * FROM users WHERE email = $1`, 
+      [email]
+    );
 
-    if (existingUser) {
+    if (checkResult.rows.length > 0) {
       return res.status(409).json({ message: 'Email already in use' });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user - only using fields that exist in the actual database
-    const [newUser] = await db.insert(users).values({
-      username: email.split('@')[0], // Generate a username from the email
-      email,
-      password: hashedPassword,
-      first_name: firstName, // Use the actual column name from the database 
-      last_name: lastName,   // Use the actual column name from the database
-    }).returning();
+    // Generate a username from the email
+    const username = email.split('@')[0];
+
+    // Create new user using raw SQL - directly using the column names that exist in the database
+    const insertResult = await db.pool.query(
+      `INSERT INTO users (username, email, password, first_name, last_name, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, username, email, first_name, last_name, created_at`,
+      [username, email, hashedPassword, firstName, lastName, new Date()]
+    );
+
+    const newUser = insertResult.rows[0];
 
     // Create session
     (req.session as any).user = {
       id: newUser.id,
       email: newUser.email,
-      firstName: newUser.firstName,
-      lastName: newUser.lastName,
+      firstName: newUser.first_name,
+      lastName: newUser.last_name,
     };
     
     await new Promise<void>((resolve, reject) => {
@@ -138,8 +153,14 @@ router.post('/register', async (req: Request, res: Response) => {
     });
 
     // Return user data (excluding password)
-    const { password: _, ...userData } = newUser;
-    return res.status(201).json(userData);
+    return res.status(201).json({
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+      firstName: newUser.first_name,
+      lastName: newUser.last_name,
+      createdAt: newUser.created_at
+    });
 
   } catch (error) {
     console.error('Registration error:', error);
