@@ -120,6 +120,37 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
 });
 
 /**
+ * Get current subscription status
+ */
+router.get("/status", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    
+    // In a real implementation, we would:
+    // 1. Get the user's subscription ID from the database
+    // 2. Fetch subscription status from Stripe
+
+    console.log(`Fetching subscription status for user ${userId}`);
+    
+    // For this implementation, check if the user has recently cancelled
+    // We'll store cancelled subscriptions in the session temporarily
+    const isCancelled = req.session.subscriptionCancelled === true;
+    
+    res.json({
+      status: isCancelled ? 'cancelled' : 'active',
+      currentPeriodEnd: "2025-06-21",
+      cancelAtPeriodEnd: false,
+    });
+  } catch (error: any) {
+    console.error("Error fetching subscription status:", error);
+    res.status(500).json({
+      error: "Failed to fetch subscription status",
+      message: error.message || "An unknown error occurred",
+    });
+  }
+});
+
+/**
  * Cancel a subscription
  */
 router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
@@ -166,7 +197,12 @@ router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
     }
     */
 
-    // For this implementation, we'll simulate success
+    // For this implementation, we'll simulate success by storing in session
+    if (!req.session) {
+      req.session = {} as any;
+    }
+    req.session.subscriptionCancelled = true;
+
     res.json({
       success: true,
       message: "Subscription cancelled successfully",

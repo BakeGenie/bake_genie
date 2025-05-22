@@ -28,6 +28,15 @@ export default function ManageSubscription() {
     refetchOnWindowFocus: false,
   });
   
+  // Fetch subscription status
+  const { data: subscriptionData, isLoading: isLoadingSubscription, refetch: refetchSubscription } = useQuery({
+    queryKey: ['/api/subscription/status'],
+    refetchOnWindowFocus: false,
+  });
+  
+  // Derive subscription status - default to active if not explicitly cancelled
+  const isSubscriptionActive = subscriptionData?.status !== 'cancelled';
+  
   const handleChangePlan = () => {
     toast({
       title: "Change Plan",
@@ -42,6 +51,7 @@ export default function ManageSubscription() {
   const handleSubscriptionCancelled = () => {
     // Refresh data after successful cancellation
     refetchPaymentMethod();
+    refetchSubscription();
     toast({
       title: "Subscription Cancelled",
       description: "Your subscription has been cancelled successfully.",
@@ -150,13 +160,21 @@ export default function ManageSubscription() {
               </div>
               
               <div className="flex justify-between items-center">
-                <Button 
-                  variant="outline" 
-                  className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
-                  onClick={handleCancelSubscription}
-                >
-                  Cancel Subscription
-                </Button>
+                {isSubscriptionActive ? (
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
+                    onClick={handleCancelSubscription}
+                  >
+                    Cancel Subscription
+                  </Button>
+                ) : (
+                  <div className="w-full p-3 bg-muted/50 rounded-md">
+                    <p className="text-sm text-center">
+                      Your subscription has been cancelled
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -176,8 +194,17 @@ export default function ManageSubscription() {
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
                     <p className="font-medium flex items-center">
-                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                      Active
+                      {isSubscriptionActive ? (
+                        <>
+                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                          Active
+                        </>
+                      ) : (
+                        <>
+                          <span className="inline-block w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                          Cancelled
+                        </>
+                      )}
                     </p>
                   </div>
                   
