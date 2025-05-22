@@ -38,33 +38,48 @@ export const CancelSubscriptionDialog: React.FC<CancelSubscriptionDialogProps> =
     setError(null);
 
     try {
-      const response = await apiRequest("POST", "/api/subscription/cancel", {
-        cancelImmediately: cancellationType === "immediate"
+      // Make the API call directly without using apiRequest helper
+      const response = await fetch("/api/subscription/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cancelImmediately: cancellationType === "immediate"
+        })
       });
       
-      // Handle the response properly
-      let responseData;
+      // For successful response, assume it worked
+      if (response.ok) {
+        toast({
+          title: "Subscription Cancelled",
+          description: cancellationType === "immediate" 
+            ? "Your subscription has been cancelled immediately." 
+            : "Your subscription will be cancelled at the end of the current billing period.",
+        });
+  
+        onCancelled();
+        onOpenChange(false);
+        return;
+      }
+      
+      // Handle error response
+      let errorMessage = "Failed to cancel subscription";
       try {
-        responseData = await response.json();
+        // Try to parse as JSON first
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
       } catch (jsonError) {
-        // If response is not JSON, use response text instead
-        const text = await response.text();
-        responseData = { success: response.ok, message: text };
+        // If not JSON, try to get text
+        try {
+          errorMessage = await response.text();
+        } catch (textError) {
+          // If even text fails, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
       }
-
-      if (!response.ok) {
-        throw new Error(responseData.message || "Failed to cancel subscription");
-      }
-
-      toast({
-        title: "Subscription Cancelled",
-        description: cancellationType === "immediate" 
-          ? "Your subscription has been cancelled immediately." 
-          : "Your subscription will be cancelled at the end of the current billing period.",
-      });
-
-      onCancelled();
-      onOpenChange(false);
+      
+      throw new Error(errorMessage);
     } catch (err: any) {
       setError(err.message || "An error occurred while cancelling your subscription.");
       toast({
