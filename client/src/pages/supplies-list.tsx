@@ -206,7 +206,7 @@ const SuppliesList = () => {
         name: formData.name,
         supplier: formData.supplier || null,
         category: formData.category,
-        price: formData.price ? parseFloat(formData.price) : null,
+        price: formData.price || null, // Keep price as string for decimal columns
         description: formData.description || null,
         quantity: formData.quantity ? parseInt(formData.quantity) : 0,
         reorder_level: formData.reorder_level ? parseInt(formData.reorder_level) : 5
@@ -271,7 +271,7 @@ const SuppliesList = () => {
         name: editFormData.name,
         supplier: editFormData.supplier || null,
         category: editFormData.category,
-        price: editFormData.price ? parseFloat(editFormData.price) : null,
+        price: editFormData.price || null, // Keep price as string for decimal columns
         description: editFormData.description || null,
         quantity: editFormData.quantity ? parseInt(editFormData.quantity) : 0,
         reorder_level: editFormData.reorder_level ? parseInt(editFormData.reorder_level) : 5
