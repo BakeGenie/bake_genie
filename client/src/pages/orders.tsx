@@ -227,11 +227,11 @@ const Orders = () => {
         </div>
         
         {/* Order List */}
-        <div className="bg-white rounded-md border shadow-sm overflow-hidden flex flex-col">
+        <div className="bg-white rounded-md border shadow-sm overflow-visible flex flex-col">
           <div className="p-4 border-b">
             <h3 className="text-lg font-semibold">Order List</h3>
           </div>
-          <div className="flex-grow">
+          <div className="flex-grow overflow-visible">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
