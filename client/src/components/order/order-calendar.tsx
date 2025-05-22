@@ -209,7 +209,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             <div
               key={dateKey}
               className={`
-                relative aspect-square flex flex-col items-center p-0.5 cursor-pointer
+                relative aspect-square flex flex-col items-center justify-center p-0.5 cursor-pointer
                 transition-all duration-150 hover:bg-gray-50
                 ${dayToday ? "bg-blue-50" : ""}
                 ${daySelected ? "bg-blue-100" : ""}
@@ -219,8 +219,8 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             >
               <div
                 className={`
-                  flex items-center justify-center h-7 w-7 rounded-full
-                  my-0.5 font-medium text-sm transition-colors
+                  flex items-center justify-center h-8 w-8 rounded-full
+                  my-0.5 font-medium text-base transition-colors
                   ${dayToday ? "bg-blue-500 text-white" : "text-gray-700"}
                   ${daySelected ? "ring-1 ring-blue-400 ring-offset-1" : ""}
                 `}
