@@ -38,8 +38,11 @@ import {
 import { eventTypes } from "@shared/schema";
 
 // Define the event types
-// Make sure each event type appears only once
-const eventTypesArray = [...new Set([...eventTypes, "Other"])];
+// Make sure event types don't include duplicate "Other" entries
+const eventTypesArray = Array.from(eventTypes);
+if (!eventTypesArray.includes("Other")) {
+  eventTypesArray.push("Other");
+}
 
 // Define source options
 const sourceOptions = ["Phone", "Email", "In-person", "Facebook", "Instagram", "Other"];
@@ -218,8 +221,8 @@ Message: ${values.message.trim()}`;
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {sourceOptions.map((source) => (
-                          <SelectItem key={source} value={source}>
+                        {sourceOptions.map((source, index) => (
+                          <SelectItem key={`source-${index}`} value={source}>
                             {source}
                           </SelectItem>
                         ))}
@@ -248,8 +251,8 @@ Message: ${values.message.trim()}`;
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {eventTypesArray.map((type) => (
-                          <SelectItem key={type} value={type}>
+                        {eventTypesArray.map((type, index) => (
+                          <SelectItem key={`event-type-${index}`} value={type}>
                             {type}
                           </SelectItem>
                         ))}
