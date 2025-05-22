@@ -193,26 +193,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       />
 
       {/* Sidebar */}
-      <aside className="md:relative fixed inset-y-0 left-0 z-50 md:z-auto flex flex-col w-64 bg-white border-r border-gray-200">
+      <aside className="md:relative fixed inset-y-0 left-0 z-50 md:z-auto flex flex-col w-64 bg-[#2A3846] text-white">
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-gray-200">
+        <div className="flex items-center h-16 px-4 border-b border-[#3A4956]">
           <div className="flex items-center">
             <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Cake-like cog 3D icon */}
-              <circle cx="16" cy="16" r="12" fill="#f0f0f0" stroke="#d1d1d1" strokeWidth="0.5" />
-              <circle cx="16" cy="16" r="10" fill="#f8f8f8" stroke="#e0e0e0" strokeWidth="0.5" />
-              <path d="M16 6 L19 9 L22 7 L20 11 L24 13 L20 15 L22 19 L18 17 L16 21 L14 17 L10 19 L12 15 L8 13 L12 11 L10 7 L14 9 Z" fill="#6285f8" stroke="#3b64ef" strokeWidth="0.5" />
-              <circle cx="16" cy="16" r="4" fill="#f5f7ff" stroke="#d6e0fd" strokeWidth="0.5" />
-              <circle cx="16" cy="16" r="2" fill="#ffffff" stroke="#ebf0fe" strokeWidth="0.5" />
-              {/* 3D effect with highlights and shadows */}
-              <path d="M16 28 C22.6274 28 28 22.6274 28 16 C28 9.37258 22.6274 4 16 4" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" opacity="0.8" />
-              <path d="M16 4 C9.37258 4 4 9.37258 4 16 C4 22.6274 9.37258 28 16 28" stroke="#d0d0d0" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+              {/* Cake-like icon */}
+              <path d="M16 6 L19 9 L22 7 L20 11 L24 13 L20 15 L22 19 L18 17 L16 21 L14 17 L10 19 L12 15 L8 13 L12 11 L10 7 L14 9 Z" fill="#ffffff" stroke="#ffffff" strokeWidth="0.5" />
+              <circle cx="16" cy="16" r="4" fill="#ffffff" strokeWidth="0.5" />
+              <circle cx="16" cy="16" r="2" fill="#ffffff" strokeWidth="0.5" />
             </svg>
-            <span className="ml-2 text-xl font-semibold text-gray-800">BakeGenie</span>
+            <span className="ml-2 text-xl font-semibold text-white">BakeDiary</span>
           </div>
           <button
             onClick={onClose}
-            className="ml-auto md:hidden text-gray-500 hover:text-gray-700"
+            className="ml-auto md:hidden text-white hover:text-gray-300"
           >
             <XIcon className="h-5 w-5" />
           </button>
@@ -227,22 +222,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                   <div
                     className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
-                        ? "active"
-                        : "text-gray-700"
+                        ? "bg-[#394B5F]"
+                        : "hover:bg-[#394B5F]"
                     }`}
                   >
                     <div className="flex items-center">
-                      <span className={`w-5 ${
-                        currentPath === link.path || currentPath.startsWith(`${link.path}/`)
-                          ? "text-primary-500"
-                          : "text-gray-500"
-                      }`}>
+                      <span className="w-5 text-white">
                         {link.icon}
                       </span>
-                      <span className="ml-3">{link.label}</span>
+                      <span className="ml-3 text-white">{link.label}</span>
                     </div>
                     {link.badge !== undefined && link.badge > 0 ? (
-                      <Badge variant={link.badge > 0 ? "default" : "secondary"} className="text-xs">
+                      <Badge variant="secondary" className="text-xs bg-blue-500 hover:bg-blue-600 text-white">
                         {link.badge}
                       </Badge>
                     ) : link.sublinks ? (
@@ -254,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             ))}
             
             {/* Log Off Button as part of the navigation menu */}
-            <li className="mt-6 border-t border-gray-200 pt-2">
+            <li className="mt-6 border-t border-[#3A4956] pt-2">
               <button 
                 onClick={async () => {
                   try {
@@ -273,13 +264,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     window.location.href = "/";
                   }
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-[#394B5F] transition-colors"
               >
                 <div className="flex items-center">
-                  <span className="w-5 text-gray-600">
+                  <span className="w-5 text-white">
                     <LogOutIcon className="h-5 w-5" />
                   </span>
-                  <span className="ml-3 font-medium">Log Off</span>
+                  <span className="ml-3 font-medium">Log off</span>
                 </div>
               </button>
             </li>
