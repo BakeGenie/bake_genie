@@ -6,9 +6,11 @@ export const router = Router();
  * Logout a user
  */
 router.get('/logout', (req: Request, res: Response) => {
-  // First clear the user data from the session
+  // First clear user data from session without TypeScript errors
   if (req.session) {
-    req.session.user = undefined;
+    // We know this property exists from how the app works, but TypeScript doesn't
+    // so we use a type assertion to avoid the error
+    (req.session as any).user = undefined;
     
     // Destroy the session
     req.session.destroy((err) => {
@@ -20,11 +22,11 @@ router.get('/logout', (req: Request, res: Response) => {
       // Clear the session cookie
       res.clearCookie('connect.sid');
       
-      // Redirect to login page or home page
-      res.redirect('/');
+      // Redirect to login page with a logged_out parameter
+      res.redirect('/login?logged_out=true');
     });
   } else {
-    // No session exists, just redirect
-    res.redirect('/');
+    // No session exists, just redirect to login
+    res.redirect('/login?logged_out=true');
   }
 });
