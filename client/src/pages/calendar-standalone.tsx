@@ -227,10 +227,17 @@ const CalendarStandalone = () => {
     });
   };
   
-  // Handle date selection
+  // Handle date selection when clicking on a calendar day
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
+    
+    // Find orders for this date
+    const ordersForDate = getOrdersForDay(date);
+    setOrdersOnSelectedDate(ordersForDate);
+    
+    // Open the date dialog with appropriate options
     setIsDateDialogOpen(true);
+    
     // Store selected date for order creation
     localStorage.setItem('selectedEventDate', date.toISOString());
   };
@@ -548,11 +555,13 @@ const CalendarStandalone = () => {
         </div>
       </div>
       
-      {/* Date Selection Dialog */}
-      <DateSelectionDialog
+      {/* Calendar Date Dialog */}
+      <CalendarDateDialog
         isOpen={isDateDialogOpen}
         onClose={() => setIsDateDialogOpen(false)}
         selectedDate={selectedDate}
+        ordersOnDate={ordersOnSelectedDate}
+        onOrderSelect={handleOrderSelect}
       />
       
       {/* Order Details Dialog */}
