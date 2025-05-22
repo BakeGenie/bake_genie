@@ -232,6 +232,20 @@ const AddBundleDialog: React.FC<AddBundleDialogProps> = ({ onSave, trigger }) =>
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter bundle description" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
                 
                 <FormField
