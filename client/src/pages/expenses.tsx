@@ -120,6 +120,7 @@ const ExpensesPage = () => {
   const [selectedYear, setSelectedYear] = useState(format(currentDate, 'yyyy'));
   const [searchTerm, setSearchTerm] = useState("");
   const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   // Expense form
@@ -200,6 +201,7 @@ const ExpensesPage = () => {
         description: "Your expense has been successfully recorded.",
       });
       setOpenExpenseDialog(false);
+      setEditingExpenseId(null);
       expenseForm.reset();
       queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
     },
@@ -207,6 +209,44 @@ const ExpensesPage = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to add expense. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update expense mutation
+  const updateExpenseMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof expenseSchema> & { id: number }) => {
+      const { id, ...updateData } = data;
+      const response = await fetch(`/api/expenses/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update expense");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Expense updated",
+        description: "Your expense has been successfully updated.",
+      });
+      setOpenExpenseDialog(false);
+      setEditingExpenseId(null);
+      expenseForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update expense. Please try again.",
         variant: "destructive",
       });
     },
@@ -244,7 +284,11 @@ const ExpensesPage = () => {
 
   // Function to handle expense submission
   const onSubmitExpense = (data: z.infer<typeof expenseSchema>) => {
-    createExpenseMutation.mutate(data);
+    if (editingExpenseId) {
+      updateExpenseMutation.mutate({ ...data, id: editingExpenseId });
+    } else {
+      createExpenseMutation.mutate(data);
+    }
   };
 
   // Helper function to group expenses by date
@@ -387,18 +431,47 @@ const ExpensesPage = () => {
                 </div>
                 
                 {dateExpenses.map((expense) => (
-                  <div key={expense.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-md">
-                    <div className="flex items-center">
-                      <div className="bg-gray-100 text-blue-500 font-medium mr-4 px-2 py-1 rounded">
+                  <div 
+                    key={expense.id} 
+                    className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                    onClick={() => {
+                      // Open edit modal when row is clicked
+                      expenseForm.reset({
+                        ...expense,
+                        date: new Date(expense.date)
+                      });
+                      setEditingExpenseId(expense.id);
+                      setOpenExpenseDialog(true);
+                    }}
+                  >
+                    {/* Date (already shown in the group header, but we could show time here) */}
+                    <div className="w-1/6 flex items-center">
+                      <div className="bg-gray-100 text-blue-500 font-medium px-2 py-1 rounded">
                         {expense.id} ({expense.id})
                       </div>
-                      <span>{expense.category}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium">$ {parseFloat(expense.amount).toFixed(2)}</span>
+                    
+                    {/* Description */}
+                    <div className="w-1/4 truncate">
+                      {expense.description || "No description"}
+                    </div>
+                    
+                    {/* Category */}
+                    <div className="w-1/5">
+                      {expense.category}
+                    </div>
+                    
+                    {/* Amount */}
+                    <div className="w-1/6 text-right font-medium">
+                      $ {parseFloat(expense.amount).toFixed(2)}
+                    </div>
+                    
+                    {/* Delete button - stop propagation to prevent opening edit modal */}
+                    <div className="w-1/12 flex justify-end">
                       <button 
-                        className="ml-2 text-gray-400 hover:text-red-500"
-                        onClick={() => {
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click
                           if (window.confirm("Are you sure you want to delete this expense?")) {
                             deleteExpenseMutation.mutate(expense.id);
                           }
@@ -435,12 +508,27 @@ const ExpensesPage = () => {
       </div>
 
       {/* Expense Dialog */}
-      <Dialog open={openExpenseDialog} onOpenChange={setOpenExpenseDialog}>
+      <Dialog 
+        open={openExpenseDialog} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingExpenseId(null);
+            expenseForm.reset();
+          }
+          setOpenExpenseDialog(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <div className="flex justify-between items-center mb-4">
-            <DialogTitle className="text-xl">Add Expense</DialogTitle>
+            <DialogTitle className="text-xl">
+              {editingExpenseId ? 'Edit Expense' : 'Add Expense'}
+            </DialogTitle>
             <button 
-              onClick={() => setOpenExpenseDialog(false)}
+              onClick={() => {
+                setOpenExpenseDialog(false);
+                setEditingExpenseId(null);
+                expenseForm.reset();
+              }}
               className="text-gray-400 hover:text-gray-500"
             >
               ✕
