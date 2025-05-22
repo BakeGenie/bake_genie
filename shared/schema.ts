@@ -395,6 +395,7 @@ export type OrderLog = typeof orderLogs.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Recipe = typeof recipes.$inferSelect;
 export type Ingredient = typeof ingredients.$inferSelect;
+export type Supply = typeof supplies.$inferSelect;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof income.$inferSelect;

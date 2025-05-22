@@ -130,16 +130,19 @@ const SuppliesList = () => {
     reorder_level: "5"
   });
   
-  // In a real application, you would fetch supplies from an API
-  // Use React Query to fetch supplies (using mock data for now)
+  // Fetch supplies from the API
   const { 
-    data: supplies = mockSupplies, 
-    isLoading 
+    data: supplies = [], 
+    isLoading,
+    refetch
   } = useQuery({
     queryKey: ["/api/supplies"],
     queryFn: async () => {
-      // In a real app this would fetch from the API
-      return mockSupplies;
+      const response = await fetch('/api/supplies');
+      if (!response.ok) {
+        throw new Error('Failed to fetch supplies');
+      }
+      return response.json();
     },
   });
   
@@ -184,7 +187,7 @@ const SuppliesList = () => {
   };
   
   // Handle saving a new supply item
-  const handleSaveNewSupply = () => {
+  const handleSaveNewSupply = async () => {
     // Validate required fields
     if (!formData.name) {
       toast({
@@ -197,38 +200,57 @@ const SuppliesList = () => {
     
     setIsSubmitting(true);
     
-    // Simulate API call to add a new supply
-    setTimeout(() => {
-      // In a real app, this would be an API call
-      const newSupply: SupplyItem = {
-        id: Date.now(), // Generate a unique ID (in a real app, the server would do this)
+    try {
+      // Prepare data for API
+      const supplyData = {
         name: formData.name,
-        supplier: formData.supplier || undefined,
+        supplier: formData.supplier || null,
         category: formData.category,
-        price: formData.price ? parseFloat(formData.price) : undefined,
-        description: formData.description || undefined,
-        quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-        reorder_level: formData.reorder_level ? parseInt(formData.reorder_level) : undefined
+        price: formData.price ? parseFloat(formData.price) : null,
+        description: formData.description || null,
+        quantity: formData.quantity ? parseInt(formData.quantity) : 0,
+        reorder_level: formData.reorder_level ? parseInt(formData.reorder_level) : 5
       };
       
-      // In a real app, you would invalidate the query cache here
-      // queryClient.invalidateQueries({ queryKey: ['/api/supplies'] });
+      // Send to API
+      const response = await fetch('/api/supplies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplyData),
+      });
       
-      // Add to the local state
-      mockSupplies.push(newSupply);
+      if (!response.ok) {
+        throw new Error('Failed to add supply');
+      }
+      
+      // Get the created supply from the response
+      const newSupply = await response.json();
+      
+      // Refresh the supplies list
+      queryClient.invalidateQueries({ queryKey: ['/api/supplies'] });
       
       toast({
         title: "Supply added",
         description: `${formData.name} has been added to your supplies list`
       });
       
-      setIsSubmitting(false);
       setIsAddDialogOpen(false);
-    }, 500);
+    } catch (error) {
+      console.error('Error adding supply:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem adding the supply. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Handle updating an existing supply item
-  const handleUpdateSupply = () => {
+  const handleUpdateSupply = async () => {
     if (!editItem) return;
     
     // Validate required fields
@@ -243,53 +265,84 @@ const SuppliesList = () => {
     
     setIsSubmitting(true);
     
-    // Simulate API call to update the supply
-    setTimeout(() => {
-      // In a real app, this would be an API call
-      const updatedSupply: SupplyItem = {
-        ...editItem,
+    try {
+      // Prepare data for API
+      const supplyData = {
         name: editFormData.name,
-        supplier: editFormData.supplier || undefined,
+        supplier: editFormData.supplier || null,
         category: editFormData.category,
-        price: editFormData.price ? parseFloat(editFormData.price) : undefined,
-        description: editFormData.description || undefined,
-        quantity: editFormData.quantity ? parseInt(editFormData.quantity) : undefined,
-        reorder_level: editFormData.reorder_level ? parseInt(editFormData.reorder_level) : undefined
+        price: editFormData.price ? parseFloat(editFormData.price) : null,
+        description: editFormData.description || null,
+        quantity: editFormData.quantity ? parseInt(editFormData.quantity) : 0,
+        reorder_level: editFormData.reorder_level ? parseInt(editFormData.reorder_level) : 5
       };
       
-      // In a real app, you would invalidate the query cache here
-      // queryClient.invalidateQueries({ queryKey: ['/api/supplies'] });
+      // Send to API
+      const response = await fetch(`/api/supplies/${editItem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplyData),
+      });
       
-      // Update the local state
-      const index = mockSupplies.findIndex(s => s.id === editItem.id);
-      if (index !== -1) {
-        mockSupplies[index] = updatedSupply;
+      if (!response.ok) {
+        throw new Error('Failed to update supply');
       }
+      
+      // Get the updated supply from the response
+      const updatedSupply = await response.json();
+      
+      // Refresh the supplies list
+      queryClient.invalidateQueries({ queryKey: ['/api/supplies'] });
       
       toast({
         title: "Supply updated",
-        description: `${editFormData.name} has been updated`
+        description: `${editFormData.name} has been updated successfully`
       });
       
-      setIsSubmitting(false);
       setIsEditDialogOpen(false);
-    }, 500);
+    } catch (error) {
+      console.error('Error updating supply:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating the supply. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Handle deleting a supply item
-  const handleDeleteSupply = (id: number) => {
-    // In a real app, this would be an API call
-    const index = mockSupplies.findIndex(s => s.id === id);
-    if (index !== -1) {
-      const itemName = mockSupplies[index].name;
-      mockSupplies.splice(index, 1);
+  const handleDeleteSupply = async (id: number) => {
+    // Find the item name first for the success message
+    const item = supplies.find(s => s.id === id);
+    const itemName = item?.name || 'Supply';
+    
+    try {
+      // Send delete request to API
+      const response = await fetch(`/api/supplies/${id}`, {
+        method: 'DELETE',
+      });
       
-      // In a real app, you would invalidate the query cache here
-      // queryClient.invalidateQueries({ queryKey: ['/api/supplies'] });
+      if (!response.ok) {
+        throw new Error('Failed to delete supply');
+      }
+      
+      // Refresh the supplies list
+      queryClient.invalidateQueries({ queryKey: ['/api/supplies'] });
       
       toast({
         title: "Supply deleted",
         description: `${itemName} has been removed from your supplies list`
+      });
+    } catch (error) {
+      console.error('Error deleting supply:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem deleting the supply. Please try again.",
+        variant: "destructive"
       });
     }
   };
