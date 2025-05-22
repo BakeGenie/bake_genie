@@ -256,7 +256,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             {/* Log Off Button as part of the navigation menu */}
             <li className="mt-6 border-t border-gray-200 pt-2">
               <button 
-                onClick={() => window.location.href = "/logout"}
+                onClick={() => {
+                  // Redirect to the logout endpoint
+                  window.location.href = "/api/auth/logout";
+                }}
                 className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 <div className="flex items-center">

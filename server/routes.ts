@@ -14,6 +14,7 @@ import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
 import { router as contactsRouter } from "./routes/contacts";
 import { router as productsRouter } from "./routes/products";
+import { router as authRouter } from "./routes/auth";
 import subscriptionRouter from "./routes/subscription";
 import integrationsRouter from "./routes/integrations";
 import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct";
@@ -83,6 +84,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register enquiries routes
   app.use('/api/enquiries', enquiriesRouter);
+  
+  // Register auth routes
+  app.use('/api/auth', authRouter);
   
   // Register import routes
   const importRouter = Router();
