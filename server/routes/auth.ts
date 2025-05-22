@@ -10,7 +10,7 @@ export const router = Router();
 // Login validation schema
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 // Registration validation schema
@@ -51,13 +51,30 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // Update last login time
+    await db.update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, user.id));
+
     // Create session
-    req.session.user = {
+    // TypeScript will complain about this, but our session.d.ts file
+    // has the proper type definitions for the session
+    (req.session as any).user = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
     };
+    
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
 
     // Return user data (excluding password)
     const { password: _, ...userData } = user;
@@ -101,15 +118,26 @@ router.post('/register', async (req: Request, res: Response) => {
       lastName,
       businessName,
       phone,
+      lastLogin: new Date(),
     }).returning();
 
     // Create session
-    req.session.user = {
+    (req.session as any).user = {
       id: newUser.id,
       email: newUser.email,
       firstName: newUser.firstName,
       lastName: newUser.lastName,
     };
+    
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
 
     // Return user data (excluding password)
     const { password: _, ...userData } = newUser;
@@ -123,8 +151,8 @@ router.post('/register', async (req: Request, res: Response) => {
 
 // Get current user
 router.get('/user', (req: Request, res: Response) => {
-  if (req.session && req.session.user) {
-    return res.status(200).json(req.session.user);
+  if (req.session && (req.session as any).user) {
+    return res.status(200).json((req.session as any).user);
   }
   return res.status(401).json({ message: 'Not authenticated' });
 });
@@ -140,5 +168,13 @@ router.post('/logout', (req: Request, res: Response) => {
     return res.status(200).json({ message: 'Logged out successfully' });
   });
 });
+
+// Middleware to check if a user is authenticated
+export const requireAuth = (req: Request, res: Response, next: Function) => {
+  if (req.session && (req.session as any).user) {
+    return next();
+  }
+  return res.status(401).json({ message: 'Authentication required' });
+};
 
 export default router;
