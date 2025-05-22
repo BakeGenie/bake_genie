@@ -87,9 +87,11 @@ router.post("/", async (req: Request, res: Response) => {
     const insertResult = await db.execute(
       sql`
         INSERT INTO ingredients (
-          user_id, name, supplier, unit, cost_per_unit
+          user_id, name, supplier, unit, cost_per_unit, pack_size, pack_cost
         ) VALUES (
-          ${userId}, ${name}, ${supplier || null}, ${unit}, ${costPrice}
+          ${userId}, ${name}, ${supplier || null}, ${unit}, ${costPrice}, 
+          ${purchaseSize ? purchaseSize : null}, 
+          ${purchaseSize && costPrice ? costPrice : null}
         ) RETURNING *
       `
     );
@@ -157,6 +159,16 @@ router.patch("/:id", async (req: Request, res: Response) => {
     if (unit !== undefined) {
       updates.push("unit = $" + (values.length + 1));
       values.push(unit);
+    }
+    
+    if (purchaseSize !== undefined) {
+      updates.push("pack_size = $" + (values.length + 1));
+      values.push(purchaseSize || null);
+    }
+    
+    if (purchaseSize !== undefined && costPrice !== undefined) {
+      updates.push("pack_cost = $" + (values.length + 1));
+      values.push(costPrice || null);
     }
     
     // If no fields to update, return the existing ingredient
