@@ -384,7 +384,7 @@ const Products = () => {
             return (
               <Card
                 key={product.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full"
                 onClick={() => handleProductClick(product)}
               >
                 <CardHeader className="pb-2">
@@ -399,7 +399,7 @@ const Products = () => {
                   </div>
                   <CardDescription>{product.type}</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   {product.imageUrl && (
                     <div className="mb-3 h-32 flex items-center justify-center">
                       <img 
@@ -416,7 +416,7 @@ const Products = () => {
                     <p className="text-sm">Servings: {product.servings}</p>
                   )}
                 </CardContent>
-                <CardFooter className="flex justify-between border-t pt-4">
+                <CardFooter className="flex justify-between border-t pt-4 mt-auto">
                   <div className="flex items-center">
                     <DollarSignIcon className="h-4 w-4 mr-1 text-gray-500" />
                     <span className="font-medium">
