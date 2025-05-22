@@ -152,15 +152,7 @@ const Enquiries = () => {
         ) : "N/A";
       },
     },
-    {
-      accessorFn: (row) => {
-        // Return the business user who owns this enquiry
-        return row.user_name || "Unknown";
-      },
-      id: "user",
-      header: "Assigned To",
-      enableSorting: true,
-    },
+
     {
       accessorKey: "event_type",
       header: "Event Type",

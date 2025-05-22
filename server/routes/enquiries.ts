@@ -13,13 +13,9 @@ router.get("/", async (req: Request, res: Response) => {
     // Use user ID from session, fallback to 1 for development
     const userId = 1;
     
-    // Fetch enquiries with user information using a JOIN
+    // Fetch enquiries for this user (reverting to original query)
     const result = await db.execute(
-      sql`SELECT e.*, u.name as user_name, u.email as user_email 
-          FROM enquiries e
-          LEFT JOIN users u ON e.user_id = u.id
-          WHERE e.user_id = ${userId} 
-          ORDER BY e.created_at DESC`
+      sql`SELECT * FROM enquiries WHERE user_id = ${userId} ORDER BY created_at DESC`
     );
     
     res.json(result.rows);
