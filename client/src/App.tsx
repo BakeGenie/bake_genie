@@ -53,6 +53,7 @@ import InvoicePreview from "./pages/invoice-preview";
 import StripePaymentProvider from "./pages/payment-settings/stripe";
 import SquarePaymentProvider from "./pages/payment-settings/square";
 import TippingSettings from "./pages/payment-settings/tipping";
+import PaymentSuccess from "./pages/payment-success";
 
 function Router() {
   return (
@@ -103,6 +104,7 @@ function Router() {
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/manage-features" component={ManageFeatures} />
         <Route path="/invoice-preview" component={InvoicePreview} />
+        <Route path="/payment-success" component={PaymentSuccess} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

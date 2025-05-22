@@ -1,17 +1,18 @@
-// Stripe payment integration for the bakery business system
-import Stripe from "stripe";
+import Stripe from 'stripe';
 
 // Get Stripe secret key from environment variables
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripePublicKey = process.env.VITE_STRIPE_PUBLIC_KEY;
 
+// Check if Stripe is configured
 if (!stripeSecretKey) {
-  console.warn("Warning: Stripe secret key not found in environment variables");
+  console.warn("Warning: Stripe API key not found in environment variables");
 }
 
-// Initialize Stripe client
-const stripe = stripeSecretKey
+// Initialize Stripe
+const stripe = stripeSecretKey 
   ? new Stripe(stripeSecretKey, {
-      apiVersion: "2023-10-16",
+      apiVersion: '2023-10-16' // Latest supported API version
     })
   : null;
 
@@ -23,22 +24,23 @@ const stripe = stripeSecretKey
  * @returns The created payment intent
  */
 export async function createPaymentIntent(
-  amount: number, 
-  currency: string = 'usd', 
-  metadata: Record<string, any> = {}
+  amount: number,
+  currency: string = 'AUD',
+  metadata: Record<string, string> = {}
 ) {
   if (!stripe) {
     throw new Error("Stripe is not configured properly. Please check your environment variables.");
   }
 
+  // Convert amount to cents (Stripe requires amounts in cents)
+  const amountInCents = Math.round(amount * 100);
+
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
-      currency,
+      amount: amountInCents,
+      currency: currency.toLowerCase(),
       metadata,
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      payment_method_types: ['card'],
     });
 
     return paymentIntent;
@@ -75,9 +77,9 @@ export async function retrievePaymentIntent(paymentIntentId: string) {
  * @returns The created customer
  */
 export async function createCustomer(
-  email: string, 
-  name?: string, 
-  metadata: Record<string, any> = {}
+  email: string,
+  name?: string,
+  metadata: Record<string, string> = {}
 ) {
   if (!stripe) {
     throw new Error("Stripe is not configured properly. Please check your environment variables.");
@@ -132,16 +134,17 @@ export async function getPaymentMethods(customerId: string) {
       type: 'card',
     });
 
-    return paymentMethods.data;
+    return paymentMethods;
   } catch (error: any) {
-    console.error("Error retrieving payment methods:", error);
+    console.error("Error retrieving Stripe payment methods:", error);
     throw error;
   }
 }
 
 export default {
-  publicKey: process.env.VITE_STRIPE_PUBLIC_KEY,
+  stripe,
   isConfigured: !!stripe,
+  publicKey: stripePublicKey,
   createPaymentIntent,
   retrievePaymentIntent,
   createCustomer,
