@@ -155,6 +155,18 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Order Tasks table (specifically for order-related tasks)
+export const orderTasks = pgTable("order_tasks", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  description: text("description").notNull(),
+  dueDate: date("due_date"),
+  priority: text("priority").default("medium"),
+  completed: boolean("completed").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Order Logs table
 export const orderLogs = pgTable("order_logs", {
   id: serial("id").primaryKey(),
@@ -163,6 +175,29 @@ export const orderLogs = pgTable("order_logs", {
   details: text("details"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdBy: integer("created_by").notNull(),
+});
+
+// Order Notes table
+export const orderNotes = pgTable("order_notes", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").notNull(),
+});
+
+// Scheduled Payments table
+export const scheduledPayments = pgTable("scheduled_payments", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  dueDate: date("due_date").notNull(),
+  paymentMethod: text("payment_method"),
+  description: text("description"),
+  status: text("status").default("Pending"),
+  reminderSent: boolean("reminder_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Products table
@@ -366,7 +401,10 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: t
 export const insertQuoteSchema = createInsertSchema(quotes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertQuoteItemSchema = createInsertSchema(quoteItems).omit({ id: true });
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
+export const insertOrderTaskSchema = createInsertSchema(orderTasks).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertOrderLogSchema = createInsertSchema(orderLogs).omit({ id: true, createdAt: true });
+export const insertOrderNoteSchema = createInsertSchema(orderNotes).omit({ id: true, createdAt: true });
+export const insertScheduledPaymentSchema = createInsertSchema(scheduledPayments).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
 export const insertRecipeSchema = createInsertSchema(recipes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({ id: true, createdAt: true });
