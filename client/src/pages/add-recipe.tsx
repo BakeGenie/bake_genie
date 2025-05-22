@@ -278,7 +278,11 @@ const AddRecipePage = () => {
                               type="number"
                               min="0"
                               placeholder="0"
-                              {...field}
+                              value={field.value || ''}
+                              onChange={(e) => {
+                                const value = e.target.valueAsNumber;
+                                field.onChange(isNaN(value) ? '' : value);
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -297,7 +301,11 @@ const AddRecipePage = () => {
                               type="number"
                               min="0"
                               placeholder="0"
-                              {...field}
+                              value={field.value || ''}
+                              onChange={(e) => {
+                                const value = e.target.valueAsNumber;
+                                field.onChange(isNaN(value) ? '' : value);
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
