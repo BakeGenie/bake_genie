@@ -116,13 +116,18 @@ const TaskList = () => {
     if (selectedTask) {
       console.log("Selected task for editing:", selectedTask);
       
-      // Check if there's a due date to properly set the hasDueDate field
-      const hasDueDate = selectedTask.due_date ? true : false;
-      const dueDate = selectedTask.due_date ? new Date(selectedTask.due_date) : undefined;
+      // Handle different property names in the backend response
+      // The server returns data with due_date but our form uses dueDate
+      const hasDueDate = (selectedTask.due_date || selectedTask.dueDate) ? true : false;
+      const dueDate = selectedTask.due_date 
+        ? new Date(selectedTask.due_date) 
+        : selectedTask.dueDate 
+          ? new Date(selectedTask.dueDate) 
+          : undefined;
       
       editForm.reset({
-        userId: selectedTask.userId,
-        relatedOrderId: selectedTask.relatedOrderId,
+        userId: selectedTask.user_id || selectedTask.userId,
+        relatedOrderId: selectedTask.related_order_id || selectedTask.relatedOrderId,
         title: selectedTask.title,
         description: selectedTask.description || "",
         dueDate: dueDate,
@@ -220,8 +225,6 @@ const TaskList = () => {
       };
       
       console.log("Sending payload to server:", payload);
-      
-      // Log the task ID being updated
       console.log(`Updating task with ID: ${selectedTask.id}`);
       
       // Use fetch directly for more control
@@ -234,15 +237,25 @@ const TaskList = () => {
         credentials: 'include'
       });
       
-      // Log the response status
       console.log("Server response status:", response.status);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to update task: ${errorText}`);
+        const errorData = await response.text();
+        console.error("Error response from server:", errorData);
+        throw new Error(`Failed to update task: ${errorData || response.statusText}`);
       }
       
-      const result = await response.json();
+      // Try to parse the response as JSON, but handle case where it might be empty
+      let result;
+      const responseText = await response.text();
+      try {
+        if (responseText) {
+          result = JSON.parse(responseText);
+          console.log("Task updated successfully:", result);
+        }
+      } catch (e) {
+        console.log("Response was not JSON:", responseText);
+      }
       console.log("Task updated successfully:", result);
       
       // Invalidate tasks query to refresh the list
