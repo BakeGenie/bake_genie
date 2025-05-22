@@ -110,7 +110,7 @@ const IngredientsList = () => {
   });
   
   // Filter ingredients based on search query
-  const filteredIngredients = ingredients.filter(ingredient => 
+  const filteredIngredients = ingredients.filter((ingredient: any) => 
     ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (ingredient.supplier && ingredient.supplier.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -205,7 +205,7 @@ const IngredientsList = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredIngredients.map((ingredient) => (
+                filteredIngredients.map((ingredient: any) => (
                   <TableRow key={ingredient.id}>
                     <TableCell className="font-medium">
                       <Button 

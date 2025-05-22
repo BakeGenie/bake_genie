@@ -135,7 +135,8 @@ const MasterIngredients = () => {
   });
   
   // Get unique categories for filter dropdown
-  const categories = ["All Categories", ...new Set(masterIngredients.map(ing => ing.category))].sort();
+  const uniqueCategories = Array.from(new Set(masterIngredients.map(ing => ing.category)));
+  const categories = ["All Categories", ...uniqueCategories].sort();
   
   // Filter ingredients based on search and category
   const filteredIngredients = masterIngredients.filter(ing => {
