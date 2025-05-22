@@ -14,7 +14,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 // We'll use a conditional approach to prevent errors
 // This will let the component render but will disable actual Stripe functionality
 // until the correct publishable key is provided
-const stripePromise = null; // Temporary disabled until proper key is set
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 // Card Element styling
 const cardElementOptions = {

@@ -35,7 +35,13 @@ export default function ManageSubscription() {
   });
   
   // Derive subscription status - default to active if not explicitly cancelled
+  // Also check the session for any recent cancellations
   const isSubscriptionActive = subscriptionData?.status !== 'cancelled';
+  
+  // Add subscription status text for display
+  const subscriptionStatus = isSubscriptionActive 
+    ? { text: "Active", color: "bg-green-500", textClass: "text-green-600" }
+    : { text: "Cancelled", color: "bg-red-500", textClass: "text-red-600" };
   
   const handleChangePlan = () => {
     toast({
@@ -169,10 +175,19 @@ export default function ManageSubscription() {
                     Cancel Subscription
                   </Button>
                 ) : (
-                  <div className="w-full p-3 bg-muted/50 rounded-md">
-                    <p className="text-sm text-center">
-                      Your subscription has been cancelled
-                    </p>
+                  <div className="w-full space-y-2">
+                    <div className="p-3 bg-muted/50 rounded-md">
+                      <p className="text-sm text-center">
+                        Your subscription has been cancelled
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-primary border-primary/20 hover:bg-primary/10"
+                      onClick={handleChangePlan}
+                    >
+                      Resubscribe
+                    </Button>
                   </div>
                 )}
               </div>
@@ -194,17 +209,10 @@ export default function ManageSubscription() {
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>
                     <p className="font-medium flex items-center">
-                      {isSubscriptionActive ? (
-                        <>
-                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                          Active
-                        </>
-                      ) : (
-                        <>
-                          <span className="inline-block w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                          Cancelled
-                        </>
-                      )}
+                      <span className={`inline-block w-2 h-2 ${subscriptionStatus.color} rounded-full mr-2`}></span>
+                      <span className={subscriptionStatus.textClass}>
+                        {subscriptionStatus.text}
+                      </span>
                     </p>
                   </div>
                   

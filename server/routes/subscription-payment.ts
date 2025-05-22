@@ -134,12 +134,16 @@ router.get("/status", requireAuth, async (req: Request, res: Response) => {
     
     // For this implementation, check if the user has recently cancelled
     // We'll store cancelled subscriptions in the session temporarily
-    const isCancelled = req.session.subscriptionCancelled === true;
+    const isCancelled = req.session?.subscriptionCancelled === true;
+    
+    console.log(`User ${userId} subscription cancelled status: ${isCancelled}`);
     
     res.json({
       status: isCancelled ? 'cancelled' : 'active',
       currentPeriodEnd: "2025-06-21",
       cancelAtPeriodEnd: false,
+      plan: "Monthly",
+      price: 20.00
     });
   } catch (error: any) {
     console.error("Error fetching subscription status:", error);
