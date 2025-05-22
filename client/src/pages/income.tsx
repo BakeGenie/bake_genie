@@ -364,12 +364,15 @@ const Income = () => {
       {/* Income Dialog */}
       <Dialog open={openIncomeDialog} onOpenChange={setOpenIncomeDialog}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add Income</DialogTitle>
-            <DialogDescription>
-              Record additional income for your business. Fill out the details below.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="flex justify-between items-center mb-4">
+            <DialogTitle className="text-xl">Add Income</DialogTitle>
+            <button 
+              onClick={() => setOpenIncomeDialog(false)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              ✕
+            </button>
+          </div>
           <Form {...incomeForm}>
             <form onSubmit={incomeForm.handleSubmit(onSubmitIncome)} className="space-y-4">
               <FormField
@@ -377,38 +380,44 @@ const Income = () => {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel className="text-gray-500 font-normal">Payment Source</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue="Cash">
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue placeholder="Select a payment source" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {incomeCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                        <SelectItem value="PayPal">PayPal</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={incomeForm.control}
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel className="text-gray-500 font-normal">Income Date</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="text"
-                        value={field.value ? format(field.value, "EEE, dd MMM yyyy") : ""}
-                        onClick={() => document.getElementById("income-calendar-toggle")?.click()}
-                        readOnly
-                      />
+                      <div className="relative">
+                        <Input 
+                          type="text"
+                          value={field.value ? format(field.value, "EEE, dd MMM yyyy") : ""}
+                          onClick={() => document.getElementById("income-calendar-toggle")?.click()}
+                          readOnly
+                        />
+                        <span className="absolute right-3 top-2.5 text-gray-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </span>
+                      </div>
                     </FormControl>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -429,12 +438,52 @@ const Income = () => {
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={incomeForm.control}
-                name="amount"
+                name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount</FormLabel>
+                    <FormLabel className="text-gray-500 font-normal">Category</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {incomeCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={incomeForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-500 font-normal">Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter a description" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={incomeForm.control}
+                name="vat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-500 font-normal">VAT (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="0.00"
@@ -448,27 +497,69 @@ const Income = () => {
                   </FormItem>
                 )}
               />
+              
               <FormField
                 control={incomeForm.control}
-                name="description"
+                name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormLabel className="text-gray-500 font-normal">Total Inc. Tax</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Enter a description" {...field} value={field.value || ''} />
+                      <Input
+                        placeholder="0.00"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              
+              <div>
+                <div className="mb-2">
+                  <label className="flex items-center gap-2 text-gray-500 font-normal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.48-8.48l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                    Attachments
+                  </label>
+                </div>
+                
+                <div className="flex gap-2 mb-1">
+                  <Input type="text" placeholder="Choose file to upload" readOnly className="flex-1" />
+                  <Button type="button" className="bg-blue-500 text-white">Choose File</Button>
+                </div>
+                
+                <div className="text-xs text-gray-500 flex items-start gap-1">
+                  <span className="text-gray-400 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                  </span>
+                  Attachments larger than 3mb may take longer to upload when saving an income.
+                </div>
+              </div>
+              
+              <div className="flex items-center mb-2">
+                <Checkbox id="isRecurring" className="mr-2" />
+                <label htmlFor="isRecurring" className="text-sm font-normal">
+                  Add as a recurring income
+                </label>
+              </div>
+              
+              <div className="flex justify-between mt-6">
                 <Button type="button" variant="outline" onClick={() => setOpenIncomeDialog(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createIncomeMutation.isPending} className="bg-blue-500">
+                <Button type="submit" disabled={createIncomeMutation.isPending} className="bg-blue-500 text-white">
                   {createIncomeMutation.isPending ? "Saving..." : "Add Income"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </Form>
         </DialogContent>
