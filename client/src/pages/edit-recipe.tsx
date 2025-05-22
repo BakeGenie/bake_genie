@@ -70,6 +70,8 @@ interface RecipeWithIngredients {
 const recipeFormSchema = insertRecipeSchema.extend({
   name: z.string().min(1, "Name is required"),
   servings: z.coerce.number().int().positive("Servings must be a positive number"),
+  prepTime: z.coerce.number().int().nonnegative().nullable(),
+  cookTime: z.coerce.number().int().nonnegative().nullable(),
   ingredients: z.array(
     z.object({
       ingredientId: z.number().int().positive("Ingredient is required"),
