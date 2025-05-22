@@ -221,15 +221,14 @@ router.post("/", async (req, res) => {
       // Insert recipe ingredients
       if (ingredientsList.length > 0) {
         const recipeIngredientValues = ingredientsList.map((item: any) => {
-          // Create a base object without notes
-          const baseValues = {
+          // Match the exact database schema
+          return {
             recipeId: recipe.id,
             ingredientId: Number(item.ingredientId),
-            quantity: Number(item.quantity)
+            quantity: String(item.quantity), // Database has quantity as TEXT
+            unit: "", // Required field in database
+            cost: "0" // Required field in database
           };
-          
-          // Only add notes if it's in the database schema to avoid errors
-          return baseValues;
         });
         
         await tx.insert(recipeIngredients).values(recipeIngredientValues);
@@ -298,9 +297,10 @@ router.put("/:id", async (req, res) => {
       if (ingredientsList.length > 0) {
         const recipeIngredientValues = ingredientsList.map((item: any) => ({
           recipeId: recipeId,
-          ingredientId: item.ingredientId,
-          quantity: item.quantity
-          // Removed notes field to avoid database schema mismatch
+          ingredientId: Number(item.ingredientId),
+          quantity: String(item.quantity), // Database has quantity as TEXT
+          unit: "", // Required field in database
+          cost: "0" // Required field in database
         }));
         
         await tx.insert(recipeIngredients).values(recipeIngredientValues);

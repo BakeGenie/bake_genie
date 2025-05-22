@@ -176,8 +176,9 @@ const AddRecipePage = () => {
       cookTime: formValues.cookTime ? Number(formValues.cookTime) : null,
       ingredients: formValues.ingredients.map(ingredient => ({
         ingredientId: Number(ingredient.ingredientId),
-        quantity: Number(ingredient.quantity)
-        // Removed notes field as it doesn't exist in the database table
+        quantity: String(ingredient.quantity), // Database expects TEXT
+        unit: "", // Required by database schema
+        cost: "0" // Required by database schema
       }))
     };
     
