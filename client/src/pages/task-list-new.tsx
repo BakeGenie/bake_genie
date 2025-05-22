@@ -151,10 +151,22 @@ const TaskList = () => {
 
   // Handle new task submission
   const handleNewTaskSubmit = async (data: TaskFormValues) => {
+    console.log("Submit button clicked!");
     setIsSubmitting(true);
     console.log("Submitting task form data:", data);
     
     try {
+      // Make sure we have a title
+      if (!data.title || data.title.trim() === '') {
+        toast({
+          title: "Error",
+          description: "Task title cannot be empty",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Manually construct the request for better control
       const response = await fetch('/api/tasks', {
         method: 'POST',
@@ -168,7 +180,7 @@ const TaskList = () => {
           description: data.description || null,
           priority: data.priority || "Medium",
           // Handle date conversion safely
-          dueDate: data.dueDate 
+          due_date: data.dueDate 
             ? (typeof data.dueDate === 'string' 
                 ? new Date(data.dueDate).toISOString() 
                 : data.dueDate instanceof Date 
@@ -474,7 +486,14 @@ const TaskList = () => {
           </div>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleNewTaskSubmit)} className="space-y-4">
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                console.log("Form submitted directly!");
+                const formData = form.getValues();
+                handleNewTaskSubmit(formData);
+              }} 
+              className="space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="title"
