@@ -84,8 +84,28 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
   async function onSubmit(data: EnquiryFormValues) {
     setIsSubmitting(true);
     
+    console.log("Submitting enquiry form data:", data);
+    
     try {
-      await apiRequest("POST", "/api/enquiries", data);
+      // Create a transformed object that matches backend expectations
+      const transformedData = {
+        message: data.message,
+        eventType: data.eventType,
+        eventDate: data.eventDate,
+        status: "New",
+        // The backend is looking for these fields in the correct format
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null
+      };
+      
+      console.log("Transformed data for backend:", transformedData);
+      
+      const response = await apiRequest("/api/enquiries", {
+        method: "POST",
+        body: transformedData
+      });
+      console.log("Response from server:", response);
       
       // Invalidate the enquiries cache to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/enquiries"] });

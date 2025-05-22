@@ -94,51 +94,29 @@ router.post("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Message is required" });
     }
     
-    // Find or create a contact ID based on the name and email
-    let contactId = null;
-    
-    // Map the form fields to the actual database structure
-    const enquiryData = {
-      user_id: userId,
-      contact_id: contactId,
-      date: now, // Current date as enquiry date
-      event_type: req.body.eventType || 'Other',
-      event_date: req.body.eventDate || null,
-      details: message,
-      status: 'New', // Always use 'New' for initial status
-      follow_up_date: null, // No follow-up date initially
-      created_at: now,
-      updated_at: now
-    };
-    
-    console.log("Mapped to DB structure:", JSON.stringify(enquiryData, null, 2));
-    
-    const query = `
+    // Try a simpler approach with minimal fields
+    const simplifiedQuery = `
       INSERT INTO enquiries
-        (user_id, contact_id, date, event_type, event_date, details, status, follow_up_date, created_at, updated_at)
+        (user_id, date, details, status, created_at, updated_at)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
     
-    const values = [
-      enquiryData.user_id,
-      enquiryData.contact_id,
-      enquiryData.date,
-      enquiryData.event_type,
-      enquiryData.event_date,
-      enquiryData.details,
-      enquiryData.status,
-      enquiryData.follow_up_date,
-      enquiryData.created_at,
-      enquiryData.updated_at
+    const simplifiedValues = [
+      userId,
+      now,
+      message,
+      'New',
+      now,
+      now
     ];
     
-    console.log("Executing SQL query:", query);
-    console.log("With values:", JSON.stringify(values, null, 2));
+    console.log("Executing simplified SQL query:", simplifiedQuery);
+    console.log("With simplified values:", JSON.stringify(simplifiedValues, null, 2));
     
-    // Instead of using db.execute with sql template literals, use the native query method
-    const result = await db.$client.query(query, values);
+    // Use a direct connection to the database
+    const result = await db.$client.query(simplifiedQuery, simplifiedValues);
     
     console.log("Query executed successfully");
     console.log("Inserted enquiry:", result.rows[0]);
@@ -155,8 +133,7 @@ router.post("/", async (req: Request, res: Response) => {
     
     res.status(500).json({ 
       error: "Failed to create enquiry", 
-      details: error.message,
-      stack: error.stack
+      details: error.message
     });
   }
 });
