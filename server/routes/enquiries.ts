@@ -80,44 +80,50 @@ router.get("/:id", async (req: Request, res: Response) => {
  */
 router.post("/", async (req: Request, res: Response) => {
   try {
+    console.log("Received enquiry form data:", req.body);
+    
     const userId = 1;
     const now = new Date();
+    
+    // Find or create a contact ID based on the name and email
+    let contactId = null;
+    if (req.body.name && req.body.email) {
+      // In a real implementation, we would look up or create a contact here
+      // For now, we'll just use null for contact_id
+    }
     
     // Map the form fields to the actual database structure
     const enquiryData = {
       user_id: userId,
-      date: now,
+      contact_id: contactId,
+      date: now, // Current date as enquiry date
       event_type: req.body.eventType || 'Other',
       event_date: req.body.eventDate || null,
       details: req.body.message || '',
       status: req.body.status || 'New',
+      follow_up_date: null, // No follow-up date initially
       created_at: now,
-      updated_at: now,
-      contact_id: null,
-      follow_up_date: null
+      updated_at: now
     };
     
-    // Handle special field mapping
-    if (req.body.firstName && req.body.lastName) {
-      // In a real implementation, we would find or create a contact here
-      // For now, we'll just use null for contact_id
-    }
+    console.log("Mapped to DB structure:", enquiryData);
     
-    // Insert the new enquiry using raw SQL
+    // Insert the new enquiry using raw SQL with only the fields that exist in the database
     const result = await db.execute(
       sql`INSERT INTO enquiries
-        (user_id, date, event_type, event_date, details, status, created_at, updated_at, contact_id, follow_up_date)
+        (user_id, contact_id, date, event_type, event_date, details, status, follow_up_date, created_at, updated_at)
         VALUES
-        (${enquiryData.user_id}, ${enquiryData.date}, ${enquiryData.event_type}, 
-         ${enquiryData.event_date}, ${enquiryData.details}, ${enquiryData.status}, 
-         ${enquiryData.created_at}, ${enquiryData.updated_at}, ${enquiryData.contact_id}, ${enquiryData.follow_up_date})
+        (${enquiryData.user_id}, ${enquiryData.contact_id}, ${enquiryData.date}, 
+         ${enquiryData.event_type}, ${enquiryData.event_date}, ${enquiryData.details}, 
+         ${enquiryData.status}, ${enquiryData.follow_up_date}, ${enquiryData.created_at}, ${enquiryData.updated_at})
         RETURNING *`
     );
     
+    console.log("Inserted enquiry:", result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Error creating enquiry:", error);
-    res.status(500).json({ error: "Failed to create enquiry" });
+    res.status(500).json({ error: "Failed to create enquiry", details: error.message });
   }
 });
 
