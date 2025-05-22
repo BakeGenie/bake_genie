@@ -38,7 +38,8 @@ import {
 import { eventTypes } from "@shared/schema";
 
 // Define the event types
-const eventTypesArray = [...eventTypes, "Other"];
+// Make sure each event type appears only once
+const eventTypesArray = [...new Set([...eventTypes, "Other"])];
 
 // Define source options
 const sourceOptions = ["Phone", "Email", "In-person", "Facebook", "Instagram", "Other"];
@@ -92,7 +93,7 @@ Email: ${values.email || 'Not provided'}
 Phone: ${values.phone || 'Not provided'}
 ${values.source ? `Source: ${values.source}` : ''}
 
-Message: ${values.message}`;
+Message: ${values.message.trim()}`;
       
       // Format data to match the server expectations
       // The server is looking for 'message' and 'eventType', even though it 

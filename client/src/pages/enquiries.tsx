@@ -104,12 +104,14 @@ const Enquiries = () => {
     const nameMatch = details.match(/Name: (.+?)(?:\n|$)/);
     const emailMatch = details.match(/Email: (.+?)(?:\n|$)/);
     const phoneMatch = details.match(/Phone: (.+?)(?:\n|$)/);
+    const sourceMatch = details.match(/Source: (.+?)(?:\n|$)/);
     const messageMatch = details.match(/Message: ([\s\S]+?)(?:\n\n|$)/);
     
     return {
       name: nameMatch ? nameMatch[1] : "Unknown",
       email: emailMatch && emailMatch[1] !== "Not provided" ? emailMatch[1] : null,
       phone: phoneMatch && phoneMatch[1] !== "Not provided" ? phoneMatch[1] : null,
+      source: sourceMatch ? sourceMatch[1] : null,
       message: messageMatch ? messageMatch[1] : details
     };
   };
@@ -287,10 +289,12 @@ const Enquiries = () => {
             </DialogHeader>
             
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle>Enquiry Details</CardTitle>
-                  {getStatusBadge(selectedEnquiry.status)}
+                  <div>
+                    {getStatusBadge(selectedEnquiry.status)}
+                  </div>
                 </div>
                 <CardDescription>
                   Received on {formatDate(new Date(selectedEnquiry.created_at), { withTime: true })}
@@ -331,7 +335,7 @@ const Enquiries = () => {
                           <div>
                             <h4 className="text-sm font-medium text-gray-500">Message</h4>
                             <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                              <p className="whitespace-pre-line">{message}</p>
+                              <p className="whitespace-pre-wrap">{message}</p>
                             </div>
                           </div>
                         </>
@@ -347,12 +351,12 @@ const Enquiries = () => {
                       <p>{selectedEnquiry.event_type}</p>
                     </div>
                   )}
-                  {selectedEnquiry.date && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500">Event Date</h4>
-                      <p>{formatDate(new Date(selectedEnquiry.date))}</p>
-                    </div>
-                  )}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500">Event Date</h4>
+                    <p>{selectedEnquiry.event_date ? formatDate(new Date(selectedEnquiry.event_date)) : 
+                       selectedEnquiry.date ? formatDate(new Date(selectedEnquiry.date)) : 
+                       'Not specified'}</p>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
