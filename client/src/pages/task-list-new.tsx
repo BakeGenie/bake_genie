@@ -245,18 +245,18 @@ const TaskList = () => {
         throw new Error(`Failed to update task: ${errorData || response.statusText}`);
       }
       
-      // Try to parse the response as JSON, but handle case where it might be empty
+      // Try to parse the response as JSON if possible
       let result;
-      const responseText = await response.text();
       try {
+        const responseClone = response.clone(); // Clone the response before reading it
+        const responseText = await responseClone.text();
         if (responseText) {
           result = JSON.parse(responseText);
           console.log("Task updated successfully:", result);
         }
       } catch (e) {
-        console.log("Response was not JSON:", responseText);
+        console.log("Error parsing response:", e);
       }
-      console.log("Task updated successfully:", result);
       
       // Invalidate tasks query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
