@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { OrderWithItems } from "@/types";
 import OrderDetailsDialog from "@/components/order/order-details-dialog";
 import CalendarDateDialog from "@/components/calendar/calendar-date-dialog";
+import { Badge } from "@/components/ui/badge";
 import { eventTypeColors } from "@/lib/constants";
 import { EventType, eventTypes } from "@shared/schema";
 
@@ -497,7 +498,7 @@ const CalendarStandalone = () => {
                             <div>Total: <span className="font-medium">${parseFloat(order.totalAmount || '0').toFixed(2)}</span></div>
                             {order.items && order.items.length > 0 && (
                               <div className="mt-1 text-gray-500">
-                                {order.items.map((item, index) => (
+                                {order.items.map((item: any, index: number) => (
                                   <div key={index} className="truncate">
                                     {item.quantity}x {item.description || item.name}
                                   </div>
