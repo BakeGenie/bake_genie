@@ -62,6 +62,15 @@ const PaymentFormSchema = z.object({
   date: z.string().optional(),
 });
 
+// Scheduled Payment form schema
+const ScheduledPaymentFormSchema = z.object({
+  amount: z.string().min(1, "Amount is required"),
+  dueDate: z.string().min(1, "Due date is required"),
+  method: z.string().min(1, "Payment method is required"),
+  description: z.string().optional(),
+  status: z.string().default("Pending"),
+});
+
 // Task form schema
 const TaskFormSchema = z.object({
   description: z.string().min(1, "Task description is required"),
@@ -84,6 +93,132 @@ const EmailFormSchema = z.object({
 
 // Import the wallet icon
 import walletImagePath from "@assets/image_1747932976720.png";
+
+// Scheduled Payment Modal Component
+const ScheduledPaymentModal = ({
+  open,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: any) => void;
+}) => {
+  const form = useForm<z.infer<typeof ScheduledPaymentFormSchema>>({
+    resolver: zodResolver(ScheduledPaymentFormSchema),
+    defaultValues: {
+      amount: "",
+      dueDate: new Date().toISOString().split("T")[0],
+      method: "credit_card",
+      description: "",
+      status: "Pending",
+    },
+  });
+
+  const handleSubmit = (data: z.infer<typeof ScheduledPaymentFormSchema>) => {
+    onSubmit(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader className="text-center">
+          <div className="flex flex-col items-center mb-4">
+            <img
+              src={walletImagePath}
+              alt="Wallet"
+              className="h-16 w-16 mb-2"
+            />
+            <DialogTitle>Schedule Payment</DialogTitle>
+            <DialogDescription>Set up a future payment</DialogDescription>
+          </div>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5">$</span>
+                      <Input className="pl-7" placeholder="0.00" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Due Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter payment description"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="submit">Schedule Payment</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 // Payment Modal Component
 const PaymentModal = ({
@@ -508,6 +643,7 @@ const OrderDetails: React.FC = () => {
 
   // States for modals
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isScheduledPaymentModalOpen, setIsScheduledPaymentModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -545,6 +681,38 @@ const OrderDetails: React.FC = () => {
       toast({
         title: "Error",
         description: "Failed to add payment",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Function to add scheduled payment
+  const handleAddScheduledPayment = async (paymentData: any) => {
+    try {
+      const response = await fetch(`/api/orders/${id}/scheduled-payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to schedule payment");
+      }
+
+      toast({
+        title: "Payment scheduled",
+        description: "Payment has been scheduled successfully",
+      });
+
+      // Refetch order data
+      queryClient.invalidateQueries({ queryKey: [`/api/orders/${id}`] });
+      setIsScheduledPaymentModalOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to schedule payment",
         variant: "destructive",
       });
     }
@@ -1058,38 +1226,41 @@ const OrderDetails: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex mt-4 space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="bg-blue-500 text-white hover:bg-blue-600"
-          onClick={generateInvoice}
-        >
-          <DownloadIcon className="h-4 w-4 mr-2" />
-          Invoice
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="bg-blue-500 text-white hover:bg-blue-600"
-          onClick={() => setIsEmailModalOpen(true)}
-        >
-          <Mail className="h-4 w-4 mr-2" />
-          Email
-        </Button>
-        <div className="ml-auto">
-          <Button
-            size="sm"
-            className="bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => setIsPaymentModalOpen(true)}
-          >
-            <DollarSign className="h-4 w-4 mr-2" />
-            Add Payment
-          </Button>
+        <hr />
+        <div className="flex justify-content-between p-4">
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              onClick={generateInvoice}
+            >
+              <DownloadIcon className="h-4 w-4 mr-2" />
+              Invoice
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              onClick={() => setIsEmailModalOpen(true)}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Email
+            </Button>
+          </div>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              className="bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => setIsPaymentModalOpen(true)}
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              Add Payment
+            </Button>
+          </div>
         </div>
+
+        {/* Action Buttons */}
       </div>
 
       {/* Scheduled Payments Section */}
@@ -1099,6 +1270,7 @@ const OrderDetails: React.FC = () => {
           <Button
             size="sm"
             className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-3"
+            onClick={() => setIsScheduledPaymentModalOpen(true)}
           >
             + Add
           </Button>
