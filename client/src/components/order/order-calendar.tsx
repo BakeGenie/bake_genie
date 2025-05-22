@@ -151,13 +151,13 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
       {/* Calendar header - Days of week */}
       <div className="bg-white grid grid-cols-7 rounded-t-lg border-b border-gray-100">
         {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
           <div
             key={day + index}
-            className="py-3 text-center font-medium text-gray-500 text-sm"
+            className="py-1 text-center font-medium text-gray-500 text-xs"
           >
             {day}
           </div>
@@ -201,7 +201,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             <div
               key={dateKey}
               className={`
-                relative aspect-square flex flex-col items-center p-1 cursor-pointer
+                relative aspect-square flex flex-col items-center p-0.5 cursor-pointer
                 transition-all duration-150 hover:bg-gray-50
                 ${dayToday ? "bg-blue-50" : ""}
                 ${daySelected ? "bg-blue-100" : ""}
@@ -211,10 +211,10 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             >
               <div
                 className={`
-                  flex items-center justify-center h-8 w-8 rounded-full
-                  my-1 font-medium text-sm transition-colors
+                  flex items-center justify-center h-6 w-6 rounded-full
+                  my-0.5 font-medium text-xs transition-colors
                   ${dayToday ? "bg-blue-500 text-white" : "text-gray-700"}
-                  ${daySelected ? "ring-2 ring-blue-400 ring-offset-2" : ""}
+                  ${daySelected ? "ring-1 ring-blue-400 ring-offset-1" : ""}
                 `}
               >
                 {dayNum}
@@ -222,15 +222,15 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
               
               {/* Event indicators */}
               {hasOrders && (
-                <div className="flex gap-1 mt-1">
+                <div className="flex gap-0.5 mt-0.5">
                   {hasRedEvents && (
-                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                    <div className="h-1.5 w-1.5 rounded-full bg-red-500"></div>
                   )}
                   {hasOrangeEvents && (
-                    <div className="h-2 w-2 rounded-full bg-orange-400"></div>
+                    <div className="h-1.5 w-1.5 rounded-full bg-orange-400"></div>
                   )}
                   {hasGrayEvents && (
-                    <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+                    <div className="h-1.5 w-1.5 rounded-full bg-gray-400"></div>
                   )}
                 </div>
               )}
@@ -238,7 +238,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
               {/* Event type indicator */}
               {dominantEventType && (
                 <div 
-                  className="absolute bottom-0 left-0 right-0 h-1"
+                  className="absolute bottom-0 left-0 right-0 h-0.5"
                   style={{ backgroundColor: eventTypeColor }}
                 ></div>
               )}
