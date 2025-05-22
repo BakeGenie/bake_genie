@@ -33,6 +33,9 @@ interface DatabaseEnquiry {
   follow_up_date: string | null;
   created_at: string;
   updated_at: string;
+  // Added fields from the JOIN with users table
+  user_name?: string;
+  user_email?: string;
 }
 
 const Enquiries = () => {
@@ -115,21 +118,27 @@ const Enquiries = () => {
   const columns: ColumnDef<DatabaseEnquiry>[] = [
     {
       accessorFn: (row) => {
-        // Extract name from details field
+        // Use customer name from details field first
         const details = row.details || "";
         const nameMatch = details.match(/Name: (.+?)(?:\n|$)/);
-        return nameMatch ? nameMatch[1] : "Unknown";
+        const customerName = nameMatch ? nameMatch[1] : "Unknown";
+        
+        // Return the customer name from the enquiry form
+        return customerName;
       },
       id: "name",
-      header: "Name",
+      header: "Customer",
       enableSorting: true,
     },
     {
       accessorFn: (row) => {
-        // Extract email from details field
+        // Extract email from details field first
         const details = row.details || "";
         const emailMatch = details.match(/Email: (.+?)(?:\n|$)/);
-        return emailMatch && emailMatch[1] !== "Not provided" ? emailMatch[1] : null;
+        const customerEmail = emailMatch && emailMatch[1] !== "Not provided" ? emailMatch[1] : null;
+        
+        // Return the customer email from the enquiry form
+        return customerEmail;
       },
       id: "email",
       header: "Email",
@@ -142,6 +151,15 @@ const Enquiries = () => {
           </a>
         ) : "N/A";
       },
+    },
+    {
+      accessorFn: (row) => {
+        // Return the business user who owns this enquiry
+        return row.user_name || "Unknown";
+      },
+      id: "user",
+      header: "Assigned To",
+      enableSorting: true,
     },
     {
       accessorKey: "event_type",

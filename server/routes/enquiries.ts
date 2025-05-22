@@ -13,9 +13,13 @@ router.get("/", async (req: Request, res: Response) => {
     // Use user ID from session, fallback to 1 for development
     const userId = 1;
     
-    // Fetch enquiries for this user using raw SQL to handle schema differences
+    // Fetch enquiries with user information using a JOIN
     const result = await db.execute(
-      sql`SELECT * FROM enquiries WHERE user_id = ${userId} ORDER BY created_at DESC`
+      sql`SELECT e.*, u.name as user_name, u.email as user_email 
+          FROM enquiries e
+          LEFT JOIN users u ON e.user_id = u.id
+          WHERE e.user_id = ${userId} 
+          ORDER BY e.created_at DESC`
     );
     
     res.json(result.rows);
