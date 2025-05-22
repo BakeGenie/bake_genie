@@ -320,20 +320,44 @@ const MasterIngredients = () => {
       
       {/* Add Ingredient Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="text-center">
-            <div className="mx-auto bg-blue-100 p-2 rounded-full w-12 h-12 flex items-center justify-center mb-2">
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          <div className="absolute top-3 right-3">
+            <button
+              className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none"
+              onClick={() => setIsDialogOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          
+          <div className="flex flex-col items-center pt-8 pb-4">
+            <div className="bg-blue-100 p-3 rounded-full mb-3">
               <Plus className="h-6 w-6 text-blue-500" />
             </div>
-            <DialogTitle className="text-xl">{selectedIngredient?.name}</DialogTitle>
-          </DialogHeader>
+            <h2 className="text-xl font-medium">{selectedIngredient?.name}</h2>
+          </div>
           
-          <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
-                Purchase Size
-              </label>
-              <div className="col-span-3 flex items-center gap-2">
+          <div className="px-6 pb-6 pt-2">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                  Purchase Size
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="ml-1 inline-flex">
+                          <Info className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="w-60">The size of the package you purchase</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="text-sm text-gray-500">Measurement</div>
+              </div>
+              <div className="flex gap-2">
                 <Input
                   type="number"
                   step="0.01"
@@ -342,7 +366,6 @@ const MasterIngredients = () => {
                   onChange={(e) => setFormData({...formData, purchaseSize: e.target.value})}
                   className="flex-1"
                 />
-                
                 <Select 
                   value={formData.purchaseSizeUnit} 
                   onValueChange={(value) => setFormData({...formData, purchaseSizeUnit: value, unit: value})}
@@ -363,74 +386,62 @@ const MasterIngredients = () => {
                     <SelectItem value="pack">pack</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="w-60">The size of the package you purchase, e.g. 400g bag of almonds</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
+            <div className="mt-5 space-y-1">
+              <div className="text-sm font-medium text-gray-600">
                 Cost Price
-              </label>
-              <div className="col-span-3 flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
-                    value={formData.costPrice}
-                    onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
-                    className="pl-7"
-                  />
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  $ {pricePerUnit()} per {formData.unit}
-                </div>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0"
+                  value={formData.costPrice}
+                  onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
+                  className="pl-7"
+                />
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                $ {pricePerUnit()} per {formData.unit}
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
-                Supplier <span className="text-muted-foreground">(Optional)</span>
-              </label>
+            <div className="mt-5 space-y-1">
+              <div className="text-sm font-medium text-gray-600">
+                Supplier <span className="text-gray-400">(Optional)</span>
+              </div>
               <Input
                 placeholder="Enter Supplier Name"
                 value={formData.supplier}
                 onChange={(e) => setFormData({...formData, supplier: e.target.value})}
-                className="col-span-3"
               />
             </div>
+            
+            <div className="mt-8 flex justify-between">
+              <Button 
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                className="border-gray-300 text-gray-600"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveIngredient} 
+                disabled={isSubmitting}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center gap-1">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    <span>Saving</span>
+                  </div>
+                ) : "Save"}
+              </Button>
+            </div>
           </div>
-          
-          <DialogFooter className="flex justify-between sm:justify-between">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveIngredient} 
-              disabled={isSubmitting}
-              className="min-w-[80px]"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-1">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  <span>Saving</span>
-                </div>
-              ) : "Save"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
