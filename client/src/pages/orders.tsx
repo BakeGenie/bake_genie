@@ -178,10 +178,14 @@ const Orders = () => {
               onClick={() => setIsFilterDialogOpen(true)}
               variant="outline"
               size="icon"
+              className="rounded-full h-10 w-10 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
             >
               <FilterIcon className="h-5 w-5" />
             </Button>
-            <Button onClick={() => setIsNewOrderDialogOpen(true)}>
+            <Button 
+              onClick={() => setIsNewOrderDialogOpen(true)}
+              className="rounded-full bg-blue-600 hover:bg-blue-700"
+            >
               <PlusIcon className="h-4 w-4 mr-2" />
               New Order
             </Button>
@@ -190,12 +194,15 @@ const Orders = () => {
       />
 
       {/* Tools and Views Selector */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
+      <div className="flex justify-between items-center mb-6 px-2">
+        <div className="flex items-center space-x-3">
           {/* Search */}
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input placeholder="Search orders..." className="pl-9 w-60" />
+            <Input 
+              placeholder="Search orders..." 
+              className="pl-9 w-64 rounded-full border-gray-200 focus-visible:ring-blue-500" 
+            />
           </div>
 
           {/* Month/Year Selector */}
@@ -204,10 +211,10 @@ const Orders = () => {
               value={month.toString()}
               onValueChange={(value) => setMonth(parseInt(value))}
             >
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[150px] rounded-full border-gray-200">
                 <SelectValue placeholder="Month" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-md shadow-lg">
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                   <SelectItem key={m} value={m.toString()}>
                     {getMonthName(m)}
@@ -220,10 +227,10 @@ const Orders = () => {
               value={year.toString()}
               onValueChange={(value) => setYear(parseInt(value))}
             >
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className="w-[120px] rounded-full border-gray-200">
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-md shadow-lg">
                 {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
                   <SelectItem key={y} value={y.toString()}>
                     {y}
@@ -235,18 +242,18 @@ const Orders = () => {
         </div>
 
         {/* Month/Year display */}
-        <div className="text-sm font-medium text-gray-500">
+        <div className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
           {getMonthName(month)} {year}
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 gap-4 flex-growmt-2 mx-24">
+      <div className="grid grid-cols-1 gap-6 flex-grow mx-2">
         {/* Today's Date */}
-        <div className="mb-4 md:mb-0">
-          <div className="text-sm text-gray-500">Today's Date</div>
-          <div className="flex items-baseline">
-            <span className="text-5xl font-bold mr-2">
+        <div className="mb-2 md:mb-0 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="text-sm text-gray-500 font-medium">Today's Date</div>
+          <div className="flex items-baseline mt-1">
+            <span className="text-5xl font-bold mr-3 text-blue-600">
               {format(new Date(), "dd")}
             </span>
             <div className="flex flex-col">

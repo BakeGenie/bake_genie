@@ -151,13 +151,13 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-md">
+    <div className="w-full bg-white rounded-lg shadow-sm overflow-hidden">
       {/* Calendar header - Days of week */}
-      <div className="bg-white grid grid-cols-7 rounded-t-md border-b border-gray-100">
+      <div className="bg-white grid grid-cols-7 rounded-t-lg border-b border-gray-100">
         {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
           <div
             key={day + index}
-            className="py-2 text-center font-medium text-gray-400 text-xs"
+            className="py-3 text-center font-medium text-gray-500 text-sm"
           >
             {day}
           </div>
@@ -165,10 +165,10 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-0 border-b border-l border-gray-100">
+      <div className="grid grid-cols-7 gap-0 border-b">
         {/* Empty cells for days before the first day of the month */}
         {Array.from({ length: (firstDayOfMonth.getDay() + 6) % 7 }, (_, i) => (
-          <div key={`empty-start-${i}`} className="aspect-square p-1 border-r border-t border-gray-100"></div>
+          <div key={`empty-start-${i}`} className="aspect-square p-1 bg-gray-50"></div>
         ))}
 
         {/* Days of the month */}
@@ -190,36 +190,58 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
 
           // Get dominant event type for this day
           const dominantEventType = getDominantEventType(dateKey);
-          let eventTypeClass = "";
+          let eventTypeColor = "";
 
-          if (dominantEventType) {
-            // Convert spaces to dashes for CSS class names
-            const cssClassName = dominantEventType
-              .replace(/\s+\/\s+/g, "-")
-              .replace(/\s+/g, "-");
-            eventTypeClass = `event-${cssClassName}`;
+          // Convert event type to color
+          if (dominantEventType && eventTypeColors[dominantEventType]) {
+            eventTypeColor = eventTypeColors[dominantEventType];
           }
 
           return (
             <div
               key={dateKey}
-              className="aspect-square flex flex-col items-center justify-center p-1 cursor-pointer border-r border-t border-gray-100 hover:bg-gray-50"
+              className={`
+                relative aspect-square flex flex-col items-center p-1 cursor-pointer
+                transition-all duration-150 hover:bg-gray-50
+                ${dayToday ? "bg-blue-50" : ""}
+                ${daySelected ? "bg-blue-100" : ""}
+              `}
               onClick={() => handleDateClick(day)}
               title={dominantEventType ? `${dominantEventType} Event` : ""}
             >
               <div
                 className={`
-                calendar-day text-xs
-                ${dayToday ? "today" : ""}
-                ${daySelected ? "selected" : ""}
-                ${hasRedEvents ? "has-red-events" : ""}
-                ${hasOrangeEvents ? "has-orange-events" : ""}
-                ${hasGrayEvents ? "has-events" : ""}
-                ${eventTypeClass}
-              `}
+                  flex items-center justify-center h-8 w-8 rounded-full
+                  my-1 font-medium text-sm transition-colors
+                  ${dayToday ? "bg-blue-500 text-white" : "text-gray-700"}
+                  ${daySelected ? "ring-2 ring-blue-400 ring-offset-2" : ""}
+                `}
               >
                 {dayNum}
               </div>
+              
+              {/* Event indicators */}
+              {hasOrders && (
+                <div className="flex gap-1 mt-1">
+                  {hasRedEvents && (
+                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                  )}
+                  {hasOrangeEvents && (
+                    <div className="h-2 w-2 rounded-full bg-orange-400"></div>
+                  )}
+                  {hasGrayEvents && (
+                    <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+                  )}
+                </div>
+              )}
+              
+              {/* Event type indicator */}
+              {dominantEventType && (
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-1"
+                  style={{ backgroundColor: eventTypeColor }}
+                ></div>
+              )}
             </div>
           );
         })}
