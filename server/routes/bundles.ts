@@ -80,34 +80,48 @@ router.post("/", async (req: AuthRequest, res: Response) => {
     const userId = req.session.userId;
     const { name, description, totalCost, items } = req.body;
     
+    console.log("Creating new bundle with data:", JSON.stringify(req.body, null, 2));
+    console.log("Current user ID from session:", userId);
+    
     // Create the bundle
+    const bundleData = {
+      userId,
+      name,
+      description,
+      price: req.body.price || null,
+      category: req.body.category || null,
+      totalCost: req.body.totalCost || null
+    };
+    
+    console.log("Bundle data being inserted:", bundleData);
+    
     const [bundle] = await db
       .insert(productBundles)
-      .values({
-        userId,
-        name,
-        description,
-        price: req.body.price || null,
-        category: req.body.category || null,
-        totalCost: req.body.totalCost || null
-      })
+      .values(bundleData)
       .returning();
+    
+    console.log("Bundle created successfully:", bundle);
     
     // Create the bundle items
     if (items && items.length > 0) {
+      console.log("Adding bundle items:", items);
+      
       const bundleItemsToInsert = items.map((item: any) => ({
         bundleId: bundle.id,
         productId: item.productId,
         quantity: item.quantity
       }));
       
+      console.log("Bundle items being inserted:", bundleItemsToInsert);
+      
       await db.insert(bundleItems).values(bundleItemsToInsert);
+      console.log("Bundle items added successfully");
     }
     
     res.status(201).json(bundle);
   } catch (error) {
     console.error("Error creating bundle:", error);
-    res.status(500).json({ error: "Failed to create bundle" });
+    res.status(500).json({ error: "Failed to create bundle", details: String(error) });
   }
 });
 

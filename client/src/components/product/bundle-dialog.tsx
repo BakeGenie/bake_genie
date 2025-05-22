@@ -50,6 +50,7 @@ interface BundleItem {
 
 interface Bundle {
   id?: number;
+  userId?: number;
   name: string;
   description: string | null;
   totalCost: number;
@@ -73,7 +74,7 @@ export function BundleDialog({ onBundleSelected, trigger }: BundleDialogProps) {
   const { toast } = useToast();
 
   // Fetch all bundles
-  const { data: bundles = [] } = useQuery({
+  const { data: bundles = [] } = useQuery<Bundle[]>({
     queryKey: ['/api/bundles'],
     enabled: open,
   });
@@ -192,7 +193,7 @@ export function BundleDialog({ onBundleSelected, trigger }: BundleDialogProps) {
     };
 
     // Log the bundle data being sent
-    console.log("Submitting bundle data:", bundle);
+    console.log("Submitting bundle data:", JSON.stringify(bundle));
     
     createBundleMutation.mutate(bundle);
   };
@@ -226,7 +227,7 @@ export function BundleDialog({ onBundleSelected, trigger }: BundleDialogProps) {
             </DialogHeader>
             
             <div className="grid gap-4 py-4">
-              {bundles.length > 0 ? (
+              {bundles && bundles.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -237,7 +238,7 @@ export function BundleDialog({ onBundleSelected, trigger }: BundleDialogProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {bundles.map((bundle: Bundle) => (
+                    {bundles.map((bundle) => (
                       <TableRow key={bundle.id}>
                         <TableCell>{bundle.name}</TableCell>
                         <TableCell>{bundle.description || '-'}</TableCell>
