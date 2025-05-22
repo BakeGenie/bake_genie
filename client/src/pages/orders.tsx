@@ -41,6 +41,22 @@ const Orders = () => {
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(
     preselectedDate ? new Date(preselectedDate) : null,
   );
+  
+  // Listen for the custom event from the calendar to open the new order modal
+  React.useEffect(() => {
+    const handleOpenNewOrderModal = (event: CustomEvent) => {
+      if (event.detail && event.detail.date) {
+        setSelectedDate(new Date(event.detail.date));
+      }
+      setIsNewOrderDialogOpen(true);
+    };
+
+    window.addEventListener('openNewOrderModal', handleOpenNewOrderModal as EventListener);
+    
+    return () => {
+      window.removeEventListener('openNewOrderModal', handleOpenNewOrderModal as EventListener);
+    };
+  }, []);
 
   const [month, setMonth] = React.useState(new Date().getMonth() + 1);
   const [year, setYear] = React.useState(new Date().getFullYear());

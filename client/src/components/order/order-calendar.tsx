@@ -91,11 +91,20 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
       // Store the date in localStorage for the order form to use
       localStorage.setItem("selectedEventDate", clickedDate.toISOString());
 
-      // Close the dialog
+      // Close the date selection dialog
       setIsSelectionDialogOpen(false);
 
-      // Redirect to the new order page with date parameter
-      window.location.href = `/orders?newOrder=true&date=${clickedDate.toISOString()}`;
+      // Show the new order form by setting URL parameter and dispatching custom event
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set("newOrder", "true");
+      newUrl.searchParams.set("date", clickedDate.toISOString());
+      window.history.pushState({}, "", newUrl.toString());
+      
+      // Dispatch custom event to open the order form modal
+      const event = new CustomEvent("openNewOrderModal", { 
+        detail: { date: clickedDate } 
+      });
+      window.dispatchEvent(event);
     }
   };
 
