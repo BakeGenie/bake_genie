@@ -22,11 +22,11 @@ router.get('/logout', (req: Request, res: Response) => {
       // Clear the session cookie
       res.clearCookie('connect.sid');
       
-      // Redirect to login page with a logged_out parameter
-      res.redirect('/login?logged_out=true');
+      // Redirect to home page
+      res.redirect('/');
     });
   } else {
-    // No session exists, just redirect to login
-    res.redirect('/login?logged_out=true');
+    // No session exists, just redirect to home
+    res.redirect('/');
   }
 });
