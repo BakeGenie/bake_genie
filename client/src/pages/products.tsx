@@ -190,7 +190,7 @@ const Products = () => {
   // Handle image upload
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("image", file);
     
     try {
       const response = await fetch("/api/upload", {
