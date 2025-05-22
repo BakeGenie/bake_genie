@@ -182,6 +182,7 @@ const Mileage = () => {
     const formattedData = {
       ...data,
       date: format(data.date, "yyyy-MM-dd"),
+      miles: String(data.miles), // Convert miles to string for API
       userId: 1, // Replace with actual user ID
     };
     createMileageMutation.mutate(formattedData);
