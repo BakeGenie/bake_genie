@@ -72,14 +72,19 @@ export function EmailUpdatesSection() {
   const updateEmailSettings = useMutation({
     mutationFn: async (data: Partial<EmailSettings>) => {
       // Convert all boolean values to actual booleans, not strings
-      const processedData = Object.entries(data).reduce((acc, [key, value]) => {
-        if (typeof value === 'boolean' || value === 'true' || value === 'false') {
-          acc[key] = typeof value === 'boolean' ? value : value === 'true';
+      const processedData: Record<string, any> = {};
+      
+      // Process each field individually to ensure proper typing
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'receiveUpcomingOrders' || 
+            key === 'receivePaymentReminders' || 
+            key === 'receiveMarketingEmails' || 
+            key === 'receiveProductUpdates') {
+          processedData[key] = Boolean(value);
         } else {
-          acc[key] = value;
+          processedData[key] = value;
         }
-        return acc;
-      }, {} as Record<string, any>);
+      });
       
       console.log("Sending data to server:", processedData);
       
