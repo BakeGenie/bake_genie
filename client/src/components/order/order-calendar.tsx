@@ -240,20 +240,53 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
               {/* Event indicators */}
               {hasOrders && (
                 <div className="flex flex-wrap gap-0.5 mt-0.5 justify-center max-w-[24px]">
-                  {Array.from({ length: Math.min(ordersOnDay.length, 5) }).map((_, index) => (
-                    <div 
-                      key={index} 
-                      className={`h-2 w-2 rounded-full ${
-                        ordersOnDay[index]?.status === "Quote" ? "bg-blue-500" :
-                        ordersOnDay[index]?.status === "In Progress" ? "bg-orange-500" :
-                        ordersOnDay[index]?.status === "Confirmed" ? "bg-purple-500" :
-                        ordersOnDay[index]?.status === "Paid" ? "bg-green-500" :
-                        ordersOnDay[index]?.status === "Cancelled" ? "bg-gray-500" :
-                        ordersOnDay[index]?.status === "Completed" ? "bg-green-600" :
-                        "bg-gray-400"
-                      }`}
-                    ></div>
-                  ))}
+                  {Array.from({ length: Math.min(ordersOnDay.length, 5) }).map((_, index) => {
+                      // Get the event type for color coding
+                      const eventType = ordersOnDay[index]?.eventType as EventType || "Other";
+                      let bgColor = "bg-gray-400";
+                      
+                      // Use the color from eventTypeColors if available
+                      if (eventType in eventTypeColors) {
+                        const hexColor = eventTypeColors[eventType];
+                        // Match event type to tailwind color classes
+                        switch(eventType) {
+                          case "Birthday": 
+                            bgColor = "bg-red-500"; // Red for Birthday
+                            break;
+                          case "Wedding": 
+                            bgColor = "bg-green-500"; // Green for Wedding
+                            break;
+                          case "Anniversary": 
+                            bgColor = "bg-orange-300"; // Peach for Anniversary
+                            break;
+                          case "Baby Shower": 
+                            bgColor = "bg-yellow-300"; // Yellow for Baby Shower
+                            break;
+                          case "Christening / Baptism": 
+                            bgColor = "bg-blue-300"; // Light blue for Christening
+                            break;
+                          case "Hen/Bux/Stag": 
+                            bgColor = "bg-purple-500"; // Purple for Hen/Bux/Stag
+                            break;
+                          case "Corporate": 
+                            bgColor = "bg-gray-500"; // Grey for Corporate
+                            break;
+                          case "Other": 
+                            bgColor = "bg-gray-400"; // Dark grey for Other
+                            break;
+                          default:
+                            bgColor = "bg-gray-400";
+                        }
+                      }
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          className={`h-2 w-2 rounded-full ${bgColor}`}
+                          title={eventType}
+                        ></div>
+                      );
+                    })}
                 </div>
               )}
             </div>
