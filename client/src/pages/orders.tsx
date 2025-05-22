@@ -77,37 +77,47 @@ const Orders = () => {
     }));
   }, [rawOrders]);
 
-  // Filter orders for the current month/year
+  // States for filters
+  const [filterMode, setFilterMode] = React.useState("all"); // "all" or "month"
+  
+  // Filter orders based on current filter mode
   const filteredOrders = React.useMemo(() => {
-    return orders
-      .filter((order: any) => {
-        if (!order.eventDate) return false;
-        
-        try {
-          const orderDate = new Date(order.eventDate);
-          // Check if the date is valid before comparing
-          if (isNaN(orderDate.getTime())) {
-            console.warn("Invalid date found:", order.eventDate, "for order:", order.id);
+    // First apply date filtering if in month mode
+    const dateFiltered = filterMode === "month" 
+      ? orders.filter((order: any) => {
+          if (!order.eventDate) return false;
+          
+          try {
+            const orderDate = new Date(order.eventDate);
+            // Check if the date is valid before comparing
+            if (isNaN(orderDate.getTime())) {
+              console.warn("Invalid date found:", order.eventDate, "for order:", order.id);
+              return false;
+            }
+            return (
+              orderDate.getMonth() + 1 === month && orderDate.getFullYear() === year
+            );
+          } catch (error) {
+            console.error("Error parsing date for order:", order.id, error);
             return false;
           }
-          return (
-            orderDate.getMonth() + 1 === month && orderDate.getFullYear() === year
-          );
-        } catch (error) {
-          console.error("Error parsing date for order:", order.id, error);
-          return false;
-        }
-      })
-      .sort((a: any, b: any) => {
-        try {
-          return (
-            new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-          );
-        } catch (error) {
+        })
+      : orders; // Show all orders if in "all" mode
+    
+    // Then sort the filtered results by date
+    return dateFiltered.sort((a: any, b: any) => {
+      try {
+        if (!a.eventDate || !b.eventDate) {
           return 0;
         }
-      });
-  }, [orders, month, year]);
+        return (
+          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+        );
+      } catch (error) {
+        return 0;
+      }
+    });
+  }, [orders, month, year, filterMode]);
 
   const handleOrderClick = (order: any) => {
     navigate(`/orders/${order.id}`);
@@ -219,47 +229,82 @@ const Orders = () => {
               className="pl-9 w-64 rounded-full border-gray-200 focus-visible:ring-blue-500" 
             />
           </div>
-
-          {/* Month/Year Selector */}
-          <div className="flex space-x-2">
-            <Select
-              value={month.toString()}
-              onValueChange={(value) => setMonth(parseInt(value))}
+          
+          {/* Filter Toggle */}
+          <div className="flex bg-gray-100 p-1 rounded-full">
+            <button
+              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                filterMode === "all" 
+                  ? "bg-white text-blue-600 shadow-sm" 
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+              onClick={() => setFilterMode("all")}
             >
-              <SelectTrigger className="w-[150px] rounded-full border-gray-200">
-                <SelectValue placeholder="Month" />
-              </SelectTrigger>
-              <SelectContent className="rounded-md shadow-lg">
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <SelectItem key={m} value={m.toString()}>
-                    {getMonthName(m)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={year.toString()}
-              onValueChange={(value) => setYear(parseInt(value))}
+              All Orders
+            </button>
+            <button
+              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                filterMode === "month" 
+                  ? "bg-white text-blue-600 shadow-sm" 
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+              onClick={() => setFilterMode("month")}
             >
-              <SelectTrigger className="w-[120px] rounded-full border-gray-200">
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent className="rounded-md shadow-lg">
-                {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
-                  <SelectItem key={y} value={y.toString()}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              Current Month
+            </button>
           </div>
+
+          {/* Month/Year Selector - Only visible when "month" filter is active */}
+          {filterMode === "month" && (
+            <div className="flex space-x-2">
+              <Select
+                value={month.toString()}
+                onValueChange={(value) => setMonth(parseInt(value))}
+              >
+                <SelectTrigger className="w-[150px] rounded-full border-gray-200">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent className="rounded-md shadow-lg">
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <SelectItem key={m} value={m.toString()}>
+                      {getMonthName(m)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={year.toString()}
+                onValueChange={(value) => setYear(parseInt(value))}
+              >
+                <SelectTrigger className="w-[120px] rounded-full border-gray-200">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent className="rounded-md shadow-lg">
+                  {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
-        {/* Month/Year display */}
-        <div className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
-          {getMonthName(month)} {year}
-        </div>
+        {/* Month/Year display - Only visible when "month" filter is active */}
+        {filterMode === "month" && (
+          <div className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
+            {getMonthName(month)} {year}
+          </div>
+        )}
+        
+        {/* Total Orders Count - Show when displaying all */}
+        {filterMode === "all" && (
+          <div className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
+            {orders.length} Total Orders
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
