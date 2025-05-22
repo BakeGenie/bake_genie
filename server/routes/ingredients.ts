@@ -163,7 +163,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
     
     if (purchaseSize !== undefined) {
       updates.push("pack_size = $" + (values.length + 1));
-      values.push(purchaseSize || null);
+      values.push(purchaseSize ? parseFloat(purchaseSize) : null);
     }
     
     if (purchaseSize !== undefined && costPrice !== undefined) {

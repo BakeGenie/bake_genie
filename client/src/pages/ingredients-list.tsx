@@ -223,7 +223,7 @@ const IngredientsList = () => {
                       </Button>
                     </TableCell>
                     <TableCell>{ingredient.supplier || '-'}</TableCell>
-                    <TableCell>{ingredient.pack_size ? `${ingredient.pack_size} ${ingredient.unit}` : '-'}</TableCell>
+                    <TableCell>{ingredient.pack_size ? `${ingredient.pack_size} ${ingredient.unit || ''}` : '-'}</TableCell>
                     <TableCell>{ingredient.cost_per_unit ? `$${ingredient.cost_per_unit}` : '-'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
