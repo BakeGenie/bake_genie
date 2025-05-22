@@ -78,7 +78,7 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
       // Send the payment method to the server
       const response = await apiRequest("POST", "/api/subscription/update-payment-method", {
         paymentMethodId: paymentMethod.id
-      }, false);
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -171,10 +171,10 @@ export const UpdatePaymentMethodDialog: React.FC<UpdatePaymentMethodDialogProps>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="payment-method-description">
         <DialogHeader>
           <DialogTitle>Update Payment Method</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="payment-method-description">
             Enter your new card details to update your payment method.
           </DialogDescription>
         </DialogHeader>
