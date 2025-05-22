@@ -44,15 +44,19 @@ const eventTypesArray = [...eventTypes, "Other"];
 // Define source options
 const sourceOptions = ["Phone", "Email", "In-person", "Facebook", "Instagram", "Other"];
 
-const enquiryFormSchema = insertEnquirySchema.extend({
-  // Add any client-side validation rules
+// Custom form schema for enquiries that captures the frontend fields
+// but will be mapped to match the database structure
+const enquiryFormSchema = z.object({
+  // Frontend fields
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address").nullable().optional(),
   phone: z.string().nullable().optional(),
   message: z.string().min(10, "Please provide more details in your message"),
-  eventType: z.string().nullable().optional(),
+  eventType: z.string(),
   eventDate: z.date().nullable().optional(),
   source: z.string().nullable().optional(),
+  status: z.string().default("New"),
+  userId: z.number().default(1),
 });
 
 type EnquiryFormValues = z.infer<typeof enquiryFormSchema>;
@@ -87,16 +91,18 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
     console.log("Submitting enquiry form data:", data);
     
     try {
-      // Create a transformed object that matches backend expectations
+      // Create a transformed object that matches the database schema
       const transformedData = {
-        message: data.message,
-        eventType: data.eventType,
-        eventDate: data.eventDate,
-        status: "New",
-        // The backend is looking for these fields in the correct format
-        name: data.name,
-        email: data.email || null,
-        phone: data.phone || null
+        userId: data.userId,
+        contactId: null, // We'll handle contact creation in a future update
+        date: new Date().toISOString(), // Current date
+        eventType: data.eventType || "Other",
+        eventDate: data.eventDate ? data.eventDate.toISOString() : null,
+        details: data.message, // Map message to details field
+        status: data.status,
+        // We'll store contact information in the message details for now
+        // since we need to match the database schema
+        details: `Name: ${data.name}\nEmail: ${data.email || 'Not provided'}\nPhone: ${data.phone || 'Not provided'}\n\nMessage: ${data.message}\n${data.source ? `\nSource: ${data.source}` : ''}`
       };
       
       console.log("Transformed data for backend:", transformedData);
