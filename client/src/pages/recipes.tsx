@@ -120,6 +120,7 @@ const RecipesPage = () => {
   const [isNewRecipeDialogOpen, setIsNewRecipeDialogOpen] = React.useState(false);
   const [isNewIngredientDialogOpen, setIsNewIngredientDialogOpen] = React.useState(false);
   const [isViewRecipeDialogOpen, setIsViewRecipeDialogOpen] = React.useState(false);
+  const [isEditRecipeDialogOpen, setIsEditRecipeDialogOpen] = React.useState(false);
   const [selectedRecipe, setSelectedRecipe] = React.useState<RecipeWithIngredients | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [searchRecipe, setSearchRecipe] = React.useState("");
@@ -135,11 +136,33 @@ const RecipesPage = () => {
     queryKey: ["/api/ingredients"],
   });
 
-  // Recipe form
+  // Recipe form for creating new recipes
   const recipeForm = useForm<RecipeFormValues>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: {
       userId: 1, // In a real app, this would be the current user's ID
+      name: "",
+      description: "",
+      servings: 1,
+      instructions: "",
+      prepTime: 0,
+      cookTime: 0,
+      category: "",
+      ingredients: [
+        {
+          ingredientId: 0,
+          quantity: 0,
+          notes: "",
+        },
+      ],
+    },
+  });
+  
+  // Recipe form for editing existing recipes
+  const editRecipeForm = useForm<RecipeFormValues>({
+    resolver: zodResolver(recipeFormSchema),
+    defaultValues: {
+      userId: 1,
       name: "",
       description: "",
       servings: 1,
@@ -170,11 +193,48 @@ const RecipesPage = () => {
     },
   });
 
-  // Handle recipe ingredient fields
+  // Handle recipe ingredient fields for new recipe form
   const { fields, append, remove } = useFieldArray({
     control: recipeForm.control,
     name: "ingredients"
   });
+  
+  // Handle recipe ingredient fields for edit recipe form
+  const { 
+    fields: editFields, 
+    append: editAppend, 
+    remove: editRemove 
+  } = useFieldArray({
+    control: editRecipeForm.control,
+    name: "ingredients"
+  });
+  
+  // Reset and populate the edit form when a recipe is selected
+  React.useEffect(() => {
+    if (selectedRecipe && isEditRecipeDialogOpen) {
+      // Reset form with the selected recipe data
+      editRecipeForm.reset({
+        userId: selectedRecipe.userId,
+        name: selectedRecipe.name,
+        description: selectedRecipe.description || "",
+        servings: selectedRecipe.servings,
+        instructions: selectedRecipe.instructions || "",
+        prepTime: selectedRecipe.prepTime || 0,
+        cookTime: selectedRecipe.cookTime || 0,
+        category: selectedRecipe.category || "",
+        ingredients: selectedRecipe.ingredients?.map(ingredient => ({
+          ingredientId: ingredient.ingredientId,
+          quantity: Number(ingredient.quantity),
+          notes: ingredient.notes || "",
+        })) || [],
+      });
+      
+      // If there are no ingredients, add an empty one
+      if (!selectedRecipe.ingredients || selectedRecipe.ingredients.length === 0) {
+        editAppend({ ingredientId: 0, quantity: 0, notes: "" });
+      }
+    }
+  }, [selectedRecipe, isEditRecipeDialogOpen, editRecipeForm, editAppend]);
 
   // Handle new recipe submission
   const handleNewRecipeSubmit = async (data: RecipeFormValues) => {
@@ -198,6 +258,37 @@ const RecipesPage = () => {
       toast({
         title: "Error",
         description: "There was an error creating the recipe. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Handle edit recipe submission
+  const handleEditRecipeSubmit = async (data: RecipeFormValues) => {
+    if (!selectedRecipe) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      await apiRequest("PUT", `/api/recipes/${selectedRecipe.id}`, data);
+      
+      // Invalidate recipes query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      
+      // Close dialog
+      setIsEditRecipeDialogOpen(false);
+      
+      toast({
+        title: "Recipe Updated",
+        description: `${data.name} has been updated successfully.`,
+      });
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating the recipe. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -1064,10 +1155,7 @@ const RecipesPage = () => {
               <Button
                 onClick={() => {
                   setIsViewRecipeDialogOpen(false);
-                  toast({
-                    title: "Edit Recipe",
-                    description: "Recipe editing will be implemented soon.",
-                  });
+                  setIsEditRecipeDialogOpen(true);
                 }}
               >
                 Edit Recipe
