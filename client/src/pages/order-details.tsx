@@ -458,9 +458,6 @@ const TaskModal = ({
 };
 
 
-
-
-
 // Note Modal Component
 const NoteModal = ({
   open,
@@ -487,9 +484,7 @@ const NoteModal = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Note</DialogTitle>
-          <DialogDescription>
-            Add a note to the order log
-          </DialogDescription>
+          <DialogDescription>Add a note to the order log.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -501,12 +496,12 @@ const NoteModal = ({
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Note</FormLabel>
+                  <FormLabel>Note Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter your note"
+                      placeholder="Enter your note here"
                       {...field}
-                      className="min-h-[100px]"
+                      className="min-h-[120px]"
                     />
                   </FormControl>
                   <FormMessage />
