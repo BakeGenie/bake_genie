@@ -14,6 +14,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import PaymentButton from "@/components/payment/payment-button";
 import { FormatCurrency } from "@/components/ui/format-currency";
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -1249,7 +1250,7 @@ const OrderDetails: React.FC = () => {
               Email
             </Button>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto space-x-2">
             <Button
               size="sm"
               className="bg-green-500 hover:bg-green-600 text-white"
@@ -1258,6 +1259,21 @@ const OrderDetails: React.FC = () => {
               <DollarSign className="h-4 w-4 mr-2" />
               Add Payment
             </Button>
+            {/* Stripe payment button */}
+            <PaymentButton
+              orderId={parseInt(id || '0')}
+              orderTotal={outstandingAmount}
+              customerEmail={order.contact?.email}
+              variant="outline"
+              className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+              onPaymentSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: [`/api/orders/${id}`] });
+                toast({
+                  title: "Payment processed",
+                  description: "Payment has been successfully processed through Stripe"
+                });
+              }}
+            />
           </div>
         </div>
 
