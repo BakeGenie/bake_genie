@@ -184,7 +184,14 @@ const ExpensesPage = () => {
         }
         
         console.log("Fetching expenses from:", url);
-        return await apiRequest<Expense[]>({ url });
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching expenses: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return data;
       } catch (error) {
         console.error("Error fetching expenses:", error);
         throw error;
@@ -196,30 +203,44 @@ const ExpensesPage = () => {
   const {
     data: income,
     isLoading: incomeLoading,
+    error: incomeError,
     refetch: refetchIncome,
   } = useQuery({
     queryKey: ["/api/income"],
     queryFn: async () => {
-      let url = "/api/income";
-      const params = new URLSearchParams();
-      
-      if (dateRange.from) {
-        params.append("startDate", dateRange.from.toISOString().split("T")[0]);
+      try {
+        let url = "/api/income";
+        const params = new URLSearchParams();
+        
+        if (dateRange.from) {
+          params.append("startDate", dateRange.from.toISOString().split("T")[0]);
+        }
+        
+        if (dateRange.to) {
+          params.append("endDate", dateRange.to.toISOString().split("T")[0]);
+        }
+        
+        if (categoryFilter) {
+          params.append("category", categoryFilter);
+        }
+        
+        if (params.toString()) {
+          url += "?" + params.toString();
+        }
+        
+        console.log("Fetching income from:", url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching income: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching income:", error);
+        throw error;
       }
-      
-      if (dateRange.to) {
-        params.append("endDate", dateRange.to.toISOString().split("T")[0]);
-      }
-      
-      if (categoryFilter) {
-        params.append("category", categoryFilter);
-      }
-      
-      if (params.toString()) {
-        url += "?" + params.toString();
-      }
-      
-      return apiRequest<Income[]>({ url });
     },
   });
 
@@ -249,11 +270,26 @@ const ExpensesPage = () => {
   // Create expense mutation
   const createExpenseMutation = useMutation({
     mutationFn: async (data: z.infer<typeof expenseSchema>) => {
-      return apiRequest({
+      const response = await fetch("/api/expenses", {
         method: "POST",
-        url: "/api/expenses",
-        body: data,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category: data.category,
+          amount: data.amount,
+          date: data.date,
+          description: data.description,
+          taxDeductible: data.taxDeductible
+        }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add expense");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -276,11 +312,25 @@ const ExpensesPage = () => {
   // Create income mutation
   const createIncomeMutation = useMutation({
     mutationFn: async (data: z.infer<typeof incomeSchema>) => {
-      return apiRequest({
+      const response = await fetch("/api/income", {
         method: "POST",
-        url: "/api/income",
-        body: data,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category: data.category,
+          amount: data.amount,
+          date: data.date,
+          description: data.description
+        }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add income");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -303,10 +353,16 @@ const ExpensesPage = () => {
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest({
+      const response = await fetch(`/api/expenses/${id}`, {
         method: "DELETE",
-        url: "/api/expenses/" + id,
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete expense");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -327,10 +383,16 @@ const ExpensesPage = () => {
   // Delete income mutation
   const deleteIncomeMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest({
+      const response = await fetch(`/api/income/${id}`, {
         method: "DELETE",
-        url: "/api/income/" + id,
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete income");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
