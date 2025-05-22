@@ -52,6 +52,7 @@ app.use(async (req, res, next) => {
       
       // Set user in session
       req.session.user = user;
+      req.session.userId = user.id;
     } catch (error) {
       console.error('Error setting up demo user:', error);
     }

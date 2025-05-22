@@ -54,6 +54,8 @@ const bundleFormSchema = z.object({
     (val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0,
     { message: "Price must be a valid positive number" }
   ),
+  description: z.string().optional(),
+  totalCost: z.string().optional()
 });
 
 type BundleFormValues = z.infer<typeof bundleFormSchema>;
