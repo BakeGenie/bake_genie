@@ -24,6 +24,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
   }, [location, isMobile]);
 
+  // Check if we're on the landing page
+  const isLandingPage = location === "/";
+  
+  // If on landing page, don't show the app layout with sidebar
+  if (isLandingPage) {
+    return <div className="h-screen">{children}</div>;
+  }
+  
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
