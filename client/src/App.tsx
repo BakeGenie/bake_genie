@@ -75,6 +75,7 @@ function Router() {
         <Route path="/recipes/bundles" component={Bundles} />
         <Route path="/products" component={Products} />
         <Route path="/reports" component={Reports} />
+        <Route path="/business-expenses" component={() => import("./pages/business-expenses").then(module => module.default)} />
         <Route path="/expenses" component={Expenses} />
         <Route path="/printables" component={Printables} />
         <Route path="/tools" component={Tools} />
