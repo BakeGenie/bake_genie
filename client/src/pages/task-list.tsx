@@ -65,6 +65,13 @@ const TaskList = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { tasks, isLoading } = useTasks();
   
+  // Add console log to see what tasks look like
+  React.useEffect(() => {
+    if (tasks && tasks.length > 0) {
+      console.log("Tasks data structure:", tasks[0]);
+    }
+  }, [tasks]);
+  
   // Task toggle function
   const toggleTaskCompletion = async (id: number, completed: boolean) => {
     try {
@@ -115,7 +122,7 @@ const TaskList = () => {
     if (selectedTask) {
       editForm.reset({
         userId: selectedTask.userId,
-        orderId: selectedTask.orderId,
+        relatedOrderId: selectedTask.relatedOrderId,
         title: selectedTask.title,
         description: selectedTask.description || "",
         dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined,
