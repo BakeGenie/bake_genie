@@ -118,22 +118,31 @@ const TaskList = () => {
       
       // Check if there's a due date to properly set the hasDueDate field
       const hasDueDate = selectedTask.dueDate ? true : false;
+      const dueDate = selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined;
       
       editForm.reset({
         userId: selectedTask.userId,
         relatedOrderId: selectedTask.relatedOrderId,
         title: selectedTask.title,
         description: selectedTask.description || "",
-        dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined,
+        dueDate: dueDate,
         completed: selectedTask.completed,
         priority: selectedTask.priority || "Normal",
         hasDueDate: hasDueDate,
       });
       
+      // Force the hasDueDate field to be set correctly
+      setTimeout(() => {
+        editForm.setValue("hasDueDate", hasDueDate);
+        if (dueDate) {
+          editForm.setValue("dueDate", dueDate);
+        }
+      }, 0);
+      
       console.log("Reset form with:", { 
         ...selectedTask, 
         hasDueDate,
-        dueDate: selectedTask.dueDate ? new Date(selectedTask.dueDate) : undefined 
+        dueDate
       });
     }
   }, [selectedTask, editForm]);
@@ -194,26 +203,31 @@ const TaskList = () => {
   };
 
   // Handle edit task submission
-  const handleEditTaskSubmit = async (data: TaskFormValues) => {
+  const handleEditTaskSubmit = async (data: any) => {
     if (!selectedTask) return;
     
     setIsSubmitting(true);
     console.log("Submitting edit form data:", data);
     
     try {
+      // Convert fields properly for the API
+      const payload = {
+        title: data.title,
+        description: data.description || null,
+        priority: data.priority || "Medium",
+        due_date: data.hasDueDate && data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        completed: data.completed || false
+      };
+      
+      console.log("Sending payload to server:", payload);
+      
       // Use fetch directly for more control
       const response = await fetch(`/api/tasks/${selectedTask.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: data.title,
-          description: data.description || null,
-          priority: data.priority || "Medium",
-          dueDate: data.dueDate ? data.dueDate.toISOString() : null,
-          completed: data.completed || false
-        }),
+        body: JSON.stringify(payload),
         credentials: 'include'
       });
       
@@ -746,7 +760,7 @@ const TaskList = () => {
                 )}
               />
               
-              {(editForm.watch("hasDueDate") || editForm.watch("dueDate")) && (
+              {editForm.watch("hasDueDate") && (
                 <div className="space-y-3">
                   <div className="space-y-1">
                     <h3 className="text-sm font-medium">Date</h3>
