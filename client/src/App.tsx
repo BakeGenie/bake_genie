@@ -6,9 +6,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "./contexts/settings-context";
 import { FeaturesProvider } from "./contexts/features-context";
+import { AuthProvider } from "./contexts/AuthContext";
 import NotFound from "@/pages/not-found";
 import AppLayout from "./layouts/app-layout";
 import Login from "./pages/login";
+import Register from "./pages/register";
 import LandingPage from "./pages/landing";
 import Dashboard from "./pages/dashboard";
 import Orders from "./pages/orders";
@@ -62,6 +64,7 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
         <Route path="/" component={LandingPage} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/orders/new" component={NewOrder} />
@@ -118,14 +121,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SettingsProvider>
-        <FeaturesProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </FeaturesProvider>
-      </SettingsProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <FeaturesProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </FeaturesProvider>
+        </SettingsProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

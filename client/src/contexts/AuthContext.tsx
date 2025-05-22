@@ -1,7 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth as useAuthHook } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface User {
@@ -30,7 +29,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      const response = await apiRequest('POST', '/api/auth/logout');
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
       if (response.ok) {
         toast({
           title: 'Logged out',

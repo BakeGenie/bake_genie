@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 interface User {
   id: number;
@@ -13,16 +12,22 @@ interface User {
 export function useAuth() {
   const { data: user, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/auth/user"],
-    queryFn: async () => {
+    queryFn: async ({ queryKey }) => {
       try {
-        const response = await apiRequest("GET", "/api/auth/user");
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include",
+          method: "GET",
+        });
+        
+        if (response.status === 401) {
+          return null;
+        }
+        
         if (!response.ok) {
-          if (response.status === 401) {
-            return null;
-          }
           throw new Error("Failed to fetch user data");
         }
-        return response.json();
+        
+        return await response.json();
       } catch (err) {
         console.error("Auth error:", err);
         return null;
