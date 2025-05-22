@@ -162,7 +162,26 @@ const EditRecipePage = () => {
     setIsSubmitting(true);
     
     try {
-      await apiRequest("PUT", `/api/recipes/${recipeId}`, data);
+      // Format data to match server expectation
+      const formattedData = {
+        ...data,
+        // Convert fields to match server expectations
+        servings: Number(data.servings),
+        prepTime: data.prepTime != null ? Number(data.prepTime) : null,
+        cookTime: data.cookTime != null ? Number(data.cookTime) : null,
+        // Format ingredients to match server expectation
+        ingredients: data.ingredients.map(ingredient => ({
+          ingredientId: Number(ingredient.ingredientId),
+          quantity: String(ingredient.quantity),
+          unit: "", // Required by server
+          cost: "0", // Required by server
+          notes: ingredient.notes || ""
+        }))
+      };
+      
+      console.log("Submitting data:", formattedData);
+      
+      await apiRequest("PUT", `/api/recipes/${recipeId}`, formattedData);
       
       // Invalidate recipes query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
