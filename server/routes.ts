@@ -20,6 +20,7 @@ import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct
 import orderLogsRouter from "./routes/order-logs";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
+import enquiriesRouter from "./routes/enquiries";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
@@ -79,6 +80,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register order logs routes
   app.use(orderLogsRouter);
+  
+  // Register enquiries routes
+  app.use('/api/enquiries', enquiriesRouter);
   
   // Register import routes
   const importRouter = Router();
