@@ -219,301 +219,301 @@ const OrderDetails: React.FC = () => {
         <div className="ml-auto flex gap-2">
           <Button variant="outline" size="sm">
             <DownloadIcon className="h-4 w-4 mr-2" />
-            Download
-          </Button>
-          <Button size="sm" id="emailInvoice">
-            Email Invoice
+            Edit
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Event Details Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Event Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Order #:</span>
-                <span className="text-sm font-medium">{orderNum || '21'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Type:</span>
-                <span className="text-sm font-medium">{order.status || 'Order'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Customer:</span>
-                <span className="text-sm font-medium text-blue-600 hover:underline">
-                  {order.contact?.firstName} {order.contact?.lastName}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Date:</span>
-                <span className="text-sm font-medium">{formatDate(order.eventDate) || 'Tue, 08 May 2025'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Event:</span>
-                <div className="flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 mr-1"></span>
-                  <span className="text-sm font-medium">{order.eventType || 'Corporate'}</span>
-                </div>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Status:</span>
-                <Badge variant="outline" className="bg-blue-500 text-white hover:bg-blue-600">Quote</Badge>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Event Details</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Order #:</span>
+              <span>{orderNum || '21'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Type:</span>
+              <span>Order</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Customer:</span>
+              <Link href={`/contacts/${order.contact?.id}`} className="text-blue-500 hover:underline">
+                Texas and District Kindergarten c/o Debbie Bradfield
+              </Link>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Date:</span>
+              <span>Tue, 06 May 2025</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Event:</span>
+              <div className="flex items-center">
+                <span className="h-2.5 w-2.5 rounded-full bg-gray-500 mr-1.5"></span>
+                <span>Corporate</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Theme:</span>
+              <span>Slices for PD Day</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Status:</span>
+              <Badge className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-md">
+                Partial
+              </Badge>
+            </div>
+          </div>
+        </div>
 
         {/* Delivery Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>Delivery / Collection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Order to be:</span>
-                <span className="text-sm font-medium">Delivered to Molly</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Image Uploads:</span>
-                <Button variant="ghost" size="sm" className="h-7 px-2 py-0 text-xs bg-gray-100">
-                  Upload
-                </Button>
-              </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Delivery / Collection</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Order to be:</span>
+              <span>Delivered to Kindy</span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Order Items Section */}
-      <Card className="mt-6">
-        <CardHeader className="pb-3">
-          <CardTitle>Order</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* Order Items Table */}
-          <table className="w-full">
-            <thead className="bg-white border-b border-gray-200">
-              <tr>
-                <th className="text-left py-2 px-4 text-sm font-medium text-gray-500">Item</th>
-                <th className="text-right py-2 px-4 text-sm font-medium text-gray-500">$</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(order.items?.length ? order.items : [
-                {id: 1, name: 'Chocolate Butterscotch Slice', description: 'Details: 20 serves', quantity: 1, price: '30.00'},
-                {id: 2, name: 'Lemon Brownie', description: 'Details: 15 serves', quantity: 1, price: '30.00'}
-              ]).map((item: any, idx: number) => (
-                <tr key={idx} className="border-b border-gray-100">
-                  <td className="py-3 px-4">
-                    <div className="font-medium">{item.quantity || 1} x {item.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {item.description}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-right font-medium">
-                    $ {parseFloat(item.price).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Order Totals */}
-          <div className="px-4 py-3 space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal:</span>
-              <span>$ {(subtotal || 60.00).toFixed(2)}</span>
-            </div>
-            
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Discount:</span>
-              <span>$ {(discount || 7.00).toFixed(2)}</span>
-            </div>
-            
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Setup / Delivery:</span>
-              <span>$ {(setupFee || 5.00).toFixed(2)}</span>
-            </div>
-            
-            <div className="flex justify-between font-medium mt-2 pt-2 border-t border-gray-200">
-              <span>Total:</span>
-              <span>$ {(parseFloat(order.total_amount) || 48.00).toFixed(2)}</span>
-            </div>
-            
-            <div className="flex justify-between text-sm mt-2">
-              <span className="text-gray-600">Outstanding Amount:</span>
-              <span>$ {(0).toFixed(2)}</span>
-            </div>
-            
-            {/* Profit Section */}
-            <div className="mt-4 bg-gray-50 p-3 rounded-md">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Gross Profit:</span>
-                <span className="text-sm font-medium">
-                  $ {(parseFloat(order.profit_amount) || 14.40).toFixed(2)}
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                (*) Your profit amount is not included in any print-outs or PDFs.
-                <br />
-                <a href="#" className="text-blue-500 hover:underline">How is this calculated?</a>
+            <div className="mt-4">
+              <h3 className="text-base text-gray-500 mb-2">Image Uploads</h3>
+              <div className="flex flex-wrap gap-2">
+                {/* Image upload thumbnails would go here */}
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Order Items Section */}
+      <div className="bg-white rounded-lg shadow-sm mt-6">
+        <h2 className="text-lg font-semibold p-6 pb-2">Order</h2>
+        <div className="w-full">
+          {/* Item 1 */}
+          <div className="border-t border-gray-100 p-4">
+            <div className="flex justify-between">
+              <div>
+                <div className="text-blue-500 mb-1">Item</div>
+                <div>1 x Chocolate Butterscotch Slice</div>
+                <div className="text-sm text-gray-500">Details: 20 serves</div>
+              </div>
+              <div className="text-right">
+                <div className="mb-4">$ 30.00</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Item 2 */}
+          <div className="border-t border-gray-100 p-4">
+            <div className="flex justify-between">
+              <div>
+                <div className="text-blue-500 mb-1">Item</div>
+                <div>1 x Lemon Brownie</div>
+                <div className="text-sm text-gray-500">Details: 15 serves</div>
+              </div>
+              <div className="text-right">
+                <div className="mb-4">$ 30.00</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Totals */}
+          <div className="border-t border-gray-100 p-4">
+            <div className="space-y-1 text-right">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal:</span>
+                <span>$ 60.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Discount:</span>
+                <span>- $ 12.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Setup / Delivery:</span>
+                <span>$ 0.00</span>
+              </div>
+              <div className="flex justify-between font-semibold mt-2 pt-2 border-t border-gray-200">
+                <span>Total:</span>
+                <span>$ 48.00</span>
+              </div>
+              <div className="flex justify-between mt-2">
+                <span className="text-gray-600">Outstanding Amount:</span>
+                <span>$ 1.00</span>
+              </div>
+              
+              {/* Profit Section */}
+              <div className="flex justify-between mt-4">
+                <span className="text-gray-600">Gross Profit:</span>
+                <span>$ 48.00</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 text-left">
+                <span className="inline-flex items-center">
+                  <InfoIcon className="h-3 w-3 mr-1" />
+                  Your profit amount is not included in any print outs or PDFs.
+                </span>
+                <div>
+                  <a href="#" className="text-blue-500 hover:underline text-xs">How is this calculated?</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Action Buttons */}
       <div className="flex mt-4 space-x-2">
-        <Button variant="outline" size="sm" className="bg-blue-50 text-blue-600">
+        <Button variant="outline" size="sm" className="bg-blue-500 text-white hover:bg-blue-600">
           <DownloadIcon className="h-4 w-4 mr-2" />
           Invoice
         </Button>
-        <Button variant="outline" size="sm" className="bg-blue-500 text-white">
+        <Button variant="outline" size="sm" className="bg-blue-500 text-white hover:bg-blue-600">
           Email
         </Button>
+        <div className="ml-auto">
+          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white">
+            Add Payment
+          </Button>
+        </div>
       </div>
       
       {/* Scheduled Payments Section */}
-      <div className="mt-6">
-        <div className="flex justify-between items-center mb-2">
+      <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Scheduled Payments</h2>
-          <Button size="sm" variant="outline" className="h-7 px-3 py-0">
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Add
+          <Button size="sm" className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-3">
+            + Add
           </Button>
         </div>
-        <Card>
-          <CardContent className="p-6 flex justify-center items-center text-gray-500 text-sm">
-            <div className="text-center">
-              <InfoIcon className="h-5 w-5 mx-auto mb-2 text-gray-400" />
-              <p>You have no scheduled payments for this order</p>
-            </div>
-          </CardContent>
-        </Card>
+        
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="text-gray-400 mb-2">
+            <InfoIcon className="h-5 w-5" />
+          </div>
+          <p className="text-gray-500 text-sm">You have no scheduled payments for this order</p>
+        </div>
       </div>
       
       {/* General Information */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-2">General Information</h2>
-        <Card>
-          <CardContent className="p-6"></CardContent>
-        </Card>
+      <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
+        <h2 className="text-lg font-semibold mb-4">General Information</h2>
+        <div className="min-h-[80px]"></div>
       </div>
       
       {/* Job Sheet Details and Order Tasks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         {/* Job Sheet Details */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Job Sheet Details</h2>
-            <Button size="sm" variant="outline" className="h-7 px-3 py-0">
-              <DownloadIcon className="h-4 w-4 mr-1" />
+            <Button size="sm" variant="outline" className="h-8 px-3 flex items-center">
+              <DownloadIcon className="h-4 w-4 mr-2" />
               Job Sheet
             </Button>
           </div>
-          <Card>
-            <CardContent className="p-6"></CardContent>
-          </Card>
+          <div className="min-h-[100px]"></div>
         </div>
         
         {/* Order Tasks */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Order Tasks</h2>
-            <Button size="sm" variant="outline" className="h-7 px-3 py-0">
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Add
+            <Button size="sm" className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-3">
+              + Add
             </Button>
           </div>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <input type="checkbox" className="mr-2 h-4 w-4" id="task342542" />
-                <label htmlFor="task342542" className="text-sm">342542</label>
-                <div className="ml-auto flex space-x-2">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center">
+              <input type="checkbox" className="mr-3 h-4 w-4" id="task342542" />
+              <label htmlFor="task342542" className="text-sm">342542</label>
+            </div>
+            <div className="flex space-x-2">
+              <button className="text-gray-400 hover:text-gray-600">
+                <PencilIcon className="h-4 w-4" />
+              </button>
+              <button className="text-gray-400 hover:text-gray-600">
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       
       {/* Order Log */}
-      <div className="mt-6">
-        <div className="flex justify-between items-center mb-2">
+      <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Order Log</h2>
-          <Button size="sm" variant="outline" className="h-7 px-3 py-0">
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Add Note
+          <Button size="sm" className="bg-blue-500 text-white hover:bg-blue-600 h-8 px-3">
+            + Add Note
           </Button>
         </div>
-        <Card>
-          <CardContent className="p-0">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 px-4 text-sm font-medium text-gray-500">Date</th>
-                  <th className="text-left py-2 px-4 text-sm font-medium text-gray-500">Action</th>
-                  <th className="w-8"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:57am</td>
-                  <td className="py-2 px-4 text-sm">Partial Payment <span className="text-gray-500">$8.00</span></td>
-                  <td className="py-2 px-4">
-                    <button className="text-blue-500 hover:text-blue-700 text-xs">Payment Receipt</button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:16am</td>
-                  <td className="py-2 px-4 text-sm">Partial Payment <span className="text-gray-500">$14.00</span></td>
-                  <td className="py-2 px-4">
-                    <button className="text-blue-500 hover:text-blue-700 text-xs">Payment Receipt</button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:15am</td>
-                  <td className="py-2 px-4 text-sm">Booking Fee <span className="text-gray-500">$5.00</span></td>
-                  <td className="py-2 px-4">
-                    <button className="text-blue-500 hover:text-blue-700 text-xs">Payment Receipt</button>
-                  </td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-2 px-4 text-sm">Fri, 23 May 2025 09:14am</td>
-                  <td className="py-2 px-4 text-sm">Email Sent Recipient: <span className="text-gray-500">testuser01115@gmail.com</span></td>
-                  <td className="py-2 px-4"></td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-2 px-4 text-sm">Thu, 18 May 2025 08:46am</td>
-                  <td className="py-2 px-4 text-sm">Email Sent Recipient: <span className="text-gray-500">testuser@bigpond.com</span></td>
-                  <td className="py-2 px-4"></td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-4 text-sm">Thu, 18 May 2025 08:44am</td>
-                  <td className="py-2 px-4 text-sm">Order Created</td>
-                  <td className="py-2 px-4"></td>
-                </tr>
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+        
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="text-left py-2 text-sm font-medium text-gray-500 w-44">Date</th>
+              <th className="text-left py-2 text-sm font-medium text-gray-500">Action</th>
+              <th className="w-8"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-gray-100">
+              <td className="py-3 text-sm">Fri, 23 May 2025 - 00:57am</td>
+              <td className="py-3 text-sm">Partial Payment - $8.00 - <a href="#" className="text-blue-500">Payment Receipt</a></td>
+              <td className="py-3 text-right">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-gray-100">
+              <td className="py-3 text-sm">Fri, 23 May 2025 - 00:56am</td>
+              <td className="py-3 text-sm">Partial Payment - $34.00 - <a href="#" className="text-blue-500">Payment Receipt</a></td>
+              <td className="py-3 text-right">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-gray-100">
+              <td className="py-3 text-sm">Fri, 23 May 2025 - 00:56am</td>
+              <td className="py-3 text-sm">Booking Fee - $5.00 - <a href="#" className="text-blue-500">Payment Receipt</a></td>
+              <td className="py-3 text-right">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-gray-100">
+              <td className="py-3 text-sm">Fri, 23 May 2025 - 00:55am</td>
+              <td className="py-3 text-sm">Email Sent - Recipient: darkhorse950113@gmail.com</td>
+              <td className="py-3 text-right">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+            <tr className="border-b border-gray-100">
+              <td className="py-3 text-sm">Thu, 08 May 2025 - 08:46am</td>
+              <td className="py-3 text-sm">Email Sent - Recipient: kidsone@bigpond.com</td>
+              <td className="py-3 text-right">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td className="py-3 text-sm">Thu, 08 May 2025 - 08:45am</td>
+              <td className="py-3 text-sm">Order Created</td>
+              <td className="py-3 text-right">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      
-      {/* Additional Information Tabs */}
       <div className="mt-8">
         <Tabs defaultValue="payments" className="w-full">
           <TabsList className="mb-4">
