@@ -212,10 +212,63 @@ const Orders = () => {
       
       {/* Main Content Area */}
       <div className="grid grid-cols-1 gap-4 flex-grow overflow-auto">
-        {/* Calendar View */}
+        {/* Calendar and Date Section */}
         <div className="bg-white rounded-md border shadow-sm">
           <div className="p-4">
-            <h3 className="text-lg font-semibold mb-3">Calendar View</h3>
+            <div className="flex flex-col md:flex-row md:justify-between items-start mb-4">
+              {/* Today's Date */}
+              <div className="mb-4 md:mb-0">
+                <div className="text-sm text-gray-500">Today's Date</div>
+                <div className="flex items-baseline">
+                  <span className="text-5xl font-bold mr-2">
+                    {format(new Date(), 'dd')}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-xl font-medium">
+                      {format(new Date(), 'MMMM')}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {format(new Date(), 'EEEE')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Month Selector */}
+              <div className="flex items-center space-x-2">
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-100"
+                  onClick={() => {
+                    const newMonth = month === 1 ? 12 : month - 1;
+                    const newYear = month === 1 ? year - 1 : year;
+                    setMonth(newMonth);
+                    setYear(newYear);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <div className="text-lg font-medium">
+                  {getMonthName(month)} {year}
+                </div>
+                <button 
+                  className="p-1 rounded-full hover:bg-gray-100"
+                  onClick={() => {
+                    const newMonth = month === 12 ? 1 : month + 1;
+                    const newYear = month === 12 ? year + 1 : year;
+                    setMonth(newMonth);
+                    setYear(newYear);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Calendar Component */}
             <OrderCalendar
               orders={orders}
               selectedDate={selectedDate}
