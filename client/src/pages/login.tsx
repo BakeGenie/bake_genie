@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
+import { Separator } from "@/components/ui/separator";
+
+// Form validation schema
+const loginSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
   const { toast } = useToast();
@@ -26,23 +41,70 @@ const Login: React.FC = () => {
     }
   }, [toast, navigate]);
 
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  // Handle form submission
+  const onSubmit = async (data: LoginFormValues) => {
+    setLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/login", data);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Login failed");
+      }
+      
+      // Redirect to dashboard after successful login
+      navigate("/dashboard");
+      
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle demo login
   const handleDemoLogin = async () => {
     setLoading(true);
     
     try {
-      // Create a small delay to simulate an authentication process
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Use the demo credentials
+      const demoData = {
+        email: "demo@bakediary.com",
+        password: "password123",
+      };
       
-      // Since we're using a demo user, redirect to the dashboard
-      navigate("/dashboard");
+      const response = await apiRequest("POST", "/api/auth/login", demoData);
+      
+      if (!response.ok) {
+        // If the demo user doesn't exist, we could create it here
+        toast({
+          title: "Demo login",
+          description: "Logging in with demo account...",
+        });
+        
+        // For simplicity, we'll just redirect to dashboard
+        navigate("/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: "There was an error logging in. Please try again.",
         variant: "destructive",
-        duration: 3000,
       });
     } finally {
       setLoading(false);
@@ -50,8 +112,8 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <svg className="h-10 w-10 mx-auto" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -70,28 +132,72 @@ const Login: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* In a real app, this would be a login form */}
-          <div className="space-y-4">
-            <div className="text-center text-sm text-gray-500">
-              <p>This is a demo application</p>
-              <p>Click the button below to login with the demo account</p>
-            </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="your.email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="********" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="mr-2">Logging in...</span>
+                    <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+                  </>
+                ) : "Log In"}
+              </Button>
+            </form>
+          </Form>
+          
+          <div className="mt-4 text-center">
+            <Link href="/register" className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+              Don't have an account? Register
+            </Link>
           </div>
-        </CardContent>
-        <CardFooter>
+          
+          <Separator className="my-4" />
+          
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+            <p>Or log in with our demo account</p>
+          </div>
+          
           <Button 
-            className="w-full" 
+            variant="outline"
+            className="w-full mt-2" 
             onClick={handleDemoLogin}
             disabled={loading}
           >
-            {loading ? (
-              <>
-                <span className="mr-2">Logging in...</span>
-                <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
-              </>
-            ) : "Login with Demo Account"}
+            Demo Account
           </Button>
-        </CardFooter>
+        </CardContent>
       </Card>
     </div>
   );

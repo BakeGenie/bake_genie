@@ -34,7 +34,7 @@ export type DeliveryType = typeof deliveryTypes[number];
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
+  username: text("username").unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   firstName: text("first_name").notNull(),
@@ -46,6 +46,8 @@ export const users = pgTable("users", {
   state: text("state"),
   zip: text("zip"),
   country: text("country"),
+  avatar: text("avatar"),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
