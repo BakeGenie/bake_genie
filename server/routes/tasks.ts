@@ -93,7 +93,7 @@ router.post("/", async (req: Request, res: Response) => {
     // Use simpler query with parameterized values for better safety
     const query = `
       INSERT INTO tasks (
-        user_id, title, description, due_date, priority, order_id, completed, created_at
+        user_id, title, description, due_date, priority, related_order_id, completed, created_at
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, NOW()
       ) RETURNING *

@@ -146,7 +146,7 @@ export const quoteItems = pgTable("quote_items", {
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  orderId: integer("order_id"),
+  relatedOrderId: integer("related_order_id"),
   title: text("title").notNull(),
   description: text("description"),
   dueDate: date("due_date"),
