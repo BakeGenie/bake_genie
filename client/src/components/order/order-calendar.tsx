@@ -222,25 +222,19 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
               
               {/* Event indicators */}
               {hasOrders && (
-                <div className="flex gap-0.5 mt-0.5">
-                  {hasRedEvents && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-red-500"></div>
-                  )}
-                  {hasOrangeEvents && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-orange-400"></div>
-                  )}
-                  {hasGrayEvents && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-gray-400"></div>
-                  )}
+                <div className="flex flex-wrap gap-0.5 mt-0.5 justify-center max-w-[24px]">
+                  {Array.from({ length: Math.min(ordersOnDay.length, 5) }).map((_, index) => (
+                    <div 
+                      key={index} 
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        ordersOnDay[index]?.status === "Quote" ? "bg-red-500" :
+                        ordersOnDay[index]?.status === "In Progress" ? "bg-orange-400" :
+                        ordersOnDay[index]?.status === "Completed" ? "bg-green-500" :
+                        "bg-gray-400"
+                      }`}
+                    ></div>
+                  ))}
                 </div>
-              )}
-              
-              {/* Event type indicator */}
-              {dominantEventType && (
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ backgroundColor: eventTypeColor }}
-                ></div>
               )}
             </div>
           );
