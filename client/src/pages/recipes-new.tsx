@@ -55,7 +55,7 @@ const RecipesPage = () => {
           <Card 
             key={section.id} 
             className="hover:bg-gray-50 cursor-pointer transition-colors"
-            onClick={() => window.location.href = section.route}
+            onClick={() => navigate(section.route)}
           >
             <CardHeader className="flex flex-row items-center justify-between p-4">
               <CardTitle className="text-lg">{section.title}</CardTitle>

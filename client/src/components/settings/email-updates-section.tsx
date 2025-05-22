@@ -71,7 +71,24 @@ export function EmailUpdatesSection() {
   // Mutation for updating email settings
   const updateEmailSettings = useMutation({
     mutationFn: async (data: Partial<EmailSettings>) => {
-      const response = await apiRequest("PATCH", "/api/settings", data);
+      // Convert all boolean values to actual booleans, not strings
+      const processedData: Record<string, any> = {};
+      
+      // Process each field individually to ensure proper typing
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'receiveUpcomingOrders' || 
+            key === 'receivePaymentReminders' || 
+            key === 'receiveMarketingEmails' || 
+            key === 'receiveProductUpdates') {
+          processedData[key] = Boolean(value);
+        } else {
+          processedData[key] = value;
+        }
+      });
+      
+      console.log("Sending data to server:", processedData);
+      
+      const response = await apiRequest("PATCH", "/api/settings", processedData);
       return await response.json();
     },
     onSuccess: (data) => {

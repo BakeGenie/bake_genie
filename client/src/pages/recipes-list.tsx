@@ -62,7 +62,14 @@ const RecipesList = () => {
         backLink="/recipes" 
         backLabel="Back to Recipes & Ingredients"
         actions={
-          <Button className="ml-auto" size="sm">
+          <Button 
+            className="ml-auto" 
+            size="sm" 
+            onClick={() => {
+              // Create a new recipe and display add recipe form
+              navigate("/recipes/add-recipe");
+            }}
+          >
             <PlusIcon className="mr-2 h-4 w-4" /> Add New Recipe
           </Button>
         }
@@ -121,9 +128,13 @@ const RecipesList = () => {
               filteredRecipes.map((recipe) => (
                 <TableRow key={recipe.id}>
                   <TableCell className="font-medium">
-                    <a href="#" className="text-blue-600 hover:underline">
+                    <Button 
+                      variant="link" 
+                      className="p-0 text-blue-600 hover:underline"
+                      onClick={() => {/* View recipe logic */}}
+                    >
                       {recipe.name}
-                    </a>
+                    </Button>
                   </TableCell>
                   <TableCell>{recipe.category}</TableCell>
                   <TableCell>

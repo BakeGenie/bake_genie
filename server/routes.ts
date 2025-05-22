@@ -13,10 +13,22 @@ import { router as settingsRouter } from "./routes/settings";
 import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
 import { router as contactsRouter } from "./routes/contacts";
+import { router as productsRouter } from "./routes/products";
+import { router as authRouter } from "./routes/auth";
+import subscriptionRouter from "./routes/subscription";
+import integrationsRouter from "./routes/integrations";
+import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct";
+import orderLogsRouter from "./routes/order-logs";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
+import enquiriesRouter from "./routes/enquiries";
+import tasksRouter from "./routes/tasks";
+import ingredientsRouter from "./routes/ingredients";
+import suppliesRouter from "./routes/supplies";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register our direct routes first
+  await registerOrdersDirectRoutes(app);
   // put application routes here
   // prefix all routes with /api
 
@@ -55,6 +67,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register contacts routes
   app.use('/api/contacts', contactsRouter);
+  
+  // Register products routes
+  app.use('/api/products', productsRouter);
+  
+  // Register new product routes for the fixed implementation
+  
+  // Register subscription routes
+  app.use('/api/subscription', subscriptionRouter);
+  
+  // Register integrations routes (for Stripe, Square, etc.)
+  app.use('/api/integrations', integrationsRouter);
+  
+  // Register orders routes
+  app.use(ordersRouter);
+  
+  // Register order logs routes
+  app.use(orderLogsRouter);
+  
+  // Register enquiries routes
+  app.use('/api/enquiries', enquiriesRouter);
+  
+  // Register tasks routes
+  app.use('/api/tasks', tasksRouter);
+  
+  // Register ingredients routes
+  app.use('/api/ingredients', ingredientsRouter);
+  
+  // Register supplies routes
+  app.use('/api/supplies', suppliesRouter);
+  
+  // Register auth routes
+  app.use('/api/auth', authRouter);
   
   // Register import routes
   const importRouter = Router();

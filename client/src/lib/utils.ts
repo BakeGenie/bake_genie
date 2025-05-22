@@ -5,13 +5,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: string | Date): string {
+type FormatDateOptions = {
+  withTime?: boolean;
+};
+
+export function formatDate(date: string | Date, options?: FormatDateOptions): string {
   if (!date) return '';
   
   const d = typeof date === 'string' ? new Date(date) : date;
   
   // Check if the date is valid
   if (isNaN(d.getTime())) return '';
+  
+  if (options?.withTime) {
+    return d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    });
+  }
   
   return d.toLocaleDateString('en-US', {
     month: 'short',

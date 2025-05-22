@@ -120,6 +120,9 @@ const defaultValues: Partial<OrderFormValues> = {
   deliveryAddress: "",
   deliveryTime: "",
   eventType: "Birthday",
+  discount: 0,
+  discountType: "%",
+  setupFee: 0,
   items: [
     {
       description: "",
@@ -131,6 +134,11 @@ const defaultValues: Partial<OrderFormValues> = {
   customer: {
     firstName: "",
     lastName: "",
+    businessName: "",
+    email: "",
+    phone: "",
+    address: "",
+    notes: "",
     userId: 1, // Default user ID
   },
   userId: 1, // Default user ID
@@ -149,12 +157,20 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     return savedCustomEventTypes ? JSON.parse(savedCustomEventTypes) : [];
   });
 
-  // Initialize form with default or initial values
+  // Initialize form with properly merged default and initial values
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
       ...defaultValues,
       ...initialValues,
+      // We'll set dates in the useEffect to ensure they are properly handled
+      items: initialValues?.items || defaultValues.items,
+      // Ensure proper nesting for nested objects
+      customer: {
+        ...defaultValues.customer,
+        ...(initialValues?.customer || {}),
+        userId: 1, // Always ensure this is set
+      },
     },
   });
   
@@ -170,33 +186,52 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     }
   }, []);
   
-  // Handle initialValues separately to ensure they override default values
+  // Set dates immediately when component mounts
   useEffect(() => {
-    if (initialValues) {
-      console.log("Received initialValues:", initialValues);
-      
-      // Handle event date from calendar selection
-      if (initialValues.eventDate) {
-        console.log("Setting event date:", initialValues.eventDate);
-        // Force update eventDate regardless of its current value
-        setValue("eventDate", initialValues.eventDate, { 
-          shouldValidate: true,
-          shouldDirty: true,
-          shouldTouch: true 
-        });
-      }
-      
-      // Handle order date (usually today's date)
-      if (initialValues.orderDate) {
-        console.log("Setting order date:", initialValues.orderDate);
-        setValue("orderDate", initialValues.orderDate, {
-          shouldValidate: true, 
-          shouldDirty: true,
-          shouldTouch: true
-        });
+    // First get the selected date from localStorage directly
+    const storedEventDate = localStorage.getItem('selectedEventDate');
+    let selectedDate = new Date();
+    
+    if (storedEventDate) {
+      try {
+        console.log("Found stored event date:", storedEventDate);
+        selectedDate = new Date(storedEventDate);
+        console.log("Using stored event date:", selectedDate);
+        
+        // Clear localStorage after using it
+        localStorage.removeItem('selectedEventDate');
+      } catch (e) {
+        console.error("Error parsing stored date:", e);
       }
     }
-  }, [initialValues, setValue]);
+    
+    // Set initial values immediately
+    console.log("Initial values being passed to form:", {
+      orderDate: new Date(),
+      eventDate: selectedDate
+    });
+    
+    // Force update both date fields with the proper values
+    setValue("eventDate", selectedDate, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    setValue("orderDate", new Date(), {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    // Log the form values after setting them
+    setTimeout(() => {
+      console.log("Form values after init:", {
+        eventDate: getValues("eventDate"),
+        orderDate: getValues("orderDate")
+      });
+    }, 0);
+  }, [setValue, getValues]);
   
   // Debug current form values
   useEffect(() => {
@@ -300,8 +335,8 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     
     // Update item with product details
     item.productId = product.id;
-    item.recipeId = undefined; // Clear recipe ID if previously selected
-    item.itemType = 'product';
+    // These fields aren't in our database schema, so we'll use the 'type' field instead
+    item.type = 'Product';
     item.description = product.name;
     item.productName = product.name;
     
@@ -334,9 +369,9 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
     const item = currentItems[index];
     
     // Update item with recipe details
-    item.recipeId = recipe.id;
+    // Use standard fields that match our database structure
     item.productId = undefined; // Clear product ID if previously selected
-    item.itemType = 'recipe';
+    item.type = 'Recipe';
     item.description = recipe.name;
     item.productName = recipe.name;
     
@@ -389,8 +424,11 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
   // Form submission handler
   const onSubmitForm = async (data: OrderFormValues) => {
     try {
+      console.log("Starting form submission with data:", data);
+      console.log("Form handleSubmit triggered");
+      
       // Ensure all required fields are present
-      if (!data.customer.firstName || !data.customer.lastName) {
+      if (!data.customer?.firstName || !data.customer?.lastName) {
         toast({
           title: "Error",
           description: "Customer name is required",
@@ -399,24 +437,56 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
         return;
       }
 
+      // Make sure we have items with valid prices
+      if (!data.items || data.items.length === 0) {
+        toast({
+          title: "Error",
+          description: "At least one item is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Output form data for debugging
+      console.log("Form validated successfully, proceeding with submission");
+
       // Format the data for submission with date conversion
+      // We need to match the actual database column names
       const formattedData = {
-        ...data,
-        total: totalAmount,
-        // Ensure dates are properly formatted for API submission
-        orderDate: data.orderDate instanceof Date ? data.orderDate.toISOString() : new Date().toISOString(),
-        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
-        // Generate a customer name for display
-        customerName: `${data.customer.firstName} ${data.customer.lastName}`,
-        // Add additional defaults
         userId: 1,
+        contactId: data.customer?.id || 12,
+        orderNumber: data.orderNumber || `ORD-${Math.floor(Math.random() * 10000)}`,
+        eventType: data.eventType || 'Birthday',
+        eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
+        status: data.status || 'Quote',
+        deliveryType: data.deliveryType || 'Pickup',
+        deliveryAddress: data.deliveryAddress || '',
+        deliveryFee: data.deliveryFee?.toString() || '0', // Match database column
+        deliveryTime: data.deliveryTime || '',
+        total_amount: totalAmount ? totalAmount.toString() : '0', // Using total_amount to match database column
+        amountPaid: '0', // Required field in database
+        specialInstructions: data.notes || '', // Match database column
+        taxRate: data.taxRate?.toString() || '0', // Required field in database
+        notes: data.notes || '',
+        discountType: data.discountType || "%",
+        discount: (data.discount || 0).toString(),
+        setupFee: (data.setupFee || 0).toString(),
+        items: data.items.map(item => ({
+          description: item.description || 'Product',
+          price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
+          quantity: item.quantity || 1,
+          name: item.productName || item.description || 'Product', // Required field
+        }))
       };
       
       // Log the data being sent (for debugging)
-      console.log("Submitting order data:", formattedData);
+      console.log("Submitting formatted order data:", JSON.stringify(formattedData, null, 2));
       
-      // Send data to parent component for submission
+      // Let parent component handle the submission
+      // This approach works better and prevents duplicate API calls
+      console.log("Calling parent onSubmit with data...");
       onSubmit(formattedData);
+      console.log("Parent onSubmit called successfully");
 
       // Show success message on form submit
       toast({
@@ -687,7 +757,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || "Quote"}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a status" />
@@ -714,7 +784,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
               render={({ field }) => (
                 <FormItem className="col-span-6">
                   <FormLabel>Delivery Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || "Pickup"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select delivery type" />
@@ -816,7 +886,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Business Name</FormLabel>
                       <FormControl>
-                        <Input {...field} className="h-8" />
+                        <Input {...field} className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -830,7 +900,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Email</FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" className="h-8" />
+                        <Input {...field} type="email" className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -844,7 +914,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Phone</FormLabel>
                       <FormControl>
-                        <Input {...field} className="h-8" />
+                        <Input {...field} className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -858,7 +928,7 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <FormItem>
                       <FormLabel className="text-xs">Address</FormLabel>
                       <FormControl>
-                        <Input {...field} className="h-8" />
+                        <Input {...field} className="h-8" value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -941,12 +1011,11 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                     <div className="col-span-12 md:col-span-4 lg:col-span-3">
                       <Label className="text-xs mb-1 block">Item Type</Label>
                       <Select
-                        value={watch(`items.${index}.itemType`) || 'product'} 
+                        value={watch(`items.${index}.type`) || 'Product'} 
                         onValueChange={(value) => {
-                          setValue(`items.${index}.itemType`, value);
+                          setValue(`items.${index}.type`, value);
                           // Clear existing selections when changing type
                           setValue(`items.${index}.productId`, undefined);
-                          setValue(`items.${index}.recipeId`, undefined);
                         }}
                       >
                         <SelectTrigger className="w-full">
@@ -1139,13 +1208,12 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                             <FormItem className="space-y-0 flex-grow">
                               <FormControl>
                                 <Input
-                                  {...field}
                                   type="number"
                                   min="0"
                                   max="100"
                                   step="0.01"
                                   className="w-20 h-8 text-right"
-                                  defaultValue="0.00"
+                                  value={field.value || 0}
                                   onChange={(e) => {
                                     const value = parseFloat(e.target.value) || 0;
                                     field.onChange(value);
@@ -1185,12 +1253,11 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
                           <FormItem className="space-y-0">
                             <FormControl>
                               <Input
-                                {...field}
                                 type="number"
                                 min="0"
                                 step="0.01"
                                 className="w-20 h-8"
-                                defaultValue="0.00"
+                                value={field.value || 0}
                                 onChange={(e) => {
                                   const value = parseFloat(e.target.value) || 0;
                                   field.onChange(value);
@@ -1260,8 +1327,88 @@ export default function OrderForm({ onSubmit, initialValues }: { onSubmit: (data
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Order"}
+            <Button 
+              type="button" 
+              disabled={isSubmitting}
+              onClick={async () => {
+                try {
+                  // Get current form values
+                  const data = form.getValues();
+                  console.log("Form values on direct submit:", data);
+                  
+                  // Create a unique order number
+                  const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+                  
+                  // Format the data for API submission
+                  const formattedData = {
+                    userId: 1,
+                    contactId: data.customer?.id || 12,
+                    orderNumber,
+                    eventType: data.eventType || 'Birthday',
+                    eventDate: data.eventDate instanceof Date ? data.eventDate.toISOString() : new Date().toISOString(),
+                    status: data.status || 'Quote',
+                    deliveryType: data.deliveryType || 'Pickup',
+                    deliveryAddress: data.deliveryAddress || '',
+                    deliveryFee: data.deliveryFee?.toString() || '0',
+                    deliveryTime: data.deliveryTime || '',
+                    total_amount: getFinalTotal().toString(),
+                    amountPaid: '0',
+                    specialInstructions: data.notes || '',
+                    taxRate: data.taxRate?.toString() || '0',
+                    notes: data.notes || '',
+                    discountType: data.discountType || "%",
+                    discount: (data.discount || 0).toString(),
+                    setupFee: (data.setupFee || 0).toString(),
+                    items: (data.items || []).map(item => ({
+                      description: item.description || 'Product',
+                      price: typeof item.price === 'number' ? item.price.toString() : (item.price || '0'),
+                      quantity: item.quantity || 1,
+                      name: item.productName || item.description || 'Product'
+                    }))
+                  };
+                  
+                  console.log("Sending direct API call with data:", JSON.stringify(formattedData, null, 2));
+                  
+                  // Make direct API call
+                  const response = await fetch("/api/orders-direct", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formattedData)
+                  });
+                  
+                  console.log("API response status:", response.status);
+                  
+                  if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Server error details:", errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                  }
+                  
+                  const result = await response.json();
+                  console.log("Order created successfully:", result);
+                  
+                  // Show success message
+                  toast({
+                    title: "Order Created",
+                    description: `Order #${orderNumber} has been created successfully.`
+                  });
+                  
+                  // Refresh orders list and navigate
+                  queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+                  window.location.href = "/orders";
+                } catch (error) {
+                  console.error("Error creating order:", error);
+                  toast({
+                    title: "Error",
+                    description: `Failed to create order: ${error instanceof Error ? error.message : "Unknown error"}`,
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              {isSubmitting ? "Saving..." : "Create Order"}
             </Button>
           </div>
         </div>

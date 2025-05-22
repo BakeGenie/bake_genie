@@ -1,10 +1,7 @@
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
 import { OrderWithItems } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { FileTextIcon, CircleXIcon, FileDownIcon, MailIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { FormatCurrency } from "@/components/ui/format-currency";
+import { Mail, FileText } from "lucide-react";
 
 interface OrderCardProps {
   order: OrderWithItems;
@@ -14,6 +11,18 @@ interface OrderCardProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
 }
 
+// Format date for display in order cards
+const formatDisplayDate = (dateStr: string | Date) => {
+  if (!dateStr) return '';
+  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short', 
+    year: 'numeric'
+  });
+};
+
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
   isSelected = false,
@@ -21,118 +30,178 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEmailClick,
   onDownloadClick,
 }) => {
-  const isQuote = order.orderNumber.startsWith("Q");
-  const isCancelled = order.status === "Cancelled";
-
-  // Format date to display
-  const formattedDate = order.eventDate ? new Date(order.eventDate).toLocaleDateString("en-US", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }) : "";
-
-  // Handle status badge color
-  const getStatusBadge = () => {
-    switch (order.status) {
-      case "Draft":
-        return <Badge variant="outline">Draft</Badge>;
-      case "Confirmed":
-        return <Badge variant="secondary">Confirmed</Badge>;
-      case "Paid":
-        return <Badge variant="default">Paid</Badge>;
-      case "Ready":
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Ready</Badge>;
-      case "Delivered":
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Delivered</Badge>;
-      case "Cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      default:
-        return null;
-    }
-  };
-
+  // Handle email click
   const handleEmailClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onEmailClick) onEmailClick(e);
   };
-
-  const handleDownloadClick = (e: React.MouseEvent) => {
+  
+  // Handle document click
+  const handleDocClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDownloadClick) onDownloadClick(e);
   };
-
+  
+  // Get properly formatted order number
+  const orderNumber = order.orderNumber || `${order.id}`.padStart(2, '0');
+  
   return (
     <div
-      className={`flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
-        isSelected ? "bg-gray-100" : isCancelled ? "bg-gray-50" : ""
+      className={`relative flex items-start px-4 py-4 hover:bg-gray-50 cursor-pointer border-b border-gray-200 ${
+        isSelected ? "bg-blue-50" : ""
       }`}
       onClick={onClick}
     >
+      {/* Red/Gray indicator dot based on status */}
+      <div className="mr-3 pt-1">
+        {order.status === 'Quote' || order.status === 'Cancelled' ? (
+          <div className="w-5 h-5 rounded-sm bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-medium text-gray-600 border border-gray-300">
+            Q
+          </div>
+        ) : (
+          <div className="w-5 h-5 rounded-full bg-red-500 flex-shrink-0"></div>
+        )}
+      </div>
+      
+      {/* Order details left column */}
       <div className="flex-1">
-        <div className="flex">
-          <div className={`h-10 w-10 flex items-center justify-center rounded mr-3 ${
-            isCancelled
-              ? "bg-gray-100 text-gray-500"
-              : isSelected
-              ? "bg-primary-100 text-primary-500"
-              : "bg-gray-100 text-gray-500"
-          }`}>
-            {isCancelled ? <CircleXIcon size={18} /> : <FileTextIcon size={18} />}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center">
-              <div className={`text-sm font-medium ${
-                isCancelled ? "text-gray-400" : "text-gray-800"
-              }`}>
-                #{order.orderNumber} - {formattedDate}
+        {/* Order number and event date */}
+        <div className="text-sm font-medium text-gray-700">
+          #{orderNumber} - {formatDisplayDate(String(order.eventDate))}
+        </div>
+        
+        {/* No description line */}
+        <div className="text-gray-600 text-sm">
+          No description available
+        </div>
+        
+        {/* Order details - direct database content display */}
+        <div className="mt-3 text-xs grid grid-cols-2 gap-x-2 gap-y-1">
+          {/* Show key-value pairs directly from all order properties */}
+          {Object.entries(order).map(([key, value]) => {
+            // Skip the items array and contact object for separate display
+            if (key === 'items' || key === 'contact') return null;
+            
+            // Format value based on type
+            let displayValue = 'null';
+            
+            if (value !== null && value !== undefined) {
+              if (key.includes('date') || key.includes('Date') || key.includes('At')) {
+                // Format dates
+                try {
+                  displayValue = new Date(String(value)).toLocaleString();
+                } catch (error) {
+                  displayValue = 'Invalid date';
+                }
+              } else if (typeof value === 'object') {
+                // Format objects
+                try {
+                  displayValue = JSON.stringify(value);
+                } catch (error) {
+                  displayValue = '[Object]';
+                }
+              } else {
+                // Default format
+                try {
+                  displayValue = String(value);
+                } catch (error) {
+                  displayValue = 'Error displaying value';
+                }
+              }
+            }
+            
+            return (
+              <div key={key} className="col-span-2 border-b border-gray-100 pb-1 flex">
+                <span className="font-semibold w-40 flex-shrink-0">{key}:</span>
+                <span className="text-gray-700">{displayValue}</span>
               </div>
-              <div className="ml-2">{getStatusBadge()}</div>
+            );
+          })}
+          
+          {/* Contact information if available */}
+          {order.contact && (
+            <div className="col-span-2 mt-2 border-t border-gray-200 pt-2">
+              <div className="font-semibold mb-1">Contact:</div>
+              {Object.entries(order.contact).map(([key, value]) => {
+                if (value === null || value === undefined) return null;
+                
+                return (
+                  <div key={key} className="ml-2 flex">
+                    <span className="font-semibold w-32 flex-shrink-0">{key}:</span>
+                    <span className="text-gray-700">{value.toString()}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div className={`text-sm ${isCancelled ? "text-gray-400" : "text-gray-600"}`}>
-              {order.contact?.firstName} {order.contact?.lastName}
-              {order.eventType && (
-                <span className={isCancelled ? "text-gray-400" : "text-primary-600"}>
-                  {" "}({order.eventType})
-                </span>
-              )}
+          )}
+          
+          {/* Order items listing */}
+          {order.items && order.items.length > 0 && (
+            <div className="col-span-2 mt-2 border-t border-gray-200 pt-2">
+              <div className="font-semibold">Order Items ({order.items.length}):</div>
+              {order.items.map((item, idx) => (
+                <div key={idx} className="ml-2 mt-2 pb-2 border-b border-gray-100">
+                  <div className="font-medium">Item #{idx + 1}</div>
+                  {Object.entries(item).map(([key, value]) => {
+                    if (value === null || value === undefined) return null;
+                    
+                    return (
+                      <div key={key} className="ml-2 flex">
+                        <span className="font-semibold w-24 flex-shrink-0">{key}:</span>
+                        <span className="text-gray-700">{value.toString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-            {order.description && (
-              <div className={`text-sm ${isCancelled ? "text-gray-400" : "text-gray-500"}`}>
-                {order.description}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
-      <div className="text-right">
-        <div className={`text-sm font-medium ${isCancelled ? "text-gray-400" : ""}`}>
-          <FormatCurrency amount={order.total} />
+      
+      {/* Right column with price and status */}
+      <div className="flex flex-col items-end ml-4">
+        {/* Total price */}
+        <div className="text-base font-medium text-right mb-1">
+          $ {order.total ? 
+              (typeof order.total === 'string' ? parseFloat(order.total) : order.total).toFixed(2) 
+              : order.totalAmount ? 
+                (typeof order.totalAmount === 'string' ? parseFloat(order.totalAmount) : order.totalAmount).toFixed(2) 
+                : '0.00'}
         </div>
-        {(onDownloadClick || onEmailClick) && (
-          <div className="flex mt-1">
-            {onDownloadClick && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleDownloadClick}
-              >
-                <FileDownIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </Button>
-            )}
-            {onEmailClick && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleEmailClick}
-              >
-                <MailIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </Button>
-            )}
-          </div>
-        )}
+        
+        {/* Status badge */}
+        <div className="mb-1">
+          {order.status === 'Cancelled' && (
+            <Badge variant="destructive" className="text-xs">Cancelled</Badge>
+          )}
+          {order.status === 'Paid' && (
+            <Badge variant="default" className="text-xs py-1 px-2 bg-gray-200 hover:bg-gray-300 text-gray-800">Paid</Badge>
+          )}
+          {order.status === 'Quote' && (
+            <Badge variant="outline" className="text-xs">Quote</Badge>
+          )}
+        </div>
+        
+        {/* Action icons */}
+        <div className="flex space-x-1">
+          {onDownloadClick && (
+            <button 
+              onClick={handleDocClick}
+              className="text-gray-400 hover:text-gray-600 p-1"
+            >
+              <FileText className="h-4 w-4" />
+            </button>
+          )}
+          {onEmailClick && (
+            <button 
+              onClick={handleEmailClick}
+              className="text-gray-400 hover:text-gray-600 p-1"
+            >
+              <Mail className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

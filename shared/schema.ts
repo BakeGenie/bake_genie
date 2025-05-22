@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, date, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { type InferSelectModel, relations } from "drizzle-orm";
 
 // Define event types
 export const eventTypes = ['Birthday', 'Wedding', 'Anniversary', 'Baby Shower', 'Christening / Baptism', 'Hen/Bux/Stag', 'Corporate', 'Other'] as const;
@@ -145,7 +146,7 @@ export const quoteItems = pgTable("quote_items", {
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  orderId: integer("order_id"),
+  relatedOrderId: integer("related_order_id"),
   title: text("title").notNull(),
   description: text("description"),
   dueDate: date("due_date"),
@@ -172,15 +173,16 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   description: text("description"),
   servings: integer("servings"),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  cost: decimal("cost", { precision: 10, scale: 2 }),
-  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"),
-  laborHours: decimal("labor_hours", { precision: 5, scale: 2 }).default("0"),
-  laborRate: decimal("labor_rate", { precision: 10, scale: 2 }).default("0"),
-  overhead: decimal("overhead", { precision: 10, scale: 2 }).default("0"),
+  price: text("price").notNull(),
+  cost: text("cost"),
+  taxRate: text("tax_rate").default("0"),
+  laborHours: text("labor_hours").default("0"),
+  laborRate: text("labor_rate").default("0"),
+  overhead: text("overhead").default("0"),
   imageUrl: text("image_url"),
   bundleId: integer("bundle_id"),
   active: boolean("active").default(true),
+  sku: text("sku"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -210,7 +212,23 @@ export const ingredients = pgTable("ingredients", {
   unitCost: decimal("unit_cost", { precision: 10, scale: 2 }),
   packSize: decimal("pack_size", { precision: 10, scale: 2 }),
   packCost: decimal("pack_cost", { precision: 10, scale: 2 }),
+  supplier: text("supplier"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Supplies table
+export const supplies = pgTable("supplies", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  supplier: text("supplier"),
+  category: text("category"),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  description: text("description"),
+  quantity: integer("quantity").default(0),
+  reorder_level: integer("reorder_level").default(5),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Recipe Ingredients table
@@ -250,13 +268,13 @@ export const income = pgTable("income", {
 export const enquiries = pgTable("enquiries", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone"),
-  eventType: text("event_type"),
+  contactId: integer("contact_id").references(() => contacts.id),
+  date: date("date").notNull(),
+  eventType: text("event_type").notNull(),
   eventDate: date("event_date"),
-  message: text("message").notNull(),
-  status: text("status").default("New").notNull(),
+  details: text("details").notNull(),
+  status: text("status").notNull(),
+  followUpDate: date("follow_up_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -337,6 +355,7 @@ export const insertOrderLogSchema = createInsertSchema(orderLogs).omit({ id: tru
 export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true });
 export const insertRecipeSchema = createInsertSchema(recipes).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({ id: true, createdAt: true });
+export const insertSupplySchema = createInsertSchema(supplies).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRecipeIngredientSchema = createInsertSchema(recipeIngredients).omit({ id: true });
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true, createdAt: true });
 export const insertIncomeSchema = createInsertSchema(income).omit({ id: true, createdAt: true });
@@ -356,6 +375,7 @@ export type InsertOrderLog = z.infer<typeof insertOrderLogSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type InsertIngredient = z.infer<typeof insertIngredientSchema>;
+export type InsertSupply = z.infer<typeof insertSupplySchema>;
 export type InsertRecipeIngredient = z.infer<typeof insertRecipeIngredientSchema>;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
@@ -375,6 +395,7 @@ export type OrderLog = typeof orderLogs.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Recipe = typeof recipes.$inferSelect;
 export type Ingredient = typeof ingredients.$inferSelect;
+export type Supply = typeof supplies.$inferSelect;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof income.$inferSelect;
@@ -496,6 +517,30 @@ export const reminderHistory = pgTable("reminder_history", {
   status: text("status").notNull(), // 'sent', 'failed', etc.
   sentAt: timestamp("sent_at").notNull().defaultNow(),
 });
+
+// Define table relations
+export const productBundlesRelations = relations(productBundles, ({ many }) => ({
+  items: many(bundleItems)
+}));
+
+export const bundleItemsRelations = relations(bundleItems, ({ one }) => ({
+  bundle: one(productBundles, {
+    fields: [bundleItems.bundleId],
+    references: [productBundles.id]
+  }),
+  product: one(products, {
+    fields: [bundleItems.productId],
+    references: [products.id]
+  })
+}));
+
+export const productsRelations = relations(products, ({ one }) => ({
+  bundle: one(productBundles, {
+    fields: [products.bundleId],
+    references: [productBundles.id],
+    relationName: "productBundle"
+  })
+}));
 
 export const insertReminderTemplateSchema = createInsertSchema(reminderTemplates).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertReminderScheduleSchema = createInsertSchema(reminderSchedules).omit({ id: true, createdAt: true, updatedAt: true });

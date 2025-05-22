@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,9 +40,15 @@ const categories = ["All Categories", "Cake", "Macaron", "Cookie", "Cupcake", "O
 
 const Bundles = () => {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
-  const [bundles, setBundles] = useState<Bundle[]>([]);
+  
+  // Sample demo data for bundles
+  const [bundles, setBundles] = useState<Bundle[]>([
+    { id: 1, name: "6pk Macaron Box", category: "Macaron", price: 4.10 },
+    { id: 2, name: "6\" Vanilla Bean Buttercake", category: "Cake", price: 32.01 }
+  ]);
   
   // Filter bundles based on search query and selected category
   const filteredBundles = bundles.filter(bundle => {
@@ -49,6 +56,22 @@ const Bundles = () => {
     const matchesCategory = selectedCategory === "All Categories" || bundle.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+  
+  // Handle delete bundle
+  const handleDeleteBundle = (id: number) => {
+    const bundleToDelete = bundles.find(b => b.id === id);
+    if (bundleToDelete) {
+      // Show confirmation toast
+      toast({
+        title: "Bundle deleted",
+        description: `"${bundleToDelete.name}" has been removed`,
+        duration: 3000,
+      });
+      
+      // Remove bundle from state
+      setBundles(bundles.filter(b => b.id !== id));
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -141,7 +164,12 @@ const Bundles = () => {
                     <TableCell>{bundle.category || '-'}</TableCell>
                     <TableCell>{bundle.price ? `$${bundle.price.toFixed(2)}` : '-'}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-red-500 hover:text-red-600"
+                        onClick={() => handleDeleteBundle(bundle.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>

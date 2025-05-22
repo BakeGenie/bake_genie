@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DashboardStats } from "@/types";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { Link } from "wouter";
+import SidebarCalendar from "@/components/calendar/sidebar-calendar";
 
 const Dashboard = () => {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
@@ -136,9 +137,19 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Additional analytics could be added here */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <Card>
+      {/* Additional analytics and calendar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Calendar</CardTitle>
+            <CardDescription>Upcoming orders and events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SidebarCalendar />
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-1 md:col-span-2">
           <CardHeader>
             <CardTitle>Orders by Type</CardTitle>
             <CardDescription>

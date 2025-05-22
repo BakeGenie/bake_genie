@@ -2,6 +2,7 @@ import React from "react";
 import PageHeader from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -25,7 +26,10 @@ import {
   KeyIcon,
   CreditCardIcon,
   BellIcon,
-  ShieldIcon
+  ShieldIcon,
+  ChevronRightIcon,
+  XCircleIcon,
+  ReceiptIcon
 } from "lucide-react";
 
 // Extended schema with validation rules for user profile
@@ -58,6 +62,7 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 const Account = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState("profile");
+  const [setLocation] = useLocation();
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -414,76 +419,89 @@ const Account = () => {
         <TabsContent value="billing">
           <Card>
             <CardHeader>
-              <CardTitle>Billing & Subscription</CardTitle>
+              <CardTitle>Subscription Details</CardTitle>
               <CardDescription>
-                Manage your subscription and payment methods
+                Update your subscription details, change your billing information or download your billing receipts.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
+              <div className="grid grid-cols-1 gap-4">
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => window.location.href = "/manage-subscription"}
+                >
+                  <div className="flex items-center">
+                    <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
                     <div>
-                      <h3 className="font-medium">Pro Plan</h3>
-                      <p className="text-sm text-muted-foreground">$15.00 per month</p>
+                      <p className="font-medium">Manage Subscription</p>
+                      <p className="text-sm text-muted-foreground">Update plan, change billing cycle</p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Manage Subscription
-                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">Active</span>
+                    <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Payment Methods</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border p-4 rounded-lg">
-                      <div className="flex items-center">
-                        <CreditCardIcon className="h-5 w-5 mr-2 text-primary-500" />
-                        <div>
-                          <p className="font-medium">Visa ending in 4242</p>
-                          <p className="text-sm text-muted-foreground">Expires 12/2025</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        Edit
-                      </Button>
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => {
+                    // Handle update billing details
+                    toast({
+                      title: "Update Billing Details",
+                      description: "This feature will allow changing payment methods."
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
+                    <div>
+                      <p className="font-medium">Update Billing Details</p>
+                      <p className="text-sm text-muted-foreground">Change payment method, billing address</p>
                     </div>
-                    <Button variant="outline">
-                      <CreditCardIcon className="h-4 w-4 mr-2" /> Add Payment Method
-                    </Button>
                   </div>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                 </div>
 
-                <Separator className="my-6" />
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Billing History</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <div>
-                        <p className="font-medium">Invoice #1234</p>
-                        <p className="text-sm text-muted-foreground">May 1, 2023</p>
-                      </div>
-                      <div className="flex items-center">
-                        <p className="font-medium mr-4">$15.00</p>
-                        <Button variant="ghost" size="sm">
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <div>
-                        <p className="font-medium">Invoice #1233</p>
-                        <p className="text-sm text-muted-foreground">April 1, 2023</p>
-                      </div>
-                      <div className="flex items-center">
-                        <p className="font-medium mr-4">$15.00</p>
-                        <Button variant="ghost" size="sm">
-                          Download
-                        </Button>
-                      </div>
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
+                  onClick={() => {
+                    // Handle billing history
+                    toast({
+                      title: "Billing History",
+                      description: "View and download past invoices."
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <ReceiptIcon className="h-5 w-5 mr-3 text-primary" />
+                    <div>
+                      <p className="font-medium">Billing History</p>
+                      <p className="text-sm text-muted-foreground">View and download past invoices</p>
                     </div>
                   </div>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
+                </div>
+
+                <div 
+                  className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors border-destructive/20 hover:bg-destructive/10"
+                  onClick={() => {
+                    // Handle cancel subscription
+                    toast({
+                      title: "Cancel Subscription",
+                      description: "Starting the cancellation process.",
+                      variant: "destructive"
+                    });
+                  }}
+                >
+                  <div className="flex items-center">
+                    <XCircleIcon className="h-5 w-5 mr-3 text-destructive" />
+                    <div>
+                      <p className="font-medium">Cancel Subscription</p>
+                      <p className="text-sm text-muted-foreground">End your subscription and delete billing information</p>
+                    </div>
+                  </div>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                 </div>
               </div>
             </CardContent>

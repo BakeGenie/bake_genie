@@ -193,11 +193,30 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         newSettings.currencySymbol = getCurrencySymbol(newSettings.currency);
       }
       
+      // Process boolean values to ensure they're actual booleans
+      const processedSettings = { ...newSettings };
+      
+      // Explicitly handle boolean fields
+      if ('receiveUpcomingOrders' in newSettings) {
+        processedSettings.receiveUpcomingOrders = Boolean(newSettings.receiveUpcomingOrders);
+      }
+      if ('receivePaymentReminders' in newSettings) {
+        processedSettings.receivePaymentReminders = Boolean(newSettings.receivePaymentReminders);
+      }
+      if ('receiveMarketingEmails' in newSettings) {
+        processedSettings.receiveMarketingEmails = Boolean(newSettings.receiveMarketingEmails);
+      }
+      if ('receiveProductUpdates' in newSettings) {
+        processedSettings.receiveProductUpdates = Boolean(newSettings.receiveProductUpdates);
+      }
+      
       // Update local state immediately for responsiveness
       setSettings(prevSettings => ({
         ...prevSettings,
-        ...newSettings,
+        ...processedSettings,
       }));
+      
+      console.log("Saving settings to server:", processedSettings);
       
       // Save to server
       const response = await fetch('/api/settings', {
@@ -205,7 +224,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newSettings),
+        body: JSON.stringify(processedSettings),
       });
       
       if (!response.ok) {

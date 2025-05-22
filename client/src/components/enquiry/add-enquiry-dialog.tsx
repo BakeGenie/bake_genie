@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { insertEnquirySchema } from "@shared/schema";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,22 +38,27 @@ import {
 import { eventTypes } from "@shared/schema";
 
 // Define the event types
-const eventTypesArray = [...eventTypes, "Other"];
+// Make sure event types don't include duplicate "Other" entries
+const eventTypesArray = Array.from(eventTypes);
+if (!eventTypesArray.includes("Other")) {
+  eventTypesArray.push("Other");
+}
 
 // Define source options
 const sourceOptions = ["Phone", "Email", "In-person", "Facebook", "Instagram", "Other"];
 
-const enquiryFormSchema = insertEnquirySchema.extend({
-  // Add any client-side validation rules
+// Form schema for the enquiry form (frontend fields)
+const enquiryFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address").nullable().optional(),
-  phone: z.string().nullable().optional(),
+  email: z.string().email("Please enter a valid email address").optional().or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
   message: z.string().min(10, "Please provide more details in your message"),
-  eventType: z.string().nullable().optional(),
-  eventDate: z.date().nullable().optional(),
-  source: z.string().nullable().optional(),
+  eventType: z.string(),
+  eventDate: z.date().optional().nullable(),
+  source: z.string().optional().or(z.literal("")).nullable(),
 });
 
+// Define the form values type
 type EnquiryFormValues = z.infer<typeof enquiryFormSchema>;
 
 interface AddEnquiryDialogProps {
@@ -70,22 +74,47 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
     resolver: zodResolver(enquiryFormSchema),
     defaultValues: {
       name: "",
-      email: null,
+      email: "",
       phone: "",
       message: "",
-      eventType: null,
+      eventType: "Other",
       eventDate: null,
-      source: null,
-      status: "New",
-      userId: 1, // Default user ID
+      source: "",
     },
   });
 
-  async function onSubmit(data: EnquiryFormValues) {
+  async function onSubmit(values: EnquiryFormValues) {
     setIsSubmitting(true);
     
+    console.log("Submitting enquiry form data:", values);
+    
     try {
-      await apiRequest("POST", "/api/enquiries", data);
+      // The server expects a message field to use as the details column in the database
+      // We'll format the contact information and message into a single string
+      const formattedMessage = `Name: ${values.name}
+Email: ${values.email || 'Not provided'}
+Phone: ${values.phone || 'Not provided'}
+${values.source ? `Source: ${values.source}` : ''}
+
+Message: ${values.message.trim()}`;
+      
+      // Format data to match the server expectations
+      // The server is looking for 'message' and 'eventType', even though it 
+      // stores them as 'details' and 'event_type' in the database
+      const serverData = {
+        message: formattedMessage,         // Server expects 'message' but stores as 'details'
+        eventType: values.eventType,       // Server expects 'eventType' but stores as 'event_type'
+        eventDate: values.eventDate ? values.eventDate.toISOString() : null,
+        status: "New"
+      };
+      
+      console.log("Data for backend:", serverData);
+      
+      const response = await apiRequest("/api/enquiries", {
+        method: "POST",
+        body: serverData
+      });
+      console.log("Response from server:", response);
       
       // Invalidate the enquiries cache to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/enquiries"] });
@@ -192,8 +221,8 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {sourceOptions.map((source) => (
-                          <SelectItem key={source} value={source}>
+                        {sourceOptions.map((source, index) => (
+                          <SelectItem key={`source-${index}`} value={source}>
                             {source}
                           </SelectItem>
                         ))}
@@ -222,8 +251,8 @@ export function AddEnquiryDialog({ onSuccess }: AddEnquiryDialogProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {eventTypesArray.map((type) => (
-                          <SelectItem key={type} value={type}>
+                        {eventTypesArray.map((type, index) => (
+                          <SelectItem key={`event-type-${index}`} value={type}>
                             {type}
                           </SelectItem>
                         ))}

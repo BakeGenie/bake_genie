@@ -256,7 +256,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             {/* Log Off Button as part of the navigation menu */}
             <li className="mt-6 border-t border-gray-200 pt-2">
               <button 
-                onClick={() => window.location.href = "/logout"}
+                onClick={async () => {
+                  try {
+                    // Perform a fetch to the logout endpoint
+                    const response = await fetch("/api/auth/logout");
+                    if (response.redirected) {
+                      // If the server responded with a redirect, follow it
+                      window.location.href = response.url;
+                    } else {
+                      // Otherwise, manually redirect to the home page
+                      window.location.href = "/";
+                    }
+                  } catch (error) {
+                    console.error("Logout error:", error);
+                    // Fallback to home page if there's an error
+                    window.location.href = "/";
+                  }
+                }}
                 className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 <div className="flex items-center">

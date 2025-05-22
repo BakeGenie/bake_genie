@@ -12,6 +12,7 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { eventTypes, type EventType } from "@shared/schema";
 import { eventTypeColors } from "@/lib/constants";
+import SidebarDateDialog from "@/components/calendar/sidebar-date-dialog";
 import { 
   Dialog, 
   DialogContent, 
@@ -42,11 +43,50 @@ interface CalendarEvent {
 
 const Calendar = () => {
   const [_, navigate] = useLocation();
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+  // Check for date in URL parameters or localStorage
+  const storedDate = React.useMemo(() => {
+    // 1. First check URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    
+    // 2. Then check localStorage
+    const dateFromStorage = localStorage.getItem('selectedCalendarDate');
+    
+    // Try URL parameter first
+    if (dateParam) {
+      try {
+        const parsedDate = new Date(dateParam);
+        if (!isNaN(parsedDate.getTime())) {
+          console.log("Using date from URL parameter:", parsedDate);
+          return parsedDate;
+        }
+      } catch (e) {
+        console.error("Error parsing date from URL:", e);
+      }
+    }
+    
+    // Try localStorage next
+    if (dateFromStorage) {
+      try {
+        const parsedDate = new Date(dateFromStorage);
+        // Clear localStorage after using it
+        localStorage.removeItem('selectedCalendarDate');
+        console.log("Using date from localStorage:", parsedDate);
+        return parsedDate;
+      } catch (e) {
+        console.error("Error parsing stored calendar date:", e);
+      }
+    }
+    
+    // Default to today
+    return new Date();
+  }, []);
+  
+  const [currentDate, setCurrentDate] = React.useState(storedDate);
   const [view, setView] = React.useState<"month" | "week" | "day">("month");
-  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(storedDate);
   const [isActionDialogOpen, setIsActionDialogOpen] = React.useState(false);
-  const [isBlockoutDialogOpen, setIsBlockoutDialogOpen] = React.useState(false);
+  const [isBlockDateDialogOpen, setIsBlockDateDialogOpen] = React.useState(false);
   const [isNewEventDialogOpen, setIsNewEventDialogOpen] = React.useState(false);
   const [calendarEvents, setCalendarEvents] = React.useState<CalendarEvent[]>([]);
   const [blockedDates, setBlockedDates] = React.useState<{[key: string]: string}>({});
@@ -167,24 +207,74 @@ const Calendar = () => {
   
   return (
     <div className="p-6">
-      <PageHeader title="Calendar" />
+      <div className="flex justify-between items-center mb-4">
+        <PageHeader title="Calendar" />
+        <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => navigate('/orders/new')}>
+          <PlusIcon className="h-4 w-4 mr-1" /> Add Item
+        </Button>
+      </div>
       
-      <div className="flex justify-between items-center mb-6 mt-4">
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={navigateToToday}>
-            Today
-          </Button>
-          <div className="flex">
-            <Button variant="outline" size="icon" onClick={navigateToPreviousMonth}>
+      <div className="flex justify-between items-center mb-4 bg-white p-3 rounded-md shadow-sm border">
+        <div className="flex space-x-2 items-center">
+          <div className="text-sm font-medium text-gray-500 mr-1">Period:</div>
+          <Select
+            value={format(currentDate, "MMMM")}
+            onValueChange={(selectedMonth) => {
+              // Get the index of the selected month (0-11)
+              const monthIndex = new Date(Date.parse(`${selectedMonth} 1, 2000`)).getMonth();
+              // Create a new date with the selected month but keep the current year
+              const newDate = new Date(currentDate);
+              newDate.setMonth(monthIndex);
+              // Update the current date
+              setCurrentDate(newDate);
+            }}
+          >
+            <SelectTrigger className="h-8 min-w-[100px] w-auto">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }).map((_, index) => {
+                const monthDate = new Date(currentDate.getFullYear(), index, 1);
+                return (
+                  <SelectItem key={index} value={format(monthDate, "MMMM")}>
+                    {format(monthDate, "MMMM")}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          
+          <Select 
+            value={currentDate.getFullYear().toString()}
+            onValueChange={(selectedYear) => {
+              const newDate = new Date(currentDate);
+              newDate.setFullYear(parseInt(selectedYear));
+              setCurrentDate(newDate);
+            }}
+          >
+            <SelectTrigger className="h-8 w-[80px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 5 }).map((_, index) => {
+                const year = new Date().getFullYear() - 2 + index;
+                return (
+                  <SelectItem key={index} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex ml-1">
+            <Button variant="outline" size="icon" onClick={navigateToPreviousMonth} className="h-8 w-8">
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={navigateToNextMonth}>
+            <Button variant="outline" size="icon" onClick={navigateToNextMonth} className="h-8 w-8">
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
-          <h2 className="text-xl font-semibold flex items-center">
-            {format(currentDate, "MMMM yyyy")}
-          </h2>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -256,39 +346,34 @@ const Calendar = () => {
         </div>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">
-            <CalendarIcon className="h-5 w-5 inline-block mr-2" />
-            Calendar
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="border rounded-md overflow-hidden">
           {/* Days of week header */}
-          <div className="grid grid-cols-7 mb-2 text-center">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="py-2 font-semibold text-sm text-gray-500">
+          <div className="grid grid-cols-7 text-center bg-gray-700 text-white border-b">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+              <div key={day} className="py-2 font-semibold text-sm border-r last:border-r-0">
                 {day}
               </div>
             ))}
           </div>
           
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 bg-white">
             {Array.from({ length: firstDayOfMonth.getDay() }).map((_, index) => (
-              <div key={`empty-start-${index}`} className="h-28 bg-gray-50 rounded-md border border-gray-100"></div>
+              <div key={`empty-start-${index}`} className="h-28 bg-gray-50 border-r border-b"></div>
             ))}
             
             {daysInMonth.map((day) => {
               const dayOrders = getOrdersForDay(day);
               const isCurrentDay = isToday(day);
+              const isSelected = selectedDate && isSameDay(day, selectedDate);
               
               return (
                 <div
                   key={day.toString()}
                   className={cn(
-                    "h-28 p-1 rounded-md border border-gray-200 overflow-y-auto relative",
-                    isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50",
+                    "h-28 p-1 rounded-md border relative",
+                    isSelected ? "bg-primary/10 border-primary" : 
+                    isCurrentDay ? "bg-blue-50 border-blue-200" : "bg-white hover:bg-gray-50 border-gray-200",
                     isDateBlocked(day) ? "bg-gray-50" : ""
                   )}
                   onClick={() => {
@@ -297,7 +382,7 @@ const Calendar = () => {
                   }}
                 >
                   <div className={cn(
-                    "font-medium text-sm sticky top-0 bg-inherit z-10 mb-1",
+                    "font-medium text-sm sticky top-0 bg-inherit z-10 mb-1 pb-1 border-b border-gray-100",
                     isCurrentDay ? "text-blue-600" : "text-gray-700"
                   )}>
                     {format(day, "d")}
@@ -309,44 +394,71 @@ const Calendar = () => {
                     </div>
                   )}
                   
-                  <div className="space-y-1">
+                  <div className="h-[calc(100%-22px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {/* Display orders */}
-                    {dayOrders.map((order) => (
-                      <div
-                        key={order.id}
-                        className="text-xs p-1 rounded bg-white border border-gray-200 cursor-pointer hover:bg-gray-50"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent triggering the parent div's onClick
-                          navigate(`/orders/${order.id}`);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{order.contact?.firstName} {order.contact?.lastName}</span>
-                          <Badge
-                            className={cn(
-                              "text-[10px] px-1 py-0",
-                              getStatusColor(order.status)
-                            )}
-                          >
-                            {order.status}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center mt-0.5">
-                          {order.eventType && (
-                            <div 
-                              className="text-[10px] px-1.5 py-0.5 rounded-sm flex items-center gap-1"
-                              style={getEventTypeColor(order.eventType)}
+                    <div className="flex space-x-1 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                      {dayOrders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="text-xs p-1.5 rounded bg-white border border-gray-200 cursor-pointer hover:bg-gray-50 flex-shrink-0 w-[156px] shadow-sm"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering the parent div's onClick
+                            // Log the order data before navigating
+                            console.log("Calendar - selected order:", order);
+                            
+                            // Create a popup with order preview before redirecting
+                            const confirmed = window.confirm(`
+Order #: ${order.orderNumber}
+Event: ${order.eventType}
+Date: ${new Date(order.eventDate).toLocaleDateString()}
+Status: ${order.status}
+                            
+Click OK to view full order details.
+                            `);
+                            
+                            if (confirmed) {
+                              // Store selected order details in localStorage to ensure we have all the information
+                              localStorage.setItem('selectedOrder', JSON.stringify(order));
+                              navigate(`/orders/${order.id}`);
+                            }
+                          }}
+                        >
+                          <div className="flex items-start mb-0.5">
+                            <div className="flex-1 pr-1">
+                              <div className="font-medium truncate text-[11px]">{order.contact?.firstName} {order.contact?.lastName}</div>
+                              <div className="text-[10px] text-gray-500">#{order.orderNumber?.split('-')[1]}</div>
+                            </div>
+                            <Badge
+                              className={cn(
+                                "text-[9px] px-1 py-0 h-4 ml-auto",
+                                getStatusColor(order.status)
+                              )}
                             >
+                              {order.status}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center mt-1">
+                            {order.eventType && (
                               <div 
-                                className="w-2 h-2 rounded-full"
-                                style={{backgroundColor: getEventTypeColor(order.eventType).color}}
-                              />
-                              <span>{order.eventType}</span>
+                                className="text-[9px] px-1.5 py-0.5 rounded-sm flex items-center gap-1 border"
+                                style={getEventTypeColor(order.eventType)}
+                              >
+                                <div 
+                                  className="w-1.5 h-1.5 rounded-full"
+                                  style={{backgroundColor: getEventTypeColor(order.eventType).color}}
+                                />
+                                <span>{order.eventType}</span>
+                              </div>
+                            )}
+                          </div>
+                          {order.items && order.items.length > 0 && (
+                            <div className="mt-1 text-[9px] text-gray-600 truncate">
+                              {order.items[0].description}
                             </div>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                     
                     {/* Display calendar events */}
                     {getEventsForDay(day).map((event) => (
@@ -378,103 +490,31 @@ const Calendar = () => {
               <div key={`empty-end-${index}`} className="h-28 bg-gray-50 rounded-md border border-gray-100"></div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+      </div>
       
-      {/* Date Selection Action Dialog */}
-      <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Date Options: {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}</DialogTitle>
-            <DialogDescription>
-              Select an action for this date
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 gap-4 py-4">
-            <Button 
-              className="flex items-center justify-start h-auto py-6 px-4"
-              variant="outline"
-              onClick={() => {
-                setIsActionDialogOpen(false);
-                if (selectedDate) {
-                  // Format and store the selected date as a string in yyyy-MM-dd format
-                  const formattedDate = format(selectedDate, "yyyy-MM-dd");
-                  console.log("Calendar: Storing selected date for new order:", formattedDate);
-                  
-                  // Use localStorage with string format - more reliable and avoids type issues
-                  localStorage.setItem('pendingEventDate', formattedDate);
-                  
-                  // Navigate without parameters - we'll get the date from localStorage
-                  navigate('/orders/new');
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <PlusIcon className="mr-2 h-5 w-5 text-green-600" />
-                <div>
-                  <h3 className="font-medium text-left">Create New Order</h3>
-                  <p className="text-sm text-gray-500 text-left">Add a new order or quote for this date</p>
-                </div>
-              </div>
-            </Button>
-            
-            <Button 
-              className="flex items-center justify-start h-auto py-6 px-4"
-              variant="outline"
-              onClick={() => {
-                setIsActionDialogOpen(false);
-                // Set the selected date for the new event and open the new event dialog
-                if (selectedDate) {
-                  setNewEvent({
-                    ...newEvent,
-                    startDate: format(selectedDate, "yyyy-MM-dd"),
-                    endDate: format(selectedDate, "yyyy-MM-dd")
-                  });
-                  setIsNewEventDialogOpen(true);
-                }
-              }}
-            >
-              <div className="flex items-center">
-                <CalendarDaysIcon className="mr-2 h-5 w-5 text-blue-600" />
-                <div>
-                  <h3 className="font-medium text-left">Add Event/Task</h3>
-                  <p className="text-sm text-gray-500 text-left">Add a reminder or task for this date</p>
-                </div>
-              </div>
-            </Button>
-            
-            <Button 
-              className="flex items-center justify-start h-auto py-6 px-4"
-              variant="outline"
-              onClick={() => {
-                setIsActionDialogOpen(false);
-                setIsBlockoutDialogOpen(true);
-              }}
-            >
-              <div className="flex items-center">
-                <XIcon className="mr-2 h-5 w-5 text-red-600" />
-                <div>
-                  <h3 className="font-medium text-left">Block Out Time</h3>
-                  <p className="text-sm text-gray-500 text-left">Mark this date as unavailable</p>
-                </div>
-              </div>
-            </Button>
-          </div>
-          
-          <DialogFooter className="sm:justify-center">
-            <Button
-              variant="ghost"
-              onClick={() => setIsActionDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Use the sidebar date dialog with custom handlers */}
+      <SidebarDateDialog 
+        isOpen={isActionDialogOpen}
+        onClose={() => setIsActionDialogOpen(false)}
+        selectedDate={selectedDate}
+        onAddEvent={() => {
+          // Set the selected date for the new event and open the new event dialog
+          if (selectedDate) {
+            setNewEvent({
+              ...newEvent,
+              startDate: format(selectedDate, "yyyy-MM-dd"),
+              endDate: format(selectedDate, "yyyy-MM-dd")
+            });
+            setIsNewEventDialogOpen(true);
+          }
+        }}
+        onBlockDate={() => {
+          setIsBlockDateDialogOpen(true);
+        }}
+      />
       
       {/* Block Out Time Dialog */}
-      <Dialog open={isBlockoutDialogOpen} onOpenChange={setIsBlockoutDialogOpen}>
+      <Dialog open={isBlockDateDialogOpen} onOpenChange={setIsBlockDateDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Block Out Time</DialogTitle>
@@ -565,7 +605,7 @@ const Calendar = () => {
                     alert(`Dates from ${formattedStartDate} to ${formattedEndDate} have been blocked out.`);
                   }
                   
-                  setIsBlockoutDialogOpen(false);
+                  setIsBlockDateDialogOpen(false);
                 } else {
                   alert("Please select both start and end dates");
                 }
@@ -578,7 +618,7 @@ const Calendar = () => {
           <DialogFooter className="sm:justify-center">
             <Button
               variant="ghost"
-              onClick={() => setIsBlockoutDialogOpen(false)}
+              onClick={() => setIsBlockDateDialogOpen(false)}
             >
               Cancel
             </Button>

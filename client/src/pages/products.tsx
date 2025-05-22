@@ -59,8 +59,15 @@ const productFormSchema = insertProductSchema.extend({
   name: z.string().min(1, "Name is required"),
   type: z.string().min(1, "Type is required"),
   price: z.coerce.number().min(0, "Price must be a positive number"),
+  cost: z.coerce.number().min(0, "Cost must be a positive number").optional().nullable(),
+  servings: z.coerce.number().min(0, "Servings must be a positive number").optional().nullable(),
+  taxRate: z.coerce.number().min(0, "Tax rate must be a positive number").optional().nullable(),
+  laborHours: z.coerce.number().min(0, "Labor hours must be a positive number").optional().nullable(),
+  laborRate: z.coerce.number().min(0, "Labor rate must be a positive number").optional().nullable(),
+  overhead: z.coerce.number().min(0, "Overhead must be a positive number").optional().nullable(),
   imageUrl: z.string().optional(),
   bundleId: z.number().optional().nullable(),
+  sku: z.string().optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -87,8 +94,11 @@ const Products = () => {
   const [selectedBundleName, setSelectedBundleName] = React.useState<string | null>(null);
 
   // Fetch products
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+  const { data: products = [], isLoading, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products"],
+    staleTime: 0, // Always get fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
   
   // Fetch bundle if a product has bundleId
@@ -211,10 +221,62 @@ const Products = () => {
         data.imageUrl = imageUrl;
       }
       
-      await apiRequest("POST", "/api/products", data);
+      // Format all numeric values as strings for database compatibility
+      const formattedData = {
+        ...data,
+        // Convert all numeric fields to strings with proper decimal format
+        price: data.price.toString(),
+        cost: data.cost ? data.cost.toString() : "0",
+        taxRate: data.taxRate ? data.taxRate.toString() : "0",
+        laborHours: data.laborHours ? data.laborHours.toString() : "0",
+        laborRate: data.laborRate ? data.laborRate.toString() : "0",
+        overhead: data.overhead ? data.overhead.toString() : "0",
+        servings: data.servings ? data.servings.toString() : "1"
+      };
       
-      // Invalidate products query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      console.log("Submitting product with formatted data:", formattedData);
+      
+      // Make the product creation request and handle the response using apiRequest
+      try {
+        console.log("Sending product data to API:", formattedData);
+
+        const response = await apiRequest("POST", "/api/products", formattedData);
+        
+        // Check if response is OK
+        if (!response.ok) {
+          console.error("Error creating product. Status:", response.status);
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          throw new Error("Failed to create product. Please try again.");
+        }
+        
+        // If there's no content, just return
+        if (response.status === 204) {
+          console.log("Product created successfully, but no data returned");
+          return;
+        }
+        
+        // Parse the JSON response
+        const data = await response.json();
+        console.log("Product creation successful:", data);
+      } catch (error) {
+        console.error("Product creation error:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create product",
+          variant: "destructive",
+        });
+        throw error;
+      }
+      
+      // Force update the products list with both methods to ensure it appears
+      await refetch();
+      
+      // For additional safety, force a complete refetch after a small delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        refetch();
+      }, 300);
       
       // Reset form and close dialog
       form.reset();
@@ -227,6 +289,7 @@ const Products = () => {
         description: `${data.name} has been added to your products.`,
       });
     } catch (error) {
+      console.error("Product creation error:", error);
       toast({
         title: "Error",
         description: "There was an error creating the product. Please try again.",
