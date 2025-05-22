@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { pool } from '../db';
+import { pool, db } from '../db';
 import { users, type User } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -124,24 +124,47 @@ router.post('/register', async (req: Request, res: Response) => {
     // Generate a username from the email
     const username = email.split('@')[0];
 
-    // Create new user with role explicitly set
-    const insertResult = await pool.query(
-      `INSERT INTO users (username, email, password, first_name, last_name, role, created_at) 
-       VALUES ($1, $2, $3, $4, $5, 'user', $6) 
-       RETURNING id, username, email, first_name, last_name, role, created_at`,
-      [username, email, hashedPassword, firstName, lastName, new Date()]
-    );
+    try {
+      // Use Drizzle ORM for insertion
+      const [newUser] = await db.insert(users).values({
+        username,
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: "user",
+      }).returning();
 
-    const newUser = insertResult.rows[0];
-
-    // Create session
-    (req.session as any).user = {
-      id: newUser.id,
-      email: newUser.email,
-      firstName: newUser.first_name,
-      lastName: newUser.last_name,
-      role: newUser.role,
-    };
+      // Create session
+      (req.session as any).user = {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role,
+      };
+    } catch (dbError) {
+      console.error("Database insertion error:", dbError);
+        
+      // Fallback to raw SQL if needed
+      const insertResult = await pool.query(
+        `INSERT INTO users (username, email, password, first_name, last_name, role) 
+         VALUES ($1, $2, $3, $4, $5, $6) 
+         RETURNING id, username, email, first_name, last_name, role, created_at`,
+        [username, email, hashedPassword, firstName, lastName, "user"]
+      );
+  
+      const newUser = insertResult.rows[0];
+  
+      // Create session
+      (req.session as any).user = {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        role: newUser.role,
+      };
+    }
     
     await new Promise<void>((resolve, reject) => {
       req.session.save((err) => {
