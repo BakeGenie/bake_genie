@@ -25,6 +25,7 @@ const CalendarStandalone = () => {
   const [isDateDialogOpen, setIsDateDialogOpen] = React.useState(false);
   const [selectedOrder, setSelectedOrder] = React.useState<OrderWithItems | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = React.useState(false);
+  const [isCalendarOrderDialogOpen, setIsCalendarOrderDialogOpen] = React.useState(false);
   const [ordersOnSelectedDate, setOrdersOnSelectedDate] = React.useState<OrderWithItems[]>([]);
   
   // Check for date in URL query parameters or localStorage
@@ -237,17 +238,20 @@ const CalendarStandalone = () => {
     const ordersForDate = getOrdersForDay(date);
     setOrdersOnSelectedDate(ordersForDate);
     
-    // Open the date dialog with appropriate options
+    // Open the date dialog
     setIsDateDialogOpen(true);
-    
-    // Store selected date for order creation
-    localStorage.setItem('selectedEventDate', date.toISOString());
   };
   
-  // Handle order selection for details
+  // Handle order selection from the date dialog
   const handleOrderSelect = (order: OrderWithItems) => {
     setSelectedOrder(order);
-    setIsOrderDetailsOpen(true);
+    setIsDateDialogOpen(false);
+    setIsCalendarOrderDialogOpen(true);
+    
+    // Store selected date for order creation if needed
+    if (selectedDate) {
+      localStorage.setItem('selectedEventDate', selectedDate.toISOString());
+    }
   };
   
   // Get event type color
@@ -575,8 +579,8 @@ const CalendarStandalone = () => {
       
       {/* Calendar Order Dialog - shows the selected order details in the calendar view */}
       <CalendarOrderDialog
-        isOpen={isOrderDetailsOpen}
-        onClose={() => setIsOrderDetailsOpen(false)}
+        isOpen={isCalendarOrderDialogOpen}
+        onClose={() => setIsCalendarOrderDialogOpen(false)}
         order={selectedOrder}
       />
     </div>
