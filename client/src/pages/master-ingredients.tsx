@@ -321,6 +321,11 @@ const MasterIngredients = () => {
       {/* Add Ingredient Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          <DialogTitle className="sr-only">{selectedIngredient?.name || 'Add Ingredient'}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Add ingredient details including purchase size, cost price, and supplier information.
+          </DialogDescription>
+          
           <div className="absolute top-3 right-3">
             <button
               className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none"
