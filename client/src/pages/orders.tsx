@@ -82,15 +82,30 @@ const Orders = () => {
     return orders
       .filter((order: any) => {
         if (!order.eventDate) return false;
-        const orderDate = new Date(order.eventDate);
-        return (
-          orderDate.getMonth() + 1 === month && orderDate.getFullYear() === year
-        );
+        
+        try {
+          const orderDate = new Date(order.eventDate);
+          // Check if the date is valid before comparing
+          if (isNaN(orderDate.getTime())) {
+            console.warn("Invalid date found:", order.eventDate, "for order:", order.id);
+            return false;
+          }
+          return (
+            orderDate.getMonth() + 1 === month && orderDate.getFullYear() === year
+          );
+        } catch (error) {
+          console.error("Error parsing date for order:", order.id, error);
+          return false;
+        }
       })
       .sort((a: any, b: any) => {
-        return (
-          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-        );
+        try {
+          return (
+            new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+          );
+        } catch (error) {
+          return 0;
+        }
       });
   }, [orders, month, year]);
 
