@@ -21,6 +21,8 @@ import Calendar from "./pages/calendar-standalone";
 import Recipes from "./pages/recipes-new";
 import RecipesList from "./pages/recipes-list";
 import AddRecipe from "./pages/add-recipe";
+import ViewRecipe from "./pages/view-recipe";
+import EditRecipe from "./pages/edit-recipe";
 import IngredientsList from "./pages/ingredients-list";
 import CreateTestOrder from "./pages/create-test-order";
 import SimpleOrder from "./pages/simple-order";
@@ -72,6 +74,8 @@ function Router() {
         <Route path="/recipes" component={Recipes} />
         <Route path="/recipes/recipes-list" component={RecipesList} />
         <Route path="/recipes/add-recipe" component={AddRecipe} />
+        <Route path="/recipes/view/:id" component={ViewRecipe} />
+        <Route path="/recipes/edit/:id" component={EditRecipe} />
         <Route path="/recipes/ingredients-list" component={IngredientsList} />
         <Route path="/recipes/supplies-list" component={SuppliesList} />
         <Route path="/recipes/master-ingredients" component={MasterIngredients} />
