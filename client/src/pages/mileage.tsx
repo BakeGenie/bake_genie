@@ -168,15 +168,6 @@ const Mileage = () => {
         description: "The mileage record has been successfully deleted.",
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/mileage"] });
-      setOpenMileageDialog(false);
-      mileageForm.reset();
-      toast({
-        title: "Mileage Added",
-        description: "The mileage record has been successfully added.",
-      });
-    },
     onError: (error: any) => {
       toast({
         title: "Error",
@@ -352,7 +343,12 @@ const Mileage = () => {
                             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
                           </svg>
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-red-500"
+                          onClick={() => deleteMileageMutation.mutate(record.id)}
+                        >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
