@@ -105,6 +105,14 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
     alert(`Date ${clickedDate?.toLocaleDateString()} has been blocked out`);
     setIsSelectionDialogOpen(false);
   };
+  
+  const viewCalendar = () => {
+    if (clickedDate) {
+      // Navigate to the standalone calendar view with the date
+      window.location.href = `/calendar-standalone?date=${clickedDate.toISOString()}`;
+      setIsSelectionDialogOpen(false);
+    }
+  };
 
   const getOrderStatusCounts = (dateStr: string) => {
     const orders = ordersByDate[dateStr] || [];
@@ -254,10 +262,22 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
-            <Button variant="outline" onClick={createNewOrder}>
+            <Button variant="outline" onClick={createNewOrder} className="flex items-center justify-center">
+              <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
               Create New Order
             </Button>
-            <Button variant="outline" onClick={blockOutDate}>
+            <Button variant="outline" onClick={viewCalendar} className="flex items-center justify-center">
+              <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              View Calendar
+            </Button>
+            <Button variant="outline" onClick={blockOutDate} className="flex items-center justify-center">
+              <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
               Block Out Date
             </Button>
           </div>
