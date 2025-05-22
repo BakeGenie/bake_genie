@@ -1,6 +1,5 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Enquiry } from "@shared/schema";
 import { DataTable } from "@/components/ui/data-table";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -21,15 +20,30 @@ import { queryClient } from "@/lib/queryClient";
 import { formatDate } from "@/lib/utils";
 import AddEnquiryDialog from "@/components/enquiry/add-enquiry-dialog";
 
+// Define DatabaseEnquiry type to match the actual database structure (snake_case fields)
+interface DatabaseEnquiry {
+  id: number;
+  user_id: number;
+  contact_id: number | null;
+  date: string;
+  event_type: string;
+  event_date: string | null;
+  details: string;
+  status: string;
+  follow_up_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const Enquiries = () => {
   const { toast } = useToast();
-  const [selectedEnquiry, setSelectedEnquiry] = React.useState<Enquiry | null>(null);
+  const [selectedEnquiry, setSelectedEnquiry] = React.useState<DatabaseEnquiry | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [statusFilter, setStatusFilter] = React.useState<string | null>(null);
 
   // Fetch enquiries
-  const { data: allEnquiries = [], isLoading } = useQuery<Enquiry[]>({
+  const { data: allEnquiries = [], isLoading } = useQuery<DatabaseEnquiry[]>({
     queryKey: ["/api/enquiries"],
   });
   
@@ -169,18 +183,9 @@ const Enquiries = () => {
       header: "Received",
       enableSorting: true,
       cell: ({ row }) => {
-        const date = row.original.created_at as string;
+        // Match what's actually in the database (snake_case)
+        const date = row.original.created_at;
         return date ? formatDate(new Date(date), { withTime: true }) : "N/A";
-      },
-      sortingFn: (rowA, rowB, columnId) => {
-        const rowADate = rowA.original.created_at as string;
-        const rowBDate = rowB.original.created_at as string;
-        
-        if (!rowADate && !rowBDate) return 0;
-        if (!rowADate) return -1;
-        if (!rowBDate) return 1;
-        
-        return new Date(rowADate).getTime() - new Date(rowBDate).getTime();
       },
     },
   ];
@@ -190,7 +195,7 @@ const Enquiries = () => {
   const searchEnquiry = () => true;
 
   // Handle enquiry click to view details
-  const handleEnquiryClick = (enquiry: Enquiry) => {
+  const handleEnquiryClick = (enquiry: DatabaseEnquiry) => {
     setSelectedEnquiry(enquiry);
     setIsViewDialogOpen(true);
   };
