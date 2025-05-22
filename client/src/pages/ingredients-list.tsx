@@ -231,7 +231,21 @@ const IngredientsList = () => {
       </div>
       
       {/* Add Ingredient Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+        setIsAddDialogOpen(open);
+        if (!open) {
+          // Reset form data when dialog closes
+          setFormData({
+            name: "",
+            supplier: "",
+            purchaseSize: "",
+            purchaseSizeUnit: "g",
+            costPrice: "",
+            unit: "g",
+            hasSpecificVolume: false
+          });
+        }
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Add New Ingredient</DialogTitle>
@@ -240,15 +254,106 @@ const IngredientsList = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            
+            // Validate required fields
+            if (!formData.name) {
+              toast({
+                title: "Missing information", 
+                description: "Ingredient name is required",
+                variant: "destructive"
+              });
+              return;
+            }
+            
+            if (!formData.costPrice) {
+              toast({
+                title: "Missing information", 
+                description: "Cost price is required",
+                variant: "destructive"
+              });
+              return;
+            }
+            
+            // Set submitting state
+            setIsSubmitting(true);
+            
+            try {
+              // Prepare the data to send to the API
+              const ingredientData = {
+                name: formData.name,
+                supplier: formData.supplier || null,
+                purchaseSize: formData.purchaseSize || null,
+                purchaseSizeUnit: formData.purchaseSizeUnit,
+                costPrice: formData.costPrice,
+                unit: formData.unit,
+                hasSpecificVolume: formData.hasSpecificVolume
+              };
+              
+              console.log("Sending ingredient data:", ingredientData);
+              
+              // Send the data to the API
+              const response = await fetch('/api/ingredients', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ingredientData)
+              });
+              
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to add ingredient');
+              }
+              
+              const newIngredient = await response.json();
+              console.log("Added ingredient:", newIngredient);
+              
+              // Invalidate the query to refetch the ingredients
+              await queryClient.invalidateQueries({ queryKey: ['/api/ingredients'] });
+              
+              // Show success message
+              toast({
+                title: "Ingredient added",
+                description: `${formData.name} has been added to your ingredients list`,
+                duration: 3000,
+              });
+              
+              // Close the dialog and reset form
+              setIsAddDialogOpen(false);
+              setFormData({
+                name: "",
+                supplier: "",
+                purchaseSize: "",
+                purchaseSizeUnit: "g",
+                costPrice: "",
+                unit: "g",
+                hasSpecificVolume: false
+              });
+            } catch (error) {
+              console.error("Error adding ingredient:", error);
+              toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to add ingredient",
+                variant: "destructive"
+              });
+            } finally {
+              setIsSubmitting(false);
+            }
+          }} className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="name" className="text-right text-sm font-medium">
                 Name*
               </label>
               <Input
                 id="name"
+                name="name"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
                 placeholder="Ingredient name"
                 className="col-span-3"
+                required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -257,6 +362,9 @@ const IngredientsList = () => {
               </label>
               <Input
                 id="supplier"
+                name="supplier"
+                value={formData.supplier}
+                onChange={(e) => setFormData({...formData, supplier: e.target.value})}
                 placeholder="Supplier name"
                 className="col-span-3"
               />
@@ -268,6 +376,9 @@ const IngredientsList = () => {
               <div className="col-span-3 flex gap-2">
                 <Input
                   id="purchaseSize"
+                  name="purchaseSize"
+                  value={formData.purchaseSize}
+                  onChange={(e) => setFormData({...formData, purchaseSize: e.target.value})}
                   type="number"
                   step="0.01"
                   placeholder="0.00"
@@ -275,7 +386,9 @@ const IngredientsList = () => {
                 />
                 <select 
                   className="h-9 w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  defaultValue="g"
+                  value={formData.purchaseSizeUnit}
+                  name="purchaseSizeUnit"
+                  onChange={(e) => setFormData({...formData, purchaseSizeUnit: e.target.value})}
                 >
                   <option value="ml">ml</option>
                   <option value="g">g</option>
@@ -295,22 +408,29 @@ const IngredientsList = () => {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
                 <Input
                   id="costPrice"
+                  name="costPrice"
+                  value={formData.costPrice}
+                  onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   className="pl-7"
+                  required
                 />
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="unit" className="text-right text-sm font-medium">
-                Measurement
+                Measurement*
               </label>
               <div className="col-span-3">
                 <select 
                   className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  defaultValue="g"
+                  value={formData.unit}
                   id="unit"
+                  name="unit"
+                  onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                  required
                 >
                   <option value="ml">ml</option>
                   <option value="mg">mg</option>
@@ -340,31 +460,34 @@ const IngredientsList = () => {
               <div className="flex items-center space-x-2 col-span-3">
                 <input 
                   type="checkbox" 
-                  id="specificVolume"
+                  id="hasSpecificVolume"
+                  name="hasSpecificVolume"
+                  checked={formData.hasSpecificVolume}
+                  onChange={(e) => setFormData({...formData, hasSpecificVolume: e.target.checked})}
                   className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="specificVolume" className="text-sm font-medium text-gray-700">
+                <label htmlFor="hasSpecificVolume" className="text-sm font-medium text-gray-700">
                   Add specific Volume to each portion
                 </label>
               </div>
             </div>
-          </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              toast({
-                title: "Ingredient added",
-                description: "New ingredient has been added to your list",
-                duration: 3000,
-              });
-              setIsAddDialogOpen(false);
-            }}>
-              Add Ingredient
-            </Button>
-          </DialogFooter>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Add Ingredient"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
