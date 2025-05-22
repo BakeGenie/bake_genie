@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PageHeader from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,8 @@ import {
   Search, 
   Trash2, 
   Plus,
-  FilterIcon
+  FilterIcon,
+  Loader2
 } from "lucide-react";
 import AddBundleDialog from "@/components/bundle/add-bundle-dialog";
 
@@ -31,8 +33,12 @@ import AddBundleDialog from "@/components/bundle/add-bundle-dialog";
 interface Bundle {
   id: number;
   name: string;
+  userId: number;
   category?: string;
-  price?: number;
+  price?: string | number;
+  description?: string;
+  createdAt: string;
+  items?: any[];
 }
 
 // Define category options
@@ -43,12 +49,23 @@ const Bundles = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const queryClient = useQueryClient();
   
-  // Sample demo data for bundles
-  const [bundles, setBundles] = useState<Bundle[]>([
-    { id: 1, name: "6pk Macaron Box", category: "Macaron", price: 4.10 },
-    { id: 2, name: "6\" Vanilla Bean Buttercake", category: "Cake", price: 32.01 }
-  ]);
+  // Fetch bundles from API
+  const { 
+    data: bundles = [], 
+    isLoading, 
+    isError 
+  } = useQuery({
+    queryKey: ['/api/bundles'],
+    queryFn: async () => {
+      const response = await fetch('/api/bundles');
+      if (!response.ok) {
+        throw new Error('Failed to fetch bundles');
+      }
+      return response.json();
+    }
+  });
   
   // Filter bundles based on search query and selected category
   const filteredBundles = bundles.filter(bundle => {
@@ -58,18 +75,35 @@ const Bundles = () => {
   });
   
   // Handle delete bundle
-  const handleDeleteBundle = (id: number) => {
+  const handleDeleteBundle = async (id: number) => {
     const bundleToDelete = bundles.find(b => b.id === id);
     if (bundleToDelete) {
-      // Show confirmation toast
-      toast({
-        title: "Bundle deleted",
-        description: `"${bundleToDelete.name}" has been removed`,
-        duration: 3000,
-      });
-      
-      // Remove bundle from state
-      setBundles(bundles.filter(b => b.id !== id));
+      try {
+        const response = await fetch(`/api/bundles/${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete bundle');
+        }
+        
+        // Show confirmation toast
+        toast({
+          title: "Bundle deleted",
+          description: `"${bundleToDelete.name}" has been removed`,
+          duration: 3000,
+        });
+        
+        // Refresh the bundles list
+        queryClient.invalidateQueries({ queryKey: ['/api/bundles'] });
+      } catch (error) {
+        console.error('Error deleting bundle:', error);
+        toast({
+          title: "Error",
+          description: "There was a problem deleting the bundle. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -81,20 +115,46 @@ const Bundles = () => {
         backLabel="Back to Recipes & Ingredients"
         actions={
           <AddBundleDialog 
-            onSave={(bundleData) => {
-              // Here we would normally send data to API
-              // For now, just add it to the local state
-              const newBundle: Bundle = {
-                id: Date.now(), // Generate a temporary ID
-                name: bundleData.name,
-                category: bundleData.category,
-                price: parseFloat(bundleData.price)
-              };
-              setBundles([...bundles, newBundle]);
-              
-              // Show success notification
-              // This would be nicer with a toast component
-              alert("Bundle created successfully!");
+            onSave={async (bundleData) => {
+              try {
+                // Prepare the bundle data for API
+                const bundlePayload = {
+                  name: bundleData.name,
+                  category: bundleData.category,
+                  price: bundleData.price,
+                  description: ""
+                };
+                
+                // Send to API
+                const response = await fetch('/api/bundles', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(bundlePayload),
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Failed to create bundle');
+                }
+                
+                // Refresh the bundles list
+                queryClient.invalidateQueries({ queryKey: ['/api/bundles'] });
+                
+                // Show success notification
+                toast({
+                  title: "Bundle created",
+                  description: `${bundleData.name} has been added to your bundles`,
+                  duration: 3000,
+                });
+              } catch (error) {
+                console.error('Error creating bundle:', error);
+                toast({
+                  title: "Error",
+                  description: "There was a problem creating the bundle. Please try again.",
+                  variant: "destructive"
+                });
+              }
             }}
             trigger={
               <Button size="sm">
@@ -136,49 +196,65 @@ const Bundles = () => {
           </div>
         </div>
         
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bundle</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredBundles.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading bundles...</span>
+          </div>
+        ) : isError ? (
+          <div className="rounded-md border p-8 text-center">
+            <p className="text-red-500">Error loading bundles. Please try again.</p>
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                    No bundles found
-                  </TableCell>
+                  <TableHead>Bundle</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
-              ) : (
-                filteredBundles.map((bundle) => (
-                  <TableRow key={bundle.id}>
-                    <TableCell className="font-medium">
-                      <a href="#" className="text-blue-600 hover:underline">
-                        {bundle.name}
-                      </a>
-                    </TableCell>
-                    <TableCell>{bundle.category || '-'}</TableCell>
-                    <TableCell>{bundle.price ? `$${bundle.price.toFixed(2)}` : '-'}</TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-red-500 hover:text-red-600"
-                        onClick={() => handleDeleteBundle(bundle.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredBundles.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                      No bundles found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : (
+                  filteredBundles.map((bundle) => (
+                    <TableRow key={bundle.id}>
+                      <TableCell className="font-medium">
+                        <a href="#" onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/recipes/bundles/${bundle.id}`);
+                        }} className="text-blue-600 hover:underline">
+                          {bundle.name}
+                        </a>
+                      </TableCell>
+                      <TableCell>{bundle.category || '-'}</TableCell>
+                      <TableCell>
+                        {bundle.price ? `$${typeof bundle.price === 'string' ? parseFloat(bundle.price).toFixed(2) : bundle.price.toFixed(2)}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-red-500 hover:text-red-600"
+                          onClick={() => handleDeleteBundle(bundle.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
     </div>
   );
