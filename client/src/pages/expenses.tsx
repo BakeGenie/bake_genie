@@ -123,7 +123,13 @@ const expenseSchema = z.object({
     required_error: "Date is required",
   }),
   description: z.string().optional().nullable(),
+  supplier: z.string().optional().nullable(),
+  paymentSource: z.string().default("Cash"),
+  vat: z.string().optional().default("0.00"),
+  totalIncTax: z.string().optional().default("0.00"),
   taxDeductible: z.boolean().optional().default(false),
+  isRecurring: z.boolean().default(false),
+  receiptUrl: z.string().optional().nullable(),
 });
 
 // Define income schema
@@ -252,7 +258,13 @@ const ExpensesPage = () => {
       amount: "",
       date: currentDate,
       description: "",
+      supplier: "",
+      paymentSource: "Cash",
+      vat: "0.00",
+      totalIncTax: "0.00",
       taxDeductible: false,
+      isRecurring: false,
+      receiptUrl: null,
     },
   });
 
