@@ -108,6 +108,7 @@ const Mileage = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "MMMM"));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), "yyyy"));
   const [openMileageDialog, setOpenMileageDialog] = useState(false);
+  const [editingMileage, setEditingMileage] = useState<Mileage | null>(null);
 
   // Form for adding new mileage
   const mileageForm = useForm({
@@ -139,6 +140,7 @@ const Mileage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mileage"] });
       setOpenMileageDialog(false);
+      setEditingMileage(null);
       mileageForm.reset();
       toast({
         title: "Mileage Added",
@@ -149,6 +151,33 @@ const Mileage = () => {
       toast({
         title: "Error",
         description: error.message || "There was an error adding the mileage record.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for updating mileage
+  const updateMileageMutation = useMutation({
+    mutationFn: (data: any) => {
+      return apiRequest(`/api/mileage/${data.id}`, {
+        method: "PUT",
+        body: data
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mileage"] });
+      setOpenMileageDialog(false);
+      setEditingMileage(null);
+      mileageForm.reset();
+      toast({
+        title: "Mileage Updated",
+        description: "The mileage record has been successfully updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "There was an error updating the mileage record.",
         variant: "destructive",
       });
     },
@@ -171,13 +200,13 @@ const Mileage = () => {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "There was an error adding the mileage record.",
+        description: error.message || "There was an error deleting the mileage record.",
         variant: "destructive",
       });
     },
   });
 
-  // Handle form submission for new mileage
+  // Handle form submission for new or edited mileage
   const onSubmitMileage = (data: any) => {
     const formattedData = {
       ...data,
@@ -185,7 +214,36 @@ const Mileage = () => {
       miles: String(data.miles), // Convert miles to string for API
       userId: 1, // Replace with actual user ID
     };
-    createMileageMutation.mutate(formattedData);
+    
+    if (editingMileage) {
+      // If editing, include the ID and update
+      updateMileageMutation.mutate({
+        ...formattedData,
+        id: editingMileage.id
+      });
+    } else {
+      // If creating new
+      createMileageMutation.mutate(formattedData);
+    }
+  };
+  
+  // Function to handle edit button click
+  const handleEditMileage = (record: Mileage) => {
+    setEditingMileage(record);
+    
+    // Set form values from the record
+    mileageForm.reset({
+      date: new Date(record.date),
+      startLocation: record.startLocation,
+      endLocation: record.endLocation,
+      purpose: record.purpose,
+      miles: Number(record.miles),
+      round_trip: record.round_trip,
+      notes: record.notes || "",
+    });
+    
+    // Open the dialog
+    setOpenMileageDialog(true);
   };
 
   // Get month and year options
@@ -328,7 +386,12 @@ const Mileage = () => {
                     <TableCell>{record.round_trip ? "Yes" : "No"}</TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-blue-500"
+                          onClick={() => handleEditMileage(record)}
+                        >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
@@ -387,12 +450,29 @@ const Mileage = () => {
       </div>
 
       {/* Mileage Dialog */}
-      <Dialog open={openMileageDialog} onOpenChange={setOpenMileageDialog}>
+      <Dialog open={openMileageDialog} onOpenChange={(open) => {
+        if (!open) {
+          // Reset form and editing state when dialog is closed
+          setEditingMileage(null);
+          mileageForm.reset({
+            date: new Date(),
+            startLocation: "",
+            endLocation: "",
+            purpose: purposeOptions[0],
+            miles: 0,
+            round_trip: false,
+            notes: "",
+          });
+        }
+        setOpenMileageDialog(open);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add Mileage</DialogTitle>
+            <DialogTitle>{editingMileage ? 'Edit Mileage' : 'Add Mileage'}</DialogTitle>
             <DialogDescription>
-              Record your business-related travel. Fill out the details below.
+              {editingMileage 
+                ? 'Update your business travel details below.' 
+                : 'Record your business-related travel. Fill out the details below.'}
             </DialogDescription>
           </DialogHeader>
           <Form {...mileageForm}>
