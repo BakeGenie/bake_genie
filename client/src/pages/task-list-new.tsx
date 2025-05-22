@@ -221,6 +221,9 @@ const TaskList = () => {
       
       console.log("Sending payload to server:", payload);
       
+      // Log the task ID being updated
+      console.log(`Updating task with ID: ${selectedTask.id}`);
+      
       // Use fetch directly for more control
       const response = await fetch(`/api/tasks/${selectedTask.id}`, {
         method: 'PATCH',
@@ -230,6 +233,9 @@ const TaskList = () => {
         body: JSON.stringify(payload),
         credentials: 'include'
       });
+      
+      // Log the response status
+      console.log("Server response status:", response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
