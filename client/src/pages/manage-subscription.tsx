@@ -7,12 +7,14 @@ import { ArrowLeftIcon, CreditCardIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import UpdatePaymentMethodDialog from "@/components/payment/update-payment-method-dialog";
+import CancelSubscriptionDialog from "@/components/payment/cancel-subscription-dialog";
 import { format } from "date-fns";
 
 export default function ManageSubscription() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isUpdatePaymentDialogOpen, setIsUpdatePaymentDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   
   // Fetch user data to get account creation date
   const { data: userData, isLoading } = useQuery({
@@ -34,7 +36,16 @@ export default function ManageSubscription() {
   };
 
   const handleCancelSubscription = () => {
-    window.location.href = "/cancel-subscription";
+    setIsCancelDialogOpen(true);
+  };
+  
+  const handleSubscriptionCancelled = () => {
+    // Refresh data after successful cancellation
+    refetchPaymentMethod();
+    toast({
+      title: "Subscription Cancelled",
+      description: "Your subscription has been cancelled successfully.",
+    });
   };
   
   const handleUpdatePaymentMethod = () => {
@@ -68,6 +79,13 @@ export default function ManageSubscription() {
       <UpdatePaymentMethodDialog 
         open={isUpdatePaymentDialogOpen} 
         onOpenChange={setIsUpdatePaymentDialogOpen} 
+      />
+      
+      {/* Cancel Subscription Dialog */}
+      <CancelSubscriptionDialog 
+        open={isCancelDialogOpen}
+        onOpenChange={setIsCancelDialogOpen}
+        onCancelled={handleSubscriptionCancelled}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

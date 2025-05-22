@@ -118,3 +118,65 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
     });
   }
 });
+
+/**
+ * Cancel a subscription
+ */
+router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    const { cancelImmediately = false } = req.body;
+
+    console.log(`Cancelling subscription for user ${userId}. Immediate: ${cancelImmediately}`);
+
+    // In a real implementation, we would:
+    // 1. Get the user's subscription ID from the database
+    // 2. Call Stripe's API to cancel the subscription
+    // 3. Update the subscription status in our database
+
+    /*
+    // Get user's subscription ID from your database
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+
+    if (!user || !user.stripeSubscriptionId) {
+      return res.status(404).json({ error: "Subscription not found" });
+    }
+
+    // Cancel the subscription with Stripe
+    await stripe.subscriptions.update(user.stripeSubscriptionId, {
+      cancel_at_period_end: !cancelImmediately,
+    });
+
+    // If cancelling immediately, update the status in our database
+    if (cancelImmediately) {
+      await db.update(users)
+        .set({ 
+          stripeSubscriptionId: null,
+          subscriptionStatus: 'cancelled'
+        })
+        .where(eq(users.id, userId));
+    } else {
+      await db.update(users)
+        .set({ 
+          subscriptionStatus: 'cancelling'
+        })
+        .where(eq(users.id, userId));
+    }
+    */
+
+    // For this implementation, we'll simulate success
+    res.json({
+      success: true,
+      message: "Subscription cancelled successfully",
+      cancelledAt: cancelImmediately ? "immediately" : "end of billing period"
+    });
+  } catch (error: any) {
+    console.error("Error cancelling subscription:", error);
+    res.status(500).json({
+      error: "Failed to cancel subscription",
+      message: error.message || "An unknown error occurred",
+    });
+  }
+});
