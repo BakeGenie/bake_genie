@@ -4,6 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay
 import DateSelectionDialog from "./date-selection-dialog";
 import OrderDetailsDialog from "./order-details-dialog";
 import { OrderWithItems } from "@/types";
+import { eventTypeColors, type EventType } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -102,6 +103,33 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
     };
   };
   
+  // Get dominant event type for a specific date
+  const getDominantEventType = (dateStr: string): EventType | null => {
+    const orders = ordersByDate[dateStr] || [];
+    if (orders.length === 0) return null;
+    
+    // Count occurrences of each event type
+    const eventTypeCounts = orders.reduce((acc: Record<string, number>, order) => {
+      const eventType = order.eventType as EventType;
+      if (!acc[eventType]) acc[eventType] = 0;
+      acc[eventType]++;
+      return acc;
+    }, {});
+    
+    // Find the most common event type
+    let dominantType: EventType | null = null;
+    let maxCount = 0;
+    
+    Object.entries(eventTypeCounts).forEach(([type, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        dominantType = type as EventType;
+      }
+    });
+    
+    return dominantType;
+  };
+  
   return (
     <div className="w-full">
       {/* Calendar header - Days of week */}
@@ -134,11 +162,22 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
           const hasOrangeEvents = orangeEvents > 0;
           const hasGrayEvents = grayEvents > 0;
           
+          // Get dominant event type for this day
+          const dominantEventType = getDominantEventType(dateKey);
+          let eventTypeClass = '';
+          
+          if (dominantEventType) {
+            // Convert spaces to dashes for CSS class names
+            const cssClassName = dominantEventType.replace(/\s+\/\s+/g, '-').replace(/\s+/g, '-');
+            eventTypeClass = `event-${cssClassName}`;
+          }
+          
           return (
             <div 
               key={dateKey} 
               className="aspect-square flex flex-col items-center justify-center p-2 cursor-pointer"
               onClick={() => handleDateClick(day)}
+              title={dominantEventType ? `${dominantEventType} Event` : ''}
             >
               <div className={`
                 calendar-day
@@ -147,6 +186,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
                 ${hasRedEvents ? 'has-red-events' : ''}
                 ${hasOrangeEvents ? 'has-orange-events' : ''}
                 ${hasGrayEvents ? 'has-events' : ''}
+                ${eventTypeClass}
               `}>
                 {dayNum}
               </div>

@@ -107,7 +107,7 @@
 
 /* Calendar styles */
 .calendar-day {
-  @apply h-10 w-10 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm;
+  @apply h-10 w-10 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm transition-all duration-200;
 }
 
 .calendar-day.today {
@@ -116,6 +116,38 @@
 
 .calendar-day.selected {
   @apply bg-blue-500 text-white;
+}
+
+.calendar-day.event-Birthday {
+  @apply border-2 border-[#FF5252] text-[#FF5252] hover:bg-[#FF5252]/10;
+}
+
+.calendar-day.event-Wedding {
+  @apply border-2 border-[#4CAF50] text-[#4CAF50] hover:bg-[#4CAF50]/10;
+}
+
+.calendar-day.event-Anniversary {
+  @apply border-2 border-[#FFAB91] text-[#FFAB91] hover:bg-[#FFAB91]/10;
+}
+
+.calendar-day.event-Baby-Shower {
+  @apply border-2 border-[#FFF176] text-[#FFF176] hover:bg-[#FFF176]/10;
+}
+
+.calendar-day.event-Christening {
+  @apply border-2 border-[#81D4FA] text-[#81D4FA] hover:bg-[#81D4FA]/10;
+}
+
+.calendar-day.event-Hen-Bux-Stag {
+  @apply border-2 border-[#9C27B0] text-[#9C27B0] hover:bg-[#9C27B0]/10;
+}
+
+.calendar-day.event-Corporate {
+  @apply border-2 border-[#9E9E9E] text-[#9E9E9E] hover:bg-[#9E9E9E]/10;
+}
+
+.calendar-day.event-Other {
+  @apply border-2 border-[#607D8B] text-[#607D8B] hover:bg-[#607D8B]/10;
 }
 
 .calendar-day.has-events {
