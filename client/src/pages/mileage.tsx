@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -109,6 +109,7 @@ const Mileage = () => {
   const [selectedYear, setSelectedYear] = useState(format(new Date(), "yyyy"));
   const [openMileageDialog, setOpenMileageDialog] = useState(false);
   const [editingMileage, setEditingMileage] = useState<Mileage | null>(null);
+  const [selectedPurpose, setSelectedPurpose] = useState<string | null>(null);
 
   // Form for adding new mileage
   const mileageForm = useForm({
@@ -128,6 +129,25 @@ const Mileage = () => {
   const { data: mileageData, isLoading } = useQuery({
     queryKey: ["/api/mileage"],
   });
+  
+  // Filter the mileage data based on the selected filters
+  const filteredMileageData = useMemo(() => {
+    if (!mileageData) return [];
+    
+    return mileageData.filter((record: Mileage) => {
+      const recordDate = new Date(record.date);
+      const recordMonth = format(recordDate, "MMMM");
+      const recordYear = format(recordDate, "yyyy");
+      
+      // Check if the record matches the selected month and year
+      const matchesDate = recordMonth === selectedMonth && recordYear === selectedYear;
+      
+      // Check if the record matches the selected purpose or if no purpose is selected
+      const matchesPurpose = !selectedPurpose || record.purpose === selectedPurpose;
+      
+      return matchesDate && matchesPurpose;
+    });
+  }, [mileageData, selectedMonth, selectedYear, selectedPurpose]);
 
   // Mutation for creating new mileage
   const createMileageMutation = useMutation({
@@ -328,13 +348,25 @@ const Mileage = () => {
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-1">
-                  <Filter className="h-4 w-4" /> All Purposes
+                  <Filter className="h-4 w-4" /> 
+                  {selectedPurpose || "All Purposes"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-56 p-0">
                 <div className="p-2">
+                  <div 
+                    className="p-2 hover:bg-gray-100 rounded cursor-pointer font-medium"
+                    onClick={() => setSelectedPurpose(null)}
+                  >
+                    All Purposes
+                  </div>
+                  <Separator className="my-1" />
                   {purposeOptions.map((purpose) => (
-                    <div key={purpose} className="p-2 hover:bg-gray-100 rounded cursor-pointer">
+                    <div 
+                      key={purpose} 
+                      className={`p-2 hover:bg-gray-100 rounded cursor-pointer ${selectedPurpose === purpose ? 'bg-blue-50 text-blue-600' : ''}`}
+                      onClick={() => setSelectedPurpose(purpose)}
+                    >
                       {purpose}
                     </div>
                   ))}
@@ -348,7 +380,7 @@ const Mileage = () => {
           <div className="flex justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
-        ) : (!mileageData || mileageData.length === 0) ? (
+        ) : (!filteredMileageData || filteredMileageData.length === 0) ? (
           <div className="flex flex-col items-center justify-center p-10 text-gray-500">
             <div className="rounded-full bg-gray-100 p-3 mb-2">
               <Car className="h-6 w-6 text-gray-400" />
@@ -376,7 +408,7 @@ const Mileage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mileageData.map((record: Mileage) => (
+                {filteredMileageData.map((record: Mileage) => (
                   <TableRow key={record.id}>
                     <TableCell>{format(new Date(record.date), "dd MMM yyyy")}</TableCell>
                     <TableCell>{record.startLocation}</TableCell>
@@ -439,7 +471,7 @@ const Mileage = () => {
               <div className="text-right">
                 <div className="text-sm text-gray-600">Total Miles:</div>
                 <div className="text-xl font-bold">
-                  {mileageData
+                  {filteredMileageData
                     .reduce((total: number, record: Mileage) => total + Number(record.miles), 0)
                     .toFixed(1)}
                 </div>
