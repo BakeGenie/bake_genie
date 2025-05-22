@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 const Login: React.FC = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const [loading, setLoading] = useState(false);
 
   // Check for logout parameter
   useEffect(() => {
@@ -26,9 +27,26 @@ const Login: React.FC = () => {
   }, [toast, navigate]);
 
   // Handle demo login
-  const handleDemoLogin = () => {
-    // Since we're using a demo user, we'll just redirect to the dashboard
-    navigate("/dashboard");
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    
+    try {
+      // Create a small delay to simulate an authentication process
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Since we're using a demo user, redirect to the dashboard
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "There was an error logging in. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,8 +82,14 @@ const Login: React.FC = () => {
           <Button 
             className="w-full" 
             onClick={handleDemoLogin}
+            disabled={loading}
           >
-            Login with Demo Account
+            {loading ? (
+              <>
+                <span className="mr-2">Logging in...</span>
+                <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
+              </>
+            ) : "Login with Demo Account"}
           </Button>
         </CardFooter>
       </Card>
