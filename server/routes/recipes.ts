@@ -186,13 +186,28 @@ router.post("/", async (req, res) => {
       servings: Number(recipeData.servings),
       prepTime: recipeData.prepTime ? Number(recipeData.prepTime) : null,
       cookTime: recipeData.cookTime ? Number(recipeData.cookTime) : null,
-      totalCost: recipeData.totalCost ? Number(recipeData.totalCost) : null
+      // Keep totalCost as string for decimal column compatibility
+      totalCost: recipeData.totalCost || null
     };
     
     // Start a transaction
     const result = await db.transaction(async (tx) => {
+      // Convert to database-compatible format before inserting
+      const dbRecipeData = {
+        userId: processedRecipeData.userId,
+        name: processedRecipeData.name,
+        description: processedRecipeData.description,
+        servings: processedRecipeData.servings,
+        instructions: processedRecipeData.instructions,
+        totalCost: processedRecipeData.totalCost,
+        prepTime: processedRecipeData.prepTime,
+        cookTime: processedRecipeData.cookTime,
+        category: processedRecipeData.category,
+        imageUrl: processedRecipeData.imageUrl
+      };
+      
       // Insert recipe
-      const [recipe] = await tx.insert(recipes).values(processedRecipeData).returning();
+      const [recipe] = await tx.insert(recipes).values(dbRecipeData).returning();
       
       // Insert recipe ingredients
       if (ingredientsList.length > 0) {
