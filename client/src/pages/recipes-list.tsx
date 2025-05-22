@@ -33,7 +33,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Recipe } from "@shared/schema";
+// Import recipe schema types
+import { recipes } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +78,7 @@ const RecipesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
+  const [recipeToDelete, setRecipeToDelete] = useState<RecipeWithIngredients | null>(null);
   
   // Fetch recipes from the database
   const { data: recipes = [], isLoading } = useQuery<RecipeWithIngredients[]>({
