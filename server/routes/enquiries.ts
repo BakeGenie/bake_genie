@@ -13,13 +13,12 @@ router.get("/", async (req: Request, res: Response) => {
     // Use user ID from session, fallback to 1 for development
     const userId = 1;
     
-    // Fetch enquiries for this user
-    const userEnquiries = await db.query.enquiries.findMany({
-      where: eq(enquiries.userId, userId),
-      orderBy: [desc(enquiries.createdAt)]
-    });
+    // Fetch enquiries for this user using raw SQL to handle schema differences
+    const result = await db.execute(
+      sql`SELECT * FROM enquiries WHERE user_id = ${userId} ORDER BY created_at DESC`
+    );
     
-    res.json(userEnquiries);
+    res.json(result.rows);
   } catch (error) {
     console.error("Error fetching enquiries:", error);
     res.status(500).json({ 
@@ -60,19 +59,16 @@ router.get("/:id", async (req: Request, res: Response) => {
     const enquiryId = parseInt(req.params.id);
     const userId = 1;
     
-    const result = await db.query.enquiries.findFirst({
-      where: (fields, { and, eq }) => 
-        and(
-          eq(fields.id, enquiryId),
-          eq(fields.userId, userId)
-        )
-    });
+    // Get enquiry by ID using raw SQL
+    const result = await db.execute(
+      sql`SELECT * FROM enquiries WHERE id = ${enquiryId} AND user_id = ${userId}`
+    );
     
-    if (!result) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Enquiry not found" });
     }
     
-    res.json(result);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error("Error fetching enquiry:", error);
     res.status(500).json({ error: "Failed to fetch enquiry" });
@@ -85,20 +81,40 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   try {
     const userId = 1;
+    const now = new Date();
     
-    // Prepare the enquiry data with userId
+    // Map the form fields to the actual database structure
     const enquiryData = {
-      ...req.body,
-      userId,
-      status: req.body.status || "New",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      user_id: userId,
+      date: now,
+      event_type: req.body.eventType || 'Other',
+      event_date: req.body.eventDate || null,
+      details: req.body.message || '',
+      status: req.body.status || 'New',
+      created_at: now,
+      updated_at: now,
+      contact_id: null,
+      follow_up_date: null
     };
     
-    // Insert the new enquiry
-    const result = await db.insert(enquiries).values(enquiryData).returning();
+    // Handle special field mapping
+    if (req.body.firstName && req.body.lastName) {
+      // In a real implementation, we would find or create a contact here
+      // For now, we'll just use null for contact_id
+    }
     
-    res.status(201).json(result[0]);
+    // Insert the new enquiry using raw SQL
+    const result = await db.execute(
+      sql`INSERT INTO enquiries
+        (user_id, date, event_type, event_date, details, status, created_at, updated_at, contact_id, follow_up_date)
+        VALUES
+        (${enquiryData.user_id}, ${enquiryData.date}, ${enquiryData.event_type}, 
+         ${enquiryData.event_date}, ${enquiryData.details}, ${enquiryData.status}, 
+         ${enquiryData.created_at}, ${enquiryData.updated_at}, ${enquiryData.contact_id}, ${enquiryData.follow_up_date})
+        RETURNING *`
+    );
+    
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Error creating enquiry:", error);
     res.status(500).json({ error: "Failed to create enquiry" });
@@ -118,20 +134,19 @@ router.patch("/:id/status", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Status is required" });
     }
     
-    // Update the enquiry status
-    const result = await db.update(enquiries)
-      .set({ 
-        status, 
-        updatedAt: new Date() 
-      })
-      .where(eq(enquiries.id, enquiryId))
-      .returning();
+    // Update the enquiry status using raw SQL
+    const result = await db.execute(
+      sql`UPDATE enquiries 
+          SET status = ${status}, updated_at = NOW() 
+          WHERE id = ${enquiryId} AND user_id = ${userId}
+          RETURNING *`
+    );
     
-    if (result.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Enquiry not found" });
     }
     
-    res.json(result[0]);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error("Error updating enquiry status:", error);
     res.status(500).json({ error: "Failed to update enquiry status" });
@@ -146,12 +161,14 @@ router.delete("/:id", async (req: Request, res: Response) => {
     const enquiryId = parseInt(req.params.id);
     const userId = 1;
     
-    // Delete the enquiry
-    const result = await db.delete(enquiries)
-      .where(eq(enquiries.id, enquiryId))
-      .returning();
+    // Delete the enquiry using raw SQL
+    const result = await db.execute(
+      sql`DELETE FROM enquiries 
+          WHERE id = ${enquiryId} AND user_id = ${userId}
+          RETURNING id`
+    );
     
-    if (result.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Enquiry not found" });
     }
     
