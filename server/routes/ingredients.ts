@@ -90,7 +90,7 @@ router.post("/", async (req: Request, res: Response) => {
           user_id, name, supplier, unit, cost_per_unit, pack_size, pack_cost
         ) VALUES (
           ${userId}, ${name}, ${supplier || null}, ${unit}, ${costPrice}, 
-          ${purchaseSize ? purchaseSize : null}, 
+          ${purchaseSize || null}, 
           ${purchaseSize && costPrice ? costPrice : null}
         ) RETURNING *
       `
