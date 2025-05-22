@@ -28,6 +28,7 @@ import suppliesRouter from "./routes/supplies";
 import recipesRouter from "./routes/recipes";
 import expensesRouter from "./routes/expenses";
 import incomeRouter from "./routes/income";
+import mileageRouter from "./routes/mileage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
@@ -108,6 +109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register income routes
   app.use('/api/income', incomeRouter);
+  
+  // Register mileage routes
+  app.use('/api/mileage', mileageRouter);
   
   // Register auth routes
   app.use('/api/auth', authRouter);

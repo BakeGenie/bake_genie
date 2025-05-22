@@ -123,22 +123,50 @@ const Mileage = () => {
     },
   });
 
-  // Query for fetching mileage data - stub for now
+  // Query for fetching mileage data from our API
   const { data: mileageData, isLoading } = useQuery({
     queryKey: ["/api/mileage"],
-    queryFn: () => {
-      // This is a placeholder since we don't have the API yet
-      return [];
-    },
   });
 
-  // Mutation for creating new mileage - stub for now
+  // Mutation for creating new mileage
   const createMileageMutation = useMutation({
     mutationFn: (data: any) => {
-      // This is a placeholder since we don't have the API yet
-      console.log("Would send mileage data:", data);
-      // Simulating a successful API call
-      return Promise.resolve({ success: true });
+      return apiRequest("/api/mileage", {
+        method: "POST",
+        body: data
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mileage"] });
+      setOpenMileageDialog(false);
+      mileageForm.reset();
+      toast({
+        title: "Mileage Added",
+        description: "The mileage record has been successfully added.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "There was an error adding the mileage record.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for deleting mileage
+  const deleteMileageMutation = useMutation({
+    mutationFn: (id: number) => {
+      return apiRequest(`/api/mileage/${id}`, {
+        method: "DELETE"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mileage"] });
+      toast({
+        title: "Mileage Deleted",
+        description: "The mileage record has been successfully deleted.",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mileage"] });
@@ -270,7 +298,7 @@ const Mileage = () => {
           <div className="flex justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
-        ) : (mileageData?.length === 0 || true) ? ( // Force empty state for demo
+        ) : (!mileageData || mileageData.length === 0) ? (
           <div className="flex flex-col items-center justify-center p-10 text-gray-500">
             <div className="rounded-full bg-gray-100 p-3 mb-2">
               <Car className="h-6 w-6 text-gray-400" />
