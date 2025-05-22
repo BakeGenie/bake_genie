@@ -120,10 +120,6 @@ export default function LandingPage() {
         )}
       </header>
 
-      {/* Notice Banner */}
-      <div className="bg-red-600 dark:bg-red-700 text-white text-center py-2 px-4 animate-fade-in">
-        We regret to inform you that Bake Diary will be permanently closing soon. For further details, please contact us.
-      </div>
 
       {/* Hero Section */}
       <div className="relative bg-gray-50 dark:bg-gray-800">
