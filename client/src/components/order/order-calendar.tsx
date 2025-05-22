@@ -131,11 +131,11 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
   };
   
   return (
-    <div className="w-full">
+    <div className="w-full max-w-md">
       {/* Calendar header - Days of week */}
       <div className="bg-gray-50 grid grid-cols-7 rounded-t-md">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-          <div key={day + index} className="py-2 text-center font-medium text-gray-500 text-sm">
+          <div key={day + index} className="py-1 text-center font-medium text-gray-500 text-xs">
             {day}
           </div>
         ))}
@@ -145,7 +145,7 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
       <div className="grid grid-cols-7 gap-0">
         {/* Empty cells for days before the first day of the month */}
         {Array.from({ length: (firstDayOfMonth.getDay() + 6) % 7 }, (_, i) => (
-          <div key={`empty-start-${i}`} className="aspect-square p-2"></div>
+          <div key={`empty-start-${i}`} className="aspect-square p-1"></div>
         ))}
         
         {/* Days of the month */}
@@ -175,12 +175,12 @@ const OrderCalendar: React.FC<OrderCalendarProps> = ({
           return (
             <div 
               key={dateKey} 
-              className="aspect-square flex flex-col items-center justify-center p-2 cursor-pointer"
+              className="aspect-square flex flex-col items-center justify-center p-1 cursor-pointer"
               onClick={() => handleDateClick(day)}
               title={dominantEventType ? `${dominantEventType} Event` : ''}
             >
               <div className={`
-                calendar-day
+                calendar-day text-xs
                 ${dayToday ? 'today' : ''}
                 ${daySelected ? 'selected' : ''}
                 ${hasRedEvents ? 'has-red-events' : ''}

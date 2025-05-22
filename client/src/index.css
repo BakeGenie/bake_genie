@@ -107,7 +107,7 @@
 
 /* Calendar styles */
 .calendar-day {
-  @apply h-10 w-10 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm transition-all duration-200;
+  @apply h-8 w-8 flex items-center justify-center mx-auto rounded-full cursor-pointer text-sm transition-all duration-200;
 }
 
 .calendar-day.today {
@@ -157,11 +157,11 @@
 .calendar-day.has-events::after {
   content: "";
   position: absolute;
-  bottom: 2px;
+  bottom: -3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   background-color: #9CA3AF;
   border-radius: 50%;
 }
@@ -169,10 +169,10 @@
 .calendar-day.has-red-events::before {
   content: "";
   position: absolute;
-  bottom: 2px;
-  left: calc(50% - 6px);
-  width: 4px;
-  height: 4px;
+  bottom: -3px;
+  left: calc(50% - 4px);
+  width: 3px;
+  height: 3px;
   background-color: #EF4444;
   border-radius: 50%;
 }
