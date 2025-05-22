@@ -17,47 +17,123 @@ import {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto flex items-center justify-between p-4">
+          <div className="flex items-center">
+            <img
+              src="https://placehold.co/40x40/e2e8f0/475569?text=BD"
+              alt="BakeDiary Logo"
+              className="h-10 w-10 mr-2"
+            />
+            <span className="text-xl font-semibold text-blue-800">BakeDiary</span>
+          </div>
+          <nav className="hidden md:flex space-x-8">
+            <a href="#" className="text-gray-600 hover:text-blue-600">Home</a>
+            <a href="#features" className="text-gray-600 hover:text-blue-600">Features</a>
+            <a href="#pricing" className="text-gray-600 hover:text-blue-600">Pricing</a>
+            <a href="#faq" className="text-gray-600 hover:text-blue-600">FAQs</a>
+            <a href="#contact" className="text-gray-600 hover:text-blue-600">Contact Us</a>
+          </nav>
+          <Button 
+            size="sm" 
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            asChild
+          >
+            <Link to="/login">LOGIN</Link>
+          </Button>
+        </div>
+      </header>
+
+      {/* Notice Banner */}
+      <div className="bg-red-600 text-white text-center py-2 px-4">
+        We regret to inform you that Bake Diary will be permanently closing soon. For further details, please contact us.
+      </div>
+
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="container mx-auto px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+      <div className="relative bg-gray-50">
+        <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
             <div className="flex flex-col justify-center">
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-                <span className="block">BakeDiary</span>
-                <span className="block text-blue-600">Simplify Your Bakery Business</span>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl lg:text-5xl uppercase">
+                <span className="block text-blue-800">CAKE PRICING &</span>
+                <span className="block text-blue-800">ORDER MANAGEMENT</span>
+                <span className="block text-blue-800">SOFTWARE APP</span>
               </h1>
-              <p className="mt-6 max-w-lg text-xl text-gray-600">
-                The all-in-one management platform designed specifically for bakers, cake makers, and bakery businesses.
+              <p className="mt-6 max-w-lg text-gray-600">
+                Bake Diary is the leading cloud based software for Cake Decorators & Bakers all over the world to help manage the admin side of your cake business.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <div className="mt-6">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  asChild
+                  className="bg-blue-600 hover:bg-blue-700 text-white uppercase"
                 >
-                  <Link to="/register">Get Started</Link>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="border-blue-300 text-blue-600"
-                  asChild
-                >
-                  <Link to="/login">Log In</Link>
+                  FIND OUT MORE
                 </Button>
               </div>
+              <div className="mt-4 text-xs text-gray-500">
+                <p>* 2 week free trial for all new users.</p>
+                <p>** Subscription after free trial is $4.95 pm / €5.50 pm</p>
+                <p>*** We currently support over 37 currencies incl. USD, AUD, GBP, CAD & EUR</p>
+              </div>
             </div>
-            <div className="relative rounded-2xl bg-white p-4 shadow-xl sm:p-6 lg:p-8">
-              <div className="overflow-hidden rounded-lg">
-                <img
-                  src="/dashboard-preview.jpg"
-                  alt="BakeDiary Dashboard Preview"
-                  className="h-auto w-full rounded-lg object-cover shadow-md"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = "https://placehold.co/600x400/e2e8f0/475569?text=BakeDiary+Dashboard";
-                  }}
-                />
+            <div className="relative">
+              <img
+                src="https://placehold.co/600x400/e2e8f0/475569?text=Baker+Image"
+                alt="Baker working in kitchen"
+                className="h-auto w-full object-cover rounded-md"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* What is Bake Diary Section */}
+      <div id="features" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <img
+                src="https://placehold.co/600x400/e2e8f0/475569?text=Dashboard+Preview"
+                alt="BakeDiary Dashboard"
+                className="rounded-lg shadow-md w-full"
+              />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-blue-800 mb-4">What is Bake Diary?</h2>
+              <p className="text-gray-600 mb-6">
+                Bake Diary is an online web application created to help cake decorators 
+                and home bakers easily manage the important day to day tasks associated 
+                with running a successful home or small baking business.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 bg-blue-100 rounded-full p-2 mt-1">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-900">Streamline Orders</h3>
+                    <p className="text-gray-600">Keep track of all your orders in one place</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 bg-blue-100 rounded-full p-2 mt-1">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-900">Manage Your Calendar</h3>
+                    <p className="text-gray-600">Never double-book or overcommit again</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 bg-blue-100 rounded-full p-2 mt-1">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-900">Track Finances</h3>
+                    <p className="text-gray-600">Monitor income, expenses, and profitability</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -65,10 +141,10 @@ export default function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <div className="py-16 sm:py-24">
+      <div className="py-16 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-bold text-blue-800 sm:text-4xl">
               Everything You Need to Run Your Bakery
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
