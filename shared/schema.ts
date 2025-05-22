@@ -264,6 +264,20 @@ export const income = pgTable("income", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Mileage table
+export const mileage = pgTable("mileage", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  date: date("date").notNull(),
+  startLocation: text("start_location").notNull(),
+  endLocation: text("end_location").notNull(),
+  purpose: text("purpose").notNull(),
+  miles: decimal("miles", { precision: 10, scale: 2 }).notNull(),
+  round_trip: boolean("round_trip").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Enquiries table
 export const enquiries = pgTable("enquiries", {
   id: serial("id").primaryKey(),
@@ -359,6 +373,7 @@ export const insertSupplySchema = createInsertSchema(supplies).omit({ id: true, 
 export const insertRecipeIngredientSchema = createInsertSchema(recipeIngredients).omit({ id: true });
 export const insertExpenseSchema = createInsertSchema(expenses).omit({ id: true, createdAt: true });
 export const insertIncomeSchema = createInsertSchema(income).omit({ id: true, createdAt: true });
+export const insertMileageSchema = createInsertSchema(mileage).omit({ id: true, createdAt: true });
 export const insertEnquirySchema = createInsertSchema(enquiries).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSettingsSchema = createInsertSchema(settings).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTaxRateSchema = createInsertSchema(taxRates).omit({ id: true, createdAt: true, updatedAt: true });
@@ -379,6 +394,7 @@ export type InsertSupply = z.infer<typeof insertSupplySchema>;
 export type InsertRecipeIngredient = z.infer<typeof insertRecipeIngredientSchema>;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type InsertIncome = z.infer<typeof insertIncomeSchema>;
+export type InsertMileage = z.infer<typeof insertMileageSchema>;
 export type InsertEnquiry = z.infer<typeof insertEnquirySchema>;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type InsertTaxRate = z.infer<typeof insertTaxRateSchema>;
