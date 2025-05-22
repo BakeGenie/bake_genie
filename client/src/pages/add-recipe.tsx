@@ -383,7 +383,11 @@ const AddRecipePage = () => {
                                     step="0.01"
                                     min="0.01"
                                     placeholder="Quantity"
-                                    {...field}
+                                    value={field.value || ''}
+                                    onChange={(e) => {
+                                      const value = e.target.valueAsNumber;
+                                      field.onChange(isNaN(value) ? '' : value);
+                                    }}
                                   />
                                 </FormControl>
                                 <FormMessage />

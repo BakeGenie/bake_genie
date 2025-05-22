@@ -180,17 +180,26 @@ router.post("/", async (req, res) => {
     // Extract ingredients from request (not part of recipe schema)
     const ingredientsList = req.body.ingredients || [];
     
+    // Convert numeric fields to the correct format
+    const processedRecipeData = {
+      ...recipeData,
+      servings: Number(recipeData.servings),
+      prepTime: recipeData.prepTime ? Number(recipeData.prepTime) : null,
+      cookTime: recipeData.cookTime ? Number(recipeData.cookTime) : null,
+      totalCost: recipeData.totalCost ? Number(recipeData.totalCost) : null
+    };
+    
     // Start a transaction
     const result = await db.transaction(async (tx) => {
       // Insert recipe
-      const [recipe] = await tx.insert(recipes).values(recipeData).returning();
+      const [recipe] = await tx.insert(recipes).values(processedRecipeData).returning();
       
       // Insert recipe ingredients
       if (ingredientsList.length > 0) {
         const recipeIngredientValues = ingredientsList.map((item: any) => ({
           recipeId: recipe.id,
-          ingredientId: item.ingredientId,
-          quantity: item.quantity,
+          ingredientId: Number(item.ingredientId),
+          quantity: Number(item.quantity),
           notes: item.notes || null
         }));
         
