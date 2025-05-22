@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "../db";
 import { scheduledPayments } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 
 const router = Router();
 
@@ -17,7 +17,7 @@ router.get("/api/orders/:orderId/scheduled-payments", async (req, res) => {
       .select()
       .from(scheduledPayments)
       .where(eq(scheduledPayments.orderId, orderId))
-      .orderBy(scheduledPayments.dueDate, "asc");
+      .orderBy(asc(scheduledPayments.dueDate));
     
     res.json(payments);
   } catch (error) {

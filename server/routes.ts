@@ -29,6 +29,9 @@ import recipesRouter from "./routes/recipes";
 import expensesRouter from "./routes/expenses";
 import incomeRouter from "./routes/income";
 import mileageRouter from "./routes/mileage";
+import orderTasksRouter from "./routes/order-tasks";
+import orderNotesRouter from "./routes/order-notes";
+import scheduledPaymentsRouter from "./routes/scheduled-payments";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
@@ -115,6 +118,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register auth routes
   app.use('/api/auth', authRouter);
+  
+  // Register order tasks, notes, and scheduled payments routes
+  app.use(orderTasksRouter);
+  app.use(orderNotesRouter);
+  app.use(scheduledPaymentsRouter);
   
   // Register import routes
   const importRouter = Router();
