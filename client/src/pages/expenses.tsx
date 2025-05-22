@@ -388,16 +388,22 @@ const ExpensesPage = () => {
                 
                 {dateExpenses.map((expense) => (
                   <div key={expense.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-md">
-                    <div>
-                      <Badge variant="outline">{expense.category}</Badge>
+                    <div className="flex items-center">
+                      <span className="text-blue-500 font-medium mr-4">
+                        {expense.id} ({expense.id})
+                      </span>
+                      <span>{expense.category}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium">${parseFloat(expense.amount).toFixed(2)}</span>
-                      <button className="text-gray-400 hover:text-red-500" onClick={() => {
-                        if (window.confirm("Are you sure you want to delete this expense?")) {
-                          deleteExpenseMutation.mutate(expense.id);
-                        }
-                      }}>
+                      <span className="font-medium">$ {parseFloat(expense.amount).toFixed(2)}</span>
+                      <button 
+                        className="ml-2 text-gray-400 hover:text-red-500"
+                        onClick={() => {
+                          if (window.confirm("Are you sure you want to delete this expense?")) {
+                            deleteExpenseMutation.mutate(expense.id);
+                          }
+                        }}
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M3 6h18"></path>
                           <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
@@ -413,8 +419,7 @@ const ExpensesPage = () => {
             {/* Total */}
             <div className="flex justify-end border-t pt-4 mt-4">
               <div className="text-right">
-                <span className="text-sm text-gray-500">Total:</span>
-                <span className="ml-1 font-medium">${calculateMonthlyTotal()}</span>
+                <span className="font-medium">Totals: $ {calculateMonthlyTotal()}</span>
               </div>
             </div>
           </>
