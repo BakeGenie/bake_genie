@@ -170,7 +170,7 @@ const TaskList = () => {
           // Handle date conversion safely
           dueDate: data.dueDate 
             ? (typeof data.dueDate === 'string' 
-                ? data.dueDate 
+                ? new Date(data.dueDate).toISOString() 
                 : data.dueDate instanceof Date 
                   ? data.dueDate.toISOString() 
                   : null)
