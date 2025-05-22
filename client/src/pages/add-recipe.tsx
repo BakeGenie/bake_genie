@@ -159,27 +159,43 @@ const AddRecipePage = () => {
   };
   
   // Handle form submission
-  const onSubmit = (data: RecipeFormValues) => {
-    // Calculate and set total cost
-    const calculatedCost = calculateTotalCost();
-    
-    // Prepare the data with explicit typing for better compatibility
-    const submissionData = {
-      ...data,
-      userId: 1, // Set the user ID
-      servings: Number(data.servings),
-      totalCost: calculatedCost.toString(), // Always send as string for decimal compatibility
-      prepTime: data.prepTime ? Number(data.prepTime) : null,
-      cookTime: data.cookTime ? Number(data.cookTime) : null,
-      ingredients: data.ingredients.map(ingredient => ({
-        ingredientId: Number(ingredient.ingredientId),
-        quantity: Number(ingredient.quantity),
-        notes: ingredient.notes || ""
-      }))
-    };
-    
-    console.log("Submitting recipe with data:", submissionData);
-    createRecipeMutation.mutate(submissionData);
+  const onSubmit = async (data: RecipeFormValues) => {
+    try {
+      // Calculate and set total cost
+      const calculatedCost = calculateTotalCost();
+      
+      // Prepare the data with explicit typing for better compatibility
+      const submissionData = {
+        ...data,
+        userId: 1, // Set the user ID
+        servings: Number(data.servings),
+        totalCost: calculatedCost.toString(), // Always send as string for decimal compatibility
+        prepTime: data.prepTime ? Number(data.prepTime) : null,
+        cookTime: data.cookTime ? Number(data.cookTime) : null,
+        ingredients: data.ingredients.map(ingredient => ({
+          ingredientId: Number(ingredient.ingredientId),
+          quantity: Number(ingredient.quantity),
+          notes: ingredient.notes || ""
+        }))
+      };
+      
+      console.log("Submitting recipe with data:", submissionData);
+      // Directly use the mutation function
+      createRecipeMutation.mutate(submissionData);
+      
+      // Show a pending toast
+      toast({
+        title: "Saving recipe...",
+        description: "Your recipe is being saved.",
+      });
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast({
+        title: "Form Error",
+        description: "There was a problem with the form. Please check all fields and try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
