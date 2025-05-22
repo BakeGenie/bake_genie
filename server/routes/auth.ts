@@ -126,10 +126,10 @@ router.post('/register', async (req: Request, res: Response) => {
 
     // Create new user using raw SQL - directly using the column names that exist in the database
     const insertResult = await pool.query(
-      `INSERT INTO users (username, email, password, first_name, last_name, created_at) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, username, email, first_name, last_name, created_at`,
-      [username, email, hashedPassword, firstName, lastName, new Date()]
+      `INSERT INTO users (username, email, password, first_name, last_name, role, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING id, username, email, first_name, last_name, role, created_at`,
+      [username, email, hashedPassword, firstName, lastName, 'user', new Date()]
     );
 
     const newUser = insertResult.rows[0];
@@ -140,6 +140,7 @@ router.post('/register', async (req: Request, res: Response) => {
       email: newUser.email,
       firstName: newUser.first_name,
       lastName: newUser.last_name,
+      role: newUser.role,
     };
     
     await new Promise<void>((resolve, reject) => {
