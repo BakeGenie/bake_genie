@@ -7,8 +7,8 @@ import { PlusIcon, FilterIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { OrderWithItems } from "@/types";
-import DateSelectionDialog from "@/components/order/date-selection-dialog";
 import OrderDetailsDialog from "@/components/order/order-details-dialog";
+import CalendarDateDialog from "@/components/calendar/calendar-date-dialog";
 import { eventTypeColors } from "@/lib/constants";
 import { EventType, eventTypes } from "@shared/schema";
 
@@ -23,6 +23,7 @@ const CalendarStandalone = () => {
   const [isDateDialogOpen, setIsDateDialogOpen] = React.useState(false);
   const [selectedOrder, setSelectedOrder] = React.useState<OrderWithItems | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = React.useState(false);
+  const [ordersOnSelectedDate, setOrdersOnSelectedDate] = React.useState<OrderWithItems[]>([]);
   
   // Check for date in URL query parameters or localStorage
   React.useEffect(() => {
