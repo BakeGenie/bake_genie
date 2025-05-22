@@ -264,7 +264,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     window.location.href = "/";
                   }
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-[#394B5F] transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white transition-colors"
               >
                 <div className="flex items-center">
                   <span className="w-5 text-white">

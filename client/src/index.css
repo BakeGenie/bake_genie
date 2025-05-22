@@ -96,9 +96,7 @@
   @apply bg-primary-50 text-primary-600 border-l-2 border-primary-600 font-medium;
 }
 
-.sidebar-link:hover:not(.active) {
-  @apply bg-gray-50;
-}
+/* Removing hover background */
 
 /* Badge styles */
 .badge {
