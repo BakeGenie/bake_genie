@@ -36,20 +36,53 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
     const filePath = req.file.path;
     const fileContent = fs.readFileSync(filePath, 'utf8');
     
-    // Parse CSV content - for BakeDiary files, headers are at row 3, data starts at row 4
-    const parsedData = parse(fileContent, {
-      skip_empty_lines: true,
-      from_line: 4, // Start reading from line 4 (1-based)
-      columns: (header) => {
-        return header.map((column: string) => column.trim());
+    // Handle both standard CSV and the BakeDiary format
+    let parsedData;
+    let headers = [];
+    
+    // Simple direct parsing approach for CSV format shown in the screenshot
+    // Headers on first line, data starts on second line
+    try {
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        throw new Error("CSV file does not have enough lines");
       }
-    });
-
-    const headerLine = fileContent.split('\n')[2]; // Get the header line (row 3)
-    const headers = parse(headerLine, { 
-      skip_empty_lines: true,
-      columns: false 
-    })[0].map((header: string) => header.trim());
+      
+      // Get header line (first line)
+      const headerLine = lines[0]; 
+      console.log("Header line:", headerLine);
+      
+      // Manually parse the header line to get column names
+      headers = headerLine.split(',').map(h => h.trim());
+      console.log("Extracted headers:", headers);
+      
+      // Prepare data structure
+      parsedData = [];
+      
+      // Process data rows starting from line 2
+      for (let i = 1; i < lines.length; i++) {
+        const dataLine = lines[i];
+        const values = dataLine.split(',');
+        
+        if (values.length !== headers.length) {
+          console.warn(`Line ${i+1} has ${values.length} values but expected ${headers.length}, skipping`);
+          continue;
+        }
+        
+        // Create object with headers as keys and values
+        const rowData: Record<string, string> = {};
+        headers.forEach((header, index) => {
+          rowData[header] = values[index]?.trim() || '';
+        });
+        
+        parsedData.push(rowData);
+      }
+      
+      console.log("Parsed data (first row):", parsedData[0]);
+    } catch (error) {
+      console.error("Error parsing CSV:", error);
+      throw new Error(`Failed to parse CSV: ${error.message}`);
+    }
 
     // Process and map headers to database fields - handle both standard and BakeDiary formats
     const mappings = {
