@@ -572,6 +572,15 @@ const ExpensesPage = () => {
                         date: new Date(expense.date)
                       };
                       
+                      // If there's a receipt, set the filename to display
+                      if (expense.receiptUrl) {
+                        // Extract the filename from the URL
+                        const filename = expense.receiptUrl.split('/').pop() || 'Receipt';
+                        setReceiptFileName(filename);
+                      } else {
+                        setReceiptFileName('');
+                      }
+                      
                       // Parse metadata from the description if it exists
                       let description = expense.description || "";
                       
@@ -905,6 +914,48 @@ const ExpensesPage = () => {
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                           </svg>
                           Remove file
+                        </button>
+                      </>
+                    ) : receiptFileName && editingExpenseId ? (
+                      <>
+                        <div className="flex items-center justify-center bg-green-50 text-green-500 w-12 h-12 rounded-full mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                          </svg>
+                        </div>
+                        <p className="font-medium text-green-600">{receiptFileName}</p>
+                        <p className="text-xs mt-1 text-gray-500">Existing receipt. Click to view or replace.</p>
+                        {expenseForm.getValues().receiptUrl && (
+                          <a 
+                            href={expenseForm.getValues().receiptUrl as string} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="mt-2 text-sm text-blue-500 hover:text-blue-700 flex items-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                              <polyline points="15 3 21 3 21 9"></polyline>
+                              <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            View Receipt
+                          </a>
+                        )}
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            expenseForm.setValue('receiptUrl', null);
+                            setReceiptFileName('');
+                          }}
+                          className="mt-2 text-sm text-red-500 hover:text-red-700 flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                          Remove receipt
                         </button>
                       </>
                     ) : (
