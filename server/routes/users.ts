@@ -13,23 +13,27 @@ router.get('/current', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const [user] = await db.select({
-      id: users.id,
-      username: users.username,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      phone: users.phone,
-      businessName: users.businessName,
-      address: users.address,
-      city: users.city,
-      state: users.state,
-      zip: users.zip,
-      country: users.country,
-      createdAt: users.createdAt
-    })
-    .from(users)
-    .where(eq(users.id, Number(req.session.userId)));
+    // Use a direct SQL query to avoid schema mapping issues
+    const result = await db.execute(`
+      SELECT 
+        id, 
+        username, 
+        email, 
+        first_name as "firstName", 
+        last_name as "lastName", 
+        phone, 
+        business_name as "businessName", 
+        address, 
+        city, 
+        state, 
+        zip, 
+        country, 
+        created_at as "createdAt"
+      FROM users
+      WHERE id = $1
+    `, [Number(req.session.userId)]);
+
+    const user = result.rows[0];
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -81,11 +85,11 @@ router.patch('/profile', async (req: Request, res: Response) => {
     const result = await db.execute(`
       UPDATE users
       SET 
-        firstname = $1,
-        lastname = $2,
+        first_name = $1,
+        last_name = $2,
         email = $3,
         phone = $4,
-        businessname = $5,
+        business_name = $5,
         address = $6,
         city = $7,
         state = $8,
@@ -93,7 +97,7 @@ router.patch('/profile', async (req: Request, res: Response) => {
         country = $10,
         updated_at = NOW()
       WHERE id = $11
-      RETURNING id, firstname, lastname, email, phone, businessname, address, city, state, zip, country
+      RETURNING id, first_name as "firstName", last_name as "lastName", email, phone, business_name as "businessName", address, city, state, zip, country
     `, [
       firstName,
       lastName,
@@ -108,20 +112,8 @@ router.patch('/profile', async (req: Request, res: Response) => {
       Number(req.session.userId)
     ]);
     
-    // Format the result to match expected shape
-    const updatedUser = result.rows[0] ? {
-      id: result.rows[0].id,
-      firstName: result.rows[0].firstname,
-      lastName: result.rows[0].lastname,
-      email: result.rows[0].email,
-      phone: result.rows[0].phone,
-      businessName: result.rows[0].businessname,
-      address: result.rows[0].address,
-      city: result.rows[0].city,
-      state: result.rows[0].state,
-      zip: result.rows[0].zip,
-      country: result.rows[0].country
-    } : null;
+    // The result already has the correct format thanks to our SQL column aliases
+    const updatedUser = result.rows[0];
     
     if (!updatedUser) {
       throw new Error('Failed to update user profile - no rows returned');
