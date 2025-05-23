@@ -13,29 +13,29 @@
   --card-foreground: 222.2 84% 4.9%;
   --border: 215 13.2% 85%;
   --input: 215 13.2% 85%;
-  --primary: 207 90% 54%;
-  --primary-foreground: 211 100% 99%;
+  --primary: 186 100% 40%;
+  --primary-foreground: 0 0% 100%;
   --secondary: 60 4.8% 95.9%;
   --secondary-foreground: 24 9.8% 10%;
-  --accent: 60 4.8% 95.9%;
-  --accent-foreground: 24 9.8% 10%;
+  --accent: 186 100% 40%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
   --ring: 222.2 84% 4.9%;
   --radius: 0.5rem;
 
   /* BakeGenie specific colors */
-  --sidebar-background: 0 0% 100%;
-  --sidebar-foreground: 222.2 84% 4.9%;
-  --sidebar-primary: 207 90% 54%;
-  --sidebar-primary-foreground: 211 100% 99%;
-  --sidebar-accent: 60 4.8% 95.9%;
-  --sidebar-accent-foreground: 24 9.8% 10%;
-  --sidebar-border: 20 5.9% 90%;
-  --sidebar-ring: 222.2 84% 4.9%;
+  --sidebar-background: 186 100% 40%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 186 100% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 186 100% 45%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 186 50% 50%;
+  --sidebar-ring: 186 100% 40%;
   
   /* Chart colors */
-  --chart-1: 207 90% 54%;
+  --chart-1: 186 100% 40%;
   --chart-2: 240 5.9% 10%;
   --chart-3: 262 83.3% 57.8%;
   --chart-4: 27 96% 61%;
@@ -53,28 +53,28 @@
   --card-foreground: 0 0% 98%;
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
-  --primary: 207 90% 54%;
-  --primary-foreground: 211 100% 99%;
+  --primary: 186 100% 40%;
+  --primary-foreground: 0 0% 100%;
   --secondary: 240 3.7% 15.9%;
   --secondary-foreground: 0 0% 98%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
+  --accent: 186 100% 40%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
   --ring: 240 4.9% 83.9%;
 
-  /* BakeDiary specific dark mode colors */
-  --sidebar-background: 240 10% 3.9%;
-  --sidebar-foreground: 0 0% 98%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-primary: 207 90% 54%;
-  --sidebar-primary-foreground: 211 100% 99%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 240 4.9% 83.9%;
+  /* BakeGenie specific dark mode colors */
+  --sidebar-background: 186 100% 30%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-border: 186 50% 35%;
+  --sidebar-primary: 186 100% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 186 100% 35%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 186 100% 40%;
   
   /* Chart colors - dark mode */
-  --chart-1: 207 90% 64%;
+  --chart-1: 186 100% 50%;
   --chart-2: 240 5.9% 90%;
   --chart-3: 262 83.3% 67.8%;
   --chart-4: 27 96% 71%;
