@@ -13,12 +13,24 @@ const TryTrial = () => {
 
   const { mutate: startTrial, isPending } = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/subscription/trial/start', {});
-      if (response.json) {
-        return response.json();
-      } else {
-        // If response is already parsed JSON
-        return response;
+      try {
+        const response = await fetch('/api/subscription/trial/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to start trial');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error starting trial:', error);
+        throw error;
       }
     },
     onSuccess: (data) => {
@@ -65,8 +77,64 @@ const TryTrial = () => {
     }
   });
 
-  const handleStartTrial = () => {
-    startTrial();
+  const handleStartTrial = async () => {
+    try {
+      // Direct fetch approach rather than using the mutation
+      const response = await fetch('/api/subscription/trial/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setIsStarted(true);
+        toast({
+          title: "Trial Started!",
+          description: "Your 30-day free trial has been activated successfully.",
+          variant: "default",
+        });
+      } else {
+        // Handle error responses
+        const errorMessage = data.error || 'Failed to start trial';
+        
+        if (errorMessage.includes('already used your free trial')) {
+          toast({
+            title: "Trial Already Used",
+            description: "You've already used your free trial period. Please subscribe to continue using premium features.",
+            variant: "destructive",
+          });
+          setTimeout(() => {
+            setLocation('/manage-subscription');
+          }, 2000);
+        } else if (errorMessage.includes('already have an active subscription')) {
+          toast({
+            title: "Active Subscription",
+            description: "You already have an active subscription or trial. No need to start a new trial.",
+            variant: "default",
+          });
+          setTimeout(() => {
+            setLocation('/dashboard');
+          }, 2000);
+        } else {
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error starting trial:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
   // If the trial has been successfully started
