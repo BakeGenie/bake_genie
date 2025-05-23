@@ -537,6 +537,19 @@ export default function DataImportExport() {
 
                   <div 
                     className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("quotes")}
+                  >
+                    <div className="bg-teal-900/30 p-2 rounded-full">
+                      <FileQuestion className="h-5 w-5 text-teal-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white">Import Quotes</h4>
+                      <p className="text-sm text-gray-400">Import your quotes data</p>
+                    </div>
+                  </div>
+
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
                     onClick={() => handleImport("expenses")}
                   >
                     <div className="bg-blue-900/30 p-2 rounded-full">
