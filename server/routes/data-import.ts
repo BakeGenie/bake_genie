@@ -65,10 +65,13 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
     const records = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
-      trim: true
+      trim: true,
+      // Handle CSV column names with spaces and keep original header names
+      relax_column_count: true
     });
     
     console.log(`Found ${records.length} contacts in Bake Diary CSV`);
+    console.log("Sample record:", JSON.stringify(records[0]));
     
     // Results tracking
     const result = {
@@ -82,24 +85,53 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
     // Process each contact
     for (const record of records) {
       try {
-        // Map CSV fields to contact schema
+        // Check if required fields exist
+        if (!record['First Name'] && !record['Last Name'] && !record['Email'] && !record['Number']) {
+          console.log("Skipping empty record");
+          result.skipped++;
+          continue;
+        }
+        
+        // Our database schema has these fields:
+        // id, userId, firstName, lastName, email, phone, businessName, address, notes
         const contactData = {
-          userId,
-          type: record['Type']?.trim() || 'Customer',
-          firstName: record['First Name']?.trim() || '',
-          lastName: record['Last Name']?.trim() || '',
-          businessName: record['Supplier Name']?.trim() || '',
+          user_id: userId,
+          first_name: record['First Name']?.trim() || '',
+          last_name: record['Last Name']?.trim() || '',
           email: record['Email']?.trim() || '',
           phone: record['Number']?.trim() || '',
-          allowMarketing: record['Allow Marketing']?.toLowerCase() === 'true',
-          website: record['Website']?.trim() || '',
-          source: record['Source']?.trim() || 'Imported',
-          notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}`,
+          business_name: record['Supplier Name']?.trim() || '',
+          notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}. Type: ${record['Type'] || 'Customer'}. Allow Marketing: ${record['Allow Marketing'] || 'No'}. Website: ${record['Website'] || 'None'}. Source: ${record['Source'] || 'Import'}.`
         };
         
-        // Insert contact into database
-        await db.insert(contacts).values(contactData);
-        result.imported++;
+        console.log("Importing contact:", contactData.first_name, contactData.last_name);
+        
+        // Insert contact into database using raw SQL to ensure correct column names
+        const query = `
+          INSERT INTO contacts (user_id, first_name, last_name, email, phone, business_name, notes, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+          RETURNING id
+        `;
+        
+        const values = [
+          contactData.user_id,
+          contactData.first_name,
+          contactData.last_name,
+          contactData.email,
+          contactData.phone,
+          contactData.business_name,
+          contactData.notes
+        ];
+        
+        const client = await db.client();
+        const queryResult = await client.query(query, values);
+        
+        if (queryResult.rowCount > 0) {
+          result.imported++;
+        } else {
+          result.errors++;
+          result.errorDetails.push(`Failed to insert contact: ${contactData.first_name} ${contactData.last_name}`);
+        }
       } catch (error) {
         console.error('Error importing contact:', error);
         result.errors++;
@@ -108,8 +140,8 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
     }
     
     return {
-      success: result.errors === 0,
-      message: `Successfully imported ${result.imported} contacts, skipped ${result.skipped}, with ${result.errors} errors.`,
+      success: result.imported > 0,
+      message: `Successfully imported ${result.imported} contacts${result.skipped > 0 ? `, skipped ${result.skipped}` : ''}${result.errors > 0 ? `, with ${result.errors} errors` : ''}.`,
       details: result
     };
     
