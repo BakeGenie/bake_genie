@@ -120,6 +120,9 @@ const ExpensesImportBakeDiary = () => {
       
       // Map the data to match our database fields
       const expenses = parsedData.map(row => {
+        // Debug log each row being processed
+        console.log("Processing row:", row);
+        
         return {
           date: row.Date || '', // Keep original format, server will parse
           description: row.Description || '',
@@ -147,9 +150,25 @@ const ExpensesImportBakeDiary = () => {
           // Send batch to server using our specialized Bake Diary import endpoint
           console.log(`Sending batch ${Math.floor(i/batchSize) + 1} of ${totalBatches}:`, batch);
           
-          const response = await apiRequest('POST', '/api/expenses/bake-diary/import', {
-            items: batch
+          // Add detailed error tracking
+          console.log("Sending to API:", JSON.stringify(batch));
+          
+          const response = await fetch('/api/expenses/bake-diary/import', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ items: batch }),
+            credentials: 'include'
           });
+          
+          // Check response status
+          if (!response.ok) {
+            console.error("API error status:", response.status);
+            const errorText = await response.text();
+            console.error("API error response:", errorText);
+            throw new Error(`API error: ${response.status} - ${errorText}`);
+          }
           
           const result = await response.json();
           console.log("Batch result:", result);
