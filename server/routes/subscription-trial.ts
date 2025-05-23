@@ -14,7 +14,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 export const router = Router();
 
-// Create a subscription with a 30-day trial period
+// Create a simple trial subscription without requiring payment upfront
 router.post('/create-trial-subscription', async (req: Request, res: Response) => {
   try {
     if (!req.session?.userId) {
@@ -22,92 +22,50 @@ router.post('/create-trial-subscription', async (req: Request, res: Response) =>
     }
 
     const userId = Number(req.session.userId);
-    const { planId, paymentMethodId } = req.body;
-
-    // Get the plan details
-    const [plan] = await db.select()
-      .from(subscriptionPlans)
-      .where(eq(subscriptionPlans.id, planId));
-
-    if (!plan) {
-      return res.status(404).json({ error: 'Subscription plan not found' });
-    }
 
     // Check if user already has an active subscription
     const [existingSubscription] = await db.select()
       .from(userSubscriptions)
-      .where(eq(userSubscriptions.userId, userId))
-      .where(eq(userSubscriptions.status, 'active'));
-
-    if (existingSubscription) {
-      return res.status(400).json({ error: 'User already has an active subscription' });
-    }
-
-    // Get or create Stripe customer
-    let customerId;
-    const [existingUser] = await db.select({
-      stripeCustomerId: userSubscriptions.stripeCustomerId,
-    })
-      .from(userSubscriptions)
       .where(eq(userSubscriptions.userId, userId));
 
-    if (existingUser?.stripeCustomerId) {
-      customerId = existingUser.stripeCustomerId;
-    } else {
-      // Get user info for creating a customer
-      const [user] = await db.execute(
-        `SELECT email, CONCAT(first_name, ' ', last_name) as name FROM users WHERE id = $1`,
-        [userId]
-      );
-
-      // Create a new customer in Stripe
-      const customer = await stripe.customers.create({
-        email: user?.email,
-        name: user?.name,
-        payment_method: paymentMethodId,
-        invoice_settings: {
-          default_payment_method: paymentMethodId,
-        },
+    if (existingSubscription) {
+      return res.status(400).json({ 
+        error: 'User already has a subscription', 
+        message: 'You already have a subscription or trial.' 
       });
-      customerId = customer.id;
     }
 
-    // Create a subscription with a trial period
-    const subscription = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [
-        {
-          price: plan.stripePriceId, // This should be set in your subscription_plans table
-        },
-      ],
-      payment_settings: {
-        payment_method_types: ['card'],
-        save_default_payment_method: 'on_subscription',
-      },
-      trial_period_days: 30, // 30-day free trial
-      expand: ['latest_invoice.payment_intent'],
-    });
+    // Get default plan (we'll just use ID 1 for now as the default plan)
+    const defaultPlanId = 1;
+    
+    // Calculate trial period dates
+    const now = new Date();
+    const trialStart = now;
+    const trialEnd = new Date(now);
+    trialEnd.setDate(trialEnd.getDate() + 30); // 30-day trial
+    
+    console.log(`Creating trial for user ${userId} from ${trialStart} to ${trialEnd}`);
 
-    // Save subscription info to database
+    // Create a trial record in the database
     const [userSubscription] = await db.insert(userSubscriptions)
       .values({
         userId,
-        planId,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscription.id,
-        status: subscription.status,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        trialStart: subscription.trial_start ? new Date(subscription.trial_start * 1000) : null,
-        trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+        planId: defaultPlanId,
+        status: 'trialing',
+        currentPeriodStart: trialStart,
+        currentPeriodEnd: trialEnd,
+        cancelAtPeriodEnd: false,
+        trialStart: trialStart,
+        trialEnd: trialEnd,
         createdAt: new Date(),
       })
       .returning();
 
+    console.log(`Trial created successfully: ${JSON.stringify(userSubscription)}`);
+
     res.json({
-      subscription: userSubscription,
-      clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+      success: true,
+      subscription: userSubscription
     });
   } catch (error: any) {
     console.error('Error creating trial subscription:', error);

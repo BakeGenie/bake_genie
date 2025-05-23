@@ -18,19 +18,23 @@ const StartTrialPage: React.FC = () => {
     mutationFn: async () => {
       return apiRequest('POST', '/api/subscription/trial/create-trial-subscription', {});
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscription/trial/status'] });
       toast({
         title: 'Trial Started!',
         description: 'Your 30-day free trial has been started successfully.',
         variant: 'default',
       });
-      setLocation('/dashboard');
+      // Redirect to dashboard after successful trial creation
+      setTimeout(() => {
+        setLocation('/dashboard');
+      }, 1000);
     },
     onError: (error: any) => {
+      console.error('Trial creation error:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to start trial. Please try again.',
+        description: error.response?.data?.message || 'Failed to start trial. Please try again.',
         variant: 'destructive',
       });
     },
