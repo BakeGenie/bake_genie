@@ -55,16 +55,16 @@ router.post("/import-csv", upload.single("file"), async (req: Request, res: Resp
       // Process based on CSV type
       switch (csvType) {
         case 'orders':
-          result = await csvImportService.importBakeDiaryOrders(csvData, req.session.userId);
+          result = await csvImportService.importBakeGenieOrders(csvData, req.session.userId);
           break;
         case 'quotes':
-          result = await csvImportService.importBakeDiaryQuotes(csvData, req.session.userId);
+          result = await csvImportService.importBakeGenieQuotes(csvData, req.session.userId);
           break;
         case 'orderItems':
-          result = await csvImportService.importBakeDiaryOrderItems(csvData, req.session.userId);
+          result = await csvImportService.importBakeGenieOrderItems(csvData, req.session.userId);
           break;
         default:
-          throw new Error(`Unknown CSV format. Please ensure this is a valid Bake Diary export file.`);
+          throw new Error(`Unknown CSV format. Please ensure this is a valid BakeGenie export file.`);
       }
       
       // Clean up - delete the uploaded file
@@ -88,7 +88,7 @@ router.post("/import-csv", upload.single("file"), async (req: Request, res: Resp
       });
     }
   } catch (error) {
-    console.error("Error importing from Bake Diary:", error);
+    console.error("Error importing from BakeGenie:", error);
     
     // Clean up uploaded file if it exists
     if (req.file && fs.existsSync(req.file.path)) {
@@ -97,7 +97,7 @@ router.post("/import-csv", upload.single("file"), async (req: Request, res: Resp
     
     res.status(500).json({ 
       success: false, 
-      error: `Error importing Bake Diary data: ${(error as Error).message}` 
+      error: `Error importing BakeGenie data: ${(error as Error).message}` 
     });
   }
 });

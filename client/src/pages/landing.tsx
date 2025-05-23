@@ -169,15 +169,15 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <img
                   src="https://placehold.co/600x400/e2e8f0/475569?text=Dashboard+Preview"
-                  alt="BakeDiary Dashboard"
+                  alt="BakeGenie Dashboard"
                   className="w-full h-auto"
                 />
               </div>
             </div>
             <div className="order-1 lg:order-2">
-              <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-6">What is Bake Diary?</h2>
+              <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-6">What is BakeGenie?</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">
-                Bake Diary is an online web application created to help cake decorators 
+                BakeGenie is an online web application created to help cake decorators 
                 and home bakers easily manage the important day to day tasks associated 
                 with running a successful home or small baking business.
               </p>

@@ -377,8 +377,8 @@ router.post("/import/json", async (req: Request, res: Response) => {
 });
 
 /**
- * Import from Bake Diary data format
- * Special endpoint specifically for importing from the legacy Bake Diary format
+ * Import from BakeGenie data format
+ * Special endpoint specifically for importing from the legacy BakeGenie format
  */
 router.post("/import/bake-diary", upload.single("file"), async (req: Request, res: Response) => {
   try {
@@ -397,7 +397,7 @@ router.post("/import/bake-diary", upload.single("file"), async (req: Request, re
       return res.status(400).json({ success: false, error: "Invalid JSON file" });
     }
     
-    // Transform Bake Diary data to BakeGenie format
+    // Transform BakeGenie data to BakeGenie format
     const transformedData = transformBakeDiaryData(data);
     
     // Parse import options from request body
@@ -580,7 +580,7 @@ function transformBakeDiaryData(bakeDiaryData: any): ImportData {
 }
 
 /**
- * Map Bake Diary event type to BakeGenie event type
+ * Map BakeGenie event type to BakeGenie event type
  */
 function mapEventType(eventType: string): string {
   const mapping: Record<string, string> = {

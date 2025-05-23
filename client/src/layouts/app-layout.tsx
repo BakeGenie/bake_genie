@@ -93,7 +93,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 </svg>
               </span>
               <span className="ml-2 text-xl font-semibold text-gray-800 dark:text-gray-100">
-                BakeDiary
+                BakeGenie
               </span>
             </div>
           </div>
