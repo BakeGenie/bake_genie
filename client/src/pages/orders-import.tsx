@@ -8,23 +8,54 @@ import { Separator } from '@/components/ui/separator';
 import { FileSpreadsheet, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Simple CSV parsing function that handles orders format
+// Advanced CSV parsing function that handles orders format and quoted values
 const parseCSV = (csvText: string) => {
   // Split by lines and filter out empty lines
   const lines = csvText.split('\n').filter(line => line.trim());
   if (lines.length === 0) return [];
   
   // First line contains the headers
-  const headers = lines[0].split(',').map(h => h.trim());
+  // Use a more robust way to split the CSV that respects quotes
+  const parseCSVLine = (line: string) => {
+    const values = [];
+    let currentValue = '';
+    let insideQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        insideQuotes = !insideQuotes;
+      } else if (char === ',' && !insideQuotes) {
+        values.push(currentValue.trim());
+        currentValue = '';
+      } else {
+        currentValue += char;
+      }
+    }
+    
+    // Add the last value
+    values.push(currentValue.trim());
+    return values;
+  };
+  
+  const headers = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, ''));
   
   // Parse the data rows
   const data = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',');
+    const values = parseCSVLine(lines[i]);
+    
     if (values.length === headers.length) {
       const row = {};
       headers.forEach((header, index) => {
-        row[header] = values[index] ? values[index].trim() : '';
+        // Remove any quotes from values 
+        let value = values[index] ? values[index].trim() : '';
+        // Remove enclosing quotes if present
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.substring(1, value.length - 1);
+        }
+        row[header] = value;
       });
       data.push(row);
     }
@@ -165,15 +196,30 @@ const OrdersImport = () => {
           // Send batch to server
           console.log(`Sending batch ${Math.floor(i/batchSize) + 1} of ${totalBatches}:`, batch);
           
+          // Clean data before sending to ensure no HTML or special characters cause issues
+          const cleanBatch = batch.map(item => {
+            const cleaned = {};
+            Object.keys(item).forEach(key => {
+              let value = item[key];
+              // Ensure string values
+              if (typeof value === 'string') {
+                // Remove any escape sequences or extra quotes that might cause issues
+                value = value.replace(/\\"/g, '"').replace(/^"+|"+$/g, '');
+              }
+              cleaned[key] = value;
+            });
+            return cleaned;
+          });
+          
           // Add detailed error tracking
-          console.log("Sending to API:", JSON.stringify(batch));
+          console.log("Sending to API:", JSON.stringify(cleanBatch));
           
           const response = await fetch('/api/orders/import', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ items: batch }),
+            body: JSON.stringify({ items: cleanBatch }),
             credentials: 'include'
           });
           

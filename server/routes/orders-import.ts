@@ -33,30 +33,68 @@ router.post('/api/orders/import', async (req, res) => {
       for (const item of items) {
         try {
           // Ensure proper data types and handle escaping
-          // Remove all quotes from string values
-          const orderNumber = (item.orderNumber || '').replace(/"/g, '');
-          const eventType = (item.eventType || '').replace(/"/g, '');
-          const theme = item.theme ? item.theme.replace(/"/g, '') : null;
-          const status = (item.status || 'Quote').replace(/"/g, '');
-          const deliveryTime = item.deliveryTime ? item.deliveryTime.replace(/"/g, '') : '';
+          // Remove all quotes from string values, handling both JSON-quoted strings and regular strings
+          const orderNumber = (item.orderNumber || '').replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '');
+          const eventType = (item.eventType || '').replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '');
+          const theme = item.theme ? item.theme.replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '') : null;
+          const status = (item.status || 'Quote').replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '');
+          const deliveryTime = item.deliveryTime ? item.deliveryTime.replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '') : '';
           
           // For numeric fields, convert to floats and handle any format issues
-          const totalAmount = parseFloat(item.totalAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const deliveryFee = parseFloat(item.deliveryFee?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const profit = parseFloat(item.profit?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const subTotalAmount = parseFloat(item.subTotalAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const discountAmount = parseFloat(item.discountAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const taxRate = parseFloat(item.taxRate?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const deliveryAmount = parseFloat(item.deliveryAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          // Handle nested quotes from JSON stringification
+          const totalAmount = parseFloat(item.totalAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const deliveryFee = parseFloat(item.deliveryFee?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const profit = parseFloat(item.profit?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const subTotalAmount = parseFloat(item.subTotalAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const discountAmount = parseFloat(item.discountAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const taxRate = parseFloat(item.taxRate?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const deliveryAmount = parseFloat(item.deliveryAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
           
           // Handle dates - important to format correctly for the database
           let eventDate = null;
           if (item.eventDate) {
             try {
-              // Try to parse the date, but if it fails, use a default format
-              eventDate = new Date(item.eventDate.replace(/"/g, '')).toISOString();
+              // Try to parse the date with extra quote removal for JSON escaped values
+              const cleanDate = item.eventDate.toString()
+                .replace(/^"\\+"|\\"|\\/g, '')
+                .replace(/"/g, '')
+                .trim();
+              console.log(`Processing event date: ${cleanDate}`);
+              
+              // Try different date parsing methods
+              let parsedDate;
+              // Try ISO format
+              if (cleanDate.match(/\d{4}-\d{2}-\d{2}/)) {
+                parsedDate = new Date(cleanDate);
+              } 
+              // Try MM/DD/YYYY format
+              else if (cleanDate.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+                const parts = cleanDate.split('/');
+                parsedDate = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+              } 
+              // Try DD/MM/YYYY format
+              else if (cleanDate.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+                const parts = cleanDate.split('/');
+                parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+              }
+              // Try YYYY format alone
+              else if (cleanDate.match(/\d{4}/)) {
+                parsedDate = new Date(parseInt(cleanDate), 0, 1);
+              }
+              // Finally try any other format
+              else {
+                parsedDate = new Date(cleanDate);
+              }
+              
+              // Check if date is valid
+              if (!isNaN(parsedDate.getTime())) {
+                eventDate = parsedDate.toISOString();
+              } else {
+                console.error(`ORDERS IMPORT: Invalid date format: ${cleanDate}`);
+                eventDate = new Date().toISOString();
+              }
             } catch (dateError) {
-              console.error(`ORDERS IMPORT: Failed to parse event date: ${item.eventDate}`);
+              console.error(`ORDERS IMPORT: Failed to parse event date: ${item.eventDate}`, dateError);
               // Use current date as fallback
               eventDate = new Date().toISOString();
             }
@@ -65,8 +103,37 @@ router.post('/api/orders/import', async (req, res) => {
           let createdAt = null;
           if (item.createdAt) {
             try {
-              // Try to parse the date, but if it fails, use current date
-              createdAt = new Date(item.createdAt.replace(/"/g, '')).toISOString();
+              // Handle escaped quotes and formatting for the created at date
+              const cleanDate = item.createdAt.toString()
+                .replace(/^"\\+"|\\"|\\/g, '')
+                .replace(/"/g, '')
+                .trim();
+              console.log(`Processing created at date: ${cleanDate}`);
+              
+              // Try to parse date with various formats
+              let parsedDate;
+              
+              // Try parsing with standard date constructor
+              parsedDate = new Date(cleanDate);
+              
+              // If that fails, try with other formats
+              if (isNaN(parsedDate.getTime())) {
+                // Try "YYYY-MM-DD HH:MM" format (common in exports)
+                if (cleanDate.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}/)) {
+                  const [datePart, timePart] = cleanDate.split(' ');
+                  const [year, month, day] = datePart.split('-').map(Number);
+                  const [hour, minute] = timePart.split(':').map(Number);
+                  parsedDate = new Date(year, month - 1, day, hour, minute);
+                }
+              }
+              
+              // Check if date is valid
+              if (!isNaN(parsedDate.getTime())) {
+                createdAt = parsedDate.toISOString();
+              } else {
+                console.error(`ORDERS IMPORT: Invalid created at date format: ${cleanDate}`);
+                createdAt = new Date().toISOString();
+              }
             } catch (dateError) {
               console.error(`ORDERS IMPORT: Failed to parse created at date: ${item.createdAt}`);
               createdAt = new Date().toISOString();
