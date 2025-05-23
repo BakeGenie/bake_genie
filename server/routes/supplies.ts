@@ -204,51 +204,75 @@ router.post('/direct-import', async (req, res) => {
     }
     
     console.log(`DIRECT IMPORT: Received ${suppliesData.length} supplies for import`);
+    console.log('First few items:', JSON.stringify(suppliesData.slice(0, 2)));
     
     // Import each supply item directly using SQL to avoid ORM issues
     let successCount = 0;
     let errorCount = 0;
     
-    for (const supply of suppliesData) {
-      try {
-        // Ensure proper data types and defaults
-        const name = supply.name || '';
-        const supplier = supply.supplier || '';
-        const category = supply.category || '';
-        const price = typeof supply.price === 'number' ? supply.price : 0;
-        const description = supply.description || '';
-        const quantity = typeof supply.quantity === 'number' ? supply.quantity : (parseInt(supply.quantity) || 0);
-        const reorder_level = typeof supply.reorder_level === 'number' ? supply.reorder_level : (parseInt(supply.reorder_level) || 5);
-        
-        await db.execute(`
-          INSERT INTO supplies (
-            user_id, name, supplier, category, price, description, quantity, reorder_level
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8
-          )
-        `, [
-          userId,
-          name,
-          supplier,
-          category,
-          price,
-          description,
-          quantity,
-          reorder_level
-        ]);
-        
-        successCount++;
-      } catch (err) {
-        console.error(`DIRECT IMPORT: Failed to insert supply "${supply.name}":`, err);
-        errorCount++;
+    // Use a single transaction for all inserts
+    try {
+      // Start transaction
+      await db.execute('BEGIN');
+      
+      for (const supply of suppliesData) {
+        try {
+          // Ensure proper data types and defaults
+          const name = (supply.name || '').replace(/"/g, '');
+          const supplier = (supply.supplier || '').replace(/"/g, '');
+          const category = (supply.category || '').replace(/"/g, '');
+          const price = typeof supply.price === 'number' ? supply.price : 0;
+          const description = (supply.description || '').replace(/"/g, '');
+          const quantity = typeof supply.quantity === 'number' ? supply.quantity : (parseInt(supply.quantity) || 0);
+          const reorder_level = typeof supply.reorder_level === 'number' ? supply.reorder_level : (parseInt(supply.reorder_level) || 5);
+          
+          console.log(`Inserting supply: ${name}, Supplier: ${supplier}, Category: ${category}, Price: ${price}`);
+          
+          // More direct database connection to ensure it works
+          await db.execute(`
+            INSERT INTO supplies (
+              user_id, name, supplier, category, price, description, quantity, reorder_level, created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+            )
+          `, [
+            userId,
+            name,
+            supplier, 
+            category,
+            price,
+            description,
+            quantity,
+            reorder_level
+          ]);
+          
+          successCount++;
+        } catch (err) {
+          console.error(`DIRECT IMPORT: Failed to insert supply:`, err);
+          errorCount++;
+        }
       }
+      
+      // Commit transaction
+      await db.execute('COMMIT');
+      
+    } catch (txnError) {
+      // Rollback on error
+      await db.execute('ROLLBACK');
+      throw txnError;
     }
     
-    return res.json({
+    const result = {
       success: true,
       message: `Successfully imported ${successCount} supplies. ${errorCount > 0 ? `Failed to import ${errorCount} supplies.` : ''}`,
       data: { imported: successCount, failed: errorCount }
-    });
+    };
+    
+    console.log("Import complete with result:", result);
+    
+    // Respond with a plain text message to avoid JSON parsing issues
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify(result));
   } catch (error) {
     console.error('DIRECT IMPORT: Error importing supplies:', error);
     return res.status(500).json({ 
