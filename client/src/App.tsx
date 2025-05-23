@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -60,6 +60,7 @@ import StripePaymentProvider from "./pages/payment-settings/stripe";
 import SquarePaymentProvider from "./pages/payment-settings/square";
 import TippingSettings from "./pages/payment-settings/tipping";
 import PaymentSuccess from "./pages/payment-success";
+import TryTrial from "./pages/try-trial";
 
 // Import ProtectedRoute component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -74,7 +75,7 @@ function Router() {
         <Route path="/" component={LandingPage} />
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/start-trial" component={StartTrial} />
-        <Route path="/try-trial" component={React.lazy(() => import('./pages/try-trial'))} />
+        <Route path="/try-trial" component={TryTrial} />
         
         {/* Protected routes - require authentication */}
         <Route path="/dashboard">
