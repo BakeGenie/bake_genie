@@ -85,13 +85,13 @@ router.post('/api/quotes/import', async (req, res) => {
           }
         }
         
-        // Insert into quotes table with contact_id
+        // Insert into quotes table with contact_id and required fields
         const quoteInsertQuery = {
           text: `
             INSERT INTO quotes (
               user_id, contact_id, quote_number, event_type, status, total_amount, 
-              event_date, notes, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+              event_date, notes, created_at, updated_at, delivery_type, delivery_fee
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW(), $9, $10)
             RETURNING id
           `,
           values: [
@@ -102,7 +102,9 @@ router.post('/api/quotes/import', async (req, res) => {
             status, 
             amount,
             eventDate,
-            notes
+            notes,
+            'Pickup', // Default delivery type
+            '0.00'    // Default delivery fee
           ]
         };
         
