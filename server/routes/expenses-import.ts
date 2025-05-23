@@ -24,61 +24,134 @@ const router = Router();
 // Route to handle expense csv import
 router.post('/api/expenses-import', isAuthenticated, upload.single('file'), async (req, res) => {
   try {
+    console.log("Expense import API called");
+    
     if (!req.file) {
+      console.error("No file uploaded");
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
+    console.log("File uploaded:", req.file.originalname);
+    
     const userId = req.session.user?.id;
     if (!userId) {
+      console.error("User not authenticated");
       return res.status(401).json({ message: 'User not authenticated' });
     }
+    
+    console.log("User ID:", userId);
 
     const filePath = req.file.path;
+    console.log("Reading file:", filePath);
+    
+    // Make sure the uploads directory exists
+    if (!fs.existsSync('uploads/')) {
+      fs.mkdirSync('uploads/', { recursive: true });
+      console.log("Created uploads directory");
+    }
+    
+    // Check if file exists and is readable
+    try {
+      fs.accessSync(filePath, fs.constants.R_OK);
+      console.log("File exists and is readable");
+    } catch (error) {
+      console.error("File access error:", error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Could not access uploaded file', 
+        error: String(error) 
+      });
+    }
+    
     const fileContent = fs.readFileSync(filePath, 'utf8');
+    console.log("File content length:", fileContent.length);
+    console.log("First 200 chars of file:", fileContent.substring(0, 200));
     
     // Handle both standard CSV and the BakeDiary format
     let parsedData;
     let headers = [];
     
-    // Simple direct parsing approach for CSV format shown in the screenshot
-    // Headers on first line, data starts on second line
+    // Using a very simple approach that should work with any CSV format
     try {
+      console.log("Starting CSV import process");
+      console.log("File path:", filePath);
+      
+      // Get basic info about the file
       const lines = fileContent.split('\n').filter(line => line.trim());
+      console.log(`Found ${lines.length} non-empty lines in the file`);
+      
       if (lines.length < 2) {
-        throw new Error("CSV file does not have enough lines");
+        throw new Error("CSV file does not have enough lines (need at least headers and one data row)");
       }
       
-      // Get header line (first line)
-      const headerLine = lines[0]; 
-      console.log("Header line:", headerLine);
+      // Detect format: Basic check if this looks like BakeDiary format by examining first few lines
+      const firstLine = lines[0];
+      console.log("First line:", firstLine);
       
-      // Manually parse the header line to get column names
-      headers = headerLine.split(',').map(h => h.trim());
-      console.log("Extracted headers:", headers);
+      // Determine if this is a standard CSV or BakeDiary format
+      let headerLineIndex = 0; // Default to first line for headers
       
-      // Prepare data structure
+      // Check for BakeDiary format by looking for common header columns
+      // Assume first line contains columns like Date, Vendor, Category, etc.
+      const possibleHeaders = firstLine.split(',').map(h => h.trim());
+      const hasCommonHeaderNames = possibleHeaders.some(h => 
+        ['Date', 'Vendor', 'Category', 'Amount', 'Payment', 'Description'].includes(h)
+      );
+      
+      console.log("Possible headers:", possibleHeaders);
+      console.log("Has common header names:", hasCommonHeaderNames);
+      
+      if (hasCommonHeaderNames) {
+        console.log("Detected standard CSV format with headers in first line");
+        headers = possibleHeaders;
+      } else {
+        // Try to find headers based on content patterns
+        console.log("Did not detect standard headers, checking other lines");
+        
+        // Check each line for common header patterns
+        for (let i = 0; i < Math.min(lines.length, 5); i++) {
+          const lineParts = lines[i].split(',').map(h => h.trim());
+          const mightBeHeaders = lineParts.some(h => 
+            ['Date', 'Vendor', 'Category', 'Amount', 'Payment', 'Description'].includes(h)
+          );
+          
+          if (mightBeHeaders) {
+            console.log(`Found potential headers on line ${i+1}:`, lineParts);
+            headers = lineParts;
+            headerLineIndex = i;
+            break;
+          }
+        }
+        
+        if (headers.length === 0) {
+          console.log("Could not detect headers, using first line as default");
+          headers = possibleHeaders;
+        }
+      }
+      
+      console.log("Using headers:", headers);
+      
+      // Parse data starting from the line after headers
       parsedData = [];
-      
-      // Process data rows starting from line 2
-      for (let i = 1; i < lines.length; i++) {
+      for (let i = headerLineIndex + 1; i < lines.length; i++) {
         const dataLine = lines[i];
         const values = dataLine.split(',');
         
-        if (values.length !== headers.length) {
-          console.warn(`Line ${i+1} has ${values.length} values but expected ${headers.length}, skipping`);
-          continue;
-        }
-        
-        // Create object with headers as keys and values
+        // Handle case where the row has more or fewer columns than headers
         const rowData: Record<string, string> = {};
         headers.forEach((header, index) => {
           rowData[header] = values[index]?.trim() || '';
         });
         
         parsedData.push(rowData);
+        
+        // Log first row for debugging
+        if (i === headerLineIndex + 1) {
+          console.log("First data row:", rowData);
+        }
       }
       
-      console.log("Parsed data (first row):", parsedData[0]);
+      console.log(`Successfully parsed ${parsedData.length} data rows`);
     } catch (error) {
       console.error("Error parsing CSV:", error);
       throw new Error(`Failed to parse CSV: ${error.message}`);
