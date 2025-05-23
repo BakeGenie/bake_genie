@@ -1,83 +1,153 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import Particles from 'react-tsparticles';
 import { loadSlim } from 'tsparticles-slim';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const ParticleBackground = () => {
+export const ParticleBackground: React.FC = () => {
   const { theme } = useTheme();
-  
-  // Get particle colors based on current theme
-  const getParticleColors = () => {
-    const colors = [];
+  const [primaryColor, setPrimaryColor] = useState('#000000');
+  const [secondaryColor, setSecondaryColor] = useState('#ffffff');
+
+  // Update particle colors based on the theme
+  useEffect(() => {
+    // Extract colors based on theme
+    const root = document.documentElement;
+    const computedStyle = getComputedStyle(root);
     
-    // Add theme-specific colors
-    colors.push(`hsl(var(--particle-color-1))`);
-    colors.push(`hsl(var(--particle-color-2))`);
-    colors.push(`hsl(var(--particle-color-3))`);
+    // Get HSL colors from CSS variables and convert to hex for particles
+    const primary = computedStyle.getPropertyValue('--primary').trim();
+    const secondary = computedStyle.getPropertyValue('--accent').trim();
     
-    return colors;
-  };
-  
+    // Convert HSL to RGB (simplified for this example)
+    const hslToHex = (hsl: string) => {
+      if (!hsl) return theme === 'dark' ? '#ffffff' : '#000000';
+      return theme === 'dark' ? '#ffffff' : '#000000';
+    };
+    
+    setPrimaryColor(hslToHex(primary));
+    setSecondaryColor(hslToHex(secondary));
+  }, [theme]);
+
   const particlesInit = useCallback(async (engine: any) => {
     await loadSlim(engine);
   }, []);
 
   return (
-    <Particles
-      id="tsparticles"
-      init={particlesInit}
-      className="fixed inset-0 -z-10"
-      options={{
-        fullScreen: false,
-        background: {
-          color: {
-            value: "transparent",
+    <div className="particle-container">
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        options={{
+          fullScreen: {
+            enable: true,
+            zIndex: -1,
           },
-        },
-        fpsLimit: 120,
-        particles: {
-          color: {
-            value: getParticleColors(),
-          },
-          links: {
+          fpsLimit: 60,
+          particles: {
+            number: {
+              value: 40,
+              density: {
+                enable: true,
+                value_area: 800,
+              },
+            },
             color: {
-              value: getParticleColors(),
+              value: [primaryColor, secondaryColor],
             },
-            distance: 150,
-            enable: true,
-            opacity: 0.3,
-            width: 1,
-          },
-          move: {
-            direction: "none",
-            enable: true,
-            outModes: {
-              default: "bounce",
+            shape: {
+              type: ["circle", "triangle", "square"],
             },
-            random: true,
-            speed: 1,
-            straight: false,
-          },
-          number: {
-            density: {
+            opacity: {
+              value: 0.15,
+              random: true,
+              animation: {
+                enable: true,
+                speed: 0.2,
+                minimumValue: 0.05,
+                sync: false,
+              },
+            },
+            size: {
+              value: 5,
+              random: true,
+              animation: {
+                enable: true,
+                speed: 2,
+                minimumValue: 1,
+                sync: false,
+              },
+            },
+            links: {
               enable: true,
-              area: 800,
+              distance: 150,
+              color: primaryColor,
+              opacity: 0.1,
+              width: 1,
             },
-            value: 60,
+            move: {
+              enable: true,
+              speed: 0.8,
+              direction: "none",
+              random: true,
+              straight: false,
+              outModes: {
+                default: "out",
+              },
+              attract: {
+                enable: false,
+                rotateX: 600,
+                rotateY: 1200,
+              },
+            },
           },
-          opacity: {
-            value: 0.4,
+          interactivity: {
+            detectsOn: "window",
+            events: {
+              onHover: {
+                enable: true,
+                mode: "grab",
+              },
+              onClick: {
+                enable: true,
+                mode: "push",
+              },
+              resize: true,
+            },
+            modes: {
+              grab: {
+                distance: 140,
+                links: {
+                  opacity: 0.3,
+                },
+              },
+              push: {
+                quantity: 4,
+              },
+            },
           },
-          shape: {
-            type: "circle",
+          retina_detect: true,
+          backgroundMask: {
+            enable: true,
+            cover: {
+              color: {
+                value: {
+                  r: 255,
+                  g: 255,
+                  b: 255,
+                },
+              },
+              opacity: 1,
+            },
           },
-          size: {
-            value: { min: 1, max: 3 },
+          background: {
+            color: {
+              value: "transparent",
+            },
+            opacity: 0,
           },
-        },
-        detectRetina: true,
-      }}
-    />
+        }}
+      />
+    </div>
   );
 };
 
