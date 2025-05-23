@@ -90,7 +90,7 @@ const TrialBanner: React.FC = () => {
             {isLowDays && (
               <div className="mt-4">
                 <Button 
-                  onClick={() => setLocation('/plans')}
+                  onClick={() => setLocation('/manage-subscription')}
                   variant="default"
                   size="sm"
                 >
@@ -118,7 +118,7 @@ const TrialBanner: React.FC = () => {
           </div>
           <div className="mt-4">
             <Button 
-              onClick={() => setLocation('/start-trial')}
+              onClick={() => setLocation('/try-trial')}
               variant="default"
               size="sm"
             >

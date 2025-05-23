@@ -119,37 +119,60 @@ router.post('/trial/start', async (req: any, res) => {
     const userId = req.user?.id || 1; // Use ID 1 as demo user fallback
     console.log(`Starting trial for user ID: ${userId}`);
     
-    // Check if user is eligible for a trial
+    // Check if user already has an active subscription
     const existingSubscriptions = await db
-      .select({
-        id: userSubscriptions.id,
-        userId: userSubscriptions.userId,
-        trialStart: userSubscriptions.trialStart,
-        trialEnd: userSubscriptions.trialEnd
-      })
+      .select()
       .from(userSubscriptions)
       .where(eq(userSubscriptions.userId, userId));
     
-    // Check if user already had a trial
-    const hadTrial = existingSubscriptions.some(sub => 
+    // Check if user already has an active subscription or trial
+    const hasActiveSubscription = existingSubscriptions.some(sub => 
+      sub.status === 'active' || sub.status === 'trialing'
+    );
+    
+    if (hasActiveSubscription) {
+      return res.status(400).json({ 
+        error: 'You already have an active subscription or trial' 
+      });
+    }
+    
+    // Check if user already used their trial (even if it's expired)
+    const usedTrial = existingSubscriptions.some(sub => 
       sub.trialStart !== null && sub.trialEnd !== null
     );
     
-    if (hadTrial) {
+    if (usedTrial) {
       return res.status(400).json({ 
         error: 'You have already used your free trial period' 
       });
     }
     
-    // Get the standard plan from the database
-    const [standardPlan] = await db
-      .select()
-      .from(subscriptionPlans)
-      .where(eq(subscriptionPlans.name, 'Standard'));
+    // Try to find Standard plan
+    let standardPlan;
+    try {
+      [standardPlan] = await db
+        .select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.name, 'Standard'));
+    } catch (err) {
+      console.error('Error finding subscription plan:', err);
+    }
     
-    // Use a default plan if we can't find one
+    // If there's no Standard plan, try to find any plan
     if (!standardPlan) {
-      console.log('Could not find a standard subscription plan, using default values');
+      try {
+        [standardPlan] = await db
+          .select()
+          .from(subscriptionPlans)
+          .limit(1);
+      } catch (err) {
+        console.error('Error finding any subscription plan:', err);
+      }
+    }
+    
+    // If still no plan found, use hard-coded default
+    if (!standardPlan) {
+      console.log('No subscription plans found, using default values');
       standardPlan = {
         id: 1,
         name: 'Standard',
@@ -167,19 +190,29 @@ router.post('/trial/start', async (req: any, res) => {
     trialEnd.setDate(trialEnd.getDate() + 30);
     
     // Create a trial subscription
-    const [subscription] = await db
-      .insert(userSubscriptions)
-      .values({
-        userId,
-        planId: standardPlan.id,
-        planName: standardPlan.name,
-        status: 'trialing',
-        trialStart,
-        trialEnd,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
+    let subscription;
+    try {
+      [subscription] = await db
+        .insert(userSubscriptions)
+        .values({
+          userId,
+          planId: standardPlan.id,
+          planName: standardPlan.name,
+          status: 'trialing',
+          trialStart,
+          trialEnd,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log('Trial subscription created:', subscription);
+    } catch (insertError) {
+      console.error('Error inserting trial subscription:', insertError);
+      return res.status(500).json({ 
+        error: 'Database error when creating trial subscription' 
+      });
+    }
     
     // Return trial info
     return res.json({
@@ -193,7 +226,10 @@ router.post('/trial/start', async (req: any, res) => {
     
   } catch (error) {
     console.error('Error starting trial:', error);
-    res.status(500).json({ error: 'Failed to start free trial' });
+    res.status(500).json({ 
+      error: 'Failed to start free trial', 
+      details: error.message 
+    });
   }
 });
 
