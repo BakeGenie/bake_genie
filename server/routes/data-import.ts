@@ -145,7 +145,7 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
       business_name: ['Supplier Name']
     };
     
-    // Function to find the best matching header for a database field
+    // Function to find the best matching header for a database field with Bake Diary's format
     function findHeaderMatch(headers: string[], databaseField: string): string | null {
       const possibleMatches = headerMap[databaseField as keyof typeof headerMap] || [];
       
@@ -157,27 +157,36 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
         }
       }
       
-      // Try case-insensitive matching
+      // Try case-insensitive and trimmed matching (Bake Diary may have spaces)
       for (const header of headers) {
+        const trimmedHeader = header.trim();
         for (const match of possibleMatches) {
-          if (header.toLowerCase() === match.toLowerCase()) {
+          // Try exact match with trimmed header
+          if (trimmedHeader === match) {
+            console.log(`Found trimmed match for ${databaseField}: ${header}`);
+            return header;
+          }
+          
+          // Try case-insensitive match with trimmed header
+          if (trimmedHeader.toLowerCase() === match.toLowerCase()) {
             console.log(`Found case-insensitive match for ${databaseField}: ${header}`);
             return header;
           }
         }
       }
       
+      console.log(`No match found for ${databaseField}`);
       return null;
     }
     
     // Create a mapping from database fields to the actual CSV headers
     const fieldMapping: Record<string, string | null> = {
+      type: findHeaderMatch(csvHeaders, 'type'),
       first_name: findHeaderMatch(csvHeaders, 'first_name'),
       last_name: findHeaderMatch(csvHeaders, 'last_name'),
       business_name: findHeaderMatch(csvHeaders, 'business_name'),
       email: findHeaderMatch(csvHeaders, 'email'),
-      phone: findHeaderMatch(csvHeaders, 'phone'),
-      address: findHeaderMatch(csvHeaders, 'address')
+      phone: findHeaderMatch(csvHeaders, 'phone')
     };
     
     console.log("Field mapping between CSV and database:", fieldMapping);
