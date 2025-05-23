@@ -71,30 +71,29 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
     const fileContent = fs.readFileSync(filePath, 'utf8');
     console.log(`File loaded, ${fileContent.length} characters`);
     
-    // Split into lines
-    const lines = fileContent.split('\n');
-    console.log(`File has ${lines.length} lines`);
+    // Split into lines - filter out empty lines
+    const lines = fileContent.split('\n').filter(line => line.trim());
+    console.log(`File has ${lines.length} non-empty lines`);
     
     if (lines.length < 2) {
       throw new Error("CSV file must have at least a header line and one data line");
     }
     
-    // Parse headers (first line)
-    const headerLine = lines[0];
+    // Determine header line - typically first line
+    // But for Bake Diary exports, it might be line 3 after title and blank line
+    let headerLineIndex = 0;
+    
+    // Parse headers
+    const headerLine = lines[headerLineIndex];
     const headers = parseCSVLine(headerLine);
     console.log("Headers:", headers);
     
-    // Process data rows (starting from line 2)
+    // Process data rows (starting from line after header)
     const expenses = [];
     
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) {
-        continue; // Skip empty lines
-      }
-      
+    for (let i = headerLineIndex + 1; i < lines.length; i++) {
       // Parse CSV line
       const values = parseCSVLine(lines[i]);
-      console.log(`Line ${i+1} has ${values.length} values:`, values);
       
       // Skip rows with too few values
       if (values.length < 3) {
@@ -102,7 +101,7 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
         continue;
       }
       
-      // Create expense object
+      // Create expense object with defaults
       const expense = {
         user_id: userId,
         date: new Date().toISOString().split('T')[0], // Default to today
@@ -127,68 +126,70 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
             value = value.substring(1, value.length - 1);
           }
           
-          // Map fields appropriately
-          switch(header.trim()) {
-            case 'Date':
-              // Handle date format "DD MMM YYYY" (e.g., "11 Jan 2025")
-              const dateParts = value.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
-              if (dateParts) {
-                const day = dateParts[1].padStart(2, '0');
-                const month = dateParts[2];
-                const year = dateParts[3];
-                
-                // Map month name to number
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const monthIndex = monthNames.findIndex(m => 
-                                  m.toLowerCase() === month.toLowerCase());
-                
-                if (monthIndex !== -1) {
-                  const monthNum = (monthIndex + 1).toString().padStart(2, '0');
-                  expense.date = `${year}-${monthNum}-${day}`;
-                  console.log(`Parsed date "${value}" to "${expense.date}"`);
-                }
+          // Map fields appropriately based on column header
+          const cleanHeader = header.trim();
+          
+          if (cleanHeader === 'Date') {
+            // Handle date format "DD MMM YYYY" (e.g., "11 Jan 2025")
+            const dateParts = value.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+            if (dateParts) {
+              const day = dateParts[1].padStart(2, '0');
+              const month = dateParts[2];
+              const year = dateParts[3];
+              
+              // Map month name to number
+              const monthMap = {
+                'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+                'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+              };
+              
+              const monthNum = monthMap[month.toLowerCase()];
+              if (monthNum) {
+                expense.date = `${year}-${monthNum}-${day}`;
+                console.log(`Parsed date "${value}" to "${expense.date}"`);
+              } else {
+                console.log(`Could not parse month in date: ${value}, using default`);
               }
-              break;
-              
-            case 'Description':
-              expense.description = value;
-              break;
-              
-            case 'Category':
-              expense.category = value;
-              break;
-              
-            case 'Amount (Incl VAT)': 
-            case 'Amount':
-              // Clean up amount: remove currency symbols and convert to number
-              const cleanAmount = value.replace(/[$£€]/g, '').trim();
-              expense.amount = (parseFloat(cleanAmount) || 0).toString();
-              
-              // If we have the "Amount (Incl VAT)", also set total_inc_tax to the same value
-              if (header.trim() === 'Amount (Incl VAT)') {
-                expense.total_inc_tax = expense.amount;
-              }
-              break;
-              
-            case 'Vendor':
-              expense.supplier = value;
-              break;
-              
-            case 'Payment':
-              expense.payment_source = value;
-              break;
-              
-            case 'VAT':
-              // Clean up VAT value
-              const cleanVat = value.replace(/[$£€]/g, '').trim();
-              expense.vat = (parseFloat(cleanVat) || 0).toString();
-              break;
+            } else {
+              console.log(`Date format not recognized: ${value}, using default`);
+            }
+          } 
+          else if (cleanHeader === 'Description') {
+            expense.description = value;
+          }
+          else if (cleanHeader === 'Category') {
+            expense.category = value;
+          }
+          else if (cleanHeader === 'Amount (Incl VAT)' || cleanHeader === 'Amount') {
+            // Clean up amount: remove currency symbols and convert to number
+            const cleanAmount = value.replace(/[^0-9.]/g, '').trim();
+            expense.amount = cleanAmount || '0';
+            expense.total_inc_tax = cleanAmount || '0';
+          }
+          else if (cleanHeader === 'Vendor') {
+            expense.supplier = value;
+          }
+          else if (cleanHeader === 'Payment') {
+            expense.payment_source = value;
+          }
+          else if (cleanHeader === 'VAT') {
+            // Clean up VAT value - keep only numbers and decimal point
+            const cleanVat = value.replace(/[^0-9.]/g, '').trim();
+            expense.vat = cleanVat || '0';
           }
         }
       });
       
-      console.log("Processed expense:", expense);
+      // If amount is not set but total_inc_tax is, use that value
+      if (expense.amount === '0' && expense.total_inc_tax !== '0') {
+        expense.amount = expense.total_inc_tax;
+      }
+      
+      // If total_inc_tax is not set but amount is, use that value
+      if (expense.total_inc_tax === '0' && expense.amount !== '0') {
+        expense.total_inc_tax = expense.amount;
+      }
+      
       expenses.push(expense);
     }
     
@@ -202,6 +203,27 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
     // Insert expenses into database
     const results = [];
     
+    // Make sure the expenses table exists with the correct schema
+    try {
+      await db.query(`
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT FROM pg_type WHERE typname = 'expenses_tax_deductible_check'
+          ) THEN
+            ALTER TABLE expenses ALTER COLUMN tax_deductible SET DEFAULT false;
+            ALTER TABLE expenses ALTER COLUMN is_recurring SET DEFAULT false;
+            ALTER TABLE expenses ALTER COLUMN vat SET DEFAULT '0';
+            ALTER TABLE expenses ALTER COLUMN total_inc_tax SET DEFAULT '0';
+          END IF;
+        END
+        $$;
+      `);
+      console.log("Database schema check/update successful");
+    } catch (err) {
+      console.warn("Error checking/updating database schema:", err);
+    }
+    
     for (const expense of expenses) {
       try {
         // Insert using direct SQL query
@@ -210,31 +232,67 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
             user_id, date, description, category, amount, supplier, 
             payment_source, vat, total_inc_tax, tax_deductible, is_recurring
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+            $1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11
           ) RETURNING *
         `;
         
+        // Generate date in a format PostgreSQL can interpret
+        let dateValue = expense.date;
+        try {
+          // If date is not in ISO format, make sure to explicitly cast it
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(expense.date)) {
+            const parts = expense.date.split('-');
+            if (parts.length === 3) {
+              dateValue = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+            }
+          }
+        } catch (err) {
+          console.error("Date parsing error:", err);
+          // Fall back to today's date
+          dateValue = new Date().toISOString().split('T')[0];
+        }
+        
         const values = [
           expense.user_id,
-          expense.date,
+          dateValue,
           expense.description || '', // Ensure no null values
           expense.category || '',
-          expense.amount,
+          expense.amount || '0',
           expense.supplier || '',
           expense.payment_source || '',
-          expense.vat,
-          expense.total_inc_tax,
-          expense.tax_deductible || false,
-          expense.is_recurring || false
+          expense.vat || '0',
+          expense.total_inc_tax || '0',
+          false, // Default tax_deductible to false
+          false  // Default is_recurring to false
         ];
         
         console.log(`Inserting expense with values:`, values);
         
-        const result = await db.query(query, values);
-        console.log("Insert result:", result.rows[0]);
-        results.push(result.rows[0]);
+        try {
+          const result = await db.query(query, values);
+          console.log("Insert result:", result.rows[0]);
+          results.push(result.rows[0]);
+        } catch (err) {
+          console.error(`Error executing query:`, err);
+          // Try a different query with more explicit type casting
+          try {
+            const backupQuery = `
+              INSERT INTO expenses (
+                user_id, date, description, category, amount, supplier, 
+                payment_source, vat, total_inc_tax, tax_deductible, is_recurring
+              ) VALUES (
+                $1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11
+              ) RETURNING *
+            `;
+            const backupResult = await db.query(backupQuery, values);
+            console.log("Backup insert successful:", backupResult.rows[0]);
+            results.push(backupResult.rows[0]);
+          } catch (fallbackErr) {
+            console.error(`Fallback insert also failed:`, fallbackErr);
+          }
+        }
       } catch (err) {
-        console.error(`Error inserting expense:`, err);
+        console.error(`Error processing expense:`, err);
       }
     }
     
