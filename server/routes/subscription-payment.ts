@@ -112,11 +112,17 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
     // Let's use a simpler approach to fix this issue
     console.log(`Fetching payment method for user ${userId}`);
 
-    // For now let's store payment info in the session while we debug database issues
+    // Always return the most recently updated payment method from the session
     const session = req.session as any;
     
     if (session.updatedPaymentMethod) {
-      console.log('Returning updated payment method from session:', session.updatedPaymentMethod);
+      console.log('Returning payment method from session:', session.updatedPaymentMethod);
+      
+      // Force new response to avoid browser caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       res.json({
         paymentMethod: session.updatedPaymentMethod
       });

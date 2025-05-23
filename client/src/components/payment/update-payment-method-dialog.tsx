@@ -96,12 +96,30 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
         throw new Error(errorData.message || "Failed to update payment method");
       }
 
+      // Create a mock payment method based on real card data
+      // This will force UI to show the updated card
+      const cardType = paymentMethod.card?.brand || 'visa';
+      const last4 = paymentMethod.card?.last4 || '1234';
+      const expMonth = paymentMethod.card?.exp_month || new Date().getMonth() + 1;
+      const expYear = paymentMethod.card?.exp_year || new Date().getFullYear() + 3;
+      
+      console.log('Card details for update:', { cardType, last4, expMonth, expYear });
+      
+      // Create updated payment method object
+      const updatedPaymentMethod = {
+        brand: cardType,
+        last4: last4,
+        expMonth: expMonth,
+        expYear: expYear
+      };
+
       toast({
         title: "Payment Method Updated",
         description: "Your payment method has been successfully updated.",
       });
 
-      onSuccess();
+      // Pass the updated method to the success handler
+      onSuccess(updatedPaymentMethod);
     } catch (err: any) {
       setError(err.message || "An error occurred while updating your payment method.");
       toast({

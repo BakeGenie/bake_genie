@@ -116,8 +116,19 @@ export default function ManageSubscription() {
     setIsUpdatePaymentDialogOpen(true);
   };
   
-  const handlePaymentMethodUpdated = () => {
+  // State to override the fetched payment method data
+  const [localPaymentMethod, setLocalPaymentMethod] = useState<PaymentMethod | null>(null);
+  
+  // Updated to handle the new payment method information
+  const handlePaymentMethodUpdated = (updatedMethod?: any) => {
+    // If we received updated method details, store them locally 
+    if (updatedMethod) {
+      setLocalPaymentMethod(updatedMethod);
+    }
+    
+    // Refresh data from server
     refetchPaymentMethod();
+    
     toast({
       title: "Payment Method Updated",
       description: "Your payment information has been successfully updated.",
