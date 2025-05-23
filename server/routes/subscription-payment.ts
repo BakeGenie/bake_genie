@@ -77,22 +77,16 @@ router.post("/update-payment-method", requireAuth, async (req: Request, res: Res
     };
     
     try {
-      // Use payment method ID to determine more specific card details
-      // In a real implementation, this would come from Stripe API
-      // For testing, let's generate different card numbers based on the payment method ID
-      if (paymentMethodId.includes("R6Ik")) {
-        // Special test case with a specific ID suffix
-        last4 = "0572";
-      } else if (paymentMethodId.includes("BB5T") || paymentMethodId.includes("master")) {
-        brand = "mastercard";
-        last4 = "5555";
-      } else if (paymentMethodId.includes("auv9") || paymentMethodId.includes("amex")) {
-        brand = "amex";
-        last4 = "0005";
-      } else if (paymentMethodId.includes("disc")) {
-        brand = "discover";
-        last4 = "6789";
-      }
+      // Extract card details from the request body
+    const { cardType, last4: cardLast4, expMonth: cardExpMonth, expYear: cardExpYear } = req.body;
+    
+    // Update with the actual card details if provided
+    let updatedBrand = cardType || brand;
+    let updatedLast4 = cardLast4 || last4;
+    let updatedExpMonth = cardExpMonth || expMonth;
+    let updatedExpYear = cardExpYear || expYear;
+    
+    console.log(`Using card details from request: ${updatedBrand} **** ${updatedLast4}, expires ${updatedExpMonth}/${updatedExpYear}`);
       
       // Save payment method to database
       // First, check if user already has a payment method
@@ -105,39 +99,39 @@ router.post("/update-payment-method", requireAuth, async (req: Request, res: Res
         await db.update(paymentMethods)
           .set({
             paymentMethodId: paymentMethodId,
-            brand: brand,
-            last4: last4,
-            expMonth: expMonth,
-            expYear: expYear,
+            brand: updatedBrand,
+            last4: updatedLast4,
+            expMonth: updatedExpMonth,
+            expYear: updatedExpYear,
           })
           .where(eq(paymentMethods.userId, Number(userId)));
         
-        console.log(`Updated existing payment method for user ${userId} with last4: ${last4}`);
+        console.log(`Updated existing payment method for user ${userId} with last4: ${updatedLast4}`);
       } else {
         // Create new payment method
         await db.insert(paymentMethods)
           .values({
             userId: Number(userId),
             paymentMethodId: paymentMethodId,
-            brand: brand,
-            last4: last4,
-            expMonth: expMonth,
-            expYear: expYear,
+            brand: updatedBrand,
+            last4: updatedLast4,
+            expMonth: updatedExpMonth,
+            expYear: updatedExpYear,
             isDefault: true
           });
         
-        console.log(`Created new payment method for user ${userId} with last4: ${last4}`);
+        console.log(`Created new payment method for user ${userId} with last4: ${updatedLast4}`);
       }
       
       // Also store in session for immediate access
       const session = req.session as any;
       
-      // Create the updated payment method object
+      // Create the updated payment method object with the correct values
       const updatedPaymentMethod = {
-        brand,
-        last4,
-        expMonth,
-        expYear
+        brand: updatedBrand,
+        last4: updatedLast4,
+        expMonth: updatedExpMonth,
+        expYear: updatedExpYear
       };
       
       // Update session with the correct data
@@ -220,6 +214,9 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      
+      // Add a timestamp to prevent client caching
+      res.setHeader('X-Timestamp', Date.now().toString());
       
       return res.json({
         paymentMethod: session.updatedPaymentMethod

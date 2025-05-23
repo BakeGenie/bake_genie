@@ -82,13 +82,26 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
         throw new Error("Failed to create payment method");
       }
 
-      // Send the payment method to the server
+      // Get card details from the Stripe payment method
+      const cardDetails = {
+        cardType: paymentMethod.card?.brand || 'visa',
+        last4: paymentMethod.card?.last4 || '1234',
+        expMonth: paymentMethod.card?.exp_month || new Date().getMonth() + 1,
+        expYear: paymentMethod.card?.exp_year || new Date().getFullYear() + 3
+      };
+      
+      console.log('Card details for update:', cardDetails);
+
+      // Send the payment method AND card details to the server
       const response = await fetch("/api/subscription/update-payment-method", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ paymentMethodId: paymentMethod.id })
+        body: JSON.stringify({ 
+          paymentMethodId: paymentMethod.id,
+          ...cardDetails
+        })
       });
 
       if (!response.ok) {
@@ -96,21 +109,15 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
         throw new Error(errorData.message || "Failed to update payment method");
       }
 
-      // Create a mock payment method based on real card data
-      // This will force UI to show the updated card
-      const cardType = paymentMethod.card?.brand || 'visa';
-      const last4 = paymentMethod.card?.last4 || '1234';
-      const expMonth = paymentMethod.card?.exp_month || new Date().getMonth() + 1;
-      const expYear = paymentMethod.card?.exp_year || new Date().getFullYear() + 3;
-      
-      console.log('Card details for update:', { cardType, last4, expMonth, expYear });
+      // The card details have already been extracted above
+      console.log('Card details for update:', cardDetails);
       
       // Create updated payment method object
       const updatedPaymentMethod = {
-        brand: cardType,
-        last4: last4,
-        expMonth: expMonth,
-        expYear: expYear
+        brand: cardDetails.cardType,
+        last4: cardDetails.last4,
+        expMonth: cardDetails.expMonth,
+        expYear: cardDetails.expYear
       };
 
       toast({
@@ -118,8 +125,8 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
         description: "Your payment method has been successfully updated.",
       });
 
-      // Pass the updated method to the success handler
-      onSuccess(updatedPaymentMethod);
+      // Call the success handler
+      onSuccess();
     } catch (err: any) {
       setError(err.message || "An error occurred while updating your payment method.");
       toast({
