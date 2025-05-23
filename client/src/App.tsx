@@ -1,12 +1,6 @@
 import React from 'react';
 import { Route, Switch } from 'wouter';
-import Dashboard from '@/pages/dashboard';
-import Calendar from '@/pages/calendar';
-import Orders from '@/pages/orders';
-import Contacts from '@/pages/contacts';
-import Products from '@/pages/products';
-import Expenses from '@/pages/expenses';
-import DataImportExport from '@/pages/data-import-export';
+import SimpleDashboard from '@/pages/simple-dashboard';
 import Layout from '@/components/enhanced-layout/Layout';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -17,13 +11,13 @@ function App() {
     <div className={`app theme-${theme}`}>
       <Layout>
         <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/calendar" component={Calendar} />
-          <Route path="/orders" component={Orders} />
-          <Route path="/contacts" component={Contacts} />
-          <Route path="/products" component={Products} />
-          <Route path="/expenses" component={Expenses} />
-          <Route path="/data-import-export" component={DataImportExport} />
+          <Route path="/" component={SimpleDashboard} />
+          <Route path="/calendar" component={SimpleDashboard} />
+          <Route path="/orders" component={SimpleDashboard} />
+          <Route path="/contacts" component={SimpleDashboard} />
+          <Route path="/products" component={SimpleDashboard} />
+          <Route path="/expenses" component={SimpleDashboard} />
+          <Route path="/data-import-export" component={SimpleDashboard} />
           {/* Fallback route for 404 */}
           <Route>
             <div className="flex items-center justify-center min-h-[50vh]">
