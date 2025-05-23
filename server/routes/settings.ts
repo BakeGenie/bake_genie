@@ -18,46 +18,67 @@ router.patch("/templates", async (req: Request, res: Response) => {
       enquiryMessageTemplate 
     } = req.body;
     
-    // Create a clean update with just the template fields
-    const updateData: Record<string, any> = {};
-    
-    // Only add defined fields to avoid null overwrites
-    if (quoteEmailTemplate !== undefined) {
-      updateData.quote_email_template = quoteEmailTemplate;
-    }
-    if (invoiceEmailTemplate !== undefined) {
-      updateData.invoice_email_template = invoiceEmailTemplate;
-    }
-    if (paymentReminderTemplate !== undefined) {
-      updateData.payment_reminder_template = paymentReminderTemplate;
-    }
-    if (paymentReceiptTemplate !== undefined) {
-      updateData.payment_receipt_template = paymentReceiptTemplate;
-    }
-    if (enquiryMessageTemplate !== undefined) {
-      updateData.enquiry_message_template = enquiryMessageTemplate;
-    }
-    
-    // Execute SQL directly to avoid ORM date conversion issues
-    console.log("Updating templates with:", updateData);
-    
-    // Build SQL dynamically based on the fields to update
-    const fieldUpdates = Object.entries(updateData)
-      .map(([field, value]) => `${field} = '${value?.replace(/'/g, "''")}'`)
-      .join(", ");
-    
-    if (!fieldUpdates) {
+    // Check if we have any data to update
+    if (!quoteEmailTemplate && 
+        !invoiceEmailTemplate && 
+        !paymentReminderTemplate && 
+        !paymentReceiptTemplate && 
+        !enquiryMessageTemplate) {
       return res.status(400).json({ error: "No template data provided" });
     }
+      
+    // Get the current settings record first
+    const [currentSettings] = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.userId, userId));
+      
+    if (!currentSettings) {
+      return res.status(404).json({ error: "Settings not found" });
+    }
     
-    const sql = `
-      UPDATE settings 
-      SET ${fieldUpdates}, updated_at = NOW() 
-      WHERE user_id = ${userId} 
+    // Build update object with proper camelCase to snake_case conversion
+    // Only update fields that were provided in the request
+    const updateObject: any = {
+      updated_at: new Date()
+    };
+    
+    if (quoteEmailTemplate !== undefined) {
+      updateObject.quoteEmailTemplate = quoteEmailTemplate;
+    }
+    if (invoiceEmailTemplate !== undefined) {
+      updateObject.invoiceEmailTemplate = invoiceEmailTemplate;
+    }
+    if (paymentReminderTemplate !== undefined) {
+      updateObject.paymentReminderTemplate = paymentReminderTemplate;
+    }
+    if (paymentReceiptTemplate !== undefined) {
+      updateObject.paymentReceiptTemplate = paymentReceiptTemplate;
+    }
+    if (enquiryMessageTemplate !== undefined) {
+      updateObject.enquiryMessageTemplate = enquiryMessageTemplate;
+    }
+    
+    // Execute SQL directly to avoid date issues
+    const result = await db.execute(`
+      UPDATE settings
+      SET 
+        quote_email_template = $1,
+        invoice_email_template = $2,
+        payment_reminder_template = $3,
+        payment_receipt_template = $4,
+        enquiry_message_template = $5,
+        updated_at = NOW()
+      WHERE user_id = $6
       RETURNING *;
-    `;
-    
-    const result = await db.execute(sql);
+    `, [
+      quoteEmailTemplate !== undefined ? quoteEmailTemplate : currentSettings.quoteEmailTemplate,
+      invoiceEmailTemplate !== undefined ? invoiceEmailTemplate : currentSettings.invoiceEmailTemplate,
+      paymentReminderTemplate !== undefined ? paymentReminderTemplate : currentSettings.paymentReminderTemplate,
+      paymentReceiptTemplate !== undefined ? paymentReceiptTemplate : currentSettings.paymentReceiptTemplate,
+      enquiryMessageTemplate !== undefined ? enquiryMessageTemplate : currentSettings.enquiryMessageTemplate,
+      userId
+    ]);
     
     return res.json({ success: true, data: result });
   } catch (error) {

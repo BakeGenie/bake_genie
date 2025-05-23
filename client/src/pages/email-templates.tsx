@@ -190,7 +190,6 @@ export default function EmailTemplates() {
         toast({
           title: "Templates Saved",
           description: "Your email templates have been saved successfully.",
-          variant: "success",
         });
       })
       .catch(error => {
