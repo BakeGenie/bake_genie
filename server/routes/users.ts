@@ -70,6 +70,11 @@ router.patch('/profile', async (req: Request, res: Response) => {
       country
     } = req.body;
 
+    // Basic validation
+    if (!firstName || !lastName || !email) {
+      return res.status(400).json({ error: 'First name, last name, and email are required' });
+    }
+
     // Check if user exists before update
     const userResult = await pool.query(
       `SELECT * FROM users WHERE id = $1`,
@@ -123,7 +128,16 @@ router.patch('/profile', async (req: Request, res: Response) => {
       throw new Error('Failed to update user profile - no rows returned');
     }
 
-    console.log('User profile updated successfully:', updatedUser);
+    console.log('User profile updated successfully!');
+    console.log('Business info updated:', {
+      businessName: updatedUser.businessName,
+      address: updatedUser.address,
+      city: updatedUser.city,
+      state: updatedUser.state,
+      zip: updatedUser.zip,
+      country: updatedUser.country
+    });
+    
     res.json(updatedUser);
   } catch (error: any) {
     console.error('Error updating user profile:', error);

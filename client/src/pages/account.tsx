@@ -160,6 +160,7 @@ const Account = () => {
   // Update profile form values when data is fetched
   useEffect(() => {
     if (userData) {
+      console.log("Loading user data into profile form:", userData);
       profileForm.reset({
         firstName: userData.firstName || "",
         lastName: userData.lastName || "",
