@@ -52,12 +52,15 @@ export default function SuppliesImport() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Supplies specific field mappings - using camelCase for database fields
+  // Supplies specific field mappings - these match exactly to database fields
   const mappings = {
     "name": "Supplies",
-    "supplier": "Supplier",
+    "supplier": "Supplier", 
     "category": "Category",
-    "price": "Item Price"
+    "price": "Item Price",
+    "quantity": "Quantity",
+    "reorder_level": "Reorder Level",
+    "description": "Description"
   };
 
   const handleFileSelect = () => {

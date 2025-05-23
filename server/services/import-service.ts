@@ -40,7 +40,7 @@ class ImportService {
           price: supply.price || null,
           description: supply.description || '',
           quantity: supply.quantity || 0,
-          reorder_level: supply.reorderLevel || 5
+          reorder_level: supply.reorder_level || 5 // Use the exact field name that matches database
         };
       });
       
