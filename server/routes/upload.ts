@@ -79,10 +79,17 @@ router.post("/receipt", upload.single("receipt"), async (req: Request, res: Resp
     const receiptUrl = `/uploads/${filename}`;
     
     // Return the receipt URL
-    return res.status(200).json({ url: receiptUrl });
+    return res.status(200).json({ 
+      success: true,
+      url: receiptUrl,
+      filename: filename
+    });
   } catch (error) {
     console.error("Error uploading receipt:", error);
-    return res.status(500).json({ error: "Failed to upload receipt" });
+    return res.status(500).json({ 
+      success: false,
+      error: "Failed to upload receipt" 
+    });
   }
 });
 

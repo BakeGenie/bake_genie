@@ -318,7 +318,11 @@ const ExpensesPage = () => {
           }
           
           const uploadResult = await uploadResponse.json();
-          receiptUrl = uploadResult.url;
+          if (uploadResult.success) {
+            receiptUrl = uploadResult.url;
+          } else {
+            throw new Error(uploadResult.error || "Upload failed");
+          }
           console.log("Receipt uploaded successfully:", receiptUrl);
         } catch (uploadError) {
           console.error("Receipt upload error:", uploadError);
