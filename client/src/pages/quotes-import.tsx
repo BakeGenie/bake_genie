@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/hooks/use-user';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +12,12 @@ import { AlertCircle, CheckCircle2, Upload, FileUp, ArrowLeft } from 'lucide-rea
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { apiRequest } from '@/lib/queryClient';
-import SEO from '@/components/SEO';
+
 
 export default function QuotesImport() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useUser();
+  const userId = 1; // Default user ID
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -138,7 +137,7 @@ export default function QuotesImport() {
       const response = await apiRequest('POST', '/api/quotes-import/import', {
         filePath,
         columnMapping,
-        userId: user?.id,
+        userId: userId,
       });
 
       if (!response.ok) {
