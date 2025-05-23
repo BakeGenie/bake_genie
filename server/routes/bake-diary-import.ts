@@ -40,7 +40,7 @@ router.post('/api/expenses/bake-diary/import', async (req, res) => {
         
         const values = [
           req.user?.id || 1, // user_id
-          item.date || new Date().toISOString().split('T')[0], // date
+          item.date || new Date().toISOString().split('T')[0], // Keep original date format as database expects
           item.category || 'Other', // category
           item.description || '', // description
           item.amount || '0', // amount
