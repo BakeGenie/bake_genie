@@ -292,6 +292,11 @@ function Router() {
             <RecipesImport />
           </ProtectedRoute>
         </Route>
+        <Route path="/expenses-import">
+          <ProtectedRoute>
+            <ExpensesImport />
+          </ProtectedRoute>
+        </Route>
         <Route path="/integrations">
           <ProtectedRoute>
             <Integrations />

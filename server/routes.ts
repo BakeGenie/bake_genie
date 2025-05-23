@@ -30,6 +30,7 @@ import suppliesRouter from "./routes/supplies";
 import usersRouter from "./routes/users";
 import recipesRouter from "./routes/recipes";
 import expensesRouter from "./routes/expenses";
+import expensesImportRouter from "./routes/expenses-import";
 import incomeRouter from "./routes/income";
 import mileageRouter from "./routes/mileage";
 import orderTasksRouter from "./routes/order-tasks";
@@ -115,6 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register expenses routes
   app.use('/api/expenses', expensesRouter);
+  app.use(expensesImportRouter);
   
   // Register income routes
   app.use('/api/income', incomeRouter);
