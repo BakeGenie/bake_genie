@@ -21,6 +21,8 @@ import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct
 import orderLogsRouter from "./routes/order-logs";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
+import { registerExportRoutes } from "./routes/export";
+import { registerDataImportRoutes } from "./routes/data-import";
 import enquiriesRouter from "./routes/enquiries";
 import tasksRouter from "./routes/tasks";
 import ingredientsRouter from "./routes/ingredients";
@@ -144,6 +146,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const importRouter = Router();
   registerImportRoutes(importRouter);
   app.use(importRouter);
+  
+  // Register export routes
+  const exportRouter = Router();
+  registerExportRoutes(exportRouter);
+  app.use(exportRouter);
+  
+  // Register general data import routes
+  const dataImportRouter = Router();
+  registerDataImportRoutes(dataImportRouter);
+  app.use(dataImportRouter);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)

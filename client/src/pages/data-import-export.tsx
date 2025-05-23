@@ -64,7 +64,7 @@ export default function DataImportExport() {
     }
   };
 
-  // Handle import submission
+  // Handle import submission with improved feedback and error handling
   const handleImport = async () => {
     if (!importFile) {
       toast({
@@ -81,6 +81,12 @@ export default function DataImportExport() {
     setImportError("");
 
     try {
+      // Show initial toast to indicate import has started
+      toast({
+        title: "Import started",
+        description: "Your data import is being processed...",
+      });
+
       const formData = new FormData();
       formData.append("file", importFile);
       
@@ -89,37 +95,81 @@ export default function DataImportExport() {
         formData.append(key, value.toString());
       });
 
+      // Check file size (client-side validation)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (importFile.size > maxSize) {
+        throw new Error(`File is too large. Maximum size is ${maxSize / (1024 * 1024)}MB`);
+      }
+
       const response = await fetch("/api/data/import", {
         method: "POST",
         body: formData,
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Import failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
       const result = await response.json();
 
       if (result.success) {
         setImportSuccess(true);
-        setImportMessage("Data imported successfully!");
-        // Format summary message
+        
+        // Format summary message with better formatting for display
         if (result.result && result.result.summary) {
           const summary = result.result.summary;
-          let summaryMessage = "Import summary:\n";
+          let summaryMessage = "Import Summary:\n\n";
+          let totalImported = 0;
+          let totalErrors = 0;
           
           Object.entries(summary).forEach(([key, value]: [string, any]) => {
             if (value.imported > 0 || value.errors > 0) {
-              summaryMessage += `- ${key}: ${value.imported} imported, ${value.errors} errors\n`;
+              const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+              summaryMessage += `• ${formattedKey}: ${value.imported} imported`;
+              
+              if (value.errors > 0) {
+                summaryMessage += `, ${value.errors} errors`;
+              }
+              
+              summaryMessage += "\n";
+              totalImported += value.imported;
+              totalErrors += value.errors;
             }
           });
           
+          // Add a summary line at the top
+          summaryMessage = `Successfully imported ${totalImported} items with ${totalErrors} errors.\n\n` + summaryMessage;
+          
           setImportMessage(summaryMessage);
+        } else {
+          setImportMessage("Data imported successfully!");
         }
+        
+        toast({
+          title: "Import completed successfully",
+          description: `Imported data from "${importFile.name}"`,
+        });
       } else {
         setImportSuccess(false);
         setImportError(result.error || "Unknown error occurred");
+        
+        toast({
+          title: "Import failed",
+          description: result.error || "An error occurred during import",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      setImportSuccess(false);
-      setImportError("Failed to import data. Please try again.");
       console.error("Import error:", error);
+      setImportSuccess(false);
+      setImportError(error instanceof Error ? error.message : "Failed to import data. Please try again.");
+      
+      toast({
+        title: "Import failed",
+        description: error instanceof Error ? error.message : "Failed to import data",
+        variant: "destructive",
+      });
     } finally {
       setIsImporting(false);
     }
@@ -210,7 +260,7 @@ export default function DataImportExport() {
     }
   };
 
-  // Handle export - simplified approach
+  // Handle export with improved error handling and progress feedback
   const handleExport = async () => {
     setIsExporting(true);
 
@@ -218,29 +268,50 @@ export default function DataImportExport() {
       // Create filename with proper extension
       const appName = "bakegenie";
       const fileExtension = exportType === "all" ? "json" : "csv";
-      const filename = `${appName}-export-${exportType}-${new Date().toISOString().slice(0, 10)}.${fileExtension}`;
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `${appName}-export-${exportType}-${timestamp}.${fileExtension}`;
       
-      // Create direct download link
-      const downloadLink = document.createElement('a');
-      downloadLink.href = exportType === "all" 
+      // Create download URL
+      const downloadUrl = exportType === "all" 
         ? `/api/data/export?filename=${filename}` 
         : `/api/data/export/${exportType}?filename=${filename}`;
-        
-      // Force download by opening in new tab (browsers handle this as download for non-HTML content)
-      downloadLink.target = '_blank';
-      downloadLink.click();
-
+      
       toast({
         title: "Export started",
-        description: "Your data export has started. The file will download automatically.",
+        description: "Your data export is being prepared...",
+      });
+      
+      // Fetch the export data - this will trigger the download
+      const response = await fetch(downloadUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Export failed with status: ${response.status}`);
+      }
+      
+      // Get the response as blob
+      const blob = await response.blob();
+      
+      // Create object URL and download link
+      const objectUrl = window.URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = objectUrl;
+      downloadLink.download = filename;
+      downloadLink.click();
+      
+      // Clean up the object URL
+      window.URL.revokeObjectURL(objectUrl);
+
+      toast({
+        title: "Export complete",
+        description: `Your ${exportType === "all" ? "data" : exportType} has been exported successfully.`,
       });
     } catch (error) {
+      console.error("Export error:", error);
       toast({
         title: "Export failed",
-        description: "Failed to export data. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to export data. Please try again.",
         variant: "destructive",
       });
-      console.error("Export error:", error);
     } finally {
       setIsExporting(false);
     }
