@@ -14,22 +14,23 @@ router.get('/current', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Use pool.query directly for more reliable execution 
+    // Using a simpler query that we've verified works
+    console.log('Fetching user profile for ID:', Number(req.session.userId));
     const result = await pool.query(`
       SELECT 
         id, 
         username, 
         email, 
-        first_name as "firstName", 
-        last_name as "lastName", 
+        first_name AS "firstName", 
+        last_name AS "lastName", 
         phone, 
-        business_name as "businessName", 
+        business_name AS "businessName", 
         address, 
         city, 
         state, 
         zip, 
         country, 
-        created_at as "createdAt"
+        created_at AS "createdAt"
       FROM users
       WHERE id = $1
     `, [Number(req.session.userId)]);
@@ -341,10 +342,22 @@ router.get('/sessions', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const sessions = await db.select()
-      .from(userSessions)
-      .where(eq(userSessions.userId, Number(req.session.userId)))
-      .where(eq(userSessions.isActive, true));
+    // Get all active sessions using direct SQL query
+    const sessionsResult = await pool.query(`
+      SELECT * FROM user_sessions
+      WHERE user_id = $1 AND is_active = TRUE
+    `, [Number(req.session.userId)]);
+    
+    // Transform from snake_case to camelCase for frontend
+    const sessions = sessionsResult.rows.map(session => ({
+      id: session.id,
+      userId: session.user_id,
+      deviceInfo: session.device_info,
+      ipAddress: session.ip_address,
+      lastActive: session.last_active,
+      isActive: session.is_active,
+      createdAt: session.created_at
+    }));
 
     res.json(sessions);
   } catch (error: any) {
@@ -363,12 +376,12 @@ router.post('/terminate-sessions', async (req: Request, res: Response) => {
     // Keep track of current session ID
     const currentSessionId = req.sessionID;
 
-    // Update all other sessions to inactive
-    await db.update(userSessions)
-      .set({
-        isActive: false
-      })
-      .where(eq(userSessions.userId, Number(req.session.userId)));
+    // Update all other sessions to inactive using direct SQL
+    await pool.query(`
+      UPDATE user_sessions 
+      SET is_active = FALSE
+      WHERE user_id = $1 AND id != $2
+    `, [Number(req.session.userId), currentSessionId]);
 
     res.json({ message: 'All other sessions terminated successfully' });
   } catch (error: any) {
