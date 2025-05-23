@@ -206,88 +206,52 @@ router.post("/", async (req: Request, res: Response) => {
       RETURNING *
     `;
     
-    // FINAL FIX: BRUTALLY DIRECT APPROACH
-    // Convert numeric fields directly with forced parsing
-    let vatValueNumeric = 0.00;
-    let totalIncTaxNumeric = 0.00;
-    
-    try {
-      if (req.body.vat && req.body.vat !== '') {
-        vatValueNumeric = Number(req.body.vat);
-        console.log("Parsed VAT:", vatValueNumeric);
-      }
-    } catch (e) {
-      console.error("Error parsing VAT:", e);
-    }
-    
-    try {
-      if (req.body.totalIncTax && req.body.totalIncTax !== '') {
-        totalIncTaxNumeric = Number(req.body.totalIncTax);
-        console.log("Parsed Total Inc Tax:", totalIncTaxNumeric);
-      }
-    } catch (e) {
-      console.error("Error parsing Total Inc Tax:", e);
-    }
-    
-    console.log("FINAL VALUES: VAT =", vatValueNumeric, "TOTAL_INC_TAX =", totalIncTaxNumeric);
-    
-    // Log all form values for full visibility
-    console.log("FORM VALUES RECEIVED:");
-    console.log("req.body.supplier =", req.body.supplier);
-    console.log("req.body.vat =", req.body.vat, "type =", typeof req.body.vat);
-    console.log("req.body.totalIncTax =", req.body.totalIncTax, "type =", typeof req.body.totalIncTax);
-    
-    // Execute raw SQL to ensure the values are inserted correctly
-    const rawSql = `
-      INSERT INTO expenses (
-        user_id, 
-        category, 
-        amount, 
-        date, 
-        description, 
-        supplier,
-        payment_source, 
-        vat, 
-        total_inc_tax, 
-        tax_deductible, 
-        is_recurring, 
-        receipt_url
-      ) 
-      VALUES (
-        $1, $2, $3, $4, $5, 
-        $6::text, 
-        $7::text, 
-        $8::numeric, 
-        $9::numeric, 
-        $10, $11, $12
+    // USING DATABASE FUNCTION: This guarantees proper type conversion on the database side
+    // Call our custom database function that properly handles all field types
+    const fnSql = `
+      SELECT * FROM add_expense(
+        $1, -- user_id
+        $2, -- category
+        $3, -- amount
+        $4, -- date
+        $5, -- description
+        $6, -- supplier
+        $7, -- payment_source
+        $8, -- vat
+        $9, -- total_inc_tax
+        $10, -- tax_deductible
+        $11, -- is_recurring
+        $12  -- receipt_url
       )
-      RETURNING *
     `;
     
-    const rawValues = [
+    // Log all form values for debugging
+    console.log("USING DATABASE FUNCTION WITH VALUES:");
+    console.log("supplier =", req.body.supplier || "");
+    console.log("payment_source =", req.body.paymentSource || "Cash");
+    console.log("vat =", req.body.vat || "0");
+    console.log("total_inc_tax =", req.body.totalIncTax || "0");
+    
+    // These values are passed directly to the database function
+    const fnValues = [
       userId,
       req.body.category || '',
-      req.body.amount || 0, 
+      req.body.amount || '0', 
       new Date(req.body.date),
       req.body.description || '',
-      req.body.supplier || '', // EXPLICIT TEXT CAST
-      req.body.paymentSource || 'Cash', // EXPLICIT TEXT CAST
-      vatValueNumeric, // EXPLICIT NUMERIC CAST
-      totalIncTaxNumeric, // EXPLICIT NUMERIC CAST
+      req.body.supplier || '', // Will be passed as TEXT
+      req.body.paymentSource || 'Cash', // Will be passed as TEXT
+      req.body.vat || '0', // Will be parsed by database function
+      req.body.totalIncTax || '0', // Will be parsed by database function
       req.body.taxDeductible ? true : false,
       req.body.isRecurring ? true : false,
       req.body.receiptUrl || null
     ];
     
-    console.log("RAW SQL VALUES:", rawValues);
+    console.log("Function parameters:", fnValues);
     
-    // Use connection directly to bypass any middleware/ORM issues
-    const result = await pool.query(rawSql, rawValues);
-    
-    console.log("SUPER SIMPLIFIED APPROACH PARAMS:", insertParams);
-    
-    // Execute the direct insert
-    const result = await pool.query(insertSql, insertParams);
+    // Use connection directly to call our database function
+    const result = await pool.query(fnSql, fnValues);
     const newExpense = result.rows[0];
     
     return res.status(201).json(newExpense);
