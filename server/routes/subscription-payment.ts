@@ -134,7 +134,8 @@ router.get("/status", requireAuth, async (req: Request, res: Response) => {
     
     // For this implementation, check if the user has recently cancelled
     // We'll store cancelled subscriptions in the session temporarily
-    const isCancelled = req.session?.subscriptionCancelled === true;
+    const session = req.session as any;
+    const isCancelled = session?.subscriptionCancelled === true;
     
     console.log(`User ${userId} subscription cancelled status: ${isCancelled}`);
     
@@ -202,10 +203,11 @@ router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
     */
 
     // For this implementation, we'll simulate success by storing in session
-    if (!req.session) {
-      req.session = {} as any;
+    // Make sure it's defined
+    if (typeof req.session !== 'undefined') {
+      // Use actual session object with custom property
+      (req.session as any).subscriptionCancelled = true;
     }
-    req.session.subscriptionCancelled = true;
 
     res.json({
       success: true,
@@ -216,6 +218,42 @@ router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
     console.error("Error cancelling subscription:", error);
     res.status(500).json({
       error: "Failed to cancel subscription",
+      message: error.message || "An unknown error occurred",
+    });
+  }
+});
+
+/**
+ * Reactivate a cancelled subscription
+ */
+router.post("/reactivate", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+
+    console.log(`Reactivating subscription for user ${userId}`);
+
+    // In a real implementation, we would:
+    // 1. Check if the user had a previous subscription
+    // 2. Create a new subscription through Stripe
+    // 3. Update the user's subscription data in our database
+
+    // For this implementation, we'll simulate success by clearing the cancelled flag
+    if (typeof req.session !== 'undefined') {
+      // Remove the cancelled flag
+      (req.session as any).subscriptionCancelled = false;
+    }
+
+    res.json({
+      success: true,
+      message: "Subscription reactivated successfully",
+      status: "active",
+      plan: "Monthly",
+      price: 20.00
+    });
+  } catch (error: any) {
+    console.error("Error reactivating subscription:", error);
+    res.status(500).json({
+      error: "Failed to reactivate subscription",
       message: error.message || "An unknown error occurred",
     });
   }

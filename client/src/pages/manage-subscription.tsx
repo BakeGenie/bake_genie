@@ -10,6 +10,34 @@ import UpdatePaymentMethodDialog from "@/components/payment/update-payment-metho
 import CancelSubscriptionDialog from "@/components/payment/cancel-subscription-dialog";
 import { format } from "date-fns";
 
+// Define interfaces for the API responses
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  createdAt: string;
+}
+
+interface PaymentMethod {
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
+interface PaymentMethodResponse {
+  paymentMethod: PaymentMethod;
+  isDefault: boolean;
+}
+
+interface SubscriptionStatus {
+  status: 'active' | 'cancelled' | 'paused';
+  plan?: string;
+  price?: number;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+}
+
 export default function ManageSubscription() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -17,37 +45,57 @@ export default function ManageSubscription() {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   
   // Fetch user data to get account creation date
-  const { data: userData, isLoading } = useQuery({
+  const { data: userData, isLoading } = useQuery<User>({
     queryKey: ['/api/users/current'],
     refetchOnWindowFocus: false,
   });
   
   // Fetch current payment method information
-  const { data: paymentMethodData, isLoading: isLoadingPaymentMethod, refetch: refetchPaymentMethod } = useQuery({
+  const { data: paymentMethodData, isLoading: isLoadingPaymentMethod, refetch: refetchPaymentMethod } = useQuery<PaymentMethodResponse>({
     queryKey: ['/api/subscription/payment-method'],
     refetchOnWindowFocus: false,
   });
   
   // Fetch subscription status
-  const { data: subscriptionData, isLoading: isLoadingSubscription, refetch: refetchSubscription } = useQuery({
+  const { data: subscriptionData, isLoading: isLoadingSubscription, refetch: refetchSubscription } = useQuery<SubscriptionStatus>({
     queryKey: ['/api/subscription/status'],
     refetchOnWindowFocus: false,
   });
   
-  // Derive subscription status - default to active if not explicitly cancelled
-  // Also check the session for any recent cancellations
+  // Safe access with default fallback values to prevent TypeScript errors
+  const subscriptionStatus = subscriptionData?.status === 'cancelled'
+    ? { text: "Cancelled", color: "bg-red-500", textClass: "text-red-600" }
+    : { text: "Active", color: "bg-green-500", textClass: "text-green-600" };
+    
+  // Derive subscription status
   const isSubscriptionActive = subscriptionData?.status !== 'cancelled';
   
-  // Add subscription status text for display
-  const subscriptionStatus = isSubscriptionActive 
-    ? { text: "Active", color: "bg-green-500", textClass: "text-green-600" }
-    : { text: "Cancelled", color: "bg-red-500", textClass: "text-red-600" };
-  
-  const handleChangePlan = () => {
-    toast({
-      title: "Change Plan",
-      description: "This feature will allow changing your subscription plan.",
-    });
+  const handleChangePlan = async () => {
+    try {
+      const response = await fetch('/api/subscription/reactivate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reactivate subscription');
+      }
+      
+      await refetchSubscription();
+      
+      toast({
+        title: "Subscription Reactivated",
+        description: "Your subscription has been successfully reactivated.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reactivate your subscription. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancelSubscription = () => {
