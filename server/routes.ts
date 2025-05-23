@@ -32,6 +32,7 @@ import recipesRouter from "./routes/recipes";
 // Using our ultra-simple expenses implementation for maximum reliability
 import expensesRouter from "./routes/expenses-simple";
 import expensesImportRouter from "./routes/expenses-import-manual";
+import expensesBatchRouter from "./routes/expenses-batch";
 import incomeRouter from "./routes/income";
 import mileageRouter from "./routes/mileage";
 import orderTasksRouter from "./routes/order-tasks";
@@ -118,6 +119,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register expenses routes
   app.use('/api/expenses', expensesRouter);
   app.use(expensesImportRouter);
+  
+  // Register batch expenses import
+  app.use(expensesBatchRouter);
   
   // Register income routes
   app.use('/api/income', incomeRouter);

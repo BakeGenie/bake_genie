@@ -53,6 +53,7 @@ import BakeDiaryImport from "./pages/bake-diary-import";
 import SuppliesImport from "./pages/supplies-import";
 import RecipesImport from "./pages/recipes-import";
 import ExpensesImport from "./pages/expenses-import";
+import ExpensesImportCustom from "./pages/expenses-import-custom";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import EmailTemplates from "./pages/email-templates";
@@ -296,6 +297,11 @@ function Router() {
         <Route path="/expenses-import">
           <ProtectedRoute>
             <ExpensesImport />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/expenses-import-bake-diary">
+          <ProtectedRoute>
+            <ExpensesImportCustom />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">
