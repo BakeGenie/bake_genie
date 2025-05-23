@@ -485,24 +485,30 @@ const ExpensesPage = () => {
         queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       } else {
         // Create a new expense
+        // Log what's being sent to server for debugging
+        const requestBody = {
+          category: data.category,
+          amount: String(data.amount),
+          date: data.date,
+          description: description,
+          supplier: data.supplier || "",
+          paymentSource: data.paymentSource || "Cash",
+          vat: data.vat || "0.00",
+          totalIncTax: data.totalIncTax || "0.00",
+          taxDeductible: Boolean(data.taxDeductible),
+          isRecurring: Boolean(data.isRecurring),
+          receiptUrl: receiptUrl
+        };
+        
+        console.log("Sending to server:", requestBody);
+        console.log("Supplier value:", data.supplier);
+        
         const response = await fetch("/api/expenses", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            category: data.category,
-            amount: String(data.amount),
-            date: data.date,
-            description: description,
-            supplier: data.supplier || "",
-            paymentSource: data.paymentSource || "Cash",
-            vat: data.vat || "0.00",
-            totalIncTax: data.totalIncTax || "0.00",
-            taxDeductible: Boolean(data.taxDeductible),
-            isRecurring: Boolean(data.isRecurring),
-            receiptUrl: receiptUrl
-          }),
+          body: JSON.stringify(requestBody),
         });
         
         if (!response.ok) {
