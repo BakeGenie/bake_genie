@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { 
   Download, 
   Upload, 
   FileText,
   Users,
-  Database,
   ArrowLeft,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -17,8 +18,8 @@ import { useLocation } from "wouter";
 export default function DataImportExport() {
   const [, setLocation] = useLocation();
   const [isImporting, setIsImporting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [importError, setImportError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Generic import handler
@@ -45,6 +46,7 @@ export default function DataImportExport() {
       
       setIsImporting(true);
       setImportProgress(10);
+      setImportError(null);
       
       const formData = new FormData();
       formData.append("file", selectedFile);
@@ -82,6 +84,7 @@ export default function DataImportExport() {
             description: `Your ${importType.replace('_', ' ')} have been imported`,
           });
         } else {
+          setImportError(result.message || "There were issues with your import");
           toast({
             title: "Import issues",
             description: result.message || "There were issues with your import",
@@ -90,6 +93,7 @@ export default function DataImportExport() {
         }
       } catch (error) {
         console.error("Import error:", error);
+        setImportError("There was an error importing your data");
         toast({
           title: "Import failed",
           description: `There was an error importing your ${importType.replace('_', ' ')}`,
@@ -104,8 +108,6 @@ export default function DataImportExport() {
 
   // Export data
   const handleExport = async (exportType: string) => {
-    setIsExporting(true);
-    
     try {
       const timestamp = new Date().toISOString().slice(0, 10);
       const filename = `bakegenie-export-${exportType}-${timestamp}.${exportType === "all" ? "json" : "csv"}`;
@@ -143,13 +145,11 @@ export default function DataImportExport() {
         description: "There was an error exporting your data",
         variant: "destructive",
       });
-    } finally {
-      setIsExporting(false);
     }
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Data Management</h1>
@@ -175,32 +175,43 @@ export default function DataImportExport() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="import" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+        <TabsContent value="import">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold flex items-center gap-2 mb-2">
                 <Upload className="h-5 w-5" />
                 Import Data
-              </CardTitle>
-              <CardDescription>
+              </h2>
+              <p className="text-muted-foreground mb-6">
                 Choose the type of data you want to import
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isImporting && (
-                <div className="mb-6 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Importing data...</span>
-                    <span>{importProgress}%</span>
-                  </div>
-                  <Progress value={importProgress} />
-                </div>
-              )}
+              </p>
+            </div>
 
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Select Import Type</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("contacts")}>
+            {isImporting && (
+              <div className="mb-6 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Importing data...</span>
+                  <span>{importProgress}%</span>
+                </div>
+                <Progress value={importProgress} />
+              </div>
+            )}
+
+            {importError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Import issues</AlertTitle>
+                <AlertDescription>
+                  {importError}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Select Import Type</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("contacts")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <Users className="h-5 w-5 text-primary" />
@@ -210,9 +221,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your contacts from Bake Diary</p>
                       </div>
                     </div>
-                  </Card>
-                  
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("orders")}>
+                  </CardContent>
+                </Card>
+                
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("orders")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -222,9 +235,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your orders from Bake Diary</p>
                       </div>
                     </div>
-                  </Card>
-                  
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("order_items")}>
+                  </CardContent>
+                </Card>
+                
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("order_items")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -234,9 +249,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import detailed order items</p>
                       </div>
                     </div>
-                  </Card>
+                  </CardContent>
+                </Card>
 
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("quotes")}>
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("quotes")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -246,9 +263,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your quotes from Bake Diary</p>
                       </div>
                     </div>
-                  </Card>
+                  </CardContent>
+                </Card>
 
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("expenses")}>
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("expenses")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -258,9 +277,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your expense data</p>
                       </div>
                     </div>
-                  </Card>
+                  </CardContent>
+                </Card>
 
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("ingredients")}>
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("ingredients")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -270,9 +291,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your ingredients data</p>
                       </div>
                     </div>
-                  </Card>
+                  </CardContent>
+                </Card>
 
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("recipes")}>
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("recipes")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -282,9 +305,11 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your recipe data</p>
                       </div>
                     </div>
-                  </Card>
+                  </CardContent>
+                </Card>
 
-                  <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("supplies")}>
+                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("supplies")}>
+                  <CardContent className="p-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 p-2 rounded-full">
                         <FileText className="h-5 w-5 text-primary" />
@@ -294,39 +319,42 @@ export default function DataImportExport() {
                         <p className="text-sm text-muted-foreground">Import your supplies data</p>
                       </div>
                     </div>
-                  </Card>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="export" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+        <TabsContent value="export">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold flex items-center gap-2 mb-2">
                 <Download className="h-5 w-5" />
                 Export Data
-              </CardTitle>
-              <CardDescription>
+              </h2>
+              <p className="text-muted-foreground mb-6">
                 Download your data for backup or transfer to another system
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("all")}>
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("all")}>
+                <CardContent className="p-0">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
-                      <Database className="h-5 w-5 text-primary" />
+                      <Download className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-medium">Export All Data</h4>
                       <p className="text-sm text-muted-foreground">Complete backup of your account</p>
                     </div>
                   </div>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("contacts")}>
+                </CardContent>
+              </Card>
+              
+              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("contacts")}>
+                <CardContent className="p-0">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
                       <Users className="h-5 w-5 text-primary" />
@@ -336,9 +364,11 @@ export default function DataImportExport() {
                       <p className="text-sm text-muted-foreground">Export all contacts as CSV</p>
                     </div>
                   </div>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("orders")}>
+                </CardContent>
+              </Card>
+              
+              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("orders")}>
+                <CardContent className="p-0">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
                       <FileText className="h-5 w-5 text-primary" />
@@ -348,29 +378,24 @@ export default function DataImportExport() {
                       <p className="text-sm text-muted-foreground">Export all orders as CSV</p>
                     </div>
                   </div>
-                </Card>
+                </CardContent>
+              </Card>
 
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("finance")}>
+              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("finance")}>
+                <CardContent className="p-0">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
-                      <Download className="h-5 w-5 text-primary" />
+                      <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-medium">Export Financial Data</h4>
                       <p className="text-sm text-muted-foreground">Export expenses and income</p>
                     </div>
                   </div>
-                </Card>
-              </div>
-              
-              {isExporting && (
-                <div className="mt-4 p-4 bg-muted rounded-md text-center">
-                  <p className="mb-2">Preparing export...</p>
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
