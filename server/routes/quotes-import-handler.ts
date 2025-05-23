@@ -28,7 +28,7 @@ const parseCurrency = (value: string): string => {
   return cleaned || '0';
 };
 
-// Process the CSV data and import it into the database
+// Process CSV data and import it into the database
 router.post('/api/quotes/import', async (req, res) => {
   try {
     const { records, columnMapping, userId } = req.body;
@@ -47,6 +47,9 @@ router.post('/api/quotes/import', async (req, res) => {
       errors: [] as { row: number; message: string }[],
       successDetails: [] as any[],
     };
+    
+    // Create a default contact if needed for all quotes
+    const defaultContactId = await ensureDefaultContact(userId);
     
     // Process each record individually
     for (let index = 0; index < records.length; index++) {
@@ -70,21 +73,35 @@ router.post('/api/quotes/import', async (req, res) => {
         const status = columnMapping.status ? record[columnMapping.status] : 'Draft';
         const notes = columnMapping.notes ? record[columnMapping.notes] : '';
         
-        // Insert directly into the quotes table
+        // Find or create contact ID
+        let contactId = defaultContactId;
+        
+        if (contactName) {
+          try {
+            contactId = await findOrCreateContact(client, userId, contactName);
+          } catch (err) {
+            console.error("Error finding/creating contact:", err);
+            // Fall back to default contact
+          }
+        }
+        
+        // Insert into quotes table with contact_id
         const quoteInsertQuery = {
           text: `
             INSERT INTO quotes (
-              user_id, quote_number, event_type, status, total_amount, 
-              notes, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+              user_id, contact_id, quote_number, event_type, status, total_amount, 
+              event_date, notes, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
             RETURNING id
           `,
           values: [
             userId, 
+            contactId,
             quoteNumber, 
             eventType || '', 
             status, 
-            amount, 
+            amount,
+            eventDate,
             notes
           ]
         };
@@ -120,6 +137,7 @@ router.post('/api/quotes/import', async (req, res) => {
           results.successDetails.push({
             quoteId,
             quoteNumber,
+            contactName,
             eventType,
             status,
             amount
@@ -166,5 +184,68 @@ router.post('/api/quotes/import', async (req, res) => {
     });
   }
 });
+
+// Create a default contact if one doesn't exist yet
+async function ensureDefaultContact(userId: number): Promise<number> {
+  const client = await pool.connect();
+  try {
+    // Check if default contact exists
+    const checkResult = await client.query(
+      `SELECT id FROM contacts WHERE user_id = $1 AND first_name = $2 LIMIT 1`,
+      [userId, 'Imported']
+    );
+    
+    if (checkResult.rows.length > 0) {
+      return checkResult.rows[0].id;
+    }
+    
+    // Create default contact if none exists
+    const insertResult = await client.query(
+      `INSERT INTO contacts (user_id, first_name, last_name, created_at, updated_at) 
+       VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id`,
+      [userId, 'Imported', 'Contact']
+    );
+    
+    return insertResult.rows[0].id;
+  } finally {
+    client.release();
+  }
+}
+
+// Find or create a contact based on the provided name
+async function findOrCreateContact(client: any, userId: number, contactName: string): Promise<number> {
+  if (!contactName) {
+    throw new Error('Contact name is required');
+  }
+  
+  // Split name into first and last
+  const parts = contactName.trim().split(' ');
+  const firstName = parts[0] || 'Unknown';
+  const lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
+  
+  // Check if contact exists
+  const checkQuery = {
+    text: `SELECT id FROM contacts WHERE user_id = $1 AND 
+           LOWER(first_name) = LOWER($2) AND 
+           LOWER(last_name) = LOWER($3) LIMIT 1`,
+    values: [userId, firstName, lastName]
+  };
+  
+  const checkResult = await client.query(checkQuery);
+  
+  if (checkResult.rows.length > 0) {
+    return checkResult.rows[0].id;
+  }
+  
+  // Create new contact
+  const insertQuery = {
+    text: `INSERT INTO contacts (user_id, first_name, last_name, created_at, updated_at)
+           VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id`,
+    values: [userId, firstName, lastName]
+  };
+  
+  const insertResult = await client.query(insertQuery);
+  return insertResult.rows[0].id;
+}
 
 export default router;
