@@ -49,6 +49,8 @@ router.patch('/profile', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
+    console.log('Updating user profile. Request body:', req.body);
+
     const { 
       firstName, 
       lastName, 
@@ -61,6 +63,18 @@ router.patch('/profile', async (req: Request, res: Response) => {
       zip,
       country
     } = req.body;
+
+    // Check if user exists before update
+    const [existingUser] = await db.select()
+      .from(users)
+      .where(eq(users.id, Number(req.session.userId)));
+
+    if (!existingUser) {
+      console.error('User not found for profile update:', req.session.userId);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('Existing user found:', existingUser.id, existingUser.email);
 
     // Update user profile
     const [updatedUser] = await db.update(users)
@@ -92,6 +106,7 @@ router.patch('/profile', async (req: Request, res: Response) => {
         country: users.country
       });
 
+    console.log('User profile updated successfully:', updatedUser);
     res.json(updatedUser);
   } catch (error: any) {
     console.error('Error updating user profile:', error);
