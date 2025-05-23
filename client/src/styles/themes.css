@@ -1,0 +1,272 @@
+:root {
+  /* Base theme variables that all themes will inherit */
+  --radius: 0.5rem;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Light Theme - Default */
+.theme-light {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+
+  --success: 142.1 76.2% 36.3%;
+  --warning: 38 92% 50%;
+  --info: 224.3 76.3% 48%;
+  
+  --chart-1: 222.2 47.4% 11.2%;
+  --chart-2: 0 84.2% 60.2%;
+  --chart-3: 142.1 76.2% 36.3%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 224.3 76.3% 48%;
+
+  color-scheme: light;
+}
+
+/* Dark Theme */
+.theme-dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 210 40% 98%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+
+  --success: 142.1 70.6% 45.3%;
+  --warning: 48 96% 53%;
+  --info: 214.3 69.3% 51%;
+  
+  --chart-1: 210 40% 98%;
+  --chart-2: 0 72.2% 50.6%;
+  --chart-3: 142.1 70.6% 45.3%;
+  --chart-4: 48 96% 53%;
+  --chart-5: 214.3 69.3% 51%;
+
+  color-scheme: dark;
+}
+
+/* Blue Theme */
+.theme-blue {
+  --background: 213 100% 98%;
+  --foreground: 224 71.4% 4.1%;
+  
+  --card: 213 100% 98%;
+  --card-foreground: 224 71.4% 4.1%;
+
+  --popover: 213 100% 98%;
+  --popover-foreground: 224 71.4% 4.1%;
+
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 213 59.4% 92.8%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 213 59.4% 92.8%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 213 59.4% 92.8%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 213 59.4% 87.4%;
+  --input: 213 59.4% 87.4%;
+  --ring: 221.2 83.2% 53.3%;
+
+  --success: 142.1 76.2% 36.3%;
+  --warning: 38 92% 50%;
+  --info: 224.3 76.3% 48%;
+  
+  --chart-1: 221.2 83.2% 53.3%;
+  --chart-2: 262.1 83.3% 57.8%;
+  --chart-3: 142.1 76.2% 36.3%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 224.3 76.3% 48%;
+
+  color-scheme: light;
+}
+
+/* Purple Theme */
+.theme-purple {
+  --background: 252 100% 99%;
+  --foreground: 262 80% 10%;
+  
+  --card: 252 100% 99%;
+  --card-foreground: 262 80% 10%;
+
+  --popover: 252 100% 99%;
+  --popover-foreground: 262 80% 10%;
+
+  --primary: 262.1 83.3% 57.8%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 252 59.4% 94.8%;
+  --secondary-foreground: 262 80% 10%;
+
+  --muted: 252 59.4% 94.8%;
+  --muted-foreground: 252 11% 50%;
+
+  --accent: 252 59.4% 94.8%;
+  --accent-foreground: 262 80% 10%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 252 59.4% 90%;
+  --input: 252 59.4% 90%;
+  --ring: 262.1 83.3% 57.8%;
+
+  --success: 142.1 76.2% 36.3%;
+  --warning: 38 92% 50%;
+  --info: 262.1 83.3% 57.8%;
+  
+  --chart-1: 262.1 83.3% 57.8%;
+  --chart-2: 292.2 84.1% 52.6%;
+  --chart-3: 230.2 76.4% 54.1%;
+  --chart-4: 183.1 77.9% 47.2%;
+  --chart-5: 142.1 76.2% 36.3%;
+
+  color-scheme: light;
+}
+
+/* Green Theme */
+.theme-green {
+  --background: 141 75% 97%;
+  --foreground: 142 80% 10%;
+  
+  --card: 141 75% 97%;
+  --card-foreground: 142 80% 10%;
+
+  --popover: 141 75% 97%;
+  --popover-foreground: 142 80% 10%;
+
+  --primary: 142.1 76.2% 36.3%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 138 59.4% 91.8%;
+  --secondary-foreground: 142 80% 10%;
+
+  --muted: 138 59.4% 91.8%;
+  --muted-foreground: 138 11% 50%;
+
+  --accent: 138 59.4% 91.8%;
+  --accent-foreground: 142 80% 10%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 138 59.4% 87%;
+  --input: 138 59.4% 87%;
+  --ring: 142.1 76.2% 36.3%;
+
+  --success: 142.1 76.2% 36.3%;
+  --warning: 38 92% 50%;
+  --info: 224.3 76.3% 48%;
+  
+  --chart-1: 142.1 76.2% 36.3%;
+  --chart-2: 172.1 68.8% 38.2%;
+  --chart-3: 198.6 88.7% 48.4%;
+  --chart-4: 224.3 76.3% 48%;
+  --chart-5: 262.1 83.3% 57.8%;
+
+  color-scheme: light;
+}
+
+/* Red Theme */
+.theme-red {
+  --background: 0 75% 97%;
+  --foreground: 0 80% 10%;
+  
+  --card: 0 75% 97%;
+  --card-foreground: 0 80% 10%;
+
+  --popover: 0 75% 97%;
+  --popover-foreground: 0 80% 10%;
+
+  --primary: 0 72.2% 50.6%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 0 59.4% 90%;
+  --secondary-foreground: 0 80% 10%;
+
+  --muted: 0 59.4% 90%;
+  --muted-foreground: 0 11% 50%;
+
+  --accent: 0 59.4% 90%;
+  --accent-foreground: 0 80% 10%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 0 59.4% 85%;
+  --input: 0 59.4% 85%;
+  --ring: 0 72.2% 50.6%;
+
+  --success: 142.1 76.2% 36.3%;
+  --warning: 38 92% 50%;
+  --info: 224.3 76.3% 48%;
+  
+  --chart-1: 0 72.2% 50.6%;
+  --chart-2: 22 97.7% 58%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 142.1 76.2% 36.3%;
+  --chart-5: 224.3 76.3% 48%;
+
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
