@@ -39,7 +39,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // Use direct SQL query to avoid schema issues
     const result = await pool.query(
-      `SELECT id, username, email, password, first_name, last_name, created_at 
+      `SELECT id, username, email, password, firstname as first_name, lastname as last_name, created_at 
        FROM users 
        WHERE email = $1`,
       [email]
@@ -127,9 +127,9 @@ router.post('/register', async (req: Request, res: Response) => {
     // Directly use SQL query for registration to ensure all required fields are set
     // Avoid column errors by only using columns we know exist
     const insertResult = await pool.query(
-      `INSERT INTO users (username, email, password, first_name, last_name, role) 
+      `INSERT INTO users (username, email, password, firstname, lastname, role) 
        VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, username, email, first_name, last_name, role, created_at`,
+       RETURNING id, username, email, firstname as first_name, lastname as last_name, role, created_at`,
       [username, email, hashedPassword, firstName, lastName, "user"]
     );
 
