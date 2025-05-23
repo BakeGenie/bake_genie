@@ -1,316 +1,351 @@
-import React, { useState } from 'react';
-import { useLocation } from 'wouter';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, ChevronLeft, FileUp, Upload } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { apiRequest } from '@/lib/queryClient';
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+import { ArrowLeft, AlertCircle, CheckCircle2, Upload, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 export default function OrderItemsImport() {
-  const [, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [importResult, setImportResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
+  const [mappings, setMappings] = useState({
+    "created_at": "Date Created",
+    "order_id": "Order Number",
+    "contact_item": "Contact Item",
+    "description": "Details",
+    "serving": "Servings",
+    "labour": "Labour",
+    "hours": "Hours",
+    "overhead": "Overhead", 
+    "recipes": "Recipes",
+    "cost_price": "Cost Price",
+    "sell_price": "Sell Price (excl VAT)"
+  });
 
-  // Ref for file input
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-        setError('Please select a CSV file');
-        return;
-      }
-      setFile(selectedFile);
-      setError(null);
+  // Handle file selection
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+  // Update mapping for a field
+  const handleMappingChange = (field: string, value: string) => {
+    setMappings({
+      ...mappings,
+      [field]: value
+    });
   };
 
-  const processFile = async () => {
+  // Submit the import
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    
     if (!file) {
-      setError('Please select a file first');
+      toast({
+        title: "No file selected",
+        description: "Please select a CSV file to import",
+        variant: "destructive",
+      });
       return;
     }
-
+    
     setIsUploading(true);
     setUploadProgress(10);
     
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("mappings", JSON.stringify(mappings));
+    formData.append("defaultsForMissing", "true");
+    
     try {
-      // Read the file as text
-      const fileContent = await readFileAsText(file);
       setUploadProgress(30);
       
-      // Parse CSV to JSON
-      const jsonData = parseCSV(fileContent);
-      setUploadProgress(50);
-      
-      // Map CSV columns to database fields
-      const mappedData = mapColumnsToFields(jsonData);
-      setUploadProgress(70);
-      
-      // Send data to the server for import
-      const result = await apiRequest('POST', '/api/order-items/import', {
-        items: mappedData
+      const response = await fetch("/api/order-items/import", {
+        method: "POST",
+        body: formData,
       });
       
-      setUploadProgress(90);
+      setUploadProgress(70);
       
-      // Parse the response
-      const importResult = await result.json();
-      setImportResult(importResult);
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
       
-      // Show toast based on result
-      if (importResult.success) {
+      const data = await response.json();
+      setResult(data);
+      
+      setUploadProgress(100);
+      
+      if (data.success) {
         toast({
-          title: 'Import Completed',
-          description: importResult.message,
+          title: "Import successful",
+          description: data.message || `Successfully imported ${data.inserted} order items`,
         });
       } else {
         toast({
-          title: 'Import Failed',
-          description: importResult.error || 'Unknown error occurred',
-          variant: 'destructive',
+          title: "Import issues",
+          description: data.error || "There were issues with your import",
+          variant: "destructive",
         });
       }
-      
-      setUploadProgress(100);
-    } catch (err) {
-      console.error('Error processing file:', err);
-      setError(`Failed to process file: ${err instanceof Error ? err.message : String(err)}`);
+    } catch (error) {
+      console.error("Import error:", error);
       toast({
-        title: 'Import Failed',
-        description: `Error: ${err instanceof Error ? err.message : String(err)}`,
-        variant: 'destructive',
+        title: "Import failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+      setResult({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error occurred",
       });
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Helper function to read file as text
-  const readFileAsText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        resolve(e.target?.result as string);
-      };
-      reader.onerror = (e) => {
-        reject(new Error('Failed to read file'));
-      };
-      reader.readAsText(file);
-    });
-  };
-
-  // Parse CSV to JSON
-  const parseCSV = (csvText: string): any[] => {
-    // Split by line and get header and rows
-    const lines = csvText.split('\\n').map(line => line.trim()).filter(line => line.length > 0);
+  // Reset the form
+  const handleReset = () => {
+    setFile(null);
+    setResult(null);
+    setUploadProgress(0);
     
-    if (lines.length < 2) {
-      throw new Error('CSV file must have at least a header row and one data row');
-    }
-    
-    // Parse header (handling quoted headers)
-    const headerLine = lines[0];
-    const headers = parseCSVRow(headerLine);
-    
-    // Parse each data row
-    const jsonData = [];
-    for (let i = 1; i < lines.length; i++) {
-      const row = parseCSVRow(lines[i]);
-      const rowData: Record<string, string> = {};
-      
-      for (let j = 0; j < headers.length; j++) {
-        rowData[headers[j]] = j < row.length ? row[j] : '';
-      }
-      
-      jsonData.push(rowData);
-    }
-    
-    return jsonData;
-  };
-
-  // Helper to parse a CSV row properly handling quoted fields
-  const parseCSVRow = (rowText: string): string[] => {
-    const result = [];
-    let insideQuote = false;
-    let currentField = '';
-    
-    for (let i = 0; i < rowText.length; i++) {
-      const char = rowText[i];
-      
-      if (char === '"') {
-        // Handle escaped quotes (two adjacent quote characters inside a quoted field)
-        if (insideQuote && i < rowText.length - 1 && rowText[i + 1] === '"') {
-          currentField += '"';
-          i++; // Skip the next quote
-        } else {
-          // Toggle quote mode
-          insideQuote = !insideQuote;
-        }
-      }
-      else if (char === ',' && !insideQuote) {
-        // End of field
-        result.push(currentField);
-        currentField = '';
-      }
-      else {
-        currentField += char;
-      }
-    }
-    
-    // Add the last field
-    result.push(currentField);
-    
-    return result;
-  };
-
-  // Map CSV columns to database fields
-  const mapColumnsToFields = (jsonData: any[]): any[] => {
-    const columnMapping: { [key: string]: string } = {
-      'Date Created': 'created_at',
-      'Order Number': 'order_id',
-      'Contact Item': 'contact_item',
-      'Details': 'description',
-      'Servings': 'serving',
-      'Labour': 'labour',
-      'Hours': 'hours',
-      'Overhead': 'overhead',
-      'Recipes': 'recipes',
-      'Cost Price': 'cost_price',
-      'Sell Price (excl VAT)': 'sell_price'
-    };
-    
-    return jsonData.map(item => {
-      const mappedItem: Record<string, any> = {};
-      
-      // Map each field using the mapping dictionary
-      for (const [csvColumn, dbField] of Object.entries(columnMapping)) {
-        // If the CSV column exists in the data, map it to the DB field
-        if (csvColumn in item) {
-          mappedItem[dbField] = item[csvColumn];
-        }
-      }
-      
-      return mappedItem;
+    // Reset mappings to default
+    setMappings({
+      "created_at": "Date Created",
+      "order_id": "Order Number",
+      "contact_item": "Contact Item",
+      "description": "Details",
+      "serving": "Servings",
+      "labour": "Labour",
+      "hours": "Hours",
+      "overhead": "Overhead", 
+      "recipes": "Recipes",
+      "cost_price": "Cost Price",
+      "sell_price": "Sell Price (excl VAT)"
     });
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-6 flex items-center">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => navigate('/data-import-export')}
-          className="mr-4"
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <h1 className="text-3xl font-bold">Import Order Items</h1>
-      </div>
+    <div className="bg-[#171923] min-h-screen text-white">
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Import Order Items</h1>
+            <p className="text-gray-400">
+              Import order items from a CSV file with custom field mapping
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setLocation("/data")} className="text-white border-gray-600 hover:bg-gray-800">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Data Management
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
+        <Card className="bg-[#1A202C] border-gray-700 mb-6">
           <CardHeader>
-            <CardTitle>Import Order Items from CSV</CardTitle>
-            <CardDescription>
-              Upload a CSV file containing order item details. Make sure your CSV has required columns for order items like Order Number and Description.
-            </CardDescription>
+            <CardTitle className="text-xl text-white">Import Instructions</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    {error}
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="border rounded-md p-6 flex flex-col items-center justify-center text-center">
-                <FileUp className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Upload CSV File</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Click to browse for a file or drag and drop
-                </p>
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <Button onClick={triggerFileInput} className="mb-2">
-                  Browse Files
-                </Button>
-                {file && (
-                  <div className="text-sm mt-2 text-muted-foreground">
-                    Selected: {file.name}
+          <CardContent className="text-gray-300">
+            <p className="mb-2">Please follow these steps to import your order items:</p>
+            <ol className="list-decimal pl-5 space-y-2">
+              <li>Ensure your CSV file has headers matching the default mappings shown below</li>
+              <li>If your CSV uses different header names, adjust the mappings accordingly</li>
+              <li>Click "Upload &amp; Import" to process your data</li>
+            </ol>
+            <div className="mt-4 p-3 bg-[#2D3748] rounded-md">
+              <h3 className="font-medium mb-2 flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-blue-400" />
+                <span>Column Mappings</span>
+              </h3>
+              <p className="text-sm text-gray-400 mb-3">
+                Match your CSV headers to our database fields. Adjust if your headers are different.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">created_at</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Date Created</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">order_id</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Order Number</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">contact_item</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Contact Item</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">description</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Details</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">serving</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Servings</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">labour</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Labour</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">hours</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Hours</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">overhead</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Overhead</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">recipes</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Recipes</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">cost_price</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Cost Price</span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="outline" className="mr-2 min-w-[120px] justify-center">sell_price</Badge>
+                  <span className="mx-2">→</span>
+                  <span className="text-blue-300">Sell Price (excl VAT)</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <form onSubmit={handleSubmit}>
+          <Card className="bg-[#1A202C] border-gray-700 mb-6">
+            <CardHeader>
+              <CardTitle className="text-xl text-white">Upload CSV File</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="file" className="text-white">Select CSV File</Label>
+                  <Input
+                    id="file"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    className="bg-[#2D3748] border-gray-600 text-white mt-1"
+                  />
+                  {file && (
+                    <p className="mt-2 text-sm text-green-400">
+                      Selected file: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                    </p>
+                  )}
+                </div>
+                
+                {isUploading && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Uploading and processing...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="bg-gray-700" />
                   </div>
                 )}
               </div>
-              
-              {isUploading && (
-                <div className="w-full bg-slate-200 rounded-full h-2.5 mt-4">
-                  <div 
-                    className="bg-primary h-2.5 rounded-full transition-all duration-300" 
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              )}
-              
-              {importResult && (
-                <div className="mt-4">
-                  <h3 className="font-semibold text-lg mb-2">Import Results</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-md bg-green-50 p-4">
-                      <p className="text-green-700 font-medium">Successfully Imported</p>
-                      <p className="text-3xl font-bold text-green-800">{importResult.inserted}</p>
-                    </div>
-                    <div className="rounded-md bg-red-50 p-4">
-                      <p className="text-red-700 font-medium">Failed to Import</p>
-                      <p className="text-3xl font-bold text-red-800">{importResult.errors}</p>
-                    </div>
-                  </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleReset}
+                disabled={isUploading}
+                className="border-gray-600 text-white hover:bg-gray-700"
+              >
+                Reset
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!file || isUploading}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isUploading ? (
+                  <>
+                    <Spinner className="mr-2" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload &amp; Import
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+
+        {result && (
+          <Card className={`mb-6 ${result.success ? 'bg-[#1A2F22] border-green-900' : 'bg-[#2D1E1E] border-red-900'}`}>
+            <CardHeader>
+              <CardTitle className="text-xl text-white flex items-center">
+                {result.success ? (
+                  <CheckCircle2 className="h-6 w-6 mr-2 text-green-500" />
+                ) : (
+                  <AlertCircle className="h-6 w-6 mr-2 text-red-500" />
+                )}
+                {result.success ? 'Import Successful' : 'Import Failed'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-gray-300">
+              {result.success ? (
+                <>
+                  <p className="mb-2">{result.message || `Successfully imported ${result.inserted} order items.`}</p>
+                  {result.errors > 0 && (
+                    <Alert variant="destructive" className="mt-4 bg-[#2D1E1E] border border-red-800">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Import Issues</AlertTitle>
+                      <AlertDescription>
+                        {`${result.errors} order items couldn't be imported. Check error details below.`}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   
-                  {importResult.errorDetails && importResult.errorDetails.length > 0 && (
+                  {result.errorDetails && result.errorDetails.length > 0 && (
                     <div className="mt-4">
-                      <h4 className="font-medium text-md mb-2">Error Details</h4>
-                      <div className="max-h-40 overflow-y-auto border rounded-md p-2">
-                        {importResult.errorDetails.map((error: any, index: number) => (
-                          <div key={index} className="text-sm py-1 border-b last:border-0">
-                            <span className="font-medium">Item {index + 1}:</span> {error.error}
+                      <h3 className="font-semibold mb-2">Error Details:</h3>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {result.errorDetails.map((error: any, idx: number) => (
+                          <div key={idx} className="p-2 bg-[#2D1E1E] rounded border border-red-800 text-sm">
+                            <p className="font-medium text-white">{error.error}</p>
+                            <p className="text-gray-400 text-xs mt-1">
+                              Order: {error.item.order_id || error.item.orderId || error.item['Order Number'] || 'Unknown'}
+                            </p>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <p>{result.error || 'Unknown error occurred during import.'}</p>
               )}
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end">
-            <Button onClick={processFile} disabled={!file || isUploading}>
-              {isUploading ? 'Processing...' : 'Import Order Items'}
-              {!isUploading && <Upload className="ml-2 h-4 w-4" />}
-            </Button>
-          </CardFooter>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

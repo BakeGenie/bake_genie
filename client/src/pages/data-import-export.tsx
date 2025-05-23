@@ -149,6 +149,12 @@ export default function DataImportExport() {
       return;
     }
     
+    if (importType === "order_items") {
+      // Navigate to the specialized order items importer
+      setLocation("/order-items-import");
+      return;
+    }
+    
     if (importType === "supplies") {
       // Navigate to the specialized supplies importer
       setLocation("/supplies-import");
