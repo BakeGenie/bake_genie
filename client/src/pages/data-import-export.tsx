@@ -155,6 +155,12 @@ export default function DataImportExport() {
       return;
     }
     
+    if (importType === "expenses") {
+      // Navigate to the specialized expenses importer
+      setLocation("/expenses-import");
+      return;
+    }
+    
     // Create a temporary hidden file input
     const fileInput = document.createElement("input");
     fileInput.type = "file";

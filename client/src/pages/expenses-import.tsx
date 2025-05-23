@@ -1,294 +1,255 @@
-import React, { useState } from 'react';
-import { useLocation } from 'wouter';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { AlertCircle, ArrowLeft, Upload } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
-// Simple browser-compatible CSV parser function
+// Helper function to parse CSV data
 function parseCSV(csvText: string) {
-  // Split by lines and filter out empty lines
-  const lines = csvText.split('\n').filter(line => line.trim() !== '');
-  
-  if (lines.length === 0) {
-    return [];
+  // Find the header line (3rd line, index 2)
+  const lines = csvText.split("\n");
+  if (lines.length < 4) {
+    throw new Error("CSV file does not have enough lines");
   }
-  
-  // Get headers (first line)
-  const headers = lines[0].split(',').map(header => header.trim());
-  
-  // Parse records
-  const records = [];
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(value => value.trim());
-    
-    // Skip lines that don't have enough values
-    if (values.length < headers.length) {
-      continue;
-    }
-    
-    // Create record object
-    const record: Record<string, string> = {};
+
+  // Get headers from the 3rd line (index 2)
+  const headerLine = lines[2];
+  const headers = headerLine.split(",").map(header => header.trim());
+
+  // Parse data starting from the 4th line (index 3)
+  const data = [];
+  for (let i = 3; i < lines.length; i++) {
+    if (!lines[i].trim()) continue; // Skip empty lines
+
+    const values = lines[i].split(",");
+    const row: Record<string, string> = {};
+
     headers.forEach((header, index) => {
-      record[header] = values[index] || '';
+      row[header] = values[index] ? values[index].trim() : "";
     });
-    
-    records.push(record);
+
+    data.push(row);
   }
-  
-  return records;
+
+  return { headers, data };
 }
 
 export default function ExpensesImport() {
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [_, navigate] = useLocation();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importSuccess, setImportSuccess] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [importedItems, setImportedItems] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Function to handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      setCsvFile(files[0]);
-      setError(null);
-      setSuccess(null);
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+      setImportError(null);
+      setImportSuccess(false);
     }
   };
 
-  const handleUpload = async () => {
-    if (!csvFile) {
-      setError('Please select a CSV file to upload.');
+  // Function to trigger file input click
+  const handleSelectFile = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Function to import expenses from the selected file
+  const handleImport = async () => {
+    if (!file) {
+      setImportError("Please select a file to import");
       return;
     }
 
-    setIsUploading(true);
-    setProgress(5);
-    setError(null);
-    setSuccess(null);
+    setImporting(true);
+    setProgress(10);
+    setImportError(null);
 
     try {
-      // Parse CSV file
-      const fileContent = await csvFile.text();
-      const parsedData = parseCSV(fileContent);
+      // Read file contents
+      const fileText = await file.text();
       
-      if (parsedData.length === 0) {
-        setError('No valid data found in the CSV file.');
-        setIsUploading(false);
+      // Parse CSV data to validate format
+      try {
+        parseCSV(fileText);
+      } catch (error) {
+        setImportError("Invalid CSV format. Make sure your file has headers on line 3 and data starts on line 4.");
+        setImporting(false);
         return;
       }
-      
-      // Display sample for debugging
-      console.log('CSV Headers:', Object.keys(parsedData[0]));
-      console.log('CSV Sample Data:', parsedData.slice(0, 2));
-      
-      // Expense specific field mappings - these match exactly to database fields
-      const mappings = {
-        "date": "Date",
-        "description": "Description", 
-        "category": "Category",
-        "amount": "Amount",
-        "supplier": "Vendor",
-        "paymentSource": "PaymentMethod",
-        "vat": "VAT",
-        "totalIncTax": "Total",
-        "taxDeductible": "TaxDeductible"
-      };
-      
-      setProgress(10);
-      setError(null);
-      
-      try {
-        // Map the data using our mappings
-        const mappedData = parsedData.map(item => {
-          const mappedItem: Record<string, any> = {};
-          for (const [dbField, csvField] of Object.entries(mappings)) {
-            // Make sure we're using the right data types
-            if (dbField === 'amount' || dbField === 'vat' || dbField === 'totalIncTax') {
-              // Convert to numeric, handle currency symbols
-              if (item[csvField]) {
-                // Remove currency symbols, quotes and other non-numeric chars except decimal point
-                const numericString = String(item[csvField]).replace(/[^0-9.]/g, '');
-                mappedItem[dbField] = numericString ? parseFloat(numericString) : 0;
-              } else {
-                mappedItem[dbField] = 0;
-              }
-            } else if (dbField === 'taxDeductible') {
-              // Handle boolean fields
-              const value = String(item[csvField] || '').toLowerCase();
-              mappedItem[dbField] = value === 'yes' || value === 'true' || value === '1';
-            } else if (dbField === 'date') {
-              // Handle date fields
-              if (item[csvField]) {
-                // Try to parse the date
-                const dateStr = String(item[csvField]).trim();
-                try {
-                  // Convert to ISO date format
-                  const dateParts = dateStr.split(/[/\-\.]/);
-                  // Assume date format is MM/DD/YYYY or DD/MM/YYYY based on the values
-                  let month, day, year;
-                  
-                  if (dateParts.length === 3) {
-                    // Try to guess the format based on values
-                    const first = parseInt(dateParts[0]);
-                    const second = parseInt(dateParts[1]);
-                    
-                    if (first <= 12 && second > 12) {
-                      // Likely MM/DD/YYYY
-                      [month, day, year] = dateParts;
-                    } else {
-                      // Likely DD/MM/YYYY
-                      [day, month, year] = dateParts;
-                    }
-                    
-                    // Ensure year is 4 digits
-                    if (year.length === 2) {
-                      year = '20' + year; // Assuming all years are 2000+
-                    }
-                    
-                    mappedItem[dbField] = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                  } else {
-                    // Try direct parsing
-                    const date = new Date(dateStr);
-                    if (!isNaN(date.getTime())) {
-                      mappedItem[dbField] = date.toISOString().split('T')[0];
-                    } else {
-                      mappedItem[dbField] = new Date().toISOString().split('T')[0]; // Default to today
-                    }
-                  }
-                } catch (error) {
-                  console.error('Error parsing date:', error);
-                  mappedItem[dbField] = new Date().toISOString().split('T')[0]; // Default to today
-                }
-              } else {
-                mappedItem[dbField] = new Date().toISOString().split('T')[0]; // Default to today
-              }
-            } else {
-              // Use strings for other fields, remove any extra quotes
-              const cleanValue = item[csvField] ? String(item[csvField]).replace(/^"|"$/g, '').trim() : '';
-              mappedItem[dbField] = cleanValue;
-            }
-          }
-          
-          // Set default values for any missing fields to ensure DB compatibility
-          mappedItem.description = mappedItem.description || '';
-          mappedItem.category = mappedItem.category || 'Other';
-          mappedItem.isRecurring = false; // Default value
-          
-          return mappedItem;
+
+      setProgress(30);
+
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setProgress(50);
+
+      // Send the file to the server
+      const response = await apiRequest("POST", "/api/expenses-import", formData, true);
+
+      setProgress(80);
+
+      const result = await response.json();
+
+      if (result.success) {
+        setImportSuccess(true);
+        setImportedItems(result.expenses.length);
+        toast({
+          title: "Import successful",
+          description: `Successfully imported ${result.expenses.length} expenses.`,
+          variant: "success",
         });
-        
-        console.log('Mapped data sample:', mappedData.slice(0, 2));
-        setProgress(50);
-        
-        // Send the mapped data to the server
-        console.log('Sending the following data to the server (total:', mappedData.length, 'records)');
-        
-        const response = await fetch('/api/expenses/import', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            expenses: mappedData
-          }),
+
+        // Invalidate expenses queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      } else {
+        setImportError(result.message || "Failed to import expenses");
+        toast({
+          title: "Import failed",
+          description: result.message || "There was an error importing your expenses.",
+          variant: "destructive",
         });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to import expenses');
-        }
-        
-        const result = await response.json();
-        console.log('Import response:', result);
-        
-        queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
-        
-        setProgress(100);
-        setSuccess(`Successfully imported ${result.data.imported} expenses. ${result.data.failed ? `Failed to import ${result.data.failed} expenses.` : ''}`);
-        setTimeout(() => {
-          navigate('/expenses');
-        }, 2000);
-      } catch (error: any) {
-        console.error('Error mapping or uploading data:', error);
-        setError(`Error processing CSV data: ${error.message}`);
       }
-    } catch (error: any) {
-      console.error('Error reading or parsing file:', error);
-      setError(`Error reading CSV file: ${error.message}`);
+    } catch (error) {
+      console.error("Error importing expenses:", error);
+      setImportError("There was an error importing your expenses. Please try again.");
+      toast({
+        title: "Import failed",
+        description: "There was an error importing your expenses. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setIsUploading(false);
+      setImporting(false);
+      setProgress(100);
     }
   };
 
   return (
-    <div className="container max-w-3xl py-6">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-6">
-        <Button variant="ghost" onClick={() => navigate('/data')} className="mr-2">
+        <Button
+          variant="ghost"
+          onClick={() => setLocation("/data")}
+          className="mr-2"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
         <h1 className="text-2xl font-bold">Import Expenses</h1>
       </div>
-      
-      <Card>
+
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Upload Expenses CSV</CardTitle>
+          <CardTitle>Import Expenses from CSV</CardTitle>
+          <CardDescription>
+            Upload a CSV file with expense data to import into your account.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          {success && (
-            <Alert className="mb-4 bg-green-50 text-green-800 border border-green-200">
-              <AlertTitle>Success</AlertTitle>
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="csvFile">CSV File</Label>
-              <Input 
-                id="csvFile" 
-                type="file" 
-                accept=".csv" 
+          <div className="space-y-6">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer" onClick={handleSelectFile}>
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
                 onChange={handleFileChange}
-                disabled={isUploading}
+                ref={fileInputRef}
               />
-              <p className="text-sm text-muted-foreground mt-1">
-                Upload a CSV file with expense data. The file should have headers for Date, Description, Category, Amount, Vendor, Payment Method, VAT, Total, and Tax Deductible.
-              </p>
-            </div>
-            
-            {isUploading && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Uploading...</span>
-                  <span>{progress}%</span>
+              
+              {!file ? (
+                <div className="flex flex-col items-center">
+                  <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                  <p className="text-lg font-medium">Click to select a CSV file</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    or drag and drop your file here
+                  </p>
                 </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <FileText className="h-10 w-10 text-primary mb-2" />
+                  <p className="text-lg font-medium break-all">{file.name}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(file.size / 1024).toFixed(2)} KB
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {importing && (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Importing expenses...</p>
                 <Progress value={progress} className="h-2" />
               </div>
             )}
+
+            {importSuccess && (
+              <Alert variant="success" className="bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4" />
+                <AlertTitle>Import successful</AlertTitle>
+                <AlertDescription>
+                  Successfully imported {importedItems} expenses.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {importError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Import failed</AlertTitle>
+                <AlertDescription>{importError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="bg-muted p-4 rounded-md">
+              <h3 className="font-medium mb-2">CSV Format Instructions</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Your CSV file should have the following format:
+              </p>
+              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                <li>Headers should be on line 3</li>
+                <li>Data should start on line 4</li>
+                <li>Column headers should match the following: Date, Description, Category, Amount, Supplier, Payment Source, VAT, Total Inc Tax, Tax Deductible, Is Recurring</li>
+                <li>Date format should be YYYY-MM-DD</li>
+                <li>Amount values can include currency symbols ($, £, €)</li>
+                <li>Boolean fields (Tax Deductible, Is Recurring) can be "Yes"/"No" or "True"/"False"</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => navigate('/data')} disabled={isUploading}>
+        <CardFooter className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/data")}
+          >
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={!csvFile || isUploading}>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload
+          <Button
+            onClick={handleImport}
+            disabled={!file || importing}
+          >
+            {importing ? "Importing..." : "Import Expenses"}
           </Button>
         </CardFooter>
       </Card>
