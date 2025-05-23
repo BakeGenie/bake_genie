@@ -48,28 +48,94 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
     
     // -------------------- SIMPLE CSV PARSING --------------------
     
-    // Split content into lines and remove empty lines
-    const lines = fileContent.split('\n').filter(line => line.trim().length > 0);
+    // Split content into lines and keep all lines (even empty ones)
+    let lines = fileContent.split('\n');
     
     if (lines.length < 2) {
       throw new Error("CSV file must have at least a header row and one data row");
     }
     
-    console.log(`CSV has ${lines.length} non-empty lines`);
+    console.log(`CSV has ${lines.length} lines`);
     
-    // Assume first line contains headers
-    const headerLine = lines[0];
-    const headers = headerLine.split(',').map(h => h.trim());
+    // Determine format: BakeDiary format (headers on line 3) or standard CSV (headers on line 1)
+    let headerLineIndex = 0; // Default to first line for standard CSV
+    
+    // Check for "BakeDiary Detailed Expense List" or similar in first two lines
+    let isBakeDiaryFormat = false;
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      if (lines[i].includes("Bake Diary") || lines[i].includes("BakeDiary")) {
+        isBakeDiaryFormat = true;
+        console.log("Detected BakeDiary format");
+        break;
+      }
+    }
+    
+    // For BakeDiary format, headers are on line 3 (index 2)
+    if (isBakeDiaryFormat) {
+      headerLineIndex = 2; // Line 3 (index 2)
+      console.log("Using BakeDiary format: headers on line 3, data starts on line 4");
+    } else {
+      console.log("Using standard CSV format: headers on line 1, data starts on line 2");
+    }
+    
+    // Handle quoted values properly
+    const parseCSVLine = (line) => {
+      const values = [];
+      let inQuote = false;
+      let currentValue = '';
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          // Toggle quote state
+          inQuote = !inQuote;
+        } else if (char === ',' && !inQuote) {
+          // End of value
+          values.push(currentValue.trim());
+          currentValue = '';
+        } else {
+          // Add to current value
+          currentValue += char;
+        }
+      }
+      
+      // Add the last value
+      values.push(currentValue.trim());
+      return values;
+    };
+    
+    // Get header line based on format detection
+    if (headerLineIndex >= lines.length) {
+      throw new Error("CSV file format error: couldn't find header row");
+    }
+    
+    const headerLine = lines[headerLineIndex];
+    const headers = parseCSVLine(headerLine);
     
     console.log("Headers:", headers);
     
     // Process data rows (skip header)
     const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
+    const dataStartIndex = isBakeDiaryFormat ? headerLineIndex + 1 : 1;
+    
+    console.log(`Processing data rows starting at line ${dataStartIndex + 1}`);
+    
+    for (let i = dataStartIndex; i < lines.length; i++) {
+      // Skip empty lines
+      if (!lines[i].trim()) {
+        continue;
+      }
+      
+      // Handle quoted CSV values properly
+      const values = parseCSVLine(lines[i]);
+      
+      // Debug row parsing
+      console.log(`Row ${i+1}: ${lines[i]}`);
+      console.log(`Parsed ${values.length} values:`, values);
       
       // Skip rows that don't have enough values
-      if (values.length < headers.length / 2) {
+      if (values.length < 3) { // Require at least date, description, and amount
         console.log(`Skipping row ${i+1}: not enough values`);
         continue;
       }
@@ -77,7 +143,12 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
       const row = {};
       headers.forEach((header, index) => {
         if (index < values.length) {
-          row[header] = values[index];
+          // Remove quotes from values if present
+          let value = values[index];
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.substring(1, value.length - 1);
+          }
+          row[header] = value;
         } else {
           row[header] = ''; // Set empty value for missing columns
         }

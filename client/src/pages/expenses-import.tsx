@@ -18,26 +18,69 @@ import { Progress } from "@/components/ui/progress";
 
 // Helper function to parse CSV data
 function parseCSV(csvText: string) {
-  // Find the header line (3rd line, index 2)
+  // Split the content into lines
   const lines = csvText.split("\n");
-  if (lines.length < 4) {
+  if (lines.length < 2) {
     throw new Error("CSV file does not have enough lines");
   }
 
-  // Get headers from the 3rd line (index 2)
-  const headerLine = lines[2];
+  // Detect format - is this a BakeDiary format or standard CSV?
+  let headerLineIndex = 0; // Standard CSV
+  let isBakeDiaryFormat = false;
+  
+  // Check for "BakeDiary" or "Bake Diary" in first few lines
+  for (let i = 0; i < Math.min(3, lines.length); i++) {
+    if (lines[i].includes("Bake Diary") || lines[i].includes("BakeDiary")) {
+      isBakeDiaryFormat = true;
+      break;
+    }
+  }
+  
+  // Determine header position based on format
+  if (isBakeDiaryFormat) {
+    // BakeDiary format - headers could be on the 3rd line (index 2)
+    headerLineIndex = 2;
+    console.log("Detected BakeDiary format with headers on line 3");
+  } else {
+    // Standard CSV - headers are typically on the first line (index 0)
+    headerLineIndex = 0;
+    console.log("Using standard CSV format with headers on line 1");
+  }
+  
+  // Make sure header line exists
+  if (headerLineIndex >= lines.length) {
+    throw new Error("CSV format error: couldn't find headers");
+  }
+  
+  // Parse headers
+  const headerLine = lines[headerLineIndex];
+  if (!headerLine.trim()) {
+    throw new Error("CSV format error: header line is empty");
+  }
+  
   const headers = headerLine.split(",").map(header => header.trim());
-
-  // Parse data starting from the 4th line (index 3)
+  
+  // Parse data rows
   const data = [];
-  for (let i = 3; i < lines.length; i++) {
+  const dataStartIndex = headerLineIndex + 1;
+  
+  for (let i = dataStartIndex; i < lines.length; i++) {
     if (!lines[i].trim()) continue; // Skip empty lines
 
     const values = lines[i].split(",");
+    
+    // Skip if there aren't enough values
+    if (values.length < 3) continue;
+    
     const row: Record<string, string> = {};
 
     headers.forEach((header, index) => {
-      row[header] = values[index] ? values[index].trim() : "";
+      // Handle quoted values
+      let value = values[index] ? values[index].trim() : "";
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.substring(1, value.length - 1);
+      }
+      row[header] = value;
     });
 
     data.push(row);
