@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -338,28 +339,28 @@ const ExpensesPage = () => {
             body: formData,
           });
           
-          // Get the response text first
-          const responseText = await uploadResponse.text();
-          
           if (!uploadResponse.ok) {
-            console.error("Error uploading receipt:", responseText);
+            console.error("Error uploading receipt:", await uploadResponse.text());
             throw new Error('Failed to upload receipt');
           }
           
-          // Parse the JSON response if there is text
-          if (responseText) {
-            try {
-              const uploadResult = JSON.parse(responseText);
-              if (uploadResult.success) {
-                receiptUrl = uploadResult.url;
-                console.log("Receipt uploaded successfully:", receiptUrl);
-              } else {
-                throw new Error(uploadResult.error || "Upload failed");
-              }
-            } catch (parseError) {
-              console.error("Error parsing response:", parseError);
-              throw new Error("Invalid response from server");
+          try {
+            // Parse the JSON response
+            const uploadResult = await uploadResponse.json();
+            if (uploadResult.success) {
+              receiptUrl = uploadResult.url;
+              console.log("Receipt uploaded successfully:", receiptUrl);
+            } else {
+              throw new Error(uploadResult.error || "Upload failed");
             }
+          } catch (parseError) {
+            console.error("Error parsing response:", parseError);
+            // If there's an error parsing JSON but the upload was successful,
+            // we'll continue with the expense submission without a receipt
+            toast({
+              title: "Note",
+              description: "Receipt was uploaded but couldn't process the server response. Expense will be saved without receipt attachment.",
+            });
           }
         } catch (error) {
           const uploadError = error as Error;
@@ -670,13 +671,13 @@ const ExpensesPage = () => {
           setOpenExpenseDialog(open);
         }}
       >
-        <DialogContent className="sm:max-w-[425px]" aria-describedby="expense-form-description">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogTitle className="text-xl mb-4">
             {editingExpenseId ? 'Edit Expense' : 'Add Expense'}
           </DialogTitle>
-          <span id="expense-form-description" className="sr-only">
+          <div id="expense-form-description" className="sr-only">
             Fill out the form to {editingExpenseId ? 'update your' : 'add a new'} expense
-          </span>
+          </div>
           <Form {...expenseForm}>
             <form onSubmit={expenseForm.handleSubmit(onSubmitExpense)} className="space-y-4">
               <FormField
