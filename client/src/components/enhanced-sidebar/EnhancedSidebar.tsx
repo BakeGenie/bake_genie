@@ -93,12 +93,14 @@ const EnhancedSidebar = () => {
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <Link key={index} href={item.href}>
-                    <a className={getLinkClasses(item.href)}>
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </a>
-                  </Link>
+                  <div key={index} className="menu-item">
+                    <Link href={item.href}>
+                      <div className={getLinkClasses(item.href)} onClick={() => setIsOpen(false)}>
+                        <Icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </div>
+                    </Link>
+                  </div>
                 );
               })}
             </nav>
