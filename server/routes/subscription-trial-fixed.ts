@@ -202,19 +202,19 @@ router.post('/trial/start', async (req: any, res) => {
     try {
       // Use a direct SQL statement which we know works from testing
       try {
+        // Use parameterized SQL query to prevent SQL injection
         const result = await db.execute(`
           INSERT INTO user_subscriptions 
           (user_id, plan_id, plan_name, price, status, trial_start, trial_end, created_at, updated_at)
           VALUES 
-          ($1, $2, $3, $4, 'trialing', NOW(), NOW() + INTERVAL '30 days', NOW(), NOW())
+          ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
           RETURNING *
         `, [
           userIdNumber,
           standardPlan.id,
           standardPlan.name,
           standardPlan.price,
-          trialStart,
-          trialEnd
+          'trialing'
         ]);
         
         // Assign the first row of the result
