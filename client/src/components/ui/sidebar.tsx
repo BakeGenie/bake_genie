@@ -205,11 +205,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
           <div className="flex items-center">
             <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Cake-like icon for BakeGenie */}
-              <path d="M9 8c6-3 12 3 7 8 m-5 0c-6-5 0-11 7-8" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M16 16v7" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M8 7.5a8 5 0 0116 0v2" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M9 8c6-3 12 3 7 8 m-5 0c-6-5 0-11 7-8" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+              <path d="M16 16v7" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+              <path d="M8 7.5a8 5 0 0116 0v2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            <span className="ml-2 text-xl font-semibold text-white">BakeGenie</span>
+            <span className="ml-2 text-xl font-bold text-white" style={{color: 'white !important'}}>BakeGenie</span>
           </div>
           <button
             onClick={onClose}

@@ -94,6 +94,12 @@
 /* Sidebar navigation styles */
 .sidebar-link {
   background-color: hsl(var(--sidebar-background)) !important;
+  color: white !important;
+}
+
+/* Ensure brand logo and text visibility */
+.sidebar-brand {
+  color: white !important;
 }
 
 /* Removing hover background */
