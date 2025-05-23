@@ -61,8 +61,8 @@ type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 const Account = () => {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = React.useState("profile");
-  const [setLocation] = useLocation();
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -428,7 +428,7 @@ const Account = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div 
                   className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
-                  onClick={() => window.location.href = "/manage-subscription"}
+                  onClick={() => navigate("/manage-subscription")}
                 >
                   <div className="flex items-center">
                     <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
@@ -445,7 +445,7 @@ const Account = () => {
 
                 <div 
                   className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
-                  onClick={() => setLocation("/manage-subscription")}
+                  onClick={() => navigate("/manage-subscription")}
                 >
                   <div className="flex items-center">
                     <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
