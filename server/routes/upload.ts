@@ -26,19 +26,35 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 3 * 1024 * 1024, // 3MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (_req, file, cb) => {
-    // Accept image files and PDFs
-    const filetypes = /jpeg|jpg|png|gif|svg|pdf/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    
-    if (mimetype && extname) {
-      return cb(null, true);
+    try {
+      // Accept image files and PDFs
+      const filetypes = /jpeg|jpg|png|gif|svg|pdf/;
+      const mimetype = filetypes.test(file.mimetype);
+      const extname = file.originalname 
+        ? filetypes.test(path.extname(file.originalname).toLowerCase()) 
+        : false;
+      
+      // Log the file info for debugging
+      console.log('Uploading file:', {
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        mimetypeMatch: mimetype,
+        extnameMatch: extname
+      });
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      }
+      
+      cb(null, false); // Don't throw an error, just reject the file silently
+    } catch (error) {
+      console.error('Error in file filter:', error);
+      cb(null, false);
     }
-    
-    cb(new Error("Only image files and PDFs are allowed"));
   },
 });
 
@@ -68,13 +84,18 @@ router.post("/", upload.single("image"), async (req: Request, res: Response) => 
 /**
  * Upload expense receipt
  */
-router.post("/receipt", upload.single("receipt"), async (req: Request, res: Response) => {
+router.post("/receipt", upload.single("receipt"), (req: Request, res: Response) => {
   try {
+    console.log("Receipt upload request received");
+    
     if (!req.file) {
-      return res.status(400).json({ 
+      console.log("No file provided in the request");
+      return res.set({
+        'Content-Type': 'application/json'
+      }).status(400).send(JSON.stringify({ 
         success: false,
         error: "No receipt file provided" 
-      });
+      }));
     }
     
     // Get the saved file path and construct the URL
@@ -84,28 +105,39 @@ router.post("/receipt", upload.single("receipt"), async (req: Request, res: Resp
     // Verify file was created
     const filePath = path.join(uploadsDir, filename);
     if (!fs.existsSync(filePath)) {
-      return res.status(500).json({
+      console.log(`File not found in storage: ${filePath}`);
+      return res.set({
+        'Content-Type': 'application/json'
+      }).status(500).send(JSON.stringify({
         success: false,
         error: "File uploaded but not found in storage"
-      });
+      }));
     }
     
     console.log(`Successfully uploaded receipt: ${filename} (${req.file.size} bytes)`);
     
-    // Return the receipt URL
-    return res.status(200).json({ 
+    // Return the receipt URL with proper content type
+    const responseData = {
       success: true,
       url: receiptUrl,
       filename: filename,
       fileSize: req.file.size,
       mimeType: req.file.mimetype
-    });
+    };
+    
+    console.log("Sending successful response:", responseData);
+    
+    return res.set({
+      'Content-Type': 'application/json'
+    }).status(200).send(JSON.stringify(responseData));
   } catch (error) {
     console.error("Error uploading receipt:", error);
-    return res.status(500).json({ 
+    return res.set({
+      'Content-Type': 'application/json'
+    }).status(500).send(JSON.stringify({ 
       success: false,
       error: error instanceof Error ? error.message : "Failed to upload receipt" 
-    });
+    }));
   }
 });
 

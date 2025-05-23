@@ -320,9 +320,22 @@ const ExpensesPage = () => {
         throw new Error(`Failed to upload receipt: ${errorText}`);
       }
       
-      // Process the server response
-      const uploadResult = await uploadResponse.json();
-      if (uploadResult.success) {
+      // Process the server response in a safer way
+      let uploadResult;
+      try {
+        const responseText = await uploadResponse.text();
+        try {
+          uploadResult = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error("Failed to parse JSON response:", responseText);
+          throw new Error("Invalid server response: " + responseText);
+        }
+      } catch (textError) {
+        console.error("Failed to get response text:", textError);
+        throw new Error("Failed to process server response");
+      }
+      
+      if (uploadResult && uploadResult.success) {
         const receiptUrl = uploadResult.url;
         console.log("Receipt uploaded successfully:", receiptUrl);
         
@@ -337,7 +350,8 @@ const ExpensesPage = () => {
         
         return receiptUrl;
       } else {
-        throw new Error(uploadResult.error || "Upload failed");
+        const errorMsg = uploadResult?.error || "Upload failed";
+        throw new Error(errorMsg);
       }
     } catch (error: any) {
       console.error("Error uploading receipt:", error);
