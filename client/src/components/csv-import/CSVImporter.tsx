@@ -333,7 +333,7 @@ export default function CSVImporter({
                     <SelectValue placeholder="Select column" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None {field.required ? '' : '(Skip)'}</SelectItem>
+                    <SelectItem value="_none_">None {field.required ? '' : '(Skip)'}</SelectItem>
                     {headers.map((header) => (
                       <SelectItem key={header} value={header}>
                         {header}
