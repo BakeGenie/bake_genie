@@ -102,6 +102,7 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
       'Description': 'description',
       'Category': 'category', 
       'Amount': 'amount',
+      'Amount (Incl VAT)': 'amount',  // Special mapping for BakeDiary format
       'Vendor': 'supplier',
       'Supplier': 'supplier',
       'Payment': 'payment_source',
@@ -131,11 +132,23 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
         is_recurring: false
       };
       
+      // Special case for Amount (Incl VAT) -> amount field
+      if (row['Amount (Incl VAT)'] !== undefined) {
+        let amountValue = row['Amount (Incl VAT)'].replace(/[$£€]/g, '').trim();
+        const numValue = parseFloat(amountValue) || 0;
+        expense.amount = numValue.toString();
+      }
+
       // Map data from CSV row to database fields
       for (const [csvHeader, dbField] of Object.entries(fieldMappings)) {
         // Check if this CSV header exists in the current row
         if (row[csvHeader] !== undefined) {
           let value = row[csvHeader];
+          
+          // Skip amount field if we've already processed Amount (Incl VAT)
+          if (dbField === 'amount' && row['Amount (Incl VAT)'] !== undefined) {
+            continue;
+          }
           
           // Special handling for amount fields
           if (dbField === 'amount' || dbField === 'vat' || dbField === 'total_inc_tax') {
@@ -162,8 +175,39 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
         }
       }
       
+      // Log the processed expense record for debugging
+      console.log("Processed row data:", expense);
+      
       try {
         // Insert expense using direct SQL query
+        console.log("Original date value:", row['Date']);
+        
+        // Parse and format the date properly
+        let dateValue = expense.date;
+        if (row['Date']) {
+          try {
+            // Try to parse the date in format "DD MMM YYYY"
+            const dateParts = row['Date'].match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+            if (dateParts) {
+              const day = dateParts[1].padStart(2, '0');
+              const month = dateParts[2];
+              const year = dateParts[3];
+              
+              // Convert month name to month number
+              const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              const monthIndex = monthNames.findIndex(m => m.toLowerCase() === month.toLowerCase());
+              
+              if (monthIndex !== -1) {
+                const monthNum = (monthIndex + 1).toString().padStart(2, '0');
+                dateValue = `${year}-${monthNum}-${day}`;
+                console.log("Parsed date as:", dateValue);
+              }
+            }
+          } catch (err) {
+            console.error("Error parsing date:", err);
+          }
+        }
+        
         const query = `
           INSERT INTO expenses (
             user_id, date, description, category, amount, supplier, 
@@ -175,16 +219,16 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
         
         const values = [
           expense.user_id,
-          expense.date,
+          dateValue,
           expense.description,
           expense.category,
           expense.amount,
           expense.supplier,
           expense.payment_source,
-          expense.vat,
-          expense.total_inc_tax,
-          expense.tax_deductible,
-          expense.is_recurring
+          expense.vat || '0',
+          expense.total_inc_tax || '0',
+          expense.tax_deductible || false,
+          expense.is_recurring || false
         ];
         
         console.log("Inserting expense:", expense);
