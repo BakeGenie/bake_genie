@@ -91,9 +91,9 @@
   }
 }
 
-/* Sidebar active link styles */
-.sidebar-link.active {
-  @apply bg-primary-50 text-primary-600 border-l-2 border-primary-600 font-medium;
+/* Sidebar navigation styles */
+.sidebar-link {
+  background-color: hsl(var(--sidebar-background)) !important;
 }
 
 /* Removing hover background */
