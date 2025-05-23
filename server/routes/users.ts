@@ -103,8 +103,7 @@ router.patch('/profile', async (req: Request, res: Response) => {
         city = $7,
         state = $8,
         zip = $9,
-        country = $10,
-        updated_at = NOW()
+        country = $10
       WHERE id = $11
       RETURNING id, first_name as "firstName", last_name as "lastName", email, phone, business_name as "businessName", address, city, state, zip, country
     `, [

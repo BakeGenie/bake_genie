@@ -202,20 +202,22 @@ const Account = () => {
   // Profile update mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
+      console.log("Submitting profile data:", data);
       return await apiRequest('PATCH', '/api/users/profile', data);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log("Profile update success response:", response);
       queryClient.invalidateQueries({ queryKey: ['/api/users/current'] });
       toast({
         title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
+        description: "Your profile information has been successfully saved.",
       });
     },
     onError: (error: any) => {
       console.error("Profile update error:", error);
       toast({
-        title: "Error",
-        description: error.message || "There was an error updating your profile.",
+        title: "Error Saving Profile",
+        description: error.message || "There was an error updating your profile information. Please try again.",
         variant: "destructive",
       });
     }
