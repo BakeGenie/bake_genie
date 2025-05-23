@@ -15,23 +15,36 @@ const storage = multer.diskStorage({
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     
+    console.log(`Upload directory: ${uploadDir}`);
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     // Set unique filename with timestamp
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const extension = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + extension);
+    const filename = file.fieldname + '-' + uniqueSuffix + extension;
+    console.log(`Generated filename: ${filename}`);
+    cb(null, filename);
   }
 });
 
+// Create uploads directory if it doesn't exist
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Use memory storage instead of disk storage
+const memoryStorage = multer.memoryStorage();
+
 // Initialize multer upload middleware
 const upload = multer({
-  storage: storage,
+  storage: memoryStorage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
   fileFilter: (req, file, cb) => {
     // Allow CSV files only
     if (path.extname(file.originalname).toLowerCase() === '.csv') {
+      console.log(`Accepting file: ${file.originalname}`);
       return cb(null, true);
     }
     cb(new Error('Only CSV files are allowed'));
@@ -48,8 +61,11 @@ export const registerDataImportRoutes = (router: Router) => {
     try {
       // Check if file exists
       if (!req.file) {
+        console.log('No file in request');
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
+
+      console.log(`File received: ${req.file.originalname}, size: ${req.file.size} bytes`);
 
       // Get user ID from session
       const userId = req.session.user?.id || 1;
@@ -61,53 +77,61 @@ export const registerDataImportRoutes = (router: Router) => {
       try {
         if (req.body.mappings) {
           mappings = JSON.parse(req.body.mappings);
+          console.log('Using mappings:', mappings);
         }
       } catch (e) {
         console.error('Error parsing mappings:', e);
         return res.status(400).json({ success: false, error: 'Invalid mappings format' });
       }
       
-      const filePath = req.file.path;
-      console.log(`Processing import for ${importType} from ${filePath} with mappings:`, mappings);
-      
       let result;
       
-      // Call the appropriate import method based on the import type
-      switch (importType) {
-        case 'contacts':
-          result = await importService.importContacts(filePath, userId, mappings);
-          break;
-        case 'orders':
-          result = await importService.importOrders(filePath, userId, mappings);
-          break;
-        case 'order_items':
-          result = await importService.importOrderItems(filePath, userId, mappings);
-          break;
-        case 'quotes':
-          result = await importService.importQuotes(filePath, userId, mappings);
-          break;
-        case 'expenses':
-          result = await importService.importExpenses(filePath, userId, mappings);
-          break;
-        case 'ingredients':
-          result = await importService.importIngredients(filePath, userId, mappings);
-          break;
-        case 'recipes':
-          result = await importService.importRecipes(filePath, userId, mappings);
-          break;
-        case 'supplies':
-          result = await importService.importSupplies(filePath, userId, mappings);
-          break;
-        default:
-          return res.status(400).json({ 
-            success: false, 
-            error: `Unsupported import type: ${importType}` 
-          });
-      }
-      
-      // Clean up: delete uploaded file after processing
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      // Special case for contacts import - direct memory processing
+      if (importType === 'contacts') {
+        const { parseBakeDiaryContacts } = require('../services/csv-parser');
+        // The file is in memory with multer.memoryStorage
+        const csvContent = req.file.buffer.toString('utf8');
+        result = await parseBakeDiaryContacts(csvContent, userId);
+      } else {
+        // For other imports, save to disk first
+        const tempFilePath = path.join(uploadDir, `${Date.now()}-${req.file.originalname}`);
+        fs.writeFileSync(tempFilePath, req.file.buffer);
+        console.log(`Saved temp file to ${tempFilePath}`);
+        
+        // Call the appropriate import method based on the import type
+        switch (importType) {
+          case 'orders':
+            result = await importService.importOrders(tempFilePath, userId, mappings);
+            break;
+          case 'order_items':
+            result = await importService.importOrderItems(tempFilePath, userId, mappings);
+            break;
+          case 'quotes':
+            result = await importService.importQuotes(tempFilePath, userId, mappings);
+            break;
+          case 'expenses':
+            result = await importService.importExpenses(tempFilePath, userId, mappings);
+            break;
+          case 'ingredients':
+            result = await importService.importIngredients(tempFilePath, userId, mappings);
+            break;
+          case 'recipes':
+            result = await importService.importRecipes(tempFilePath, userId, mappings);
+            break;
+          case 'supplies':
+            result = await importService.importSupplies(tempFilePath, userId, mappings);
+            break;
+          default:
+            return res.status(400).json({ 
+              success: false, 
+              error: `Unsupported import type: ${importType}` 
+            });
+        }
+        
+        // Clean up: delete temporary file after processing
+        if (fs.existsSync(tempFilePath)) {
+          fs.unlinkSync(tempFilePath);
+        }
       }
       
       return res.json(result);
