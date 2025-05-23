@@ -155,6 +155,12 @@ export default function DataImportExport() {
       return;
     }
     
+    if (importType === "ingredients") {
+      // Navigate to the specialized ingredients importer
+      setLocation("/ingredients-import");
+      return;
+    }
+    
     if (importType === "expenses") {
       // Ask user which expense format they want to import
       toast({
