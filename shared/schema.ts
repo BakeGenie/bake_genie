@@ -469,7 +469,8 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
   trialStart: timestamp("trial_start"),       // When the trial period started
   trialEnd: timestamp("trial_end"),           // When the trial period ends
-  isTrialUsed: boolean("is_trial_used").default(false), // Whether the user has used their trial
+  // isTrialUsed field will be added in a future migration
+  // for now, we'll determine trial usage by checking if trialStart/trialEnd are set
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

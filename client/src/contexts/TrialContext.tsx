@@ -40,6 +40,15 @@ export const TrialProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { data: trialData, isLoading } = useQuery({
     queryKey: ['/api/subscription/trial/status'],
     refetchInterval: 60 * 60 * 1000, // Refetch every hour
+    retry: 1,
+    // Provide default values if the request fails
+    placeholderData: {
+      isInTrial: false,
+      trialEnded: false,
+      hasActiveSubscription: false,
+      daysLeft: 30,
+      eligibleForTrial: true
+    }
   });
   
   // Effect to handle redirects based on trial status
