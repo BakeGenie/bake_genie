@@ -124,6 +124,8 @@ const ExpensesPage = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [receiptFileName, setReceiptFileName] = useState<string>("");
 
   // Expense form
   const expenseForm = useForm<z.infer<typeof expenseSchema>>({
@@ -284,12 +286,78 @@ const ExpensesPage = () => {
     },
   });
 
+  // Handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setSelectedFile(files[0]);
+      setReceiptFileName(files[0].name);
+    }
+  };
+  
   // Function to handle expense submission
-  const onSubmitExpense = (data: z.infer<typeof expenseSchema>) => {
-    if (editingExpenseId) {
-      updateExpenseMutation.mutate({ ...data, id: editingExpenseId });
-    } else {
-      createExpenseMutation.mutate(data);
+  const onSubmitExpense = async (data: z.infer<typeof expenseSchema>) => {
+    try {
+      // If there's a file to upload, handle it first
+      let receiptUrl = null;
+      
+      if (selectedFile) {
+        // Create a FormData object to send the file
+        const formData = new FormData();
+        formData.append('receipt', selectedFile);
+        
+        // Upload the file
+        const uploadResponse = await fetch('/api/upload/receipt', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload receipt');
+        }
+        
+        const uploadResult = await uploadResponse.json();
+        receiptUrl = uploadResult.url;
+      }
+      
+      // Add the receipt URL to the data
+      const updatedData = {
+        ...data,
+        receiptUrl
+      };
+      
+      // Submit the expense data
+      // Make sure we're passing only valid data
+      const expenseData = {
+        category: data.category,
+        amount: data.amount,
+        date: data.date,
+        description: data.description,
+        supplier: data.supplier,
+        paymentSource: data.paymentSource,
+        vat: data.vat,
+        totalIncTax: data.totalIncTax,
+        taxDeductible: data.taxDeductible,
+        isRecurring: data.isRecurring,
+        receiptUrl: receiptUrl
+      };
+      
+      if (editingExpenseId) {
+        updateExpenseMutation.mutate({ ...expenseData, id: editingExpenseId });
+      } else {
+        createExpenseMutation.mutate(expenseData);
+      }
+      
+      // Reset file selection
+      setSelectedFile(null);
+      setReceiptFileName('');
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload receipt. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -711,15 +779,26 @@ const ExpensesPage = () => {
                     type="text"
                     placeholder="Choose file to upload"
                     readOnly
+                    value={receiptFileName}
                     className="flex-1"
                   />
-                  <Button 
-                    type="button" 
-                    variant="secondary"
-                    className="whitespace-nowrap bg-blue-500 text-white hover:bg-blue-600 px-3"
-                  >
-                    Choose File
-                  </Button>
+                  <label htmlFor="receipt-upload">
+                    <Button 
+                      type="button" 
+                      variant="secondary"
+                      className="whitespace-nowrap bg-blue-500 text-white hover:bg-blue-600 px-3"
+                      onClick={() => document.getElementById('receipt-upload')?.click()}
+                    >
+                      Choose File
+                    </Button>
+                  </label>
+                  <input
+                    id="receipt-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg,application/pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </div>
                 <p className="text-xs text-gray-400 flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 mr-1">

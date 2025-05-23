@@ -29,8 +29,8 @@ const upload = multer({
     fileSize: 3 * 1024 * 1024, // 3MB limit
   },
   fileFilter: (_req, file, cb) => {
-    // Accept only image files
-    const filetypes = /jpeg|jpg|png|gif|svg/;
+    // Accept image files and PDFs
+    const filetypes = /jpeg|jpg|png|gif|svg|pdf/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     
@@ -38,7 +38,7 @@ const upload = multer({
       return cb(null, true);
     }
     
-    cb(new Error("Only image files are allowed"));
+    cb(new Error("Only image files and PDFs are allowed"));
   },
 });
 
@@ -62,6 +62,27 @@ router.post("/", upload.single("image"), async (req: Request, res: Response) => 
   } catch (error) {
     console.error("Error uploading image:", error);
     return res.status(500).json({ error: "Failed to upload image" });
+  }
+});
+
+/**
+ * Upload expense receipt
+ */
+router.post("/receipt", upload.single("receipt"), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No receipt file provided" });
+    }
+    
+    // Get the saved file path and construct the URL
+    const filename = req.file.filename;
+    const receiptUrl = `/uploads/${filename}`;
+    
+    // Return the receipt URL
+    return res.status(200).json({ url: receiptUrl });
+  } catch (error) {
+    console.error("Error uploading receipt:", error);
+    return res.status(500).json({ error: "Failed to upload receipt" });
   }
 });
 
