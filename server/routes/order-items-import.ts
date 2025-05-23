@@ -58,18 +58,21 @@ router.post('/api/order-items/import', async (req, res) => {
         console.log(`Using default contact ID: ${defaultContactId}`);
       } else {
         // If no contacts exist, create a placeholder contact
-        const createContactResult = await db.execute(`
-          INSERT INTO contacts (
-            user_id, first_name, last_name, email, created_at, type
-          ) VALUES (
-            1, 'Default', 'Contact', 'placeholder@example.com', NOW(), 'customer'
-          ) RETURNING id
-        `);
-        
-        if (createContactResult?.[0]?.rows?.length > 0) {
-          defaultContactId = createContactResult[0].rows[0].id;
-          console.log(`Created placeholder contact with ID: ${defaultContactId}`);
-        } else {
+        try {
+          const createContactResult = await db.execute(`
+            INSERT INTO contacts (
+              user_id, first_name, last_name, email, created_at, type
+            ) VALUES (
+              1, 'Default', 'Contact', 'placeholder@example.com', NOW(), 'customer'
+            ) RETURNING id
+          `);
+          
+          if (createContactResult?.[0]?.rows?.length > 0) {
+            defaultContactId = createContactResult[0].rows[0].id;
+            console.log(`Created placeholder contact with ID: ${defaultContactId}`);
+          }
+        } catch (contactErr) {
+          console.error("Failed to create default contact:", contactErr);
           defaultContactId = 1; // Last resort fallback
         }
       }
@@ -171,12 +174,12 @@ router.post('/api/order-items/import', async (req, res) => {
                   INSERT INTO orders (
                     user_id, contact_id, order_number, status, 
                     event_date, total_amount, sub_total_amount, delivery_amount, 
-                    discount_amount, special_instructions, event_type, created_at
+                    discount_amount, special_instructions, event_type, created_at, title
                   ) VALUES (
-                    ${userId}, ${defaultContactId}, '${safeOrderId}', 'pending', 
+                    ${userId}, ${defaultContactId || 'NULL'}, '${safeOrderId}', 'pending', 
                     '${orderDate}', '0.00', '0.00', '0.00',
                     '0.00', 'Auto-created from order items import', 'Other', 
-                    '${orderDate}'
+                    '${orderDate}', 'Order Item Import - ${safeOrderId.replace(/'/g, "''")}'
                   )
                   RETURNING id
                 `;
@@ -254,10 +257,10 @@ router.post('/api/order-items/import', async (req, res) => {
               1,
               '${cleanedSellPrice}',
               '${processedCreatedAt}',
-              ${cleanedServing},
-              ${cleanedLabour},
-              ${cleanedHours},
-              ${cleanedOverhead},
+              '${cleanedServing}',
+              ${cleanedLabour || 0},
+              ${cleanedHours || 0},
+              ${cleanedOverhead || 0},
               '${cleanedCostPrice}',
               '${cleanedSellPrice}',
               ${contactItem ? `'${contactItem.replace(/'/g, "''")}'` : 'NULL'},
