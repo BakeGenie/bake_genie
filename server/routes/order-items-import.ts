@@ -245,17 +245,15 @@ router.post('/api/order-items/import', async (req, res) => {
           
           const insertQuery = `
             INSERT INTO order_items (
-              order_id, description, quantity, price, notes, 
-              created_at, updated_at, serving, labour, hours, 
-              overhead, cost_price, sell_price, contact_item, recipes
+              order_id, description, quantity, price, 
+              created_at, serving, labour, hours, 
+              overhead, cost_price, sell_price, contact_item, recipes, number
             ) VALUES (
               ${orderDbId},
               '${description.replace(/'/g, "''")}',
               1,
               '${cleanedSellPrice}',
-              NULL,
               '${processedCreatedAt}',
-              '${new Date().toISOString()}',
               ${cleanedServing},
               ${cleanedLabour},
               ${cleanedHours},
@@ -263,7 +261,8 @@ router.post('/api/order-items/import', async (req, res) => {
               '${cleanedCostPrice}',
               '${cleanedSellPrice}',
               ${contactItem ? `'${contactItem.replace(/'/g, "''")}'` : 'NULL'},
-              ${recipes ? `'${recipes.replace(/'/g, "''")}'` : 'NULL'}
+              ${recipes ? `'${recipes.replace(/'/g, "''")}'` : 'NULL'},
+              '${safeOrderId}'
             )
             RETURNING id
           `;
