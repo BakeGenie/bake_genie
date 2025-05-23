@@ -204,9 +204,10 @@ router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
 
     // For this implementation, we'll simulate success by storing in session
     // Make sure it's defined
-    if (typeof req.session !== 'undefined') {
-      // Use actual session object with custom property
-      (req.session as any).subscriptionCancelled = true;
+    const session = req.session as any;
+    if (session) {
+      // Store cancellation state in session
+      session.subscriptionCancelled = true;
     }
 
     res.json({
@@ -238,9 +239,10 @@ router.post("/reactivate", requireAuth, async (req: Request, res: Response) => {
     // 3. Update the user's subscription data in our database
 
     // For this implementation, we'll simulate success by clearing the cancelled flag
-    if (typeof req.session !== 'undefined') {
+    const session = req.session as any;
+    if (session) {
       // Remove the cancelled flag
-      (req.session as any).subscriptionCancelled = false;
+      session.subscriptionCancelled = false;
     }
 
     res.json({
