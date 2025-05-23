@@ -12,6 +12,15 @@ const TrialBanner: React.FC = () => {
   const { data: trialData, isLoading } = useQuery({
     queryKey: ['/api/subscription/trial/status'],
     refetchInterval: 60 * 60 * 1000, // Refetch every hour
+    retry: 1,
+    // Default values in case the request fails
+    placeholderData: {
+      isInTrial: false,
+      trialEnded: false,
+      hasActiveSubscription: false,
+      daysLeft: 30,
+      eligibleForTrial: true
+    }
   });
 
   // Loading state
