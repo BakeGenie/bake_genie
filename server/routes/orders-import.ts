@@ -66,11 +66,11 @@ router.post('/api/orders/import', async (req, res) => {
           const status = item.status || 'Quote';
           const deliveryTime = item.delivery_time || item.deliveryTime || '';
           
-          // For numeric fields, convert to floats reliably
+          // For numeric fields, convert to floats reliably and cap to max allowed value
           const cleanNumber = (val) => {
             if (val === null || val === undefined) return 0;
             const str = val.toString().replace(/[^0-9.-]/g, '');
-            return parseFloat(str) || 0;
+            return Math.min(99, parseFloat(str) || 0); // Cap at 99 due to database field numeric(2,0) constraint
           };
           
           const totalAmount = cleanNumber(item.total_amount || item.totalAmount);
