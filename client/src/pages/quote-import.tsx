@@ -22,7 +22,7 @@ export default function QuoteImport() {
     { dbField: 'event_date', displayName: 'Event Date' },
     { dbField: 'event_type', displayName: 'Event Type' },
     { dbField: 'description', displayName: 'Description/Theme' },
-    { dbField: 'price', displayName: 'Price/Total' },
+    { dbField: 'total_amount', displayName: 'Total Amount' },
     { dbField: 'status', displayName: 'Status' },
     { dbField: 'expiry_date', displayName: 'Expiry Date' },
     { dbField: 'notes', displayName: 'Notes' },
@@ -46,7 +46,7 @@ export default function QuoteImport() {
   return (
     <CSVImporter
       title="Import Quotes"
-      description="Upload a CSV file containing quotes data to import into the system. The file should include columns for quote number, customer name, event date, event type, description, price, status, expiry date, and notes."
+      description="Upload a CSV file containing quotes data to import into the system. The file should include columns for quote number, customer name, event date, event type, description, total amount, status, expiry date, and notes."
       onBack={handleBack}
       onImportComplete={handleImportComplete}
       apiEndpoint="/api/quotes/import"
