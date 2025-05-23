@@ -13,19 +13,17 @@ import Reports from '@/pages/reports';
 import Enquiries from '@/pages/enquiries';
 import Printables from '@/pages/printables';
 import TaxRates from '@/pages/tax-rates';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 
-// Import the navbar component directly
-import { ThemeProvider } from "next-themes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// Create a client
+// Create a query client
 const queryClient = new QueryClient();
 
 function App() {
   return (
-    <div className="app">
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="light">
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <div className="min-h-screen">
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/calendar" component={Calendar} />
@@ -44,15 +42,15 @@ function App() {
             <Route>
               <div className="flex items-center justify-center min-h-[50vh]">
                 <div className="text-center">
-                  <h1 className="text-4xl font-bold text-primary mb-4">404 - Page Not Found</h1>
-                  <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
+                  <h1 className="text-3xl font-bold mb-2">404 - Page Not Found</h1>
+                  <p className="text-gray-500 dark:text-gray-400">The page you're looking for doesn't exist.</p>
                 </div>
               </div>
             </Route>
           </Switch>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </div>
+        </div>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
