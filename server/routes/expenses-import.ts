@@ -49,6 +49,11 @@ function parseCSVLine(line) {
   return values;
 }
 
+// Log all database errors helper
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 // SIMPLIFIED IMPORT ROUTE - SPECIFICALLY FOR BAKE DIARY FORMAT
 router.post('/api/expenses-import', isAuthenticated, upload.single('file'), async (req, res) => {
   try {
