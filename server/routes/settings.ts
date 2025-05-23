@@ -50,13 +50,13 @@ router.patch("/", async (req: Request, res: Response) => {
       .from(settings)
       .where(eq(settings.userId, userId));
 
-    // Extract only the fields we want to update, focusing on email templates
+    // Extract fields from the request using camelCase (from frontend)
     const {
-      quote_email_template,
-      invoice_email_template,
-      payment_reminder_template,
-      payment_receipt_template,
-      enquiry_message_template,
+      quoteEmailTemplate,
+      invoiceEmailTemplate,
+      paymentReminderTemplate,
+      paymentReceiptTemplate,
+      enquiryMessageTemplate,
       // Include any other fields that should be updated directly
       currency,
       weekStartDay,
@@ -64,21 +64,23 @@ router.patch("/", async (req: Request, res: Response) => {
       // ...don't include dates or IDs
     } = req.body;
     
-    // Build our clean update object with only valid fields
+    // Build our clean update object mapping to snake_case DB columns
     const updateData: any = {};
     
-    // Only add fields that actually have values
-    if (quote_email_template) updateData.quote_email_template = quote_email_template;
-    if (invoice_email_template) updateData.invoice_email_template = invoice_email_template;
-    if (payment_reminder_template) updateData.payment_reminder_template = payment_reminder_template;
-    if (payment_receipt_template) updateData.payment_receipt_template = payment_receipt_template;
-    if (enquiry_message_template) updateData.enquiry_message_template = enquiry_message_template;
-    if (currency) updateData.currency = currency;
-    if (weekStartDay) updateData.weekStartDay = weekStartDay;
-    if (languageCode) updateData.languageCode = languageCode;
+    // Map camelCase property names to snake_case DB column names
+    if (quoteEmailTemplate !== undefined) updateData.quote_email_template = quoteEmailTemplate;
+    if (invoiceEmailTemplate !== undefined) updateData.invoice_email_template = invoiceEmailTemplate;
+    if (paymentReminderTemplate !== undefined) updateData.payment_reminder_template = paymentReminderTemplate;
+    if (paymentReceiptTemplate !== undefined) updateData.payment_receipt_template = paymentReceiptTemplate;
+    if (enquiryMessageTemplate !== undefined) updateData.enquiry_message_template = enquiryMessageTemplate;
     
-    // Always set the updated timestamp
-    updateData.updatedAt = new Date();
+    // Other fields that don't need name conversion
+    if (currency !== undefined) updateData.currency = currency;
+    if (weekStartDay !== undefined) updateData.week_start_day = weekStartDay;
+    if (languageCode !== undefined) updateData.language_code = languageCode;
+    
+    // Always set the updated timestamp with proper snake_case column name
+    updateData.updated_at = new Date();
 
     if (userSettings.length === 0) {
       // Create new settings record if none exists

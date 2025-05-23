@@ -160,13 +160,13 @@ export default function EmailTemplates() {
   });
 
   const handleSaveChanges = () => {
-    // Create object using the snake_case field names that match the database column names
-    const templateData: any = {
-      quote_email_template: quoteTemplate,
-      invoice_email_template: invoiceTemplate, 
-      payment_reminder_template: paymentReminderTemplate,
-      payment_receipt_template: paymentReceiptTemplate,
-      enquiry_message_template: enquiryMessageTemplate
+    // Create a clean templates-only object for the API
+    const templateData = {
+      quoteEmailTemplate: quoteTemplate,
+      invoiceEmailTemplate: invoiceTemplate, 
+      paymentReminderTemplate: paymentReminderTemplate,
+      paymentReceiptTemplate: paymentReceiptTemplate,
+      enquiryMessageTemplate: enquiryMessageTemplate
     };
     
     console.log('Saving email templates:', templateData);
