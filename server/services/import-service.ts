@@ -174,7 +174,7 @@ export class ImportService {
             eventDate = new Date();
           }
           
-          // Map order status
+          // Map order status with exact Bake Diary field names
           const statusMapping: Record<string, string> = {
             '': 'Quote',
             'Booked': 'Confirmed',
@@ -183,6 +183,7 @@ export class ImportService {
             'Cancelled': 'Cancelled'
           };
           
+          // Use "Status" which is the exact field name in Bake Diary CSV
           const status = statusMapping[record.Status || ''] || 'Quote';
           
           // Parse amounts
@@ -203,21 +204,24 @@ export class ImportService {
             continue;
           }
           
-          // Create order
+          // Format eventDate as a string to avoid type issues 
+          const formattedEventDate = eventDate.toISOString().split('T')[0];
+          
+          // Create order with exact Bake Diary field mappings
           const [newOrder] = await db.insert(orders).values({
             userId,
             contactId,
             orderNumber: orderNumber.toString(),
             theme: record.Theme || '',
             eventType: record["Event Type"] || 'Other',
-            eventDate,
+            eventDate: formattedEventDate, // Use formatted string date
             status,
             deliveryType: deliveryAmount > 0 ? 'Delivery' : 'Pickup',
             deliveryDetails: '',
             setupFee: deliveryAmount.toString(),
             total: orderTotal.toString(),
             taxRate: '0',
-            notes: 'Imported from Bake Diary',
+            notes: `Imported from Bake Diary - Order #${orderNumber}`,
           }).returning();
           
           processedRows++;

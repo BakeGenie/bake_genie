@@ -129,7 +129,10 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
     // Get the headers from the first record
     const firstRecord = records[0];
     const csvHeaders = Object.keys(firstRecord);
-    console.log("CSV Headers found:", csvHeaders);
+    
+    // Clean up headers by trimming whitespace (Bake Diary CSVs often have spaces after commas)
+    const cleanedHeaders = csvHeaders.map(header => header.trim());
+    console.log("CSV Headers found:", cleanedHeaders);
     
     // Exact mappings based on user's Bake Diary CSV format
     const headerMap = {
