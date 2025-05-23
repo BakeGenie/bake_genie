@@ -102,8 +102,8 @@ export default function SuppliesImport() {
       console.log('Mapped data sample:', mappedData.slice(0, 2));
       setProgress(50);
       
-      // Send data directly to API without file upload
-      const response = await fetch('/api/data/import/json', {
+      // Send data directly to API without file upload - use the special fixed endpoint
+      const response = await fetch('/api/data-fixed/import/json', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -141,7 +141,7 @@ export default function SuppliesImport() {
       
       // Redirect to supplies page after successful import
       setTimeout(() => {
-        setLocation('/data-import-export');
+        setLocation('/data');
       }, 1500);
       
     } catch (error) {
@@ -163,7 +163,7 @@ export default function SuppliesImport() {
       <Button 
         variant="ghost" 
         className="mb-4"
-        onClick={() => setLocation('/data-import-export')}
+        onClick={() => setLocation('/data')}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Data Management

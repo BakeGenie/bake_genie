@@ -281,6 +281,11 @@ function Router() {
             <BakeDiaryImport />
           </ProtectedRoute>
         </Route>
+        <Route path="/supplies-import">
+          <ProtectedRoute>
+            <SuppliesImport />
+          </ProtectedRoute>
+        </Route>
         <Route path="/integrations">
           <ProtectedRoute>
             <Integrations />
