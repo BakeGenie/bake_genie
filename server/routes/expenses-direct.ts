@@ -28,45 +28,41 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
     
-    // SIMPLE DIRECT APPROACH - Minimal code, everything explicit
+    // STORED PROCEDURE APPROACH - Let the database handle everything
+    // Using our new create_expense stored procedure/function
     const sql = `
-      INSERT INTO expenses (
-        user_id, 
-        category, 
-        amount, 
-        date, 
-        description, 
-        supplier,
-        payment_source, 
-        vat, 
-        total_inc_tax, 
-        tax_deductible, 
-        is_recurring, 
-        receipt_url
-      ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING *
+      SELECT * FROM create_expense(
+        $1, -- p_user_id
+        $2, -- p_category
+        $3, -- p_amount
+        $4, -- p_date
+        $5, -- p_description
+        $6, -- p_supplier
+        $7, -- p_payment_source
+        $8, -- p_vat
+        $9, -- p_total_inc_tax
+        $10, -- p_tax_deductible
+        $11, -- p_is_recurring
+        $12  -- p_receipt_url
+      )
     `;
     
-    // Parse numeric values safely
-    const vatValue = req.body.vat ? parseFloat(req.body.vat) : 0;
-    const totalIncTaxValue = req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : 0;
-    
-    console.log("PRE-EXECUTION VALUES:");
+    console.log("CALLING DATABASE FUNCTION WITH VALUES:");
     console.log("Supplier:", req.body.supplier);
-    console.log("VAT:", vatValue, "from original:", req.body.vat);
-    console.log("Total Inc Tax:", totalIncTaxValue, "from original:", req.body.totalIncTax);
+    console.log("VAT:", req.body.vat);
+    console.log("Total Inc Tax:", req.body.totalIncTax);
     
+    // Pass raw values directly to the database function
     const values = [
       userId,
       req.body.category,
       req.body.amount,
       new Date(req.body.date),
-      req.body.description || null,
-      req.body.supplier || "",
-      req.body.paymentSource || "Cash",
-      vatValue,
-      totalIncTaxValue,
+      req.body.description || '',
+      req.body.supplier || '', // We want this stored as is
+      req.body.paymentSource || 'Cash',
+      req.body.vat || '0', // Pass as string, function will convert
+      req.body.totalIncTax || '0', // Pass as string, function will convert
       req.body.taxDeductible ? true : false,
       req.body.isRecurring ? true : false,
       req.body.receiptUrl || null
