@@ -364,15 +364,20 @@ const Income = () => {
       {/* Income Dialog */}
       <Dialog open={openIncomeDialog} onOpenChange={setOpenIncomeDialog}>
         <DialogContent className="sm:max-w-[425px]">
-          <div className="flex justify-between items-center mb-4">
-            <DialogTitle className="text-xl">Add Income</DialogTitle>
-            <button 
-              onClick={() => setOpenIncomeDialog(false)}
-              className="text-gray-400 hover:text-gray-500"
-            >
-              ✕
-            </button>
-          </div>
+          <DialogHeader>
+            <div className="flex justify-between items-center">
+              <DialogTitle className="text-xl">Add Income</DialogTitle>
+              <button 
+                onClick={() => setOpenIncomeDialog(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                ✕
+              </button>
+            </div>
+            <DialogDescription>
+              Enter the income details below to track your additional revenue
+            </DialogDescription>
+          </DialogHeader>
           <Form {...incomeForm}>
             <form onSubmit={incomeForm.handleSubmit(onSubmitIncome)} className="space-y-4">
               <FormField
