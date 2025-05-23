@@ -119,6 +119,14 @@ router.post('/trial/start', async (req: any, res) => {
     const userId = req.user?.id || 1; // Use ID 1 as demo user fallback
     console.log(`Starting trial for user ID: ${userId}`);
     
+    // Make sure userId is a number (or try to convert it if possible)
+    const userIdNumber = parseInt(userId.toString(), 10);
+    if (isNaN(userIdNumber)) {
+      return res.status(400).json({ 
+        error: 'Invalid user ID' 
+      });
+    }
+    
     // Check if user already has an active subscription
     const existingSubscriptions = await db
       .select()
@@ -192,11 +200,11 @@ router.post('/trial/start', async (req: any, res) => {
     // Create a trial subscription
     let subscription;
     try {
-      // Ensure variable names match DB field names using snake_case
+      // The database columns use snake_case naming, not camelCase
       [subscription] = await db
         .insert(userSubscriptions)
         .values({
-          user_id: userId,
+          user_id: userIdNumber, // Use the parsed number
           plan_id: standardPlan.id,
           plan_name: standardPlan.name,
           status: 'trialing',
