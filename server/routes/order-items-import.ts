@@ -63,7 +63,7 @@ router.post('/api/order-items/import', async (req, res) => {
             INSERT INTO contacts (
               user_id, first_name, last_name, email, created_at, type
             ) VALUES (
-              1, 'Default', 'Contact', 'placeholder@example.com', NOW(), 'customer'
+              ${userId}, 'Default', 'Contact', 'placeholder@example.com', NOW(), 'customer'
             ) RETURNING id
           `);
           
@@ -170,20 +170,103 @@ router.post('/api/order-items/import', async (req, res) => {
                   orderDate = new Date().toISOString();
                 }
                 
-                const createOrderQuery = `
-                  INSERT INTO orders (
-                    user_id, contact_id, order_number, status, 
-                    event_date, total_amount, sub_total_amount, delivery_amount, 
-                    discount_amount, special_instructions, event_type, created_at, title
-                  ) VALUES (
-                    ${userId}, ${defaultContactId || 'NULL'}, '${safeOrderId}', 'pending', 
-                    '${orderDate}', '0.00', '0.00', '0.00',
-                    '0.00', 'Auto-created from order items import', 'Other', 
-                    '${orderDate}', 'Order Item Import - ${safeOrderId.replace(/'/g, "''")}'
-                  )
-                  RETURNING id
-                `;
+                // Check the orders table schema first to ensure we're using the right columns
+                try {
+                  const orderTableInfo = await db.execute(`
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'orders'
+                  `);
+                  
+                  // Create a set of available columns for faster lookup
+                  const orderColumns = new Set();
+                  if (orderTableInfo?.[0]?.rows) {
+                    orderTableInfo[0].rows.forEach(row => {
+                      orderColumns.add(row.column_name);
+                    });
+                  }
+                  
+                  console.log("Available order columns:", Array.from(orderColumns));
+                  
+                  // Build a safe order creation query with only available columns
+                  const columnNames = [];
+                  const columnValues = [];
+                  
+                  if (orderColumns.has('user_id')) {
+                    columnNames.push('user_id');
+                    columnValues.push(userId);
+                  }
+                  
+                  if (orderColumns.has('contact_id')) {
+                    columnNames.push('contact_id');
+                    columnValues.push(defaultContactId || 'NULL');
+                  }
+                  
+                  if (orderColumns.has('order_number')) {
+                    columnNames.push('order_number');
+                    columnValues.push(`'${safeOrderId.replace(/'/g, "''")}'`);
+                  }
+                  
+                  if (orderColumns.has('status')) {
+                    columnNames.push('status');
+                    columnValues.push(`'pending'`);
+                  }
+                  
+                  if (orderColumns.has('event_date')) {
+                    columnNames.push('event_date');
+                    columnValues.push(`'${orderDate}'`);
+                  }
+                  
+                  if (orderColumns.has('total_amount')) {
+                    columnNames.push('total_amount');
+                    columnValues.push(`'0.00'`);
+                  }
+                  
+                  if (orderColumns.has('sub_total_amount')) {
+                    columnNames.push('sub_total_amount');
+                    columnValues.push(`'0.00'`);
+                  }
+                  
+                  if (orderColumns.has('delivery_amount')) {
+                    columnNames.push('delivery_amount');
+                    columnValues.push(`'0.00'`);
+                  }
+                  
+                  if (orderColumns.has('discount_amount')) {
+                    columnNames.push('discount_amount');
+                    columnValues.push(`'0.00'`);
+                  }
+                  
+                  if (orderColumns.has('special_instructions')) {
+                    columnNames.push('special_instructions');
+                    columnValues.push(`'Auto-created from order items import'`);
+                  }
+                  
+                  if (orderColumns.has('event_type')) {
+                    columnNames.push('event_type');
+                    columnValues.push(`'Other'`);
+                  }
+                  
+                  if (orderColumns.has('created_at')) {
+                    columnNames.push('created_at');
+                    columnValues.push(`'${orderDate}'`);
+                  }
+                  
+                  if (orderColumns.has('title')) {
+                    columnNames.push('title');
+                    columnValues.push(`'Order Item Import - ${safeOrderId.replace(/'/g, "''")}'`);
+                  }
+                  
+                  const createOrderQuery = `
+                    INSERT INTO orders (
+                      ${columnNames.join(', ')}
+                    ) VALUES (
+                      ${columnValues.join(', ')}
+                    )
+                    RETURNING id
+                  `;
                 
+                console.log("Order creation SQL:", createOrderQuery);
                 const createResult = await db.execute(createOrderQuery);
                 if (createResult?.[0]?.rows?.[0]?.id) {
                   orderDbId = createResult[0].rows[0].id;
