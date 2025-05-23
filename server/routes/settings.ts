@@ -59,18 +59,19 @@ router.patch("/templates", async (req: Request, res: Response) => {
       updateObject.enquiryMessageTemplate = enquiryMessageTemplate;
     }
     
-    // Simple approach - update via DRIZZLE ORM with proper schema
+    // Use field names that match the database schema
     const result = await db
       .update(settings)
       .set({
-        quote_email_template: quoteEmailTemplate,
-        invoice_email_template: invoiceEmailTemplate,
-        payment_reminder_template: paymentReminderTemplate,
-        payment_receipt_template: paymentReceiptTemplate,
-        enquiry_message_template: enquiryMessageTemplate,
-        updated_at: new Date()
+        quoteEmailTemplate: quoteEmailTemplate,
+        invoiceEmailTemplate: invoiceEmailTemplate,
+        paymentReminderTemplate: paymentReminderTemplate,
+        paymentReceiptTemplate: paymentReceiptTemplate,
+        enquiryMessageTemplate: enquiryMessageTemplate,
+        updatedAt: new Date()
       })
-      .where(eq(settings.userId, userId));
+      .where(eq(settings.userId, userId))
+      .returning();
     
     return res.json({ success: true, data: result });
   } catch (error) {

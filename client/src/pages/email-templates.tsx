@@ -115,13 +115,16 @@ export default function EmailTemplates() {
   ]);
 
   // Mutation for saving changes
+  // Call the main settings reload function from context
+  const { refetchSettings } = useSettings() || { refetchSettings: () => null };
+
   const saveTemplatesMutation = useMutation({
     mutationFn: async (data: any) => {
       setIsLoading(true);
       try {
-        // Using direct fetch for better control over the API request
-        console.log('Saving templates with data:', data);
-        const response = await fetch('/api/settings', {
+        // Now using our specialized templates endpoint
+        console.log('Saving email templates:', data);
+        const response = await fetch('/api/settings/templates', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -133,16 +136,25 @@ export default function EmailTemplates() {
           throw new Error(`Failed to save templates: ${response.statusText}`);
         }
         
-        const result = await response.json();
-        setIsLoading(false);
-        return result;
+        // Check if the response has content before trying to parse as JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json();
+          setIsLoading(false);
+          return result;
+        } else {
+          // If not JSON or empty response, just return a success object
+          setIsLoading(false);
+          return { success: true };
+        }
       } catch (error) {
         setIsLoading(false);
         throw error;
       }
     },
-    onSuccess: (data) => {
-      updateSettings(data);
+    onSuccess: () => {
+      // Refetch settings to update context with latest data
+      if (refetchSettings) refetchSettings();
       setHasChanges(false);
       toast({
         title: "Templates saved",

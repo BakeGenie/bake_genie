@@ -52,6 +52,7 @@ interface SettingsContextType {
   isLoading: boolean;
   updateSettings: (newSettings: Partial<Settings>) => Promise<boolean>;
   getCurrencySymbol: (currencyCode: string) => string;
+  refetchSettings: () => Promise<void>;
 }
 
 // Create the context with default values
@@ -162,33 +163,35 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return currencySymbols[currencyCode] || '$';
   };
 
+  // Function to fetch settings from the server
+  const refetchSettings = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/settings');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch settings');
+      }
+      
+      const data = await response.json();
+      
+      // Update settings with fetched data
+      setSettings({
+        ...settings,
+        ...data,
+        // Make sure currencySymbol is set based on currency
+        currencySymbol: getCurrencySymbol(data.currency || settings.currency),
+      });
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Load settings from server on initial load
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await fetch('/api/settings');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch settings');
-        }
-        
-        const data = await response.json();
-        
-        // Update settings with fetched data
-        setSettings({
-          ...settings,
-          ...data,
-          // Make sure currencySymbol is set based on currency
-          currencySymbol: getCurrencySymbol(data.currency || settings.currency),
-        });
-      } catch (error) {
-        console.error('Error loading settings:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchSettings();
+    refetchSettings();
   }, []);
 
   // Update settings - both locally and on the server
@@ -251,6 +254,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isLoading,
         updateSettings,
         getCurrencySymbol,
+        refetchSettings,
       }}
     >
       {children}
