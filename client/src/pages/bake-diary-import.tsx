@@ -39,11 +39,11 @@ export default function BakeDiaryImport() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Bake Diary specific field mappings
+  // Bake Diary specific field mappings - using camelCase for database fields
   const mappings = {
     "type": "Type",
-    "first_name": "First Name",
-    "last_name": "Last Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
     "email": "Email",
     "phone": "Number"
   };
