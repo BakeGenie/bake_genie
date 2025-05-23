@@ -175,7 +175,12 @@ router.patch("/:id", async (req: Request, res: Response) => {
     if (req.body.amount !== undefined) updateData.amount = req.body.amount.toString();
     if (req.body.date !== undefined) updateData.date = new Date(req.body.date);
     if (req.body.description !== undefined) updateData.description = req.body.description;
+    if (req.body.supplier !== undefined) updateData.supplier = req.body.supplier;
+    if (req.body.paymentSource !== undefined) updateData.paymentSource = req.body.paymentSource;
+    if (req.body.vat !== undefined) updateData.vat = req.body.vat ? parseFloat(req.body.vat) : null;
+    if (req.body.totalIncTax !== undefined) updateData.totalIncTax = req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : null;
     if (req.body.taxDeductible !== undefined) updateData.taxDeductible = req.body.taxDeductible;
+    if (req.body.isRecurring !== undefined) updateData.isRecurring = req.body.isRecurring;
     if (req.body.receiptUrl !== undefined) updateData.receiptUrl = req.body.receiptUrl;
     
     // Update the expense
