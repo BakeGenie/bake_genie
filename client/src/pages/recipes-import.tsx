@@ -9,7 +9,7 @@ import { AlertCircle, ArrowLeft, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useQueryClient } from '@tanstack/react-query';
 
-// Simple browser-compatible CSV parser function
+// Simple browser-compatible CSV parser function optimized for Bake Diary recipe export format
 function parseCSV(csvText: string) {
   // Split by lines and filter out empty lines
   const lines = csvText.split('\n').filter(line => line.trim() !== '');
@@ -18,26 +18,57 @@ function parseCSV(csvText: string) {
     return [];
   }
   
-  // Get headers (first line)
-  const headers = lines[0].split(',').map(header => header.trim());
+  // For Bake Diary recipe format, the actual headers are in the 3rd row (index 2)
+  // If there aren't enough lines for this format, default to standard CSV parsing
+  let headerLine = 0;
+  let dataStartLine = 1;
   
-  // Parse records
+  // Check if we have enough lines to extract headers from 3rd row
+  if (lines.length >= 4) {
+    // Look for the line that contains "Recipies,Category,Servings,Custom Price" pattern
+    for (let i = 0; i < 5 && i < lines.length; i++) {
+      if (lines[i].includes("Category") && lines[i].includes("Servings") && 
+          (lines[i].includes("Custom Price") || lines[i].includes("Custom"))) {
+        headerLine = i;
+        dataStartLine = i + 1;
+        break;
+      }
+    }
+  }
+  
+  // Get headers from the identified header line
+  const headers = lines[headerLine].split(',').map(header => header.trim());
+  
+  console.log('Detected header line:', headerLine, 'with headers:', headers);
+  console.log('Data starting from line:', dataStartLine);
+  
+  // Parse records starting from the line after headers
   const records = [];
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(value => value.trim());
+  for (let i = dataStartLine; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue; // Skip empty lines
     
-    // Skip lines that don't have enough values
-    if (values.length < headers.length) {
+    // Split values for each row
+    const values = line.split(',').map(value => value.trim());
+    
+    // Skip lines that are likely not data (e.g., header separators, totals)
+    // Skip lines with fewer columns than what we need for meaningful data
+    if (values.length < 2 || !values[0] || values[0].includes('----')) {
       continue;
     }
     
     // Create record object
     const record: Record<string, string> = {};
     headers.forEach((header, index) => {
-      record[header] = values[index] || '';
+      if (header) { // Only add fields that have a header name
+        record[header] = values[index] || '';
+      }
     });
     
-    records.push(record);
+    // Ensure there's a recipe name
+    if (record['Recipies'] && record['Recipies'].length > 0) {
+      records.push(record);
+    }
   }
   
   return records;
@@ -122,23 +153,56 @@ export default function RecipesImport() {
           if (dbField === 'total_cost') {
             // Convert to numeric, handle currency symbols
             if (item[csvField]) {
-              // Remove currency symbols, quotes and other non-numeric chars except decimal point
-              const numericString = String(item[csvField]).replace(/[^0-9.]/g, '');
-              mappedItem[dbField] = numericString ? parseFloat(numericString) : 0;
+              // Handle specific Bake Diary format - may contain price in parentheses or with currency symbols
+              let valueToProcess = String(item[csvField]);
+              
+              // Check for formats like "54.5 $00,4." or "$14.10" or "7.78"
+              // First remove any currency symbols and other non-numeric chars except decimal point
+              const numericString = valueToProcess.replace(/[^0-9.]/g, '');
+              
+              // Special case for empty or invalid values
+              if (!numericString || numericString === '.') {
+                mappedItem[dbField] = 0;
+              } else {
+                // Handle potential multiple decimal points
+                const parts = numericString.split('.');
+                if (parts.length > 2) {
+                  // If we have multiple decimal points, use the first two parts
+                  mappedItem[dbField] = parseFloat(`${parts[0]}.${parts[1]}`);
+                } else {
+                  mappedItem[dbField] = parseFloat(numericString);
+                }
+              }
             } else {
               mappedItem[dbField] = 0;
             }
           } else if (dbField === 'servings') {
-            // Handle numeric fields
+            // Handle numeric fields and formats like "15 ($0.29)"
             if (item[csvField]) {
-              const numericString = String(item[csvField]).replace(/[^0-9]/g, '');
-              mappedItem[dbField] = numericString ? parseInt(numericString) : 1;
+              let servingValue = String(item[csvField]);
+              
+              // Extract just the number part (before any parentheses or spaces)
+              const servingsMatch = servingValue.match(/^(\d+)/);
+              if (servingsMatch && servingsMatch[1]) {
+                mappedItem[dbField] = parseInt(servingsMatch[1]);
+              } else {
+                // If no clear number is found, try to get any digits
+                const numericString = servingValue.replace(/[^0-9]/g, '');
+                mappedItem[dbField] = numericString ? parseInt(numericString) : 1;
+              }
             } else {
               mappedItem[dbField] = 1; // Default to 1 serving
             }
           } else {
-            // Use strings for other fields, remove any extra quotes
-            const cleanValue = item[csvField] ? String(item[csvField]).replace(/^"|"$/g, '').trim() : '';
+            // Use strings for other fields, remove any extra quotes and clean up
+            let cleanValue = '';
+            if (item[csvField]) {
+              // Remove quotes, normalize whitespace
+              cleanValue = String(item[csvField])
+                .replace(/^"|"$/g, '')
+                .replace(/\\"/g, '"')
+                .trim();
+            }
             mappedItem[dbField] = cleanValue;
           }
         }
