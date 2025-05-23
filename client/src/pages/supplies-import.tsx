@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { parse } from 'csv-parse/sync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +7,40 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { AlertCircle, ArrowLeft, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+// Simple browser-compatible CSV parser function
+function parseCSV(csvText: string) {
+  // Split by lines and filter out empty lines
+  const lines = csvText.split('\n').filter(line => line.trim() !== '');
+  
+  if (lines.length === 0) {
+    return [];
+  }
+  
+  // Get headers (first line)
+  const headers = lines[0].split(',').map(header => header.trim());
+  
+  // Parse records
+  const records = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',').map(value => value.trim());
+    
+    // Skip lines that don't have enough values
+    if (values.length < headers.length) {
+      continue;
+    }
+    
+    // Create record object
+    const record: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      record[header] = values[index] || '';
+    });
+    
+    records.push(record);
+  }
+  
+  return records;
+}
 
 export default function SuppliesImport() {
   const [setLocation] = useLocation();
@@ -50,12 +83,8 @@ export default function SuppliesImport() {
       try {
         const content = event.target?.result as string;
         
-        // Parse CSV
-        const records = parse(content, {
-          columns: true,
-          skip_empty_lines: true,
-          trim: true
-        });
+        // Parse CSV with a simple browser-compatible parser
+        const records = parseCSV(content);
         
         console.log('CSV Headers:', Object.keys(records[0]));
         console.log('CSV Sample Data:', records.slice(0, 2));
