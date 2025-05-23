@@ -73,22 +73,29 @@ export default function EmailTemplates() {
   // Initialize templates from settings or defaults
   useEffect(() => {
     if (settings) {
-      setQuoteTemplate(settings.quoteEmailTemplate || defaultTemplates.quoteTemplate);
-      setInvoiceTemplate(settings.invoiceEmailTemplate || defaultTemplates.invoiceTemplate);
-      setPaymentReminderTemplate(settings.paymentReminderTemplate || defaultTemplates.paymentReminderTemplate);
-      setPaymentReceiptTemplate(settings.paymentReceiptTemplate || defaultTemplates.paymentReceiptTemplate);
-      setEnquiryMessageTemplate(settings.enquiryMessageTemplate || defaultTemplates.enquiryMessageTemplate);
+      // Use bracket notation to access properties that might be using snake_case in the response
+      setQuoteTemplate(settings.quote_email_template || settings.quoteEmailTemplate || defaultTemplates.quoteTemplate);
+      setInvoiceTemplate(settings.invoice_email_template || settings.invoiceEmailTemplate || defaultTemplates.invoiceTemplate);
+      setPaymentReminderTemplate(settings.payment_reminder_template || settings.paymentReminderTemplate || defaultTemplates.paymentReminderTemplate);
+      setPaymentReceiptTemplate(settings.payment_receipt_template || settings.paymentReceiptTemplate || defaultTemplates.paymentReceiptTemplate);
+      setEnquiryMessageTemplate(settings.enquiry_message_template || settings.enquiryMessageTemplate || defaultTemplates.enquiryMessageTemplate);
     }
   }, [settings]);
 
   // Track changes
   useEffect(() => {
     if (settings) {
-      const hasQuoteChanged = settings.quoteEmailTemplate !== quoteTemplate;
-      const hasInvoiceChanged = settings.invoiceEmailTemplate !== invoiceTemplate;
-      const hasReminderChanged = settings.paymentReminderTemplate !== paymentReminderTemplate;
-      const hasReceiptChanged = settings.paymentReceiptTemplate !== paymentReceiptTemplate;
-      const hasEnquiryChanged = settings.enquiryMessageTemplate !== enquiryMessageTemplate;
+      // Check both camelCase and snake_case fields
+      const hasQuoteChanged = 
+        (settings.quote_email_template || settings.quoteEmailTemplate) !== quoteTemplate;
+      const hasInvoiceChanged = 
+        (settings.invoice_email_template || settings.invoiceEmailTemplate) !== invoiceTemplate;
+      const hasReminderChanged = 
+        (settings.payment_reminder_template || settings.paymentReminderTemplate) !== paymentReminderTemplate;
+      const hasReceiptChanged = 
+        (settings.payment_receipt_template || settings.paymentReceiptTemplate) !== paymentReceiptTemplate;
+      const hasEnquiryChanged = 
+        (settings.enquiry_message_template || settings.enquiryMessageTemplate) !== enquiryMessageTemplate;
       
       setHasChanges(
         hasQuoteChanged || 
@@ -109,12 +116,29 @@ export default function EmailTemplates() {
 
   // Mutation for saving changes
   const saveTemplatesMutation = useMutation({
-    mutationFn: async (data: Partial<typeof settings>) => {
+    mutationFn: async (data: any) => {
       setIsLoading(true);
-      const response = await apiRequest("PATCH", "/api/settings", data);
-      const result = await response.json();
-      setIsLoading(false);
-      return result;
+      try {
+        // Using apiRequest from lib/queryClient 
+        const response = await fetch('/api/settings', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to save templates: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        setIsLoading(false);
+        return result;
+      } catch (error) {
+        setIsLoading(false);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       updateSettings(data);
@@ -135,14 +159,16 @@ export default function EmailTemplates() {
   });
 
   const handleSaveChanges = () => {
-    // Convert camelCase to snake_case for the backend (database field names)
-    saveTemplatesMutation.mutate({
+    // Create a properly typed object to mutate
+    const templateData: any = {
       quote_email_template: quoteTemplate,
-      invoice_email_template: invoiceTemplate,
+      invoice_email_template: invoiceTemplate, 
       payment_reminder_template: paymentReminderTemplate,
       payment_receipt_template: paymentReceiptTemplate,
       enquiry_message_template: enquiryMessageTemplate
-    });
+    };
+    
+    saveTemplatesMutation.mutate(templateData);
   };
 
   return (
