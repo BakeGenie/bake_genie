@@ -20,6 +20,7 @@ import integrationsRouter from "./routes/integrations";
 import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct";
 import orderLogsRouter from "./routes/order-logs";
 import bakeDiaryImportRouter from "./routes/bake-diary-import";
+import ingredientsImportRouter from "./routes/ingredients-import";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 import { registerExportRoutes } from "./routes/export";
@@ -167,6 +168,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const dataImportRouter = Router();
   registerDataImportRoutes(dataImportRouter);
   app.use(dataImportRouter);
+  
+  // Register ingredients import routes
+  app.use(ingredientsImportRouter);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
