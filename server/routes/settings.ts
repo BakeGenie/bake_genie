@@ -50,6 +50,36 @@ router.patch("/", async (req: Request, res: Response) => {
       .from(settings)
       .where(eq(settings.userId, userId));
 
+    // Extract only the fields we want to update, focusing on email templates
+    const {
+      quote_email_template,
+      invoice_email_template,
+      payment_reminder_template,
+      payment_receipt_template,
+      enquiry_message_template,
+      // Include any other fields that should be updated directly
+      currency,
+      weekStartDay,
+      languageCode,
+      // ...don't include dates or IDs
+    } = req.body;
+    
+    // Build our clean update object with only valid fields
+    const updateData: any = {};
+    
+    // Only add fields that actually have values
+    if (quote_email_template) updateData.quote_email_template = quote_email_template;
+    if (invoice_email_template) updateData.invoice_email_template = invoice_email_template;
+    if (payment_reminder_template) updateData.payment_reminder_template = payment_reminder_template;
+    if (payment_receipt_template) updateData.payment_receipt_template = payment_receipt_template;
+    if (enquiry_message_template) updateData.enquiry_message_template = enquiry_message_template;
+    if (currency) updateData.currency = currency;
+    if (weekStartDay) updateData.weekStartDay = weekStartDay;
+    if (languageCode) updateData.languageCode = languageCode;
+    
+    // Always set the updated timestamp
+    updateData.updatedAt = new Date();
+
     if (userSettings.length === 0) {
       // Create new settings record if none exists
       console.log("Creating new settings for user:", userId);
@@ -57,7 +87,7 @@ router.patch("/", async (req: Request, res: Response) => {
         .insert(settings)
         .values({
           userId,
-          ...req.body,
+          ...updateData,
         })
         .returning();
 
@@ -66,38 +96,43 @@ router.patch("/", async (req: Request, res: Response) => {
       // Update existing settings
       console.log("Updating existing settings for user:", userId);
       
-      // Safely prepare email notification settings
-      const updateValues = {
-        ...req.body,
-        updatedAt: new Date(),
-      };
-      
       // Convert string 'true'/'false' values to boolean if needed
-      if (typeof updateValues.receiveUpcomingOrders === 'string') {
-        updateValues.receiveUpcomingOrders = updateValues.receiveUpcomingOrders === 'true';
+      if (typeof updateData.receiveUpcomingOrders === 'string') {
+        updateData.receiveUpcomingOrders = updateData.receiveUpcomingOrders === 'true';
       }
-      if (typeof updateValues.receivePaymentReminders === 'string') {
-        updateValues.receivePaymentReminders = updateValues.receivePaymentReminders === 'true';
+      if (typeof updateData.receivePaymentReminders === 'string') {
+        updateData.receivePaymentReminders = updateData.receivePaymentReminders === 'true';
       }
-      if (typeof updateValues.receiveMarketingEmails === 'string') {
-        updateValues.receiveMarketingEmails = updateValues.receiveMarketingEmails === 'true';
+      if (typeof updateData.receiveMarketingEmails === 'string') {
+        updateData.receiveMarketingEmails = updateData.receiveMarketingEmails === 'true';
       }
-      if (typeof updateValues.receiveProductUpdates === 'string') {
-        updateValues.receiveProductUpdates = updateValues.receiveProductUpdates === 'true';
+      if (typeof updateData.receiveProductUpdates === 'string') {
+        updateData.receiveProductUpdates = updateData.receiveProductUpdates === 'true';
       }
       
-      console.log("Final update values:", updateValues);
+      console.log("Final update values:", updateData);
       
-      const [updatedSettings] = await db
-        .update(settings)
-        .set(updateValues)
-        .where(eq(settings.userId, userId))
-        .returning();
-
-      return res.json(updatedSettings);
+      try {
+        const [updatedSettings] = await db
+          .update(settings)
+          .set(updateData)
+          .where(eq(settings.userId, userId))
+          .returning();
+          
+        return res.json(updatedSettings);
+      } catch (dbError) {
+        console.error("Error updating settings:", dbError);
+        return res.status(500).json({ 
+          error: "Failed to update settings", 
+          details: dbError instanceof Error ? dbError.message : String(dbError) 
+        });
+      }
     }
   } catch (error) {
     console.error("Error updating settings:", error);
-    return res.status(500).json({ error: "Failed to update settings", details: error.message });
+    return res.status(500).json({ 
+      error: "Failed to update settings", 
+      details: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
