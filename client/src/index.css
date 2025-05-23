@@ -29,9 +29,9 @@
   --sidebar-foreground: 0 0% 100%;
   --sidebar-primary: 186 100% 40%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 186 100% 45%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-border: 186 50% 50%;
+  --sidebar-accent: 186 100% 50%;
+  --sidebar-accent-foreground: 222.2 84% 4.9%;
+  --sidebar-border: 186 50% 55%;
   --sidebar-ring: 186 100% 40%;
   
   /* Chart colors */

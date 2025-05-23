@@ -229,14 +229,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer hover:bg-sidebar-accent/20 transition-colors ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : ""
+                        : "text-white"
                     }`}
                   >
                     <div className="flex items-center">
-                      <span className="w-5 text-sidebar-foreground">
+                      <span className={`w-5 ${
+                        currentPath === link.path || currentPath.startsWith(`${link.path}/`)
+                          ? "text-sidebar-accent-foreground"
+                          : "text-white"
+                      }`}>
                         {link.icon}
                       </span>
-                      <span className="ml-3 text-sidebar-foreground">{link.label}</span>
+                      <span className={`ml-3 ${
+                        currentPath === link.path || currentPath.startsWith(`${link.path}/`)
+                          ? "text-sidebar-accent-foreground"
+                          : "text-white"
+                      }`}>{link.label}</span>
                     </div>
                     {link.badge !== undefined && link.badge > 0 ? (
                       <Badge variant="secondary" className="text-xs bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground">
@@ -256,10 +264,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                 onClick={() => {
                   setTheme(theme === "dark" ? "light" : "dark");
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent/20 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-sidebar-accent/20 transition-colors"
               >
                 <div className="flex items-center">
-                  <span className="w-5 text-sidebar-foreground">
+                  <span className="w-5 text-white">
                     {theme === "dark" ? (
                       <Sun className="h-5 w-5" />
                     ) : (
@@ -293,10 +301,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     window.location.href = "/";
                   }
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent/20 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-sidebar-accent/20 transition-colors"
               >
                 <div className="flex items-center">
-                  <span className="w-5 text-sidebar-foreground">
+                  <span className="w-5 text-white">
                     <LogOutIcon className="h-5 w-5" />
                   </span>
                   <span className="ml-3 font-medium">Log off</span>
