@@ -60,9 +60,9 @@ router.post('/api/order-items/import', async (req, res) => {
         // If no contacts exist, create a placeholder contact
         const createContactResult = await db.execute(`
           INSERT INTO contacts (
-            user_id, first_name, last_name, email, created_at, updated_at
+            user_id, first_name, last_name, email, created_at, type
           ) VALUES (
-            1, 'Default', 'Contact', 'placeholder@example.com', NOW(), NOW()
+            1, 'Default', 'Contact', 'placeholder@example.com', NOW(), 'customer'
           ) RETURNING id
         `);
         
@@ -143,12 +143,6 @@ router.post('/api/order-items/import', async (req, res) => {
             let findOrderQuery = `SELECT id FROM orders WHERE order_number = '${safeOrderId}'`;
             let orderResult = await db.execute(findOrderQuery);
             
-            // If not found, try with the number field directly
-            if (!orderResult?.[0]?.rows?.length) {
-              findOrderQuery = `SELECT id FROM orders WHERE number = '${safeOrderId}'`;
-              orderResult = await db.execute(findOrderQuery);
-            }
-            
             // If still not found, try with the id field (if numeric)
             if (!orderResult?.[0]?.rows?.length && !isNaN(Number(safeOrderId))) {
               findOrderQuery = `SELECT id FROM orders WHERE id = ${Number(safeOrderId)}`;
@@ -175,16 +169,14 @@ router.post('/api/order-items/import', async (req, res) => {
                 
                 const createOrderQuery = `
                   INSERT INTO orders (
-                    user_id, contact_id, order_number, number, status, 
-                    event_date, order_date, subtotal, delivery_amount, 
-                    discount_amount, tax_amount, total_amount, payment_method, 
-                    payment_status, delivery_method, notes, event_type, created_at, updated_at
+                    user_id, contact_id, order_number, status, 
+                    event_date, total_amount, sub_total_amount, delivery_amount, 
+                    discount_amount, special_instructions, event_type, created_at
                   ) VALUES (
-                    ${userId}, ${defaultContactId}, '${safeOrderId}', '${safeOrderId}', 'pending', 
-                    '${orderDate}', '${orderDate}', '0.00', '0.00',
-                    '0.00', '0.00', '0.00', 'card',
-                    'unpaid', 'pickup', 'Auto-created from order items import', 'Other', 
-                    '${orderDate}', NOW()
+                    ${userId}, ${defaultContactId}, '${safeOrderId}', 'pending', 
+                    '${orderDate}', '0.00', '0.00', '0.00',
+                    '0.00', 'Auto-created from order items import', 'Other', 
+                    '${orderDate}'
                   )
                   RETURNING id
                 `;
