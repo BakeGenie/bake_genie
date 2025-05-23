@@ -644,11 +644,14 @@ const ExpensesPage = () => {
           setOpenExpenseDialog(open);
         }}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby="expense-form-description">
           <div className="flex justify-between items-center mb-4">
             <DialogTitle className="text-xl">
               {editingExpenseId ? 'Edit Expense' : 'Add Expense'}
             </DialogTitle>
+            <span id="expense-form-description" className="sr-only">
+              Fill out the form to {editingExpenseId ? 'update your' : 'add a new'} expense
+            </span>
             <button 
               onClick={() => {
                 setOpenExpenseDialog(false);
