@@ -72,6 +72,7 @@ import TippingSettings from "./pages/payment-settings/tipping";
 import PaymentSuccess from "./pages/payment-success";
 import TryTrial from "./pages/try-trial";
 import QuotesImport from "./pages/quotes-import";
+import QuoteImport from "./pages/quote-import";
 import OrderItemsImport from "./pages/order-items-import";
 
 // Import ProtectedRoute component
@@ -328,6 +329,11 @@ function Router() {
         <Route path="/quotes-import">
           <ProtectedRoute>
             <QuotesImport />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/quote-import">
+          <ProtectedRoute>
+            <QuoteImport />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">

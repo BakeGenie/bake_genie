@@ -17,8 +17,8 @@ export default function QuoteImport() {
   
   // Field mappings for quote imports
   const quoteFields = [
-    { dbField: 'quote_id', displayName: 'Quote Number/ID', required: true },
-    { dbField: 'name', displayName: 'Contact Name' },
+    { dbField: 'quote_number', displayName: 'Quote Number', required: true },
+    { dbField: 'contact_name', displayName: 'Customer Name' },
     { dbField: 'event_date', displayName: 'Event Date' },
     { dbField: 'event_type', displayName: 'Event Type' },
     { dbField: 'description', displayName: 'Description/Theme' },
@@ -46,7 +46,7 @@ export default function QuoteImport() {
   return (
     <CSVImporter
       title="Import Quotes"
-      description="Upload a CSV file containing quotes data to import into the system. The file should include columns for quote number, contact name, event date, event type, description, price, status, expiry date, and notes."
+      description="Upload a CSV file containing quotes data to import into the system. The file should include columns for quote number, customer name, event date, event type, description, price, status, expiry date, and notes."
       onBack={handleBack}
       onImportComplete={handleImportComplete}
       apiEndpoint="/api/quotes/import"

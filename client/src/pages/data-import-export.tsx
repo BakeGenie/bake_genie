@@ -156,8 +156,8 @@ export default function DataImportExport() {
     }
     
     if (importType === "quotes") {
-      // Navigate to the specialized quotes importer
-      setLocation("/quotes-import");
+      // Navigate to the specialized quotes importer using CSVImporter component
+      setLocation("/quote-import");
       return;
     }
     
