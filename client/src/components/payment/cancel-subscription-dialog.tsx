@@ -1,200 +1,124 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertTriangleIcon } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { XCircleIcon, LoaderIcon, AlertTriangleIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation } from '@tanstack/react-query';
 
 interface CancelSubscriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCancelled: () => void;
+  onSuccess?: () => void;
 }
 
-export const CancelSubscriptionDialog: React.FC<CancelSubscriptionDialogProps> = ({
+const CancelSubscriptionDialog: React.FC<CancelSubscriptionDialogProps> = ({
   open,
   onOpenChange,
-  onCancelled
+  onSuccess,
 }) => {
-  const [cancellationType, setCancellationType] = useState<"end_of_period" | "immediate">("end_of_period");
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [confirmInput, setConfirmInput] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isConfirmed) {
-      setError("Please confirm that you understand the consequences of cancellation");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Make the API call directly without using apiRequest helper
-      const response = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cancelImmediately: cancellationType === "immediate"
-        })
-      });
-      
-      // For successful response, assume it worked
-      if (response.ok) {
-        toast({
-          title: "Subscription Cancelled",
-          description: cancellationType === "immediate" 
-            ? "Your subscription has been cancelled immediately." 
-            : "Your subscription will be cancelled at the end of the current billing period.",
-        });
-  
-        onCancelled();
-        onOpenChange(false);
-        return;
-      }
-      
-      // Handle error response
-      let errorMessage = "Failed to cancel subscription";
-      try {
-        // Try to parse as JSON first
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (jsonError) {
-        // If not JSON, try to get text
-        try {
-          errorMessage = await response.text();
-        } catch (textError) {
-          // If even text fails, use status text
-          errorMessage = response.statusText || errorMessage;
-        }
-      }
-      
-      throw new Error(errorMessage);
-    } catch (err: any) {
-      setError(err.message || "An error occurred while cancelling your subscription.");
+  // Cancel subscription mutation
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/subscription/cancel', {});
+    },
+    onSuccess: () => {
       toast({
-        title: "Cancellation Failed",
-        description: err.message || "Failed to cancel subscription.",
+        title: "Subscription Cancelled",
+        description: "Your subscription has been successfully cancelled.",
+      });
+      setConfirmInput('');
+      onOpenChange(false);
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error: any) => {
+      console.error("Cancel subscription error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "There was an error cancelling your subscription.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
-  const resetState = () => {
-    setCancellationType("end_of_period");
-    setIsConfirmed(false);
-    setError(null);
+  const handleCancel = () => {
+    if (confirmInput.toLowerCase() !== 'cancel') {
+      toast({
+        title: "Error",
+        description: "Please type 'cancel' to confirm.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    cancelSubscriptionMutation.mutate();
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={(isOpen) => {
-        if (!isOpen) resetState();
-        onOpenChange(isOpen);
-      }}
-    >
-      <DialogContent className="sm:max-w-md" aria-describedby="cancel-subscription-description">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Cancel Subscription</DialogTitle>
-          <DialogDescription id="cancel-subscription-description">
-            We're sorry to see you go. Please let us know how you'd like to proceed with your cancellation.
+          <DialogTitle className="flex items-center text-destructive">
+            <AlertTriangleIcon className="h-5 w-5 mr-2" />
+            Cancel Your Subscription
+          </DialogTitle>
+          <DialogDescription>
+            Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing period.
           </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-2">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTriangleIcon className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+        
+        <div className="py-4">
+          <p className="text-sm mb-4">
+            Type <strong>cancel</strong> below to confirm:
+          </p>
+          <input
+            type="text"
+            value={confirmInput}
+            onChange={(e) => setConfirmInput(e.target.value)}
+            placeholder="Type 'cancel' to confirm"
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
+        
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setConfirmInput('');
+              onOpenChange(false);
+            }}
+          >
+            Keep Subscription
+          </Button>
+          
+          <Button
+            variant="destructive"
+            onClick={handleCancel}
+            disabled={cancelSubscriptionMutation.isPending || confirmInput.toLowerCase() !== 'cancel'}
+          >
+            {cancelSubscriptionMutation.isPending ? (
+              <>
+                <LoaderIcon className="h-4 w-4 mr-2 animate-spin" /> Processing...
+              </>
+            ) : (
+              <>
+                <XCircleIcon className="h-4 w-4 mr-2" /> Cancel Subscription
+              </>
             )}
-
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Cancellation Options</h3>
-              <RadioGroup 
-                value={cancellationType} 
-                onValueChange={(value) => setCancellationType(value as "end_of_period" | "immediate")}
-                className="space-y-3"
-              >
-                <div className="flex items-start space-x-2 rounded-md border p-3">
-                  <RadioGroupItem value="end_of_period" id="end_of_period" />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label htmlFor="end_of_period" className="font-medium">
-                      Cancel at end of billing period
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Your subscription will remain active until the end of the current billing period.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-2 rounded-md border p-3">
-                  <RadioGroupItem value="immediate" id="immediate" />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label htmlFor="immediate" className="font-medium">
-                      Cancel immediately
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Your subscription will be cancelled right away and you'll lose access immediately.
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="flex items-start space-x-2 pt-2">
-              <Checkbox 
-                id="confirm-cancellation" 
-                checked={isConfirmed}
-                onCheckedChange={(checked) => setIsConfirmed(checked as boolean)}
-              />
-              <div className="grid gap-1.5 leading-none">
-                <Label htmlFor="confirm-cancellation" className="text-sm">
-                  I understand that by cancelling my subscription, I may lose access to features and my data may be subject to the terms outlined in the service agreement.
-                </Label>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Keep Subscription
-            </Button>
-            <Button 
-              type="submit"
-              variant="destructive" 
-              disabled={isLoading || !isConfirmed}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Cancelling...
-                </>
-              ) : (
-                "Confirm Cancellation"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -570,8 +570,19 @@ const Account = () => {
                         )}
                       />
 
-                      <Button type="submit">
-                        <KeyIcon className="h-4 w-4 mr-2" /> Update Password
+                      <Button 
+                        type="submit"
+                        disabled={updatePasswordMutation.isPending}
+                      >
+                        {updatePasswordMutation.isPending ? (
+                          <>
+                            <LoaderIcon className="h-4 w-4 mr-2 animate-spin" /> Updating...
+                          </>
+                        ) : (
+                          <>
+                            <KeyIcon className="h-4 w-4 mr-2" /> Update Password
+                          </>
+                        )}
                       </Button>
                     </form>
                   </Form>
@@ -581,7 +592,7 @@ const Account = () => {
 
                 <div>
                   <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Add an extra layer of security to your account by enabling two-factor authentication.
                   </p>
                   <Button variant="outline">
@@ -593,12 +604,52 @@ const Account = () => {
 
                 <div>
                   <h3 className="text-lg font-medium mb-4">Sessions</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Manage your active sessions and sign out from other devices.
                   </p>
-                  <Button variant="outline">
-                    <LogOutIcon className="h-4 w-4 mr-2" /> Sign Out From All Devices
-                  </Button>
+                  
+                  {userSessions && userSessions.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="rounded-md border">
+                        <div className="p-3 text-sm">
+                          <div className="font-medium mb-2">Active Sessions</div>
+                          <div className="grid grid-cols-3 gap-2 text-muted-foreground mb-2">
+                            <div>Device</div>
+                            <div>IP Address</div>
+                            <div>Last Activity</div>
+                          </div>
+                          {userSessions.map((session) => (
+                            <div key={session.id} className="grid grid-cols-3 gap-2 py-2 border-t">
+                              <div>{session.deviceInfo || "Unknown Device"}</div>
+                              <div>{session.ipAddress || "Unknown"}</div>
+                              <div>{new Date(session.lastActive).toLocaleString()}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        onClick={handleTerminateSessions}
+                        disabled={terminateSessionsMutation.isPending}
+                      >
+                        {terminateSessionsMutation.isPending ? (
+                          <>
+                            <LoaderIcon className="h-4 w-4 mr-2 animate-spin" /> Processing...
+                          </>
+                        ) : (
+                          <>
+                            <LogOutIcon className="h-4 w-4 mr-2" /> Sign Out From All Other Devices
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-4 text-center bg-muted/20 rounded-md">
+                      <p className="text-sm text-muted-foreground">No active sessions found</p>
+                      <p className="text-xs text-muted-foreground mt-1">Only your current session is active</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -608,6 +659,19 @@ const Account = () => {
         {/* Billing Tab */}
         <TabsContent value="billing">
           <div className="space-y-4">
+            {/* Cancel Subscription Dialog */}
+            <CancelSubscriptionDialog
+              open={isCancelSubscriptionOpen}
+              onOpenChange={setIsCancelSubscriptionOpen}
+              onSuccess={() => {
+                queryClient.invalidateQueries({ queryKey: ['/api/subscription/current'] });
+                toast({
+                  title: "Subscription Cancelled",
+                  description: "Your subscription has been successfully cancelled."
+                });
+              }}
+            />
+            
             {/* Current Plan Card */}
             <Card className="overflow-hidden border-none shadow-sm">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-4">
@@ -617,11 +681,34 @@ const Account = () => {
                       <CreditCardIcon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Professional Plan</h3>
-                      <p className="text-sm text-muted-foreground">$20.00 per month</p>
+                      <h3 className="font-medium">
+                        {subscriptionData?.plan?.name || "Professional Plan"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {subscriptionData?.plan?.price ? `$${subscriptionData.plan.price} per ${subscriptionData.plan.interval}` : "$20.00 per month"}
+                      </p>
                     </div>
                   </div>
-                  <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-500/20 text-green-700 border border-green-500/50">Active</span>
+                  <div className="flex items-center space-x-3">
+                    <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                      subscriptionData?.status === "active" 
+                        ? "bg-green-500/20 text-green-700 border border-green-500/50" 
+                        : "bg-yellow-500/20 text-yellow-700 border border-yellow-500/50"
+                    }`}>
+                      {subscriptionData?.status === "active" ? "Active" : (subscriptionData?.status || "Processing")}
+                    </span>
+                    
+                    {subscriptionData?.status === "active" && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs text-destructive font-medium"
+                        onClick={() => setIsCancelSubscriptionOpen(true)}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <CardContent className="p-6">
@@ -633,10 +720,7 @@ const Account = () => {
                       size="sm" 
                       className="text-xs text-primary font-medium"
                       onClick={() => {
-                        toast({
-                          title: "Change Plan",
-                          description: "Plan change dialog would open here."
-                        });
+                        navigate("/plans");
                       }}
                     >
                       Change plan
@@ -645,11 +729,15 @@ const Account = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Next billing</span>
-                      <span>Jun 21, 2025</span>
+                      <span>
+                        {subscriptionData?.currentPeriodEnd 
+                          ? new Date(subscriptionData.currentPeriodEnd).toLocaleDateString() 
+                          : "Not available"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Billing cycle</span>
-                      <span>Monthly</span>
+                      <span className="capitalize">{subscriptionData?.plan?.interval || "Monthly"}</span>
                     </div>
                   </div>
                 </div>
@@ -662,40 +750,60 @@ const Account = () => {
                 <CardTitle className="text-base">Payment method</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-muted p-2 rounded-md">
-                      <CreditCardIcon className="h-4 w-4" />
+                {paymentMethodData?.paymentMethod ? (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-muted p-2 rounded-md">
+                        <CreditCardIcon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {`${paymentMethodData.paymentMethod.brand.charAt(0).toUpperCase() + paymentMethodData.paymentMethod.brand.slice(1)} •••• ${paymentMethodData.paymentMethod.last4}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Expires {`${paymentMethodData.paymentMethod.expMonth}/${paymentMethodData.paymentMethod.expYear}`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">
-                        {paymentMethodData?.paymentMethod 
-                          ? `${paymentMethodData.paymentMethod.brand.charAt(0).toUpperCase() + paymentMethodData.paymentMethod.brand.slice(1)} •••• ${paymentMethodData.paymentMethod.last4}` 
-                          : "Visa •••• 4242"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Expires {paymentMethodData?.paymentMethod 
-                          ? `${paymentMethodData.paymentMethod.expMonth}/${paymentMethodData.paymentMethod.expYear}` 
-                          : "12/2024"}
-                      </p>
-                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-primary"
+                      onClick={() => setIsUpdatePaymentDialogOpen(true)}
+                    >
+                      Update
+                    </Button>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-primary"
-                    onClick={() => setIsUpdatePaymentDialogOpen(true)}
-                  >
-                    Update
-                  </Button>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-4">
+                    <p className="text-sm text-muted-foreground mb-3">No payment method on file</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsUpdatePaymentDialogOpen(true)}
+                    >
+                      <CreditCardIcon className="h-4 w-4 mr-2" /> Add Payment Method
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Billing History Card */}
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Billing history</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-base">Billing history</CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      navigate("/billing-history");
+                    }}
+                  >
+                    <ReceiptIcon className="h-4 w-4 mr-2" /> View all
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-center items-center py-8 bg-muted/20 rounded-md">
@@ -705,23 +813,6 @@ const Account = () => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Cancel Subscription */}
-            <div className="pt-2">
-              <Button 
-                variant="outline" 
-                className="text-muted-foreground hover:text-destructive border-gray-200"
-                onClick={() => {
-                  toast({
-                    title: "Cancel Subscription",
-                    description: "Are you sure you want to cancel your subscription?",
-                    variant: "destructive"
-                  });
-                }}
-              >
-                Cancel subscription
-              </Button>
-            </div>
           </div>
         </TabsContent>
         
