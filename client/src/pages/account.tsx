@@ -21,6 +21,7 @@ import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import UpdatePaymentMethodDialog from "@/components/payment/update-payment-method-dialog";
 import CancelSubscriptionDialog from "@/components/payment/cancel-subscription-dialog";
+import TrialBanner from "@/components/subscription/trial-banner";
 import { Switch } from "@/components/ui/switch";
 import {
   UserIcon,
