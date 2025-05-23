@@ -1,6 +1,12 @@
 import React from 'react';
 import { Route, Switch } from 'wouter';
-import Dashboard from '@/pages/dashboard'; 
+import Dashboard from '@/pages/dashboard';
+import Calendar from '@/pages/calendar';
+import Orders from '@/pages/orders';
+import Contacts from '@/pages/contacts';
+import Products from '@/pages/products';
+import Expenses from '@/pages/expenses';
+import DataImportExport from '@/pages/data-import-export';
 import Layout from '@/components/enhanced-layout/Layout';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -12,7 +18,13 @@ function App() {
       <Layout>
         <Switch>
           <Route path="/" component={Dashboard} />
-          {/* Add other routes here as needed */}
+          <Route path="/calendar" component={Calendar} />
+          <Route path="/orders" component={Orders} />
+          <Route path="/contacts" component={Contacts} />
+          <Route path="/products" component={Products} />
+          <Route path="/expenses" component={Expenses} />
+          <Route path="/data-import-export" component={DataImportExport} />
+          {/* Fallback route for 404 */}
           <Route>
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center">

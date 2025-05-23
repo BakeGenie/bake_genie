@@ -101,10 +101,21 @@ const EnhancedCalendar = () => {
     const day = props.date;
     
     // Filter events for this day
-    const dayEvents = events.filter(event => event && event.date && isSameDay(event.date, day));
+    const dayEvents = events.filter(event => {
+      try {
+        return event && event.date && isSameDay(event.date, day);
+      } catch (e) {
+        console.log('Error comparing dates:', e);
+        return false;
+      }
+    });
     
     // Get unique statuses for the day
-    const statuses = Array.from(new Set(dayEvents.map(event => event.status)));
+    const statusSet = new Set<string>();
+    dayEvents.forEach(event => {
+      if (event.status) statusSet.add(event.status);
+    });
+    const statuses = Array.from(statusSet);
     
     // Is this day blocked?
     const isDateBlocked = dayEvents.some(event => event.status === 'Blocked');
