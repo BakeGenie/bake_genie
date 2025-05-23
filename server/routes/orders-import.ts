@@ -66,20 +66,33 @@ router.post('/api/orders/import', async (req, res) => {
           const status = item.status || 'Quote';
           const deliveryTime = item.delivery_time || item.deliveryTime || '';
           
-          // For numeric fields, convert to floats reliably and cap to max allowed value
-          const cleanNumber = (val) => {
-            if (val === null || val === undefined) return 0;
+          // For numeric fields, convert to strings for TEXT fields or capped values for NUMERIC fields
+          // Handle the difference between TEXT fields and NUMERIC fields in our DB schema
+          
+          // For TEXT fields (handles floating points properly)
+          const cleanTextNumber = (val) => {
+            if (val === null || val === undefined) return "0.00";
             const str = val.toString().replace(/[^0-9.-]/g, '');
-            return Math.min(99, parseFloat(str) || 0); // Cap at 99 due to database field numeric(2,0) constraint
+            return parseFloat(str) || 0;
           };
           
-          const totalAmount = cleanNumber(item.total_amount || item.totalAmount);
-          const deliveryFee = cleanNumber(item.delivery_fee || item.deliveryFee);
-          const profit = cleanNumber(item.profit);
-          const subTotalAmount = cleanNumber(item.sub_total_amount || item.subTotalAmount);
-          const discountAmount = cleanNumber(item.discount_amount || item.discountAmount);
-          const taxRate = cleanNumber(item.tax_rate || item.taxRate);
-          const deliveryAmount = cleanNumber(item.delivery_amount || item.deliveryAmount);
+          // For NUMERIC(2,0) fields (must be integers less than 100)
+          const cleanNumericField = (val) => {
+            if (val === null || val === undefined) return 0;
+            const str = val.toString().replace(/[^0-9.-]/g, '');
+            return Math.min(99, Math.floor(parseFloat(str) || 0)); // Cap at 99 and ensure it's an integer
+          };
+          
+          // Text fields in the database (can store as text safely)
+          const totalAmount = cleanTextNumber(item.total_amount || item.totalAmount);
+          const deliveryFee = cleanTextNumber(item.delivery_fee || item.deliveryFee);
+          const taxRate = cleanTextNumber(item.tax_rate || item.taxRate);
+          
+          // Numeric fields in the database (must be integers < 100)
+          const profit = cleanNumericField(item.profit);
+          const subTotalAmount = cleanNumericField(item.sub_total_amount || item.subTotalAmount);
+          const discountAmount = cleanNumericField(item.discount_amount || item.discountAmount);
+          const deliveryAmount = cleanNumericField(item.delivery_amount || item.deliveryAmount);
           
           // Handle dates - important to format correctly for the database
           let eventDate = null;
@@ -216,11 +229,11 @@ router.post('/api/orders/import', async (req, res) => {
               '${totalAmount || "0.00"}',
               '${totalAmount || "0.00"}',
               ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
-              ${profit ? Math.min(99, Math.floor(parseFloat(profit.toString()))) : 'NULL'}, 
-              ${subTotalAmount ? Math.min(99, Math.floor(parseFloat(subTotalAmount.toString()))) : 'NULL'}, 
-              ${discountAmount ? Math.min(99, Math.floor(parseFloat(discountAmount.toString()))) : 'NULL'}, 
+              ${profit < 100 ? profit : 99}, 
+              ${subTotalAmount < 100 ? subTotalAmount : 99}, 
+              ${discountAmount < 100 ? discountAmount : 99}, 
               '${taxRate || "0.00"}',
-              ${deliveryAmount ? Math.min(99, Math.floor(parseFloat(deliveryAmount.toString()))) : 'NULL'}
+              ${deliveryAmount < 100 ? deliveryAmount : 99}
             )
             RETURNING id
           `;
