@@ -187,7 +187,7 @@ router.post('/api/orders/import', async (req, res) => {
           
           console.log(`Inserting order: ${orderNumber}, Event Type: ${eventType}, Total Amount: ${totalAmount}`);
           
-          // Make sure we have valid values for required date field
+          // Make sure we have valid values for date field
           if (!eventDate) {
             // If no event date is provided, use a future date as fallback
             eventDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 7 days from now
@@ -195,33 +195,32 @@ router.post('/api/orders/import', async (req, res) => {
           
           console.log(`Using event date: ${eventDate} for order ${orderNumber}`);
           
-          // Use direct SQL insert approach with properly escaped strings
+          // CRITICAL FIX: Based on database schema inspection, all fields are actually nullable
+          // This resolves the import issue since our SQL was adding required fields that don't match the schema
           const insertQuery = `
             INSERT INTO orders (
               user_id, contact_id, order_number, event_type, event_date, 
               status, delivery_type, delivery_fee, delivery_time, total_amount, 
               amount_paid, theme, profit, sub_total_amount, discount_amount, 
-              tax_rate, delivery_amount, created_at, updated_at
+              tax_rate, delivery_amount
             ) VALUES (
               ${userId}, 
               ${contactId},
               '${orderNumber.replace(/'/g, "''")}',
-              '${eventType.replace(/'/g, "''") || "Other"}',
-              '${eventDate}',
-              '${status.replace(/'/g, "''") || "Quote"}',
+              '${eventType ? eventType.replace(/'/g, "''") : "Other"}',
+              ${eventDate ? `'${eventDate}'` : 'NULL'},
+              '${status ? status.replace(/'/g, "''") : "Quote"}',
               'Pickup',
               '${deliveryFee || "0.00"}',
               '${deliveryTime ? deliveryTime.replace(/'/g, "''") : ""}',
               '${totalAmount || "0.00"}',
               '${totalAmount || "0.00"}',
               ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
-              ${profit || 0},
-              ${subTotalAmount || 0},
-              ${discountAmount || 0},
+              ${profit ? profit : 'NULL'}, 
+              ${subTotalAmount ? subTotalAmount : 'NULL'}, 
+              ${discountAmount ? discountAmount : 'NULL'}, 
               '${taxRate || "0.00"}',
-              ${deliveryAmount || 0},
-              '${createdAt}',
-              '${createdAt}'
+              ${deliveryAmount ? deliveryAmount : 'NULL'}
             )
             RETURNING id
           `;
