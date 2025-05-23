@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageHeader from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import UpdatePaymentMethodDialog from "@/components/payment/update-payment-method-dialog";
+import CancelSubscriptionDialog from "@/components/payment/cancel-subscription-dialog";
+import { Switch } from "@/components/ui/switch";
 import {
   UserIcon,
   Building2Icon,
@@ -31,8 +33,11 @@ import {
   ShieldIcon,
   ChevronRightIcon,
   XCircleIcon,
-  ReceiptIcon
+  ReceiptIcon,
+  LoaderIcon,
+  CheckCircle2Icon
 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 // Extended schema with validation rules for user profile
 const profileFormSchema = z.object({
@@ -58,14 +63,45 @@ const passwordFormSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Schema for notification preferences
+const notificationPrefsSchema = z.object({
+  orderUpdates: z.boolean().default(true),
+  upcomingEvents: z.boolean().default(true),
+  newEnquiries: z.boolean().default(true),
+  marketingTips: z.boolean().default(false),
+  smsOrderConfirmations: z.boolean().default(false),
+  smsDeliveryReminders: z.boolean().default(false),
+});
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+type NotificationPrefsValues = z.infer<typeof notificationPrefsSchema>;
 
 const Account = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = React.useState("profile");
   const [isUpdatePaymentDialogOpen, setIsUpdatePaymentDialogOpen] = useState(false);
+  const [isCancelSubscriptionOpen, setIsCancelSubscriptionOpen] = useState(false);
+  const queryClient = useQueryClient();
+  
+  // Fetch user profile data
+  const { data: userData, isLoading: isUserLoading } = useQuery({
+    queryKey: ['/api/users/current'],
+    retry: 1,
+  });
+  
+  // Fetch notification preferences
+  const { data: notificationPrefs, isLoading: isNotificationPrefsLoading } = useQuery({
+    queryKey: ['/api/users/notification-preferences'],
+    retry: 1,
+  });
+  
+  // Fetch user's active sessions
+  const { data: userSessions } = useQuery({
+    queryKey: ['/api/users/sessions'],
+    retry: 1,
+  });
   
   // Fetch payment method data
   const { data: paymentMethodData, refetch: refetchPaymentMethod } = useQuery({
@@ -74,15 +110,12 @@ const Account = () => {
     staleTime: 0, // Don't use cached data
   });
   
-  // Handle payment method update
-  const handlePaymentMethodUpdated = () => {
-    refetchPaymentMethod();
-    toast({
-      title: "Payment Method Updated",
-      description: "Your payment information has been successfully updated."
-    });
-  };
-
+  // Fetch subscription data
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['/api/subscription/current'],
+    retry: 1,
+  });
+  
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -99,7 +132,7 @@ const Account = () => {
       country: "",
     },
   });
-
+  
   // Password form
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
@@ -109,40 +142,171 @@ const Account = () => {
       confirmPassword: "",
     },
   });
-
-  // Handle profile update
-  const handleProfileSubmit = async (data: ProfileFormValues) => {
-    try {
-      // API call would go here
+  
+  // Notification preferences form
+  const notificationForm = useForm<NotificationPrefsValues>({
+    resolver: zodResolver(notificationPrefsSchema),
+    defaultValues: {
+      orderUpdates: true,
+      upcomingEvents: true,
+      newEnquiries: true,
+      marketingTips: false,
+      smsOrderConfirmations: false,
+      smsDeliveryReminders: false,
+    },
+  });
+  
+  // Update profile form values when data is fetched
+  useEffect(() => {
+    if (userData) {
+      profileForm.reset({
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        businessName: userData.businessName || "",
+        address: userData.address || "",
+        city: userData.city || "",
+        state: userData.state || "",
+        zip: userData.zip || "",
+        country: userData.country || "",
+      });
+    }
+  }, [userData, profileForm]);
+  
+  // Update notification preferences form values when data is fetched
+  useEffect(() => {
+    if (notificationPrefs) {
+      notificationForm.reset({
+        orderUpdates: notificationPrefs.orderUpdates ?? true,
+        upcomingEvents: notificationPrefs.upcomingEvents ?? true,
+        newEnquiries: notificationPrefs.newEnquiries ?? true,
+        marketingTips: notificationPrefs.marketingTips ?? false,
+        smsOrderConfirmations: notificationPrefs.smsOrderConfirmations ?? false,
+        smsDeliveryReminders: notificationPrefs.smsDeliveryReminders ?? false,
+      });
+    }
+  }, [notificationPrefs, notificationForm]);
+  
+  // Handle payment method update
+  const handlePaymentMethodUpdated = () => {
+    refetchPaymentMethod();
+    toast({
+      title: "Payment Method Updated",
+      description: "Your payment information has been successfully updated."
+    });
+  };
+  
+  // Profile update mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormValues) => {
+      return await apiRequest('PATCH', '/api/users/profile', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/current'] });
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
-    } catch (error) {
+    },
+    onError: (error: any) => {
+      console.error("Profile update error:", error);
       toast({
         title: "Error",
-        description: "There was an error updating your profile.",
+        description: error.message || "There was an error updating your profile.",
         variant: "destructive",
       });
     }
-  };
-
-  // Handle password update
-  const handlePasswordSubmit = async (data: PasswordFormValues) => {
-    try {
-      // API call would go here
+  });
+  
+  // Password update mutation
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: PasswordFormValues) => {
+      return await apiRequest('POST', '/api/users/change-password', {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword
+      });
+    },
+    onSuccess: () => {
+      passwordForm.reset();
       toast({
         title: "Password Updated",
         description: "Your password has been successfully updated.",
       });
-      passwordForm.reset();
-    } catch (error) {
+    },
+    onError: (error: any) => {
+      console.error("Password update error:", error);
       toast({
         title: "Error",
-        description: "There was an error updating your password.",
+        description: error.response?.data?.error || "There was an error updating your password.",
         variant: "destructive",
       });
     }
+  });
+  
+  // Notification preferences update mutation
+  const updateNotificationPrefsMutation = useMutation({
+    mutationFn: async (data: NotificationPrefsValues) => {
+      return await apiRequest('PATCH', '/api/users/notification-preferences', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/notification-preferences'] });
+      toast({
+        title: "Preferences Updated",
+        description: "Your notification preferences have been successfully updated.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Notification preferences update error:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating your notification preferences.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Sign out from all devices mutation
+  const terminateSessionsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', '/api/users/terminate-sessions', {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sessions Terminated",
+        description: "You have been signed out from all other devices.",
+      });
+      // Refresh sessions data
+      queryClient.invalidateQueries({ queryKey: ['/api/users/sessions'] });
+    },
+    onError: (error: any) => {
+      console.error("Terminate sessions error:", error);
+      toast({
+        title: "Error",
+        description: "There was an error signing out from other devices.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle profile update
+  const handleProfileSubmit = async (data: ProfileFormValues) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  // Handle password update
+  const handlePasswordSubmit = async (data: PasswordFormValues) => {
+    updatePasswordMutation.mutate(data);
+  };
+  
+  // Handle notification preferences update
+  const handleNotificationPrefsSubmit = async (data: NotificationPrefsValues) => {
+    updateNotificationPrefsMutation.mutate(data);
+  };
+  
+  // Handle terminate all sessions
+  const handleTerminateSessions = () => {
+    terminateSessionsMutation.mutate();
   };
 
   return (
@@ -571,85 +735,165 @@ const Account = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Email Notifications</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Order Updates</p>
-                        <p className="text-sm text-muted-foreground">Receive notifications when an order status changes</p>
-                      </div>
-                      <div className="flex items-center">
-                        <input type="checkbox" id="order-updates" className="h-4 w-4 mr-2" defaultChecked />
-                        <label htmlFor="order-updates" className="text-sm">Enabled</label>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Upcoming Events</p>
-                        <p className="text-sm text-muted-foreground">Get reminded about upcoming event dates</p>
-                      </div>
-                      <div className="flex items-center">
-                        <input type="checkbox" id="upcoming-events" className="h-4 w-4 mr-2" defaultChecked />
-                        <label htmlFor="upcoming-events" className="text-sm">Enabled</label>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">New Enquiries</p>
-                        <p className="text-sm text-muted-foreground">Get notified when you receive a new enquiry</p>
-                      </div>
-                      <div className="flex items-center">
-                        <input type="checkbox" id="new-enquiries" className="h-4 w-4 mr-2" defaultChecked />
-                        <label htmlFor="new-enquiries" className="text-sm">Enabled</label>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Marketing & Tips</p>
-                        <p className="text-sm text-muted-foreground">Receive baking tips and product updates</p>
-                      </div>
-                      <div className="flex items-center">
-                        <input type="checkbox" id="marketing" className="h-4 w-4 mr-2" />
-                        <label htmlFor="marketing" className="text-sm">Enabled</label>
-                      </div>
-                    </div>
-                  </div>
+              {isNotificationPrefsLoading ? (
+                <div className="flex justify-center my-12">
+                  <LoaderIcon className="h-8 w-8 animate-spin text-primary/70" />
                 </div>
-
-                <Separator className="my-6" />
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">SMS Notifications</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Order Confirmations</p>
-                        <p className="text-sm text-muted-foreground">Receive SMS when an order is confirmed</p>
-                      </div>
-                      <div className="flex items-center">
-                        <input type="checkbox" id="sms-orders" className="h-4 w-4 mr-2" />
-                        <label htmlFor="sms-orders" className="text-sm">Enabled</label>
+              ) : (
+                <Form {...notificationForm}>
+                  <form onSubmit={notificationForm.handleSubmit(handleNotificationPrefsSubmit)} className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Email Notifications</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Order Updates</p>
+                            <p className="text-sm text-muted-foreground">Receive notifications when an order status changes</p>
+                          </div>
+                          <FormField
+                            control={notificationForm.control}
+                            name="orderUpdates"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Upcoming Events</p>
+                            <p className="text-sm text-muted-foreground">Get reminded about upcoming event dates</p>
+                          </div>
+                          <FormField
+                            control={notificationForm.control}
+                            name="upcomingEvents"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">New Enquiries</p>
+                            <p className="text-sm text-muted-foreground">Get notified when you receive a new enquiry</p>
+                          </div>
+                          <FormField
+                            control={notificationForm.control}
+                            name="newEnquiries"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Marketing & Tips</p>
+                            <p className="text-sm text-muted-foreground">Receive baking tips and product updates</p>
+                          </div>
+                          <FormField
+                            control={notificationForm.control}
+                            name="marketingTips"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Delivery Reminders</p>
-                        <p className="text-sm text-muted-foreground">Get SMS reminders for upcoming deliveries</p>
-                      </div>
-                      <div className="flex items-center">
-                        <input type="checkbox" id="sms-deliveries" className="h-4 w-4 mr-2" />
-                        <label htmlFor="sms-deliveries" className="text-sm">Enabled</label>
+
+                    <Separator className="my-6" />
+
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">SMS Notifications</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Order Confirmations</p>
+                            <p className="text-sm text-muted-foreground">Receive SMS when an order is confirmed</p>
+                          </div>
+                          <FormField
+                            control={notificationForm.control}
+                            name="smsOrderConfirmations"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">Delivery Reminders</p>
+                            <p className="text-sm text-muted-foreground">Get SMS reminders for upcoming deliveries</p>
+                          </div>
+                          <FormField
+                            control={notificationForm.control}
+                            name="smsDeliveryReminders"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <Button className="mt-4">
-                  <SaveIcon className="h-4 w-4 mr-2" /> Save Preferences
-                </Button>
-              </div>
+                    <Button 
+                      type="submit" 
+                      className="mt-4"
+                      disabled={updateNotificationPrefsMutation.isPending}
+                    >
+                      {updateNotificationPrefsMutation.isPending ? (
+                        <>
+                          <LoaderIcon className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                        </>
+                      ) : (
+                        <>
+                          <SaveIcon className="h-4 w-4 mr-2" /> Save Preferences
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

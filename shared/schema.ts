@@ -40,6 +40,41 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
+  phone: text("phone"),
+  businessName: text("business_name"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  country: text("country"),
+  lastPasswordUpdate: timestamp("last_password_update"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User notification preferences table
+export const userNotificationPreferences = pgTable("user_notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  orderUpdates: boolean("order_updates").default(true),
+  upcomingEvents: boolean("upcoming_events").default(true),
+  newEnquiries: boolean("new_enquiries").default(true),
+  marketingTips: boolean("marketing_tips").default(false),
+  smsOrderConfirmations: boolean("sms_order_confirmations").default(false),
+  smsDeliveryReminders: boolean("sms_delivery_reminders").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Security sessions table
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  deviceInfo: text("device_info"),
+  ipAddress: text("ip_address"),
+  lastActive: timestamp("last_active").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
