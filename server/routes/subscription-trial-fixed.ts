@@ -200,24 +200,31 @@ router.post('/trial/start', async (req: any, res) => {
     // Create a trial subscription
     let subscription;
     try {
-      // The database columns use snake_case naming, not camelCase
-      [subscription] = await db
-        .insert(userSubscriptions)
-        .values({
-          user_id: userIdNumber, // Use the parsed number
-          plan_id: standardPlan.id,
-          plan_name: standardPlan.name,
-          status: 'trialing',
-          trial_start: trialStart,
-          trial_end: trialEnd,
-          price: standardPlan.price,
-          cancel_at_period_end: false,
-          current_period_start: trialStart,
-          current_period_end: trialEnd,
-          created_at: new Date(),
-          updated_at: new Date()
-        })
-        .returning();
+      // Use a direct SQL statement which we know works from testing
+      try {
+        const result = await db.execute(`
+          INSERT INTO user_subscriptions 
+          (user_id, plan_id, plan_name, price, status, trial_start, trial_end, created_at, updated_at)
+          VALUES 
+          ($1, $2, $3, $4, 'trialing', NOW(), NOW() + INTERVAL '30 days', NOW(), NOW())
+          RETURNING *
+        `, [
+          userIdNumber,
+          standardPlan.id,
+          standardPlan.name,
+          standardPlan.price,
+          trialStart,
+          trialEnd
+        ]);
+        
+        // Assign the first row of the result
+        subscription = result.rows[0];
+        
+        console.log('Trial subscription created successfully:', subscription);
+      } catch (dbError) {
+        console.error('Database execution error:', dbError);
+        throw dbError;
+      }
       
       console.log('Trial subscription created:', subscription);
     } catch (insertError) {
