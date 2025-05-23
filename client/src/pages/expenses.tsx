@@ -432,25 +432,8 @@ const ExpensesPage = () => {
         receiptUrl = null;
       }
       
-      // Store additional info in the description field
-      let basicDescription = data.description || "";
-      
-      // Create metadata object for additional fields
-      const metaFields = {
-        supplier: data.supplier || "",
-        paymentSource: data.paymentSource || "",
-        vat: data.vat || "",
-        totalIncTax: data.totalIncTax || "",
-        isRecurring: Boolean(data.isRecurring)
-      };
-      
-      // Store the metadata as a hidden JSON string with a marker
-      if (Object.values(metaFields).some(v => v)) {
-        // Create a simplified string for humans to read, but hide the JSON data
-        const metaString = JSON.stringify(metaFields);
-        basicDescription = basicDescription.replace(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/, '');
-        basicDescription += (basicDescription ? '\n\n' : '') + `[META_DATA]${metaString}[/META_DATA]`;
-      }
+      // Just use the description field as-is, no metadata needed
+      const basicDescription = data.description || "";
       
       // Create a clean object with all fields supported by our database schema
       const expenseData = {
@@ -645,26 +628,13 @@ const ExpensesPage = () => {
                         setReceiptFileName('');
                       }
                       
-                      // Parse metadata from the description if it exists
-                      let description = expense.description || "";
-                      
-                      // Look for the metadata section (using dotAll workaround for compatibility)
-                      const metaMatch = description.match(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/);
-                      if (metaMatch && metaMatch[1]) {
-                        try {
-                          const metaData = JSON.parse(metaMatch[1]);
-                          expenseData.supplier = metaData.supplier || "";
-                          expenseData.paymentSource = metaData.paymentSource || "";
-                          expenseData.vat = metaData.vat || "";
-                          expenseData.totalIncTax = metaData.totalIncTax || "";
-                          expenseData.isRecurring = Boolean(metaData.isRecurring);
-                          
-                          // Clean the description
-                          expenseData.description = description.replace(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/, '').trim();
-                        } catch (error) {
-                          console.error("Error parsing metadata:", error);
-                        }
-                      }
+                      // Use the expense data directly from the database columns
+                      expenseData.supplier = expense.supplier || "";
+                      expenseData.paymentSource = expense.paymentSource || "Cash";
+                      expenseData.vat = expense.vat || "0.00";
+                      expenseData.totalIncTax = expense.totalIncTax || "0.00";
+                      expenseData.isRecurring = Boolean(expense.isRecurring);
+                      expenseData.description = expense.description || "";
                       
                       expenseForm.reset(expenseData);
                       setEditingExpenseId(expense.id);
@@ -681,27 +651,15 @@ const ExpensesPage = () => {
                     {/* Description */}
                     <div className="w-1/4 truncate">
                       {(() => {
-                        // Clean the description by removing metadata
-                        let cleanDescription = expense.description || "";
-                        
-                        // Remove metadata tags and content if present
-                        cleanDescription = cleanDescription.replace(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/g, '').trim();
-                        
-                        // If there's still a description, show it
-                        if (cleanDescription) {
-                          return cleanDescription;
+                        // Show description if available
+                        if (expense.description) {
+                          return expense.description;
                         }
                         
-                        // Try to extract supplier from metadata to display instead
-                        try {
-                          const metaMatch = expense.description?.match(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/);
-                          if (metaMatch && metaMatch[1]) {
-                            const metaData = JSON.parse(metaMatch[1]);
-                            if (metaData.supplier) {
-                              return metaData.supplier;
-                            }
-                          }
-                        } catch (e) {}
+                        // Show supplier as fallback if available
+                        if (expense.supplier) {
+                          return expense.supplier;
+                        }
                         
                         // Default fallback
                         return expense.category + " expense";
