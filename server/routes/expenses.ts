@@ -141,22 +141,23 @@ router.post("/", async (req: Request, res: Response) => {
                 tax_deductible, is_recurring, receipt_url, created_at
     `;
     
-    // Assign default values for fields we've been having issues with
-    const supplierValue = req.body.supplier === undefined ? "" : 
-                          req.body.supplier === null ? "" : 
-                          req.body.supplier.toString();
+    // FIXED: Ensure supplier field and other problematic fields are properly handled
+    // by using string coercion for any non-null value
+    const supplierValue = req.body.supplier !== undefined && req.body.supplier !== null
+                          ? String(req.body.supplier).trim() 
+                          : "";
                           
-    const paymentSourceValue = req.body.paymentSource === undefined ? "Cash" : 
-                              req.body.paymentSource === null ? "Cash" : 
-                              req.body.paymentSource.toString();
+    const paymentSourceValue = req.body.paymentSource !== undefined && req.body.paymentSource !== null
+                              ? String(req.body.paymentSource).trim() 
+                              : "Cash";
                               
-    const vatValue = req.body.vat === undefined ? "0.00" : 
-                     req.body.vat === null ? "0.00" : 
-                     req.body.vat.toString();
+    const vatValue = req.body.vat !== undefined && req.body.vat !== null
+                     ? String(req.body.vat) 
+                     : "0.00";
                      
-    const totalIncTaxValue = req.body.totalIncTax === undefined ? "0.00" : 
-                             req.body.totalIncTax === null ? "0.00" : 
-                             req.body.totalIncTax.toString();
+    const totalIncTaxValue = req.body.totalIncTax !== undefined && req.body.totalIncTax !== null
+                             ? String(req.body.totalIncTax) 
+                             : "0.00";
     
     const values = [
       userId,
@@ -175,10 +176,15 @@ router.post("/", async (req: Request, res: Response) => {
     
     console.log("Final SQL values:", JSON.stringify(values, null, 2));
     
-    console.log("SQL Values:", JSON.stringify(values, null, 2));
-    
     // Execute the SQL directly
-    // Problem: Let's try a different approach with direct pg pool query
+    // Log the final values one more time just before execution
+    console.log("FINAL VALUES SENT TO DATABASE:");
+    console.log("Supplier value:", supplierValue, "Type:", typeof supplierValue);
+    console.log("Payment source:", paymentSourceValue, "Type:", typeof paymentSourceValue);
+    console.log("VAT value:", vatValue, "Type:", typeof vatValue);
+    console.log("Total inc tax:", totalIncTaxValue, "Type:", typeof totalIncTaxValue);
+    
+    // Execute with direct pg pool query
     // This bypasses any potential ORM issues completely by using direct database connection
     const result = await pool.query(sql, values);
     const newExpense = result.rows[0];
