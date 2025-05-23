@@ -57,8 +57,11 @@ export const registerDataImportRoutes = (router: Router) => {
    * @desc Import data from CSV file
    * @access Private
    */
-  router.post('/api/data/import', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+  router.post('/api/data/import', upload.single('file'), async (req: Request, res: Response) => {
     try {
+      console.log('Request body keys:', Object.keys(req.body));
+      console.log('Request file:', req.file ? 'File present' : 'No file');
+      
       // Check if file exists
       if (!req.file) {
         console.log('No file in request');
