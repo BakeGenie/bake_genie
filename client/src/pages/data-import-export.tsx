@@ -149,6 +149,12 @@ export default function DataImportExport() {
       return;
     }
     
+    if (importType === "recipes") {
+      // Navigate to the specialized recipes importer
+      setLocation("/recipes-import");
+      return;
+    }
+    
     // Create a temporary hidden file input
     const fileInput = document.createElement("input");
     fileInput.type = "file";

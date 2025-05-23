@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "../db";
-import { recipes, recipeIngredients, ingredients } from "@shared/schema";
-import { and, desc, eq } from "drizzle-orm";
-import { insertRecipeSchema, insertRecipeIngredientSchema } from "@shared/schema";
+import { recipes } from "@shared/schema";
+import { and, eq, desc } from "drizzle-orm";
+import { insertRecipeSchema } from "@shared/schema";
 
 const router = Router();
 
@@ -16,73 +16,13 @@ declare module "express-session" {
 // Get all recipes for the user
 router.get("/", async (req, res) => {
   try {
-    const userId = req.session.userId || 1; // Default to user 1 for development
-    
-    // Get all recipes for this user
-    const userRecipes = await db.select().from(recipes)
+    const userId = req.session.userId || 1; // Default to 1 for development
+    const allRecipes = await db
+      .select()
+      .from(recipes)
       .where(eq(recipes.userId, userId))
-      .orderBy(desc(recipes.id));
-    
-    // Get recipe ingredients for all recipes
-    const recipeIds = userRecipes.map(recipe => recipe.id);
-    
-    // If there are no recipes, return empty array
-    if (recipeIds.length === 0) {
-      return res.json([]);
-    }
-    
-    // Get all recipe ingredients for these recipes
-    const recipeIngredientsData = await db.select()
-      .from(recipeIngredients)
-      .where(
-        recipeIds.length > 0 
-          ? eq(recipeIngredients.recipeId, recipeIds[0]) 
-          : eq(recipeIngredients.recipeId, -1)  // Return nothing if no recipes
-      );
-    
-    // Get all ingredient IDs from recipe ingredients
-    const ingredientIds = recipeIngredientsData.map(ri => ri.ingredientId);
-    
-    // Get all ingredients for these recipe ingredients
-    let ingredientsData = [];
-    
-    // We need to fetch each ingredient individually since we can't use .in()
-    if (ingredientIds.length > 0) {
-      // Create an array of promises for each ingredient fetch
-      const ingredientPromises = ingredientIds.map(id => 
-        db.select().from(ingredients).where(eq(ingredients.id, id))
-      );
-      
-      // Execute all promises and flatten the resulting array
-      const results = await Promise.all(ingredientPromises);
-      ingredientsData = results.flat();
-    }
-    
-    // Create lookup maps
-    const ingredientsMap = ingredientsData.reduce((acc, ingredient) => {
-      acc[ingredient.id] = ingredient;
-      return acc;
-    }, {} as Record<number, typeof ingredientsData[0]>);
-    
-    // Group recipe ingredients by recipe ID
-    const ingredientsByRecipe = recipeIngredientsData.reduce((acc, item) => {
-      if (!acc[item.recipeId]) {
-        acc[item.recipeId] = [];
-      }
-      acc[item.recipeId].push({
-        ...item,
-        ingredient: ingredientsMap[item.ingredientId] || null
-      });
-      return acc;
-    }, {} as Record<number, any[]>);
-    
-    // Attach recipe ingredients to recipes
-    const recipesWithIngredients = userRecipes.map(recipe => ({
-      ...recipe,
-      ingredients: ingredientsByRecipe[recipe.id] || []
-    }));
-    
-    res.json(recipesWithIngredients);
+      .orderBy(desc(recipes.updatedAt));
+    res.json(allRecipes);
   } catch (error) {
     console.error("Error fetching recipes:", error);
     res.status(500).json({ error: "Failed to fetch recipes" });
@@ -92,66 +32,28 @@ router.get("/", async (req, res) => {
 // Get a single recipe by ID
 router.get("/:id", async (req, res) => {
   try {
-    const userId = req.session.userId || 1; // Default to user 1 for development
+    const userId = req.session.userId || 1; // Default to 1 for development
     const recipeId = parseInt(req.params.id);
     
     if (isNaN(recipeId)) {
       return res.status(400).json({ error: "Invalid recipe ID" });
     }
     
-    // Get the recipe
-    const [recipe] = await db.select().from(recipes)
-      .where(and(
-        eq(recipes.id, recipeId),
-        eq(recipes.userId, userId)
-      ));
+    const [recipe] = await db
+      .select()
+      .from(recipes)
+      .where(
+        and(
+          eq(recipes.id, recipeId),
+          eq(recipes.userId, userId)
+        )
+      );
     
     if (!recipe) {
       return res.status(404).json({ error: "Recipe not found" });
     }
     
-    // Get recipe ingredients
-    const recipeIngredientsData = await db.select()
-      .from(recipeIngredients)
-      .where(eq(recipeIngredients.recipeId, recipeId));
-    
-    // Get all ingredient IDs from recipe ingredients
-    const ingredientIds = recipeIngredientsData.map(ri => ri.ingredientId);
-    
-    // Get all ingredients for these recipe ingredients
-    let ingredientsData = [];
-    
-    // We need to fetch each ingredient individually since we can't use .in()
-    if (ingredientIds.length > 0) {
-      // Create an array of promises for each ingredient fetch
-      const ingredientPromises = ingredientIds.map(id => 
-        db.select().from(ingredients).where(eq(ingredients.id, id))
-      );
-      
-      // Execute all promises and flatten the resulting array
-      const results = await Promise.all(ingredientPromises);
-      ingredientsData = results.flat();
-    }
-    
-    // Create lookup map for ingredients
-    const ingredientsMap = ingredientsData.reduce((acc, ingredient) => {
-      acc[ingredient.id] = ingredient;
-      return acc;
-    }, {} as Record<number, typeof ingredientsData[0]>);
-    
-    // Attach ingredient details to recipe ingredients
-    const recipeIngredientsWithDetails = recipeIngredientsData.map(item => ({
-      ...item,
-      ingredient: ingredientsMap[item.ingredientId] || null
-    }));
-    
-    // Attach recipe ingredients to recipe
-    const recipeWithIngredients = {
-      ...recipe,
-      ingredients: recipeIngredientsWithDetails
-    };
-    
-    res.json(recipeWithIngredients);
+    res.json(recipe);
   } catch (error) {
     console.error("Error fetching recipe:", error);
     res.status(500).json({ error: "Failed to fetch recipe" });
@@ -161,156 +63,77 @@ router.get("/:id", async (req, res) => {
 // Create a new recipe
 router.post("/", async (req, res) => {
   try {
-    const userId = req.session.userId || 1; // Default to user 1 for development
+    const userId = req.session.userId || 1; // Default to 1 for development
+    const recipeData = req.body;
     
-    // Validate recipe data and remove fields that don't exist in the database
-    const recipeDataRaw = {
-      ...req.body,
-      userId
-    };
-    
-    // Remove imageUrl if it exists to prevent database error
-    if (recipeDataRaw.imageUrl) {
-      delete recipeDataRaw.imageUrl;
-    }
-    
-    console.log("Recipe data being inserted:", recipeDataRaw);
-    
-    // Try-catch for better error handling during schema validation
-    let recipeData;
-    try {
-      recipeData = insertRecipeSchema.parse(recipeDataRaw);
-    } catch (validationError) {
-      console.error("Schema validation error:", validationError);
-      // Use raw data instead to troubleshoot the submission
-      recipeData = recipeDataRaw;
-    }
-    
-    // Extract ingredients from request (not part of recipe schema)
-    const ingredientsList = req.body.ingredients || [];
-    
-    // Convert numeric fields to the correct format
-    const processedRecipeData = {
+    // Validate recipe data
+    const parseResult = insertRecipeSchema.safeParse({
       ...recipeData,
-      servings: Number(recipeData.servings),
-      prepTime: recipeData.prepTime ? Number(recipeData.prepTime) : null,
-      cookTime: recipeData.cookTime ? Number(recipeData.cookTime) : null,
-      // Keep totalCost as string for decimal column compatibility
-      totalCost: recipeData.totalCost || null
-    };
-    
-    // Start a transaction
-    const result = await db.transaction(async (tx) => {
-      // Convert to database-compatible format before inserting
-      const dbRecipeData = {
-        userId: processedRecipeData.userId,
-        name: processedRecipeData.name,
-        description: processedRecipeData.description,
-        servings: processedRecipeData.servings,
-        instructions: processedRecipeData.instructions,
-        totalCost: processedRecipeData.totalCost,
-        prepTime: processedRecipeData.prepTime,
-        cookTime: processedRecipeData.cookTime,
-        category: processedRecipeData.category,
-        imageUrl: processedRecipeData.imageUrl
-      };
-      
-      // Insert recipe
-      const [recipe] = await tx.insert(recipes).values(dbRecipeData).returning();
-      
-      // Insert recipe ingredients
-      if (ingredientsList.length > 0) {
-        const recipeIngredientValues = ingredientsList.map((item: any) => {
-          // Match the exact database schema
-          return {
-            recipeId: recipe.id,
-            ingredientId: Number(item.ingredientId),
-            quantity: String(item.quantity), // Database has quantity as TEXT
-            unit: "", // Required field in database
-            cost: "0" // Required field in database
-          };
-        });
-        
-        await tx.insert(recipeIngredients).values(recipeIngredientValues);
-      }
-      
-      return recipe;
+      userId
     });
     
-    res.status(201).json({ success: true, id: result.id, message: "Recipe created successfully" });
+    if (!parseResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid recipe data", 
+        details: parseResult.error.format() 
+      });
+    }
+    
+    // Insert the new recipe
+    const [newRecipe] = await db
+      .insert(recipes)
+      .values(parseResult.data)
+      .returning();
+      
+    res.status(201).json(newRecipe);
   } catch (error) {
     console.error("Error creating recipe:", error);
     res.status(500).json({ error: "Failed to create recipe" });
   }
 });
 
-// Update a recipe
+// Update an existing recipe
 router.put("/:id", async (req, res) => {
   try {
-    const userId = req.session.userId || 1; // Default to user 1 for development
+    const userId = req.session.userId || 1; // Default to 1 for development
     const recipeId = parseInt(req.params.id);
+    const recipeData = req.body;
     
     if (isNaN(recipeId)) {
       return res.status(400).json({ error: "Invalid recipe ID" });
     }
     
-    // Check if recipe exists and belongs to user
-    const [existingRecipe] = await db.select().from(recipes)
-      .where(and(
-        eq(recipes.id, recipeId),
-        eq(recipes.userId, userId)
-      ));
+    // Ensure the recipe exists and belongs to the user
+    const [existingRecipe] = await db
+      .select()
+      .from(recipes)
+      .where(
+        and(
+          eq(recipes.id, recipeId),
+          eq(recipes.userId, userId)
+        )
+      );
     
     if (!existingRecipe) {
       return res.status(404).json({ error: "Recipe not found" });
     }
     
-    // Update recipe data (excluding id, userId, createdAt)
-    const recipeData = {
-      name: req.body.name,
-      description: req.body.description,
-      servings: Number(req.body.servings),
-      instructions: req.body.instructions,
-      totalCost: req.body.totalCost || "0",
-      // Convert to string for TEXT columns in database
-      prepTime: req.body.prepTime != null ? String(req.body.prepTime) : null,
-      cookTime: req.body.cookTime != null ? String(req.body.cookTime) : null,
-      imageUrl: req.body.imageUrl,
-      category: req.body.category,
-      updated_at: new Date() // Use snake_case to match column name
-    };
-    
-    console.log("Updating recipe with data:", recipeData);
-    
-    // Extract ingredients from request
-    const ingredientsList = req.body.ingredients || [];
-    
-    // Start a transaction
-    await db.transaction(async (tx) => {
-      // Update recipe
-      await tx.update(recipes)
-        .set(recipeData)
-        .where(eq(recipes.id, recipeId));
+    // Update the recipe
+    const [updatedRecipe] = await db
+      .update(recipes)
+      .set({
+        ...recipeData,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(recipes.id, recipeId),
+          eq(recipes.userId, userId)
+        )
+      )
+      .returning();
       
-      // Delete existing recipe ingredients
-      await tx.delete(recipeIngredients)
-        .where(eq(recipeIngredients.recipeId, recipeId));
-      
-      // Insert new recipe ingredients
-      if (ingredientsList.length > 0) {
-        const recipeIngredientValues = ingredientsList.map((item: any) => ({
-          recipeId: recipeId,
-          ingredientId: Number(item.ingredientId),
-          quantity: String(item.quantity), // Database has quantity as TEXT
-          unit: "", // Required field in database
-          cost: "0" // Required field in database
-        }));
-        
-        await tx.insert(recipeIngredients).values(recipeIngredientValues);
-      }
-    });
-    
-    res.json({ success: true, message: "Recipe updated successfully" });
+    res.json(updatedRecipe);
   } catch (error) {
     console.error("Error updating recipe:", error);
     res.status(500).json({ error: "Failed to update recipe" });
@@ -320,42 +143,130 @@ router.put("/:id", async (req, res) => {
 // Delete a recipe
 router.delete("/:id", async (req, res) => {
   try {
-    const userId = req.session.userId || 1; // Default to user 1 for development
+    const userId = req.session.userId || 1; // Default to 1 for development
     const recipeId = parseInt(req.params.id);
     
     if (isNaN(recipeId)) {
       return res.status(400).json({ error: "Invalid recipe ID" });
     }
     
-    // Check if recipe exists and belongs to user
-    const [existingRecipe] = await db.select().from(recipes)
-      .where(and(
-        eq(recipes.id, recipeId),
-        eq(recipes.userId, userId)
-      ));
+    // Make sure this recipe belongs to the user
+    const [existingRecipe] = await db
+      .select()
+      .from(recipes)
+      .where(
+        and(
+          eq(recipes.id, recipeId),
+          eq(recipes.userId, userId)
+        )
+      );
     
     if (!existingRecipe) {
       return res.status(404).json({ error: "Recipe not found" });
     }
     
-    // Start a transaction
-    await db.transaction(async (tx) => {
-      // Delete recipe ingredients first (foreign key constraint)
-      await tx.delete(recipeIngredients)
-        .where(eq(recipeIngredients.recipeId, recipeId));
-      
-      // Delete recipe
-      await tx.delete(recipes)
-        .where(and(
+    // Delete the recipe
+    await db
+      .delete(recipes)
+      .where(
+        and(
           eq(recipes.id, recipeId),
           eq(recipes.userId, userId)
-        ));
-    });
-    
-    res.json({ success: true, message: "Recipe deleted successfully" });
+        )
+      );
+      
+    res.status(204).end();
   } catch (error) {
     console.error("Error deleting recipe:", error);
     res.status(500).json({ error: "Failed to delete recipe" });
+  }
+});
+
+// Direct SQL import route to bypass ORM issues
+router.post('/direct-import', async (req, res) => {
+  try {
+    const userId = req.session.userId || 1;
+    const { recipes: recipesData } = req.body;
+    
+    if (!Array.isArray(recipesData) || recipesData.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid request format. Recipe data array is required.' 
+      });
+    }
+    
+    console.log(`DIRECT IMPORT: Received ${recipesData.length} recipes for import`);
+    console.log('First few items:', JSON.stringify(recipesData.slice(0, 2)));
+    
+    // Import each recipe item directly using SQL to avoid ORM issues
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Use a single transaction for all inserts
+    try {
+      // Start transaction
+      await db.execute('BEGIN');
+      
+      for (const recipe of recipesData) {
+        try {
+          // Ensure proper data types and defaults
+          const name = (recipe.name || '').replace(/"/g, '');
+          const category = (recipe.category || '').replace(/"/g, '');
+          const description = (recipe.description || '').replace(/"/g, '');
+          const servings = typeof recipe.servings === 'number' ? recipe.servings : (parseInt(recipe.servings) || 1);
+          const total_cost = typeof recipe.total_cost === 'number' ? recipe.total_cost : (parseFloat(recipe.total_cost) || 0);
+          
+          console.log(`Inserting recipe: ${name}, Category: ${category}, Servings: ${servings}, Cost: ${total_cost}`);
+          
+          // More direct database connection to ensure it works
+          await db.execute(`
+            INSERT INTO recipes (
+              user_id, name, category, description, servings, total_cost, created_at, updated_at
+            ) VALUES (
+              ${userId}, 
+              '${name.replace(/'/g, "''")}', 
+              '${category.replace(/'/g, "''")}', 
+              '${description.replace(/'/g, "''")}',
+              ${servings},
+              ${total_cost},
+              NOW(), NOW()
+            )
+          `);
+          
+          console.log(`Successfully inserted recipe: ${name}`);
+          successCount++;
+        } catch (err) {
+          console.error(`DIRECT IMPORT: Failed to insert recipe:`, err);
+          errorCount++;
+        }
+      }
+      
+      // Commit transaction
+      await db.execute('COMMIT');
+      
+    } catch (txnError) {
+      // Rollback on error
+      await db.execute('ROLLBACK');
+      throw txnError;
+    }
+    
+    const result = {
+      success: true,
+      message: `Successfully imported ${successCount} recipes. ${errorCount > 0 ? `Failed to import ${errorCount} recipes.` : ''}`,
+      data: { imported: successCount, failed: errorCount }
+    };
+    
+    console.log("Import complete with result:", result);
+    
+    // Respond with a plain text message to avoid JSON parsing issues
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify(result));
+  } catch (error) {
+    console.error('DIRECT IMPORT: Error importing recipes:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: `Failed to import recipes: ${error instanceof Error ? error.message : String(error)}` 
+    });
   }
 });
 
