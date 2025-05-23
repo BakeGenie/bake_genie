@@ -192,17 +192,22 @@ router.post('/trial/start', async (req: any, res) => {
     // Create a trial subscription
     let subscription;
     try {
+      // Ensure variable names match DB field names using snake_case
       [subscription] = await db
         .insert(userSubscriptions)
         .values({
-          userId,
-          planId: standardPlan.id,
-          planName: standardPlan.name,
+          user_id: userId,
+          plan_id: standardPlan.id,
+          plan_name: standardPlan.name,
           status: 'trialing',
-          trialStart,
-          trialEnd,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          trial_start: trialStart,
+          trial_end: trialEnd,
+          price: standardPlan.price,
+          cancel_at_period_end: false,
+          current_period_start: trialStart,
+          current_period_end: trialEnd,
+          created_at: new Date(),
+          updated_at: new Date()
         })
         .returning();
       
