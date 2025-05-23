@@ -48,6 +48,36 @@ router.post('/api/order-items/import', async (req, res) => {
     const successes = [];
     const errors = [];
     
+    // Create a lookup table for contacts to avoid duplicate queries
+    let defaultContactId = null;
+    try {
+      // Try to get a default contact ID first
+      const contactResult = await db.execute('SELECT id FROM contacts LIMIT 1');
+      if (contactResult?.[0]?.rows?.length > 0) {
+        defaultContactId = contactResult[0].rows[0].id;
+        console.log(`Using default contact ID: ${defaultContactId}`);
+      } else {
+        // If no contacts exist, create a placeholder contact
+        const createContactResult = await db.execute(`
+          INSERT INTO contacts (
+            user_id, first_name, last_name, email, created_at, updated_at
+          ) VALUES (
+            1, 'Default', 'Contact', 'placeholder@example.com', NOW(), NOW()
+          ) RETURNING id
+        `);
+        
+        if (createContactResult?.[0]?.rows?.length > 0) {
+          defaultContactId = createContactResult[0].rows[0].id;
+          console.log(`Created placeholder contact with ID: ${defaultContactId}`);
+        } else {
+          defaultContactId = 1; // Last resort fallback
+        }
+      }
+    } catch (contactErr) {
+      console.error('Error getting/creating default contact:', contactErr);
+      defaultContactId = 1; // Fallback
+    }
+    
     // Use a transaction for all inserts
     try {
       // Start transaction
@@ -56,6 +86,9 @@ router.post('/api/order-items/import', async (req, res) => {
       const userId = req.session?.userId || 1; // Default to 1 for development
       
       console.log("Processing items with format:", items[0]);
+      
+      // Create a lookup for order IDs to avoid repeated queries
+      const orderCache = {};
       
       for (const item of items) {
         try {
@@ -78,7 +111,7 @@ router.post('/api/order-items/import', async (req, res) => {
             if (val === null || val === undefined) return "0.00";
             const str = val.toString().replace(/[^0-9.-]/g, '');
             const number = parseFloat(str) || 0;
-            return number.toString();
+            return number.toFixed(2).toString();
           };
           
           // For NUMERIC(2,0) fields (must be integers less than 100)
@@ -88,72 +121,91 @@ router.post('/api/order-items/import', async (req, res) => {
             return Math.min(99, Math.floor(parseFloat(str) || 0)); // Cap at 99 and ensure it's an integer
           };
           
-          // First, make sure we have a valid order_id reference
-          if (!orderId) {
-            throw new Error("Order ID is required for order items");
+          // For order numbers - make sure they're valid
+          // For order numbers - make sure they're valid, clean any special characters  
+          const safeOrderId = orderId ? String(orderId).trim().replace(/[^\w\d-]/g, '') : null;
+          
+          // If we don't have an order ID, create a placeholder with a timestamp-based ID
+          if (!safeOrderId) {
+            const timestamp = Date.now();
+            const randomSuffix = Math.floor(Math.random() * 10000);
+            const placeholderId = `AUTO-${timestamp}-${randomSuffix}`;
+            console.log(`No order ID provided, creating placeholder: ${placeholderId}`);
+            item.order_id = placeholderId;
           }
           
-          // Check if the referenced order exists - try different ways to find the order
-          // First try with order_number field
-          let findOrderQuery = `SELECT id FROM orders WHERE order_number = '${orderId}'`;
-          let orderResult = await db.execute(findOrderQuery);
+          // Check if we've already processed this order number in this session
+          let orderDbId = orderCache[safeOrderId];
           
-          // If not found, try with the number field directly
-          if (!orderResult?.[0]?.rows?.length) {
-            findOrderQuery = `SELECT id FROM orders WHERE number = '${orderId}'`;
-            orderResult = await db.execute(findOrderQuery);
-          }
-          
-          // If still not found, try with the id field (if the order_id is numeric)
-          if (!orderResult?.[0]?.rows?.length && !isNaN(Number(orderId))) {
-            findOrderQuery = `SELECT id FROM orders WHERE id = ${Number(orderId)}`;
-            orderResult = await db.execute(findOrderQuery);
-          }
-          
-          let orderDbId;
-          if (orderResult && orderResult[0] && orderResult[0].rows && orderResult[0].rows.length > 0) {
-            orderDbId = orderResult[0].rows[0].id;
-            console.log(`Found order ID ${orderDbId} for order number ${orderId}`);
-          } else {
-            // If order not found, let's create a placeholder order to ensure the item gets imported
-            try {
-              const createOrderQuery = `
-                INSERT INTO orders (
-                  user_id, contact_id, order_number, number, status, 
-                  event_date, order_date, subtotal, delivery_amount, 
-                  discount_amount, tax_amount, total_amount, payment_method, 
-                  payment_status, delivery_method, notes, event_type, created_at, updated_at
-                ) VALUES (
-                  1, 1, '${orderId}', '${orderId}', 'pending', 
-                  '${new Date().toISOString()}', '${new Date().toISOString()}', '0.00', '0.00',
-                  '0.00', '0.00', '0.00', 'card',
-                  'unpaid', 'pickup', 'Auto-created from order items import', 'Other', 
-                  '${new Date().toISOString()}', '${new Date().toISOString()}'
-                )
-                RETURNING id
-              `;
-              
-              const createResult = await db.execute(createOrderQuery);
-              if (createResult?.[0]?.rows?.[0]?.id) {
-                orderDbId = createResult[0].rows[0].id;
-                console.log(`Created placeholder order ${orderDbId} for order number ${orderId}`);
-              } else {
-                console.warn(`Order with number ${orderId} not found and couldn't create a placeholder order`);
+          // If not in cache, look it up in the database
+          if (!orderDbId) {
+            // First try with order_number field
+            let findOrderQuery = `SELECT id FROM orders WHERE order_number = '${safeOrderId}'`;
+            let orderResult = await db.execute(findOrderQuery);
+            
+            // If not found, try with the number field directly
+            if (!orderResult?.[0]?.rows?.length) {
+              findOrderQuery = `SELECT id FROM orders WHERE number = '${safeOrderId}'`;
+              orderResult = await db.execute(findOrderQuery);
+            }
+            
+            // If still not found, try with the id field (if numeric)
+            if (!orderResult?.[0]?.rows?.length && !isNaN(Number(safeOrderId))) {
+              findOrderQuery = `SELECT id FROM orders WHERE id = ${Number(safeOrderId)}`;
+              orderResult = await db.execute(findOrderQuery);
+            }
+            
+            if (orderResult?.[0]?.rows?.length > 0) {
+              orderDbId = orderResult[0].rows[0].id;
+              orderCache[safeOrderId] = orderDbId; // Cache it
+              console.log(`Found order ID ${orderDbId} for order number ${safeOrderId}`);
+            } else {
+              // Create a placeholder order if not found
+              try {
+                console.log(`Order ${safeOrderId} not found, creating placeholder`);
+                
+                // Default the order date to the item created_at date if possible
+                let orderDate;
+                try {
+                  // Try to parse the createdAt date
+                  orderDate = new Date(createdAt).toISOString();
+                } catch (dateErr) {
+                  orderDate = new Date().toISOString();
+                }
+                
+                const createOrderQuery = `
+                  INSERT INTO orders (
+                    user_id, contact_id, order_number, number, status, 
+                    event_date, order_date, subtotal, delivery_amount, 
+                    discount_amount, tax_amount, total_amount, payment_method, 
+                    payment_status, delivery_method, notes, event_type, created_at, updated_at
+                  ) VALUES (
+                    ${userId}, ${defaultContactId}, '${safeOrderId}', '${safeOrderId}', 'pending', 
+                    '${orderDate}', '${orderDate}', '0.00', '0.00',
+                    '0.00', '0.00', '0.00', 'card',
+                    'unpaid', 'pickup', 'Auto-created from order items import', 'Other', 
+                    '${orderDate}', NOW()
+                  )
+                  RETURNING id
+                `;
+                
+                const createResult = await db.execute(createOrderQuery);
+                if (createResult?.[0]?.rows?.[0]?.id) {
+                  orderDbId = createResult[0].rows[0].id;
+                  orderCache[safeOrderId] = orderDbId; // Cache it
+                  console.log(`Created placeholder order ${orderDbId} for number ${safeOrderId}`);
+                } else {
+                  throw new Error(`Failed to create placeholder order for ${safeOrderId}`);
+                }
+              } catch (createErr) {
+                console.error(`Failed to create order for ${safeOrderId}:`, createErr);
                 errors.push({
                   item,
-                  error: `Order number ${orderId} not found in the database and couldn't create a placeholder`
+                  error: `Could not create placeholder order: ${createErr.message}`
                 });
                 errorCount++;
                 continue;
               }
-            } catch (createErr) {
-              console.warn(`Failed to create placeholder order for ${orderId}: ${createErr.message}`);
-              errors.push({
-                item,
-                error: `Order number ${orderId} not found in the database`
-              });
-              errorCount++;
-              continue;
             }
           }
           
