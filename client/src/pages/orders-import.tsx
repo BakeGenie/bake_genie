@@ -95,7 +95,10 @@ const OrdersImport = () => {
       setFile(selectedFile);
       
       // Read the file
-      const text = await selectedFile.text();
+      let text = await selectedFile.text();
+      
+      // Remove any DOCTYPE or HTML tags that might be in the file
+      text = text.replace(/<[^>]*>|<!DOCTYPE[^>]*>/g, '');
       
       // Use our parseCSV function
       const records = parseCSV(text);

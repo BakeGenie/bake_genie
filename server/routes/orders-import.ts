@@ -6,7 +6,32 @@ const router = Router();
 // Direct import endpoint specifically for orders CSV format
 router.post('/api/orders/import', async (req, res) => {
   try {
-    const { items } = req.body;
+    // Pre-process the request body to handle potential HTML content or malformed JSON
+    let parsedBody;
+    let items;
+    
+    try {
+      // Check if the body is already parsed as JSON
+      if (typeof req.body === 'object') {
+        parsedBody = req.body;
+      } 
+      // If it's a string (possibly containing HTML), clean it and parse it
+      else if (typeof req.body === 'string') {
+        // Remove any HTML or DOCTYPE declarations
+        const cleanedBody = req.body.replace(/<[^>]*>|<!DOCTYPE[^>]*>/g, '');
+        parsedBody = JSON.parse(cleanedBody);
+      } else {
+        throw new Error("Invalid request body format");
+      }
+      
+      items = parsedBody.items;
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      return res.status(400).json({
+        success: false,
+        error: `Failed to parse request data: ${parseError.message}`
+      });
+    }
     
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ 
