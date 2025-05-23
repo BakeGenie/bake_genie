@@ -22,7 +22,7 @@ export default function DataImportExport() {
   const [importError, setImportError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Generic import handler
+  // Generic import handler with field mappings for different import types
   const handleImport = async (importType: string) => {
     // Create a temporary hidden file input
     const fileInput = document.createElement("input");
@@ -52,17 +52,133 @@ export default function DataImportExport() {
       formData.append("file", selectedFile);
       formData.append("type", importType);
       
-      // Add field mappings for contacts
-      if (importType === "contacts") {
-        const mappings = {
-          "first_name": "First Name",
-          "last_name": "Last Name",
-          "email": "Email",
-          "phone": "Number",
-          "type": "Type"
-        };
-        formData.append("mappings", JSON.stringify(mappings));
+      // Define mappings for different import types
+      let mappings = {};
+      
+      // Add field mappings based on import type
+      switch (importType) {
+        case "contacts":
+          mappings = {
+            "first_name": "First Name", 
+            "last_name": "Last Name",
+            "email": "Email",
+            "phone": "Number",
+            "type": "Type",
+            // Add defaults for potentially missing fields
+            "company": "",
+            "address": "",
+            "city": "",
+            "state": "",
+            "postal_code": "",
+            "country": "",
+            "notes": ""
+          };
+          break;
+          
+        case "orders":
+          mappings = {
+            "order_number": "Order Number",
+            "customer_name": "Customer Name",
+            "order_date": "Order Date",
+            "delivery_date": "Delivery Date",
+            "status": "Status",
+            "total": "Total",
+            "balance_due": "Balance Due",
+            // Add defaults for potentially missing fields
+            "delivery_address": "",
+            "notes": "",
+            "payment_method": "Cash"
+          };
+          break;
+          
+        case "order_items":
+          mappings = {
+            "order_id": "Order ID",
+            "product_name": "Product Name",
+            "quantity": "Quantity",
+            "unit_price": "Unit Price",
+            // Add defaults for potentially missing fields
+            "discount": "0",
+            "notes": ""
+          };
+          break;
+          
+        case "quotes":
+          mappings = {
+            "quote_number": "Quote Number",
+            "customer_name": "Customer Name",
+            "event_date": "Event Date",
+            "created_date": "Created Date",
+            "status": "Status",
+            "total": "Total",
+            // Add defaults for potentially missing fields
+            "notes": "",
+            "expiry_date": ""
+          };
+          break;
+          
+        case "expenses":
+          mappings = {
+            "date": "Date",
+            "category": "Category",
+            "amount": "Amount",
+            "description": "Description",
+            "payment_source": "Payment Source",
+            "supplier": "Supplier",
+            "vat": "VAT",
+            "total_inc_tax": "Total Inc Tax",
+            // Add defaults for potentially missing fields
+            "tax_deductible": "false",
+            "is_recurring": "false",
+            "receipt_url": ""
+          };
+          break;
+          
+        case "ingredients":
+          mappings = {
+            "name": "Name",
+            "category": "Category",
+            "unit": "Unit",
+            "cost_per_unit": "Cost Per Unit",
+            "stock_level": "Stock Level",
+            // Add defaults for potentially missing fields
+            "reorder_point": "0",
+            "supplier": "",
+            "notes": ""
+          };
+          break;
+          
+        case "recipes":
+          mappings = {
+            "name": "Name",
+            "category": "Category",
+            "description": "Description",
+            "serving_size": "Serving Size",
+            // Add defaults for potentially missing fields
+            "prep_time": "0",
+            "cook_time": "0",
+            "notes": ""
+          };
+          break;
+          
+        case "supplies":
+          mappings = {
+            "name": "Name",
+            "category": "Category",
+            "unit": "Unit",
+            "cost_per_unit": "Cost Per Unit",
+            "stock_level": "Stock Level",
+            // Add defaults for potentially missing fields
+            "reorder_point": "0",
+            "supplier": "",
+            "notes": ""
+          };
+          break;
       }
+      
+      // Add mappings to form data
+      formData.append("mappings", JSON.stringify(mappings));
+      formData.append("defaultsForMissing", "true");
       
       try {
         setImportProgress(30);
