@@ -48,6 +48,7 @@ import ManageSubscription from "./pages/manage-subscription";
 import CancelSubscription from "./pages/cancel-subscription";
 import DataImportExport from "./pages/data-import-export";
 import Import from "./pages/import";
+import ContactsImport from "./pages/contacts-import";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import EmailTemplates from "./pages/email-templates";
@@ -266,6 +267,11 @@ function Router() {
         <Route path="/import">
           <ProtectedRoute>
             <Import />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/contacts-import">
+          <ProtectedRoute>
+            <ContactsImport />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">
