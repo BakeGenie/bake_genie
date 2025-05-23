@@ -74,6 +74,7 @@ function Router() {
         <Route path="/" component={LandingPage} />
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/start-trial" component={StartTrial} />
+        <Route path="/try-trial" component={React.lazy(() => import('./pages/try-trial'))} />
         
         {/* Protected routes - require authentication */}
         <Route path="/dashboard">
