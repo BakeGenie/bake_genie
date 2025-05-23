@@ -155,6 +155,12 @@ export default function DataImportExport() {
       return;
     }
     
+    if (importType === "quotes") {
+      // Navigate to the specialized quotes importer
+      setLocation("/quote-import");
+      return;
+    }
+    
     if (importType === "supplies") {
       // Navigate to the specialized supplies importer
       setLocation("/supplies-import");
