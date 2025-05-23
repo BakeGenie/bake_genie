@@ -29,14 +29,27 @@ router.post('/api/expenses/batch', async (req, res) => {
       // Process each expense item
       for (const item of items) {
         try {
-          // Format the date correctly
+          // Handle date format for VARCHAR field in database
           let formattedDate = item.date;
           
-          // Make sure we have a valid date string in ISO format for the database
-          if (formattedDate && !(formattedDate instanceof Date)) {
-            const parsedDate = new Date(formattedDate);
-            if (!isNaN(parsedDate.getTime())) {
-              formattedDate = format(parsedDate, 'yyyy-MM-dd');
+          // If the date is in DD/MM/YYYY format (common in Bake Diary exports)
+          if (formattedDate && typeof formattedDate === 'string' && formattedDate.includes('/')) {
+            const parts = formattedDate.split('/');
+            if (parts.length === 3) {
+              // Convert DD/MM/YYYY to YYYY-MM-DD for database storage
+              const [day, month, year] = parts;
+              formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+          } else if (formattedDate && typeof formattedDate === 'string' && formattedDate.includes(' ')) {
+            // Handle date formats like "11 Jan 2025"
+            try {
+              const parsedDate = new Date(formattedDate);
+              if (!isNaN(parsedDate.getTime())) {
+                formattedDate = format(parsedDate, 'yyyy-MM-dd');
+              }
+            } catch (e) {
+              // Keep original if parsing fails
+              console.log(`Date parsing failed for: ${formattedDate}`);
             }
           }
           
@@ -58,7 +71,7 @@ router.post('/api/expenses/batch', async (req, res) => {
             is_recurring: item.isRecurring || false
           };
           
-          // Use direct SQL query to avoid Drizzle ORM issues with field naming
+          // Use direct SQL query to match the database schema exactly
           const query = `
             INSERT INTO expenses (
               user_id, category, description, amount, date, 
