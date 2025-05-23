@@ -229,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer hover:bg-sidebar-accent/20 transition-colors ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
                         ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-white"
+                        : "bg-sidebar-background text-white"
                     }`}
                   >
                     <div className="flex items-center">
