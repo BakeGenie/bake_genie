@@ -98,6 +98,9 @@ router.post("/", async (req: Request, res: Response) => {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
+    // Debug log to see what's coming in the request
+    console.log("Expense data received:", JSON.stringify(req.body, null, 2));
+    
     // Ensure required fields are present
     if (!req.body.category || !req.body.amount || !req.body.date) {
       return res.status(400).json({ 
@@ -106,26 +109,51 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
     
-    // Prepare expense data
-    const expenseData: InsertExpense = {
-      userId,
-      category: req.body.category,
-      amount: req.body.amount.toString(),
-      date: new Date(req.body.date),
-      description: req.body.description || null,
-      supplier: req.body.supplier || "",
-      paymentSource: req.body.paymentSource || "Cash",
-      vat: req.body.vat ? parseFloat(req.body.vat) : 0,
-      totalIncTax: req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : 0,
-      taxDeductible: req.body.taxDeductible || false,
-      isRecurring: req.body.isRecurring || false,
-      receiptUrl: req.body.receiptUrl || null
-    };
+    // Use direct SQL instead of Drizzle ORM to ensure all fields are properly saved
+    console.log("Raw request body:", JSON.stringify(req.body, null, 2));
     
-    // Insert the expense
-    const [newExpense] = await db.insert(expenses)
-      .values(expenseData)
-      .returning();
+    // Prepare SQL values properly to avoid any ORM translation issues
+    const sql = `
+      INSERT INTO expenses (
+        user_id, 
+        category, 
+        amount, 
+        date, 
+        description, 
+        supplier,
+        payment_source, 
+        vat, 
+        total_inc_tax, 
+        tax_deductible, 
+        is_recurring, 
+        receipt_url
+      ) 
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+      )
+      RETURNING *
+    `;
+    
+    const values = [
+      userId,
+      req.body.category,
+      req.body.amount.toString(),
+      new Date(req.body.date),
+      req.body.description || null,
+      req.body.supplier || "", // Empty string if not provided
+      req.body.paymentSource || "Cash", // Default to 'Cash' if not provided
+      req.body.vat ? req.body.vat.toString() : "0.00", // Default to 0 if not provided
+      req.body.totalIncTax ? req.body.totalIncTax.toString() : "0.00", // Default to 0 if not provided
+      req.body.taxDeductible || false,
+      req.body.isRecurring || false,
+      req.body.receiptUrl || null
+    ];
+    
+    console.log("SQL Values:", JSON.stringify(values, null, 2));
+    
+    // Execute the SQL directly
+    const result = await db.execute(sql, values);
+    const newExpense = result.rows[0];
     
     return res.status(201).json(newExpense);
   } catch (error) {
@@ -146,6 +174,8 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const userId = req.session?.userId || 1;
     const expenseId = parseInt(req.params.id);
     
+    console.log("Update expense data received:", JSON.stringify(req.body, null, 2));
+    
     if (isNaN(expenseId)) {
       return res.status(400).json({ 
         success: false, 
@@ -154,45 +184,109 @@ router.patch("/:id", async (req: Request, res: Response) => {
     }
     
     // Check if expense exists and belongs to the user
-    const [existingExpense] = await db.select().from(expenses).where(
-      and(
-        eq(expenses.id, expenseId),
-        eq(expenses.userId, userId)
-      )
-    );
+    const checkSql = `
+      SELECT * FROM expenses 
+      WHERE id = $1 AND user_id = $2
+    `;
     
-    if (!existingExpense) {
+    const checkResult = await db.execute(checkSql, [expenseId, userId]);
+    
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({ 
         success: false, 
         error: "Expense not found" 
       });
     }
     
-    // Prepare update data
-    const updateData: Partial<InsertExpense> = {};
+    // Build the update SQL dynamically based on what fields were provided
+    const updateFields = [];
+    const values = [expenseId, userId]; // Start with id and userId
+    let paramIndex = 3; // Start from $3 since we're using $1 and $2 above
     
-    if (req.body.category !== undefined) updateData.category = req.body.category;
-    if (req.body.amount !== undefined) updateData.amount = req.body.amount.toString();
-    if (req.body.date !== undefined) updateData.date = new Date(req.body.date);
-    if (req.body.description !== undefined) updateData.description = req.body.description;
-    if (req.body.supplier !== undefined) updateData.supplier = req.body.supplier || "";
-    if (req.body.paymentSource !== undefined) updateData.paymentSource = req.body.paymentSource || "Cash";
-    if (req.body.vat !== undefined) updateData.vat = req.body.vat ? parseFloat(req.body.vat) : 0;
-    if (req.body.totalIncTax !== undefined) updateData.totalIncTax = req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : 0;
-    if (req.body.taxDeductible !== undefined) updateData.taxDeductible = req.body.taxDeductible;
-    if (req.body.isRecurring !== undefined) updateData.isRecurring = req.body.isRecurring;
-    if (req.body.receiptUrl !== undefined) updateData.receiptUrl = req.body.receiptUrl;
+    if (req.body.category !== undefined) {
+      updateFields.push(`category = $${paramIndex}`);
+      values.push(req.body.category);
+      paramIndex++;
+    }
     
-    // Update the expense
-    const [updatedExpense] = await db.update(expenses)
-      .set(updateData)
-      .where(
-        and(
-          eq(expenses.id, expenseId),
-          eq(expenses.userId, userId)
-        )
-      )
-      .returning();
+    if (req.body.amount !== undefined) {
+      updateFields.push(`amount = $${paramIndex}`);
+      values.push(req.body.amount.toString());
+      paramIndex++;
+    }
+    
+    if (req.body.date !== undefined) {
+      updateFields.push(`date = $${paramIndex}`);
+      values.push(new Date(req.body.date));
+      paramIndex++;
+    }
+    
+    if (req.body.description !== undefined) {
+      updateFields.push(`description = $${paramIndex}`);
+      values.push(req.body.description);
+      paramIndex++;
+    }
+    
+    if (req.body.supplier !== undefined) {
+      updateFields.push(`supplier = $${paramIndex}`);
+      values.push(req.body.supplier || "");
+      paramIndex++;
+    }
+    
+    if (req.body.paymentSource !== undefined) {
+      updateFields.push(`payment_source = $${paramIndex}`);
+      values.push(req.body.paymentSource || "Cash");
+      paramIndex++;
+    }
+    
+    if (req.body.vat !== undefined) {
+      updateFields.push(`vat = $${paramIndex}`);
+      values.push(req.body.vat ? req.body.vat.toString() : "0.00");
+      paramIndex++;
+    }
+    
+    if (req.body.totalIncTax !== undefined) {
+      updateFields.push(`total_inc_tax = $${paramIndex}`);
+      values.push(req.body.totalIncTax ? req.body.totalIncTax.toString() : "0.00");
+      paramIndex++;
+    }
+    
+    if (req.body.taxDeductible !== undefined) {
+      updateFields.push(`tax_deductible = $${paramIndex}`);
+      values.push(Boolean(req.body.taxDeductible));
+      paramIndex++;
+    }
+    
+    if (req.body.isRecurring !== undefined) {
+      updateFields.push(`is_recurring = $${paramIndex}`);
+      values.push(Boolean(req.body.isRecurring));
+      paramIndex++;
+    }
+    
+    if (req.body.receiptUrl !== undefined) {
+      updateFields.push(`receipt_url = $${paramIndex}`);
+      values.push(req.body.receiptUrl);
+      paramIndex++;
+    }
+    
+    // If no fields to update, return the existing expense
+    if (updateFields.length === 0) {
+      return res.json(checkResult.rows[0]);
+    }
+    
+    // Build and execute the SQL
+    const updateSql = `
+      UPDATE expenses 
+      SET ${updateFields.join(', ')}
+      WHERE id = $1 AND user_id = $2
+      RETURNING *
+    `;
+    
+    console.log("Update SQL:", updateSql);
+    console.log("Update values:", JSON.stringify(values, null, 2));
+    
+    const result = await db.execute(updateSql, values);
+    const updatedExpense = result.rows[0];
     
     return res.json(updatedExpense);
   } catch (error) {
