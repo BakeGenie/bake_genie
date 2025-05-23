@@ -503,8 +503,16 @@ const Account = () => {
                       <CreditCardIcon className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">Visa •••• 4242</p>
-                      <p className="text-xs text-muted-foreground">Expires 12/2024</p>
+                      <p className="font-medium text-sm">
+                        {paymentMethodData?.paymentMethod 
+                          ? `${paymentMethodData.paymentMethod.brand.charAt(0).toUpperCase() + paymentMethodData.paymentMethod.brand.slice(1)} •••• ${paymentMethodData.paymentMethod.last4}` 
+                          : "Visa •••• 4242"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Expires {paymentMethodData?.paymentMethod 
+                          ? `${paymentMethodData.paymentMethod.expMonth}/${paymentMethodData.paymentMethod.expYear}` 
+                          : "12/2024"}
+                      </p>
                     </div>
                   </div>
                   <Button 

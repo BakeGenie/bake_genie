@@ -68,9 +68,6 @@ router.post("/update-payment-method", requireAuth, async (req: Request, res: Res
     const expMonth = new Date().getMonth() + 1; // Current month
     const expYear = new Date().getFullYear() + 5; // 5 years from now
     
-    // Store in session for persistence between requests
-    const session = req.session as any;
-    
     // Create the payment method object
     const paymentMethod = {
       brand,
@@ -79,10 +76,53 @@ router.post("/update-payment-method", requireAuth, async (req: Request, res: Res
       expYear
     };
     
-    // Save to session
-    session.updatedPaymentMethod = paymentMethod;
-    
-    console.log('Updated payment method saved to session:', paymentMethod);
+    try {
+      // Save payment method to database
+      // First, check if user already has a payment method
+      const existingMethods = await db.select()
+        .from(paymentMethods)
+        .where(eq(paymentMethods.userId, Number(userId)));
+      
+      if (existingMethods.length > 0) {
+        // Update existing payment method
+        await db.update(paymentMethods)
+          .set({
+            paymentMethodId: paymentMethodId,
+            brand: brand,
+            last4: last4,
+            expMonth: expMonth,
+            expYear: expYear,
+          })
+          .where(eq(paymentMethods.userId, Number(userId)));
+        
+        console.log(`Updated existing payment method for user ${userId}`);
+      } else {
+        // Create new payment method
+        await db.insert(paymentMethods)
+          .values({
+            userId: Number(userId),
+            paymentMethodId: paymentMethodId,
+            brand: brand,
+            last4: last4,
+            expMonth: expMonth,
+            expYear: expYear,
+            isDefault: true
+          });
+        
+        console.log(`Created new payment method for user ${userId}`);
+      }
+      
+      // Also store in session for immediate access
+      const session = req.session as any;
+      session.updatedPaymentMethod = paymentMethod;
+      
+      console.log('Payment method saved to database and session:', paymentMethod);
+    } catch (dbError) {
+      console.error('Error saving payment method to database:', dbError);
+      // If database save fails, still keep in session as fallback
+      const session = req.session as any;
+      session.updatedPaymentMethod = paymentMethod;
+    }
 
     res.json({
       success: true,
@@ -112,7 +152,38 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
     // Let's use a simpler approach to fix this issue
     console.log(`Fetching payment method for user ${userId}`);
 
-    // Always return the most recently updated payment method from the session
+    // First try to fetch from database
+    try {
+      const userPaymentMethods = await db.select()
+        .from(paymentMethods)
+        .where(eq(paymentMethods.userId, Number(userId)))
+        .orderBy(desc(paymentMethods.createdAt))
+        .limit(1);
+      
+      if (userPaymentMethods.length > 0) {
+        const dbPaymentMethod = userPaymentMethods[0];
+        console.log('Returning payment method from database:', dbPaymentMethod);
+        
+        // Force new response to avoid browser caching
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
+        return res.json({
+          paymentMethod: {
+            brand: dbPaymentMethod.brand,
+            last4: dbPaymentMethod.last4,
+            expMonth: dbPaymentMethod.expMonth,
+            expYear: dbPaymentMethod.expYear
+          }
+        });
+      }
+    } catch (dbError) {
+      console.error('Error fetching payment method from database:', dbError);
+      // Continue to session fallback if database fetch fails
+    }
+    
+    // Fallback to session if no database record found
     const session = req.session as any;
     
     if (session.updatedPaymentMethod) {
@@ -123,20 +194,21 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       
-      res.json({
+      return res.json({
         paymentMethod: session.updatedPaymentMethod
       });
-    } else {
-      console.log('No updated payment method found, returning default');
-      res.json({
-        paymentMethod: {
-          brand: "visa",
-          last4: "4242",
-          expMonth: 12,
-          expYear: 2024,
-        }
-      });
     }
+    
+    // Default fallback if no payment method found
+    console.log('No payment method found, returning default');
+    res.json({
+      paymentMethod: {
+        brand: "visa",
+        last4: "4242",
+        expMonth: 12,
+        expYear: 2024,
+      }
+    });
   } catch (error: any) {
     console.error("Error fetching payment method:", error);
     res.status(500).json({
