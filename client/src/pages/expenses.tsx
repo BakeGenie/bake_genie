@@ -452,13 +452,18 @@ const ExpensesPage = () => {
         basicDescription += (basicDescription ? '\n\n' : '') + `[META_DATA]${metaString}[/META_DATA]`;
       }
       
-      // Create a clean object with only the fields supported by our database schema
+      // Create a clean object with all fields supported by our database schema
       const expenseData = {
         category: data.category,
         amount: String(data.amount),
         date: data.date,
         description: basicDescription,
+        supplier: data.supplier || "",
+        paymentSource: data.paymentSource,
+        vat: data.vat || "0.00",
+        totalIncTax: data.totalIncTax || "0.00",
         taxDeductible: Boolean(data.taxDeductible),
+        isRecurring: Boolean(data.isRecurring),
         receiptUrl: receiptUrl
       };
       
@@ -923,6 +928,26 @@ const ExpensesPage = () => {
               <FormField
                 control={expenseForm.control}
                 name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-normal text-gray-500">Amount</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="0.00"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={expenseForm.control}
+                name="totalIncTax"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-normal text-gray-500">Total Inc. Tax</FormLabel>

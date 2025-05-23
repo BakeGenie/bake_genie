@@ -113,7 +113,12 @@ router.post("/", async (req: Request, res: Response) => {
       amount: req.body.amount.toString(),
       date: new Date(req.body.date),
       description: req.body.description || null,
+      supplier: req.body.supplier || null,
+      paymentSource: req.body.paymentSource || "Cash",
+      vat: req.body.vat ? parseFloat(req.body.vat) : null,
+      totalIncTax: req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : null,
       taxDeductible: req.body.taxDeductible || false,
+      isRecurring: req.body.isRecurring || false,
       receiptUrl: req.body.receiptUrl || null
     };
     
