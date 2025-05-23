@@ -445,13 +445,7 @@ const Account = () => {
 
                 <div 
                   className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted transition-colors"
-                  onClick={() => {
-                    // Handle update billing details
-                    toast({
-                      title: "Update Billing Details",
-                      description: "This feature will allow changing payment methods."
-                    });
-                  }}
+                  onClick={() => setLocation("/manage-subscription")}
                 >
                   <div className="flex items-center">
                     <CreditCardIcon className="h-5 w-5 mr-3 text-primary" />
