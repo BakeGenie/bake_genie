@@ -135,12 +135,13 @@ export default function EmailTemplates() {
   });
 
   const handleSaveChanges = () => {
+    // Convert camelCase to snake_case for the backend (database field names)
     saveTemplatesMutation.mutate({
-      quoteEmailTemplate: quoteTemplate,
-      invoiceEmailTemplate: invoiceTemplate,
-      paymentReminderTemplate: paymentReminderTemplate,
-      paymentReceiptTemplate: paymentReceiptTemplate,
-      enquiryMessageTemplate: enquiryMessageTemplate
+      quote_email_template: quoteTemplate,
+      invoice_email_template: invoiceTemplate,
+      payment_reminder_template: paymentReminderTemplate,
+      payment_receipt_template: paymentReceiptTemplate,
+      enquiry_message_template: enquiryMessageTemplate
     });
   };
 
