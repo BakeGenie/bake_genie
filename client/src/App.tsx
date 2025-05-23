@@ -49,6 +49,7 @@ import CancelSubscription from "./pages/cancel-subscription";
 import DataImportExport from "./pages/data-import-export";
 import Import from "./pages/import";
 import ContactsImport from "./pages/contacts-import";
+import BakeDiaryImport from "./pages/bake-diary-import";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import EmailTemplates from "./pages/email-templates";
@@ -272,6 +273,11 @@ function Router() {
         <Route path="/contacts-import">
           <ProtectedRoute>
             <ContactsImport />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/bake-diary-import">
+          <ProtectedRoute>
+            <BakeDiaryImport />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">

@@ -138,7 +138,9 @@ export default function DataImportExport() {
   const handleImport = async (importType: string) => {
     // Special case for contacts which has a specific importer
     if (importType === "contacts") {
-      return handleContactsImport();
+      // Navigate to the specialized Bake Diary contacts importer
+      setLocation("/bake-diary-import");
+      return;
     }
     
     // Create a temporary hidden file input
