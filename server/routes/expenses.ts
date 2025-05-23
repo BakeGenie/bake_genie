@@ -207,16 +207,23 @@ router.post("/", async (req: Request, res: Response) => {
     `;
     
     // Insert values directly using the raw request data
+    // Special value handling for fields that need proper conversion
+    const vatValue = req.body.vat ? parseFloat(req.body.vat) : 0.00;
+    const totalIncTaxValue = req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : 0.00;
+    
+    console.log("VAT VALUE FOR DATABASE:", vatValue);
+    console.log("TOTAL INC TAX VALUE FOR DATABASE:", totalIncTaxValue);
+    
     const insertParams = [
       userId,
       req.body.category,
       req.body.amount, 
       new Date(req.body.date),
       req.body.description || '',
-      req.body.supplier, // Direct values from form 
-      req.body.paymentSource,
-      req.body.vat,
-      req.body.totalIncTax,
+      req.body.supplier || '', // Direct values from form with fallback
+      req.body.paymentSource || 'Cash',
+      vatValue, // Properly parsed numeric value
+      totalIncTaxValue, // Properly parsed numeric value
       req.body.taxDeductible ? true : false,
       req.body.isRecurring ? true : false,
       req.body.receiptUrl || null
