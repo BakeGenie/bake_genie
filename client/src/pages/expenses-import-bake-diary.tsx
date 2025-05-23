@@ -9,6 +9,31 @@ import { Separator } from '@/components/ui/separator';
 import { CalendarIcon, FileSpreadsheet, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+// Simple CSV parsing function that handles Bake Diary format
+const parseCSV = (csvText: string) => {
+  // Split by lines and filter out empty lines
+  const lines = csvText.split('\n').filter(line => line.trim());
+  if (lines.length === 0) return [];
+  
+  // First line contains the headers
+  const headers = lines[0].split(',').map(h => h.trim());
+  
+  // Parse the data rows
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',');
+    if (values.length === headers.length) {
+      const row = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] ? values[index].trim() : '';
+      });
+      data.push(row);
+    }
+  }
+  
+  return data;
+};
+
 const ExpensesImportBakeDiary = () => {
   const [file, setFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<any[]>([]);
@@ -44,21 +69,8 @@ const ExpensesImportBakeDiary = () => {
       // Read the file
       const text = await selectedFile.text();
       
-      // Browser-compatible CSV parsing
-      const lines = text.split("\n").filter(line => line.trim());
-      const headers = lines[0].split(",").map(header => header.trim());
-      
-      const records = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",").map(val => val.trim());
-        if (values.length === headers.length) {
-          const record = {};
-          headers.forEach((header, index) => {
-            record[header] = values[index];
-          });
-          records.push(record);
-        }
-      }
+      // Use our parseCSV function defined at the top
+      const records = parseCSV(text);
       
       if (records.length === 0) {
         toast({
@@ -76,13 +88,44 @@ const ExpensesImportBakeDiary = () => {
       // Bake Diary format typically has these headers
       const isBakeDiaryFormat = rowHeaders.includes('Date') && 
                                (rowHeaders.includes('Vendor') || rowHeaders.includes('Payment')) &&
-                               rowHeaders.includes('Amount (Incl VAT)');
+                               (rowHeaders.includes('Amount (Incl VAT)') || rowHeaders.includes('Amount'));
       
       if (isBakeDiaryFormat) {
         console.log("Detected BakeDiary format");
         console.log("CSV headers:", rowHeaders);
         console.log("First row:", firstRow);
         console.log("Total rows:", records.length);
+        
+        // Run a test import with a single record to verify API is working
+        try {
+          const testItem = {
+            date: firstRow.Date || '',
+            description: firstRow.Description || '',
+            category: firstRow.Category || 'Other',
+            amount: firstRow["Amount"] || firstRow["Amount (Incl VAT)"] || '0',
+            supplier: firstRow.Vendor || null,
+            paymentSource: firstRow.Payment || null,
+            vat: firstRow.VAT || '0',
+            totalIncTax: firstRow["Amount (Incl VAT)"] || firstRow.Amount || '0'
+          };
+          
+          // Test the endpoint with a single item
+          const testResponse = await fetch('/api/expenses/bake-diary/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: [testItem] }),
+            credentials: 'include'
+          });
+          
+          if (!testResponse.ok) {
+            throw new Error(`API test failed: ${testResponse.status}`);
+          }
+          
+          console.log("API test successful!");
+        } catch (testError) {
+          console.error("API test error:", testError);
+          // Continue anyway, as this is just a test
+        }
         
         setHeaders(rowHeaders);
         setParsedData(records);
@@ -204,15 +247,25 @@ const ExpensesImportBakeDiary = () => {
           }
         } catch (error: any) {
           console.error("Error importing expenses:", error);
+          
+          // Try to get more detailed error information
+          let errorMessage = error.message || 'Unknown error';
+          
+          if (typeof error === 'string') {
+            errorMessage = error;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
           setErrorCount(prev => prev + batch.length);
           setErrorDetails(prev => [...prev, ...batch.map((item: any) => ({
             item,
-            error: error.message || 'Unknown error'
+            error: errorMessage
           }))]);
           
           toast({
             title: "Import Error",
-            description: `Error importing batch: ${error.message || 'Unknown error'}`,
+            description: `Error importing batch: ${errorMessage}`,
             variant: "destructive"
           });
         }
