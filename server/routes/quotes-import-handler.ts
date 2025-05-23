@@ -20,12 +20,12 @@ const parseDate = (dateStr: string): string | null => {
 };
 
 // Clean and normalize currency values
-const parseCurrency = (value: string): number => {
-  if (!value) return 0;
+const parseCurrency = (value: string): string => {
+  if (!value) return '0';
   
   // Remove currency symbols and non-numeric characters except decimal point
   const cleaned = value.replace(/[^0-9.-]/g, '');
-  return parseFloat(cleaned) || 0;
+  return cleaned || '0';
 };
 
 // Process the CSV data and import it into the database
@@ -66,7 +66,7 @@ router.post('/api/quotes/import', async (req, res) => {
         const eventDate = columnMapping.event_date ? parseDate(record[columnMapping.event_date]) : null;
         const eventType = columnMapping.event_type ? record[columnMapping.event_type] : null;
         const description = columnMapping.description ? record[columnMapping.description] : '';
-        const price = columnMapping.price ? parseCurrency(record[columnMapping.price]) : 0;
+        const amount = columnMapping.price ? parseCurrency(record[columnMapping.price]) : '0';
         const status = columnMapping.status ? record[columnMapping.status] : 'Draft';
         const notes = columnMapping.notes ? record[columnMapping.notes] : '';
         
@@ -74,9 +74,9 @@ router.post('/api/quotes/import', async (req, res) => {
         const quoteInsertQuery = {
           text: `
             INSERT INTO quotes (
-              user_id, quote_number, event_type, status, price, description, 
+              user_id, quote_number, event_type, status, total_amount, 
               notes, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
             RETURNING id
           `,
           values: [
@@ -84,8 +84,7 @@ router.post('/api/quotes/import', async (req, res) => {
             quoteNumber, 
             eventType || '', 
             status, 
-            price, 
-            description, 
+            amount, 
             notes
           ]
         };
@@ -100,13 +99,13 @@ router.post('/api/quotes/import', async (req, res) => {
           const itemInsertQuery = {
             text: `
               INSERT INTO quote_items (
-                quote_id, name, price, quantity, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, NOW(), NOW())
+                quote_id, name, price, quantity, created_at
+              ) VALUES ($1, $2, $3, $4, NOW())
             `,
             values: [
               quoteId, 
               'Imported Item', 
-              price, 
+              amount, 
               1
             ]
           };
@@ -123,7 +122,7 @@ router.post('/api/quotes/import', async (req, res) => {
             quoteNumber,
             eventType,
             status,
-            price
+            amount
           });
         } else {
           await client.query('ROLLBACK');
