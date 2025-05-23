@@ -280,6 +280,11 @@ export const expenses = pgTable("expenses", {
   description: text("description"),
   receiptUrl: text("receipt_url"),
   taxDeductible: boolean("tax_deductible").default(false),
+  supplier: text("supplier"),
+  paymentSource: text("payment_source"),
+  vat: decimal("vat", { precision: 10, scale: 2 }),
+  totalIncTax: decimal("total_inc_tax", { precision: 10, scale: 2 }),
+  isRecurring: boolean("is_recurring").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

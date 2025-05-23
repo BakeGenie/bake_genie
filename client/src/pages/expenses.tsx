@@ -326,19 +326,18 @@ const ExpensesPage = () => {
         receiptUrl
       };
       
-      // Submit the expense data
-      // Make sure we're passing only valid data
+      // Submit the expense data with clean data types
       const expenseData = {
         category: data.category,
-        amount: data.amount,
+        amount: String(data.amount), // Ensure amount is a string 
         date: data.date,
-        description: data.description,
-        supplier: data.supplier,
+        description: data.description || "", // Ensure not null
+        supplier: data.supplier || "", // Ensure not null
         paymentSource: data.paymentSource,
-        vat: data.vat,
-        totalIncTax: data.totalIncTax,
-        taxDeductible: data.taxDeductible,
-        isRecurring: data.isRecurring,
+        vat: data.vat || "0.00", // Ensure not null
+        totalIncTax: data.totalIncTax || "0.00", // Ensure not null
+        taxDeductible: Boolean(data.taxDeductible), // Ensure boolean
+        isRecurring: Boolean(data.isRecurring), // Ensure boolean
         receiptUrl: receiptUrl
       };
       
