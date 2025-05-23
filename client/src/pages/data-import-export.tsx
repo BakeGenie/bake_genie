@@ -329,7 +329,7 @@ export default function DataImportExport() {
       <div className="container mx-auto py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Data Import & Export</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Data Import & Export</h1>
             <p className="text-muted-foreground">
               Backup your data or migrate from other systems
             </p>
@@ -337,29 +337,39 @@ export default function DataImportExport() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="export">Export Data</TabsTrigger>
-            <TabsTrigger value="import">Import Data</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="export" className="data-[state=active]:bg-primary/90 data-[state=active]:text-white">
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
+            </TabsTrigger>
+            <TabsTrigger value="import" className="data-[state=active]:bg-primary/90 data-[state=active]:text-white">
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="export" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Export Your Data</CardTitle>
+            <Card className="border-t-4 border-t-primary/90 shadow-md">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <Download className="h-5 w-5" />
+                  Export Your Data
+                </CardTitle>
                 <CardDescription>
                   Download a backup of your data for safekeeping or to transfer to another system
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <div className="grid gap-6">
                   <div className="grid gap-3">
-                    <Label htmlFor="exportType">What would you like to export?</Label>
+                    <Label htmlFor="exportType" className="text-base font-medium">What would you like to export?</Label>
                     <Select value={exportType} onValueChange={setExportType}>
-                      <SelectTrigger id="exportType">
+                      <SelectTrigger id="exportType" className="h-11">
                         <SelectValue placeholder="Select data to export" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Data</SelectItem>
+                        <SelectItem value="all" className="font-medium">All Data (Complete Backup)</SelectItem>
+                        <Separator className="my-2" />
                         <SelectItem value="orders">Orders</SelectItem>
                         <SelectItem value="contacts">Contacts</SelectItem>
                         <SelectItem value="recipes">Recipes</SelectItem>
@@ -368,28 +378,54 @@ export default function DataImportExport() {
                         <SelectItem value="tasks">Tasks</SelectItem>
                         <SelectItem value="enquiries">Enquiries</SelectItem>
                         <SelectItem value="settings">Settings</SelectItem>
+                        <Separator className="my-2" />
                         <SelectItem value="template_orders">Orders Template</SelectItem>
                         <SelectItem value="template_quotes">Quotes Template</SelectItem>
                         <SelectItem value="template_order_items">Order Items Template</SelectItem>
                       </SelectContent>
                     </Select>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-md p-4 mt-2">
+                      <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">Export Information</p>
+                      <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+                        <li className="flex items-start gap-2">
+                          <Download className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>All Data</strong> exports a complete JSON backup of your entire account.
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Download className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Individual data types</strong> are exported as CSV files for easy viewing in spreadsheets.
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <Download className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Templates</strong> provide empty CSV files that show the correct format for importing data.
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="border-t bg-slate-50 dark:bg-slate-900/50 py-4">
                 <Button 
                   onClick={handleExport} 
                   disabled={isExporting}
-                  className="w-full"
+                  className="w-full h-11"
+                  size="lg"
                 >
                   {isExporting ? (
                     <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Exporting...
+                      <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                      Preparing Export...
                     </>
                   ) : (
                     <>
-                      <Download className="mr-2 h-4 w-4" />
+                      <Download className="mr-2 h-5 w-5" />
                       Download {exportType === "all" ? "All Data" : exportType}
                     </>
                   )}
@@ -399,30 +435,33 @@ export default function DataImportExport() {
           </TabsContent>
 
           <TabsContent value="import" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Import Data</CardTitle>
+            <Card className="border-t-4 border-t-purple-500 shadow-md">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="flex items-center gap-2 text-purple-500">
+                  <Upload className="h-5 w-5" />
+                  Import Data
+                </CardTitle>
                 <CardDescription>
                   Import data from a backup file or migrate from Bake Diary
                 </CardDescription>
               </CardHeader>
               <div className="px-6 pt-2">
-                <Alert className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Import from Bake Diary (CSV)</AlertTitle>
-                  <AlertDescription>
+                <Alert className="mb-6 border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-900/20">
+                  <AlertCircle className="h-4 w-4 text-purple-500" />
+                  <AlertTitle className="text-purple-700 dark:text-purple-300">Import from Bake Diary (CSV)</AlertTitle>
+                  <AlertDescription className="text-purple-700 dark:text-purple-400">
                     To import data from Bake Diary, select one of the CSV files exported from Bake Diary:
                     <ul className="list-disc pl-5 mt-2 space-y-1">
                       <li>Order List - To import orders and their basic details</li>
                       <li>Quote List - To import quotes and their basic details</li>
                       <li>Detailed Order Items - To import order items and details</li>
                     </ul>
-                    <div className="mt-2">
+                    <div className="mt-2 border-t border-purple-200 dark:border-purple-800/50 pt-2">
                       <p className="text-sm font-medium">Need a template?</p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-purple-600 dark:text-purple-300 mt-1">
                         Download a CSV template from the Export tab by selecting one of these options:
                       </p>
-                      <ul className="list-disc pl-5 mt-1 text-xs text-muted-foreground space-y-1">
+                      <ul className="list-disc pl-5 mt-1 text-xs text-purple-600 dark:text-purple-300 space-y-1">
                         <li>Orders Template - For Order List imports</li>
                         <li>Quotes Template - For Quote List imports</li>
                         <li>Order Items Template - For Detailed Order Items imports</li>
@@ -434,19 +473,33 @@ export default function DataImportExport() {
               <CardContent>
                 <div className="grid gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="importFile">Select a file to import</Label>
-                    <input
-                      id="importFile"
-                      type="file"
-                      accept=".json,.csv,application/json,text/csv"
-                      onChange={handleFileChange}
-                      className="border rounded p-2"
-                    />
-                    {importFile && (
-                      <p className="text-sm text-muted-foreground">
-                        Selected: {importFile.name}
-                      </p>
-                    )}
+                    <Label htmlFor="importFile" className="text-base font-medium">Select File to Import</Label>
+                    <div className="border-2 border-dashed border-purple-200 dark:border-purple-800/40 rounded-md p-6 text-center hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer">
+                      <input
+                        id="importFile"
+                        type="file"
+                        accept=".json,.csv,application/json,text/csv"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                      <label htmlFor="importFile" className="cursor-pointer block">
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="h-10 w-10 text-purple-400" />
+                          {importFile ? (
+                            <div className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                              {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              Click to browse or drag and drop a file
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Supported formats: JSON (full backup), CSV (data table)
+                          </p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
 
                   <Separator />
