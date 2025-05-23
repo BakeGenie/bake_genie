@@ -90,6 +90,7 @@ const SettingsContext = createContext<SettingsContextType>({
   isLoading: true,
   updateSettings: async () => false,
   getCurrencySymbol: () => '$',
+  refetchSettings: async () => {},
 });
 
 // Currency mapping of code to symbol

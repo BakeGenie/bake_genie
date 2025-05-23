@@ -56,7 +56,7 @@ Thanks again`
 };
 
 export default function EmailTemplates() {
-  const { settings, updateSettings } = useSettings();
+  const { settings, refetchSettings } = useSettings() || { settings: {}, refetchSettings: async () => {} };
   const { toast } = useToast();
 
   // Template states
@@ -70,15 +70,28 @@ export default function EmailTemplates() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Force fetch fresh data when the component mounts
+  useEffect(() => {
+    const fetchFreshData = async () => {
+      console.log("Fetching fresh email template data...");
+      if (refetchSettings) {
+        await refetchSettings();
+      }
+    };
+    
+    fetchFreshData();
+  }, []);
+
   // Initialize templates from settings or defaults
   useEffect(() => {
     if (settings) {
+      console.log("Loading email templates from settings:", settings);
       // Use bracket notation to access properties that might be using snake_case in the response
-      setQuoteTemplate(settings.quote_email_template || settings.quoteEmailTemplate || defaultTemplates.quoteTemplate);
-      setInvoiceTemplate(settings.invoice_email_template || settings.invoiceEmailTemplate || defaultTemplates.invoiceTemplate);
-      setPaymentReminderTemplate(settings.payment_reminder_template || settings.paymentReminderTemplate || defaultTemplates.paymentReminderTemplate);
-      setPaymentReceiptTemplate(settings.payment_receipt_template || settings.paymentReceiptTemplate || defaultTemplates.paymentReceiptTemplate);
-      setEnquiryMessageTemplate(settings.enquiry_message_template || settings.enquiryMessageTemplate || defaultTemplates.enquiryMessageTemplate);
+      setQuoteTemplate(settings.quoteEmailTemplate || defaultTemplates.quoteTemplate);
+      setInvoiceTemplate(settings.invoiceEmailTemplate || defaultTemplates.invoiceTemplate);
+      setPaymentReminderTemplate(settings.paymentReminderTemplate || defaultTemplates.paymentReminderTemplate);
+      setPaymentReceiptTemplate(settings.paymentReceiptTemplate || defaultTemplates.paymentReceiptTemplate);
+      setEnquiryMessageTemplate(settings.enquiryMessageTemplate || defaultTemplates.enquiryMessageTemplate);
     }
   }, [settings]);
 
@@ -115,8 +128,6 @@ export default function EmailTemplates() {
   ]);
 
   // Mutation for saving changes
-  // Call the main settings reload function from context
-  const { refetchSettings } = useSettings() || { refetchSettings: () => null };
 
   const saveTemplatesMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -154,7 +165,9 @@ export default function EmailTemplates() {
     },
     onSuccess: () => {
       // Refetch settings to update context with latest data
-      if (refetchSettings) refetchSettings();
+      if (refetchSettings) {
+        refetchSettings();
+      }
       setHasChanges(false);
       toast({
         title: "Templates saved",
