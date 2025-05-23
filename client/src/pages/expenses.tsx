@@ -645,24 +645,12 @@ const ExpensesPage = () => {
         }}
       >
         <DialogContent className="sm:max-w-[425px]" aria-describedby="expense-form-description">
-          <div className="flex justify-between items-center mb-4">
-            <DialogTitle className="text-xl">
-              {editingExpenseId ? 'Edit Expense' : 'Add Expense'}
-            </DialogTitle>
-            <span id="expense-form-description" className="sr-only">
-              Fill out the form to {editingExpenseId ? 'update your' : 'add a new'} expense
-            </span>
-            <button 
-              onClick={() => {
-                setOpenExpenseDialog(false);
-                setEditingExpenseId(null);
-                expenseForm.reset();
-              }}
-              className="text-gray-400 hover:text-gray-500"
-            >
-              ✕
-            </button>
-          </div>
+          <DialogTitle className="text-xl mb-4">
+            {editingExpenseId ? 'Edit Expense' : 'Add Expense'}
+          </DialogTitle>
+          <span id="expense-form-description" className="sr-only">
+            Fill out the form to {editingExpenseId ? 'update your' : 'add a new'} expense
+          </span>
           <Form {...expenseForm}>
             <form onSubmit={expenseForm.handleSubmit(onSubmitExpense)} className="space-y-4">
               <FormField
@@ -832,26 +820,32 @@ const ExpensesPage = () => {
                 )}
               />
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <FormLabel className="text-sm font-normal text-gray-500">Attach Receipt</FormLabel>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Choose file to upload"
-                    readOnly
-                    value={receiptFileName}
-                    className="flex-1"
-                  />
-                  <label htmlFor="receipt-upload">
-                    <Button 
-                      type="button" 
-                      variant="secondary"
-                      className="whitespace-nowrap bg-blue-500 text-white hover:bg-blue-600 px-3"
-                      onClick={() => document.getElementById('receipt-upload')?.click()}
-                    >
-                      Choose File
-                    </Button>
-                  </label>
+                <div 
+                  className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors ${
+                    isDragging ? 'bg-blue-50 border-blue-300' : 'border-gray-300'
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      handleFileChange({ target: { files: e.dataTransfer.files } } as any);
+                    }
+                  }}
+                  onClick={() => document.getElementById('receipt-upload')?.click()}
+                >
                   <input
                     id="receipt-upload"
                     type="file"
@@ -859,14 +853,55 @@ const ExpensesPage = () => {
                     className="hidden"
                     onChange={handleFileChange}
                   />
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    {selectedFile ? (
+                      <>
+                        <div className="flex items-center justify-center bg-blue-50 text-blue-500 w-12 h-12 rounded-full mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                          </svg>
+                        </div>
+                        <p className="font-medium text-blue-600">{selectedFile.name}</p>
+                        <p className="text-xs mt-1 text-gray-500">File selected. Click to change or drop a new file.</p>
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFile(null);
+                            setReceiptFileName('');
+                          }}
+                          className="mt-2 text-sm text-red-500 hover:text-red-700 flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                          Remove file
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-center bg-gray-100 w-12 h-12 rounded-full mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                          </svg>
+                        </div>
+                        <p className="font-medium">Choose file to upload or drag and drop</p>
+                        <p className="text-xs mt-1">(JPG, JPEG, PNG, PDF - max 3MB)</p>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 flex items-center">
+                <p className="text-xs text-gray-500 flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 mr-1">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="16" x2="12" y2="12" />
                     <line x1="12" y1="8" x2="12.01" y2="8" />
                   </svg>
-                  Attachments larger than 3mb may take longer to upload when saving an expense.
+                  Attachments larger than 3MB may take longer to upload when saving an expense.
                 </p>
               </div>
               
