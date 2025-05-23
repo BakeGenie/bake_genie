@@ -31,7 +31,7 @@ import usersRouter from "./routes/users";
 import recipesRouter from "./routes/recipes";
 // Using our ultra-simple expenses implementation for maximum reliability
 import expensesRouter from "./routes/expenses-simple";
-import expensesImportRouter from "./routes/expenses-import-fixed";
+import expensesImportRouter from "./routes/expenses-import-manual";
 import incomeRouter from "./routes/income";
 import mileageRouter from "./routes/mileage";
 import orderTasksRouter from "./routes/order-tasks";
