@@ -174,7 +174,7 @@ export default function ManageSubscription() {
               </CardDescription>
             </div>
             <div className="flex items-center">
-              <span className={`inline-block w-3 h-3 ${subscriptionStatus.color} rounded-full mr-2`}></span>
+              <span className={`inline-block w-2 h-2 ${subscriptionStatus.color} rounded-full mr-2`}></span>
               <span className={`${subscriptionStatus.textClass} font-medium`}>
                 {subscriptionStatus.text}
               </span>
@@ -182,11 +182,11 @@ export default function ManageSubscription() {
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+        <CardContent>
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-sm font-semibold mb-2">Plan Details</h3>
-              <div className="space-y-1">
+              <h3 className="text-sm font-medium mb-4">Plan Details</h3>
+              <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Plan</span>
                   <span className="text-sm font-medium">Monthly</span>
@@ -198,53 +198,30 @@ export default function ManageSubscription() {
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Next billing</span>
                   <span className="text-sm font-medium">
-                    {isLoading ? "Loading..." : userData?.createdAt ? 
-                      (() => {
-                        const createdDate = new Date(userData.createdAt);
-                        const today = new Date();
-                        const monthsDiff = (today.getFullYear() - createdDate.getFullYear()) * 12 + 
-                                          today.getMonth() - createdDate.getMonth();
-                        const nextBillingDate = new Date(createdDate);
-                        nextBillingDate.setMonth(createdDate.getMonth() + monthsDiff + 1);
-                        nextBillingDate.setDate(createdDate.getDate());
-                        return format(nextBillingDate, 'MMM d, yyyy');
-                      })() : 
-                      "Jun 21, 2025"
-                    }
+                    {isLoading ? "Loading..." : "Jun 21, 2025"}
                   </span>
                 </div>
               </div>
             </div>
             
             <div>
-              <h3 className="text-sm font-semibold mb-2">Payment Method</h3>
+              <h3 className="text-sm font-medium mb-4">Payment Method</h3>
               <div className="flex items-center justify-between">
-                {isLoadingPaymentMethod ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                    <span className="text-sm text-muted-foreground">Loading...</span>
+                <div className="flex items-center">
+                  <CreditCardIcon className="h-4 w-4 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {paymentMethodData?.paymentMethod 
+                        ? `${paymentMethodData.paymentMethod.brand} •••• ${paymentMethodData.paymentMethod.last4}` 
+                        : "Visa •••• 4242"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Expires {paymentMethodData?.paymentMethod 
+                        ? `${paymentMethodData.paymentMethod.expMonth}/${paymentMethodData.paymentMethod.expYear}`
+                        : "12/2024"}
+                    </p>
                   </div>
-                ) : paymentMethodData?.paymentMethod ? (
-                  <div className="flex items-center">
-                    <CreditCardIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium capitalize">
-                        {paymentMethodData.paymentMethod.brand} •••• {paymentMethodData.paymentMethod.last4}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Expires {paymentMethodData.paymentMethod.expMonth}/{paymentMethodData.paymentMethod.expYear}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <CreditCardIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Visa •••• 4242</p>
-                      <p className="text-xs text-muted-foreground">Expires 12/2025</p>
-                    </div>
-                  </div>
-                )}
+                </div>
                 <Button 
                   variant="outline"
                   size="sm"
@@ -256,30 +233,23 @@ export default function ManageSubscription() {
             </div>
           </div>
           
-          <div className="pt-2">
+          <div className="mt-8">
             {isSubscriptionActive ? (
               <Button 
                 variant="outline" 
-                className="text-destructive hover:bg-destructive/10"
+                className="text-destructive"
                 onClick={handleCancelSubscription}
               >
                 Cancel Subscription
               </Button>
             ) : (
-              <div className="space-y-3">
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
-                  <p className="text-sm">
-                    Your subscription has been cancelled and will end on your next billing date.
-                  </p>
-                </div>
-                <Button 
-                  variant="outline"
-                  className="text-primary hover:bg-primary/10"
-                  onClick={handleChangePlan}
-                >
-                  Reactivate Subscription
-                </Button>
-              </div>
+              <Button 
+                variant="outline"
+                className="text-primary"
+                onClick={handleChangePlan}
+              >
+                Reactivate Subscription
+              </Button>
             )}
           </div>
         </CardContent>
