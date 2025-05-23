@@ -186,17 +186,62 @@ router.post("/", async (req: Request, res: Response) => {
     
     console.log("Final SQL values:", JSON.stringify(values, null, 2));
     
-    // Execute the SQL directly
-    // Log the final values one more time just before execution
-    console.log("FINAL VALUES SENT TO DATABASE:");
-    console.log("Supplier value:", supplierValue, "Type:", typeof supplierValue);
-    console.log("Payment source:", paymentSourceValue, "Type:", typeof paymentSourceValue);
-    console.log("VAT value:", vatValue, "Type:", typeof vatValue);
-    console.log("Total inc tax:", totalIncTaxValue, "Type:", typeof totalIncTaxValue);
+    // EMERGENCY FIX: Skip the ORM entirely and use raw SQL with direct values
+    // This is the most reliable way to ensure field values are saved correctly
+    const directSql = `
+      INSERT INTO expenses (
+        user_id, 
+        category, 
+        amount, 
+        date, 
+        description, 
+        supplier,
+        payment_source, 
+        vat, 
+        total_inc_tax, 
+        tax_deductible, 
+        is_recurring, 
+        receipt_url
+      ) 
+      VALUES (
+        $1, 
+        $2, 
+        $3, 
+        $4, 
+        $5, 
+        $6, 
+        $7, 
+        $8, 
+        $9, 
+        $10, 
+        $11, 
+        $12
+      )
+      RETURNING *
+    `;
     
-    // Execute with direct pg pool query
-    // This bypasses any potential ORM issues completely by using direct database connection
-    const result = await pool.query(sql, values);
+    console.log("FINAL VALUES - EMERGENCY FIX:");
+    console.log("Supplier:", req.body.supplier || "");
+    console.log("VAT:", req.body.vat || "0.00");
+    console.log("Total Inc Tax:", req.body.totalIncTax || "0.00");
+    
+    const directValues = [
+      userId,
+      req.body.category,
+      req.body.amount,
+      new Date(req.body.date),
+      req.body.description || null,
+      req.body.supplier || "", // Force supplier
+      req.body.paymentSource || "Cash", // Force payment source
+      req.body.vat || "0.00", // Force VAT
+      req.body.totalIncTax || "0.00", // Force Total Inc Tax
+      Boolean(req.body.taxDeductible),
+      Boolean(req.body.isRecurring),
+      req.body.receiptUrl || null
+    ];
+    
+    // Execute using direct connection
+    const result = await pool.query(directSql, directValues);
     const newExpense = result.rows[0];
     
     return res.status(201).json(newExpense);
