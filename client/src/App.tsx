@@ -316,7 +316,7 @@ function Router() {
         </Route>
         <Route path="/orders-import">
           <ProtectedRoute>
-            <OrdersImport />
+            <div>Orders Import</div>
           </ProtectedRoute>
         </Route>
         <Route path="/order-items-import">
