@@ -88,7 +88,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    d="M8.8 7.2c5.5-2.8 11.3 3 6 7.4 m-5.6 0c-5.5-4.4 0.5-10.2 6-7.4 M12 13v5"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 6.5a5 3 0 0110 0v2"
                   />
                 </svg>
               </span>

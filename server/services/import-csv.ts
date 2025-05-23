@@ -98,7 +98,7 @@ export class CSVImportService {
     return 'unknown';
   }
 
-  async importBakeDiaryOrders(orderData: BakeDiaryOrder[], userId: number): Promise<{ success: boolean; imported: number; errors: number; message: string }> {
+  async importBakeGenieOrders(orderData: BakeDiaryOrder[], userId: number): Promise<{ success: boolean; imported: number; errors: number; message: string }> {
     let imported = 0;
     let errors = 0;
     let errorMessages: string[] = [];
@@ -190,7 +190,7 @@ export class CSVImportService {
     };
   }
 
-  async importBakeDiaryQuotes(quoteData: BakeDiaryQuote[], userId: number): Promise<{ success: boolean; imported: number; errors: number; message: string }> {
+  async importBakeGenieQuotes(quoteData: BakeDiaryQuote[], userId: number): Promise<{ success: boolean; imported: number; errors: number; message: string }> {
     let imported = 0;
     let errors = 0;
     let errorMessages: string[] = [];
@@ -275,7 +275,7 @@ export class CSVImportService {
     };
   }
 
-  async importBakeDiaryOrderItems(itemData: BakeDiaryOrderItem[], userId: number): Promise<{ success: boolean; imported: number; errors: number; message: string }> {
+  async importBakeGenieOrderItems(itemData: BakeDiaryOrderItem[], userId: number): Promise<{ success: boolean; imported: number; errors: number; message: string }> {
     let imported = 0;
     let errors = 0;
     let errorMessages: string[] = [];
