@@ -188,8 +188,14 @@ const ExpensesImportCustom = () => {
           // Apply special formatting based on field type
           if (csvField === 'Date') {
             expense[dbField] = formatBakeDiaryDate(row[csvField]);
-          } else if (csvField === 'Amount' || csvField === 'VAT') {
-            expense[dbField] = formatNumber(row[csvField]);
+          } else if (csvField === 'Amount' || csvField === 'Amount (Incl VAT)' || csvField === 'VAT') {
+            // Special handling for Amount (Incl VAT) field from Bake Diary
+            if (csvField === 'Amount (Incl VAT)') {
+              expense[dbField] = formatNumber(row[csvField]);
+              expense['totalIncTax'] = formatNumber(row[csvField]);
+            } else {
+              expense[dbField] = formatNumber(row[csvField]);
+            }
           } else {
             expense[dbField] = row[csvField];
           }
@@ -198,7 +204,11 @@ const ExpensesImportCustom = () => {
       
       // Set defaults for any missing fields
       expense.taxDeductible = true;
-      expense.totalIncTax = expense.amount;
+      
+      // Only set totalIncTax if it hasn't been set by Amount (Incl VAT)
+      if (!expense.totalIncTax) {
+        expense.totalIncTax = expense.amount;
+      }
       
       return expense;
     });
