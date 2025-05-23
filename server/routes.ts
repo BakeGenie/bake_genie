@@ -19,6 +19,7 @@ import subscriptionRouter from "./routes/subscription";
 import integrationsRouter from "./routes/integrations";
 import ordersRouter, { registerOrdersDirectRoutes } from "./routes/orders-direct";
 import orderLogsRouter from "./routes/order-logs";
+import bakeDiaryImportRouter from "./routes/bake-diary-import";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 import { registerExportRoutes } from "./routes/export";
@@ -122,6 +123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register batch expenses import
   app.use(expensesBatchRouter);
+  
+  // Register Bake Diary specific import router
+  app.use(bakeDiaryImportRouter);
   
   // Register income routes
   app.use('/api/income', incomeRouter);

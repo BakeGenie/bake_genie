@@ -214,8 +214,11 @@ const ExpensesImportCustom = () => {
     });
     
     try {
+      // Log what we're about to send for debugging
+      console.log("About to import expenses:", expenses);
+      
       // Process expenses in batches for reliability
-      const batchSize = 50;
+      const batchSize = 5; // Smaller batch size for testing
       const totalBatches = Math.ceil(expenses.length / batchSize);
       
       for (let i = 0; i < expenses.length; i += batchSize) {
@@ -225,26 +228,36 @@ const ExpensesImportCustom = () => {
         const currentProgress = Math.round(((i + batch.length) / expenses.length) * 100);
         setProgress(currentProgress);
         
-        // Send batch to server
-        const response = await apiRequest('POST', '/api/expenses/batch', {
-          items: batch
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          setSuccessCount(prev => prev + result.inserted);
-          setErrorCount(prev => prev + result.errors);
+        try {
+          // Send batch to server
+          console.log(`Sending batch ${Math.floor(i/batchSize) + 1} of ${totalBatches}:`, batch);
           
-          if (result.errorDetails && result.errorDetails.length > 0) {
-            setErrorDetails(prev => [...prev, ...result.errorDetails]);
-          }
+          const response = await apiRequest('POST', '/api/expenses/bake-diary/import', {
+            items: batch
+          });
           
-          if (result.successDetails && result.successDetails.length > 0) {
-            setImportedItems(prev => [...prev, ...result.successDetails]);
+          const result = await response.json();
+          console.log("Batch result:", result);
+          
+          if (result.success) {
+            setSuccessCount(prev => prev + result.inserted);
+            setErrorCount(prev => prev + result.errors);
+            
+            if (result.errorDetails && result.errorDetails.length > 0) {
+              console.error("Error details:", result.errorDetails);
+              setErrorDetails(prev => [...prev, ...result.errorDetails]);
+            }
+            
+            if (result.successDetails && result.successDetails.length > 0) {
+              setImportedItems(prev => [...prev, ...result.successDetails]);
+            }
+          } else {
+            console.error("Batch failed:", result);
+            throw new Error(result.error || 'Import failed');
           }
-        } else {
-          throw new Error(result.error || 'Import failed');
+        } catch (batchErr) {
+          console.error(`Error processing batch ${Math.floor(i/batchSize) + 1}:`, batchErr);
+          throw batchErr;
         }
       }
       
