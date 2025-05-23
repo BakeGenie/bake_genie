@@ -20,6 +20,7 @@ import Contacts from "./pages/contacts";
 import Enquiries from "./pages/enquiries";
 import EnquiryForm from "./pages/enquiry-form";
 import TaskList from "./pages/task-list-new";
+import StartTrial from "./pages/start-trial";
 import Calendar from "./pages/calendar-standalone";
 import Recipes from "./pages/recipes-new";
 import RecipesList from "./pages/recipes-list";
@@ -71,6 +72,7 @@ function Router() {
         <Route path="/register" component={Register} />
         <Route path="/" component={LandingPage} />
         <Route path="/enquiry-form" component={EnquiryForm} />
+        <Route path="/start-trial" component={StartTrial} />
         
         {/* Protected routes - require authentication */}
         <Route path="/dashboard">
