@@ -127,7 +127,7 @@ const findOrCreateContact = async (contactName: string, userId: number) => {
 };
 
 // Process the CSV data and import it into the database
-router.post('/import', async (req, res) => {
+router.post('/api/quotes/import', async (req, res) => {
   try {
     const { records, columnMapping, userId } = req.body;
     
