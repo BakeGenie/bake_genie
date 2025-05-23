@@ -320,24 +320,29 @@ const ExpensesPage = () => {
         receiptUrl = uploadResult.url;
       }
       
-      // Add the receipt URL to the data
-      const updatedData = {
-        ...data,
-        receiptUrl
+      // Store additional metadata in description to make it compatible with our database schema
+      const additionalData = {
+        supplier: data.supplier || "",
+        paymentSource: data.paymentSource || "",
+        vat: data.vat || "0",
+        totalIncTax: data.totalIncTax || "0",
+        isRecurring: data.isRecurring || false
       };
       
-      // Submit the expense data with clean data types
+      // Prepare a clean description with the original description + additional data
+      let enhancedDescription = data.description || "";
+      if (Object.values(additionalData).some(val => val)) {
+        enhancedDescription += enhancedDescription ? "\n\n" : "";
+        enhancedDescription += "Additional info: " + JSON.stringify(additionalData);
+      }
+      
+      // Create a clean object with only the fields supported by our database schema
       const expenseData = {
         category: data.category,
-        amount: String(data.amount), // Ensure amount is a string 
+        amount: String(data.amount),
         date: data.date,
-        description: data.description || "", // Ensure not null
-        supplier: data.supplier || "", // Ensure not null
-        paymentSource: data.paymentSource,
-        vat: data.vat || "0.00", // Ensure not null
-        totalIncTax: data.totalIncTax || "0.00", // Ensure not null
-        taxDeductible: Boolean(data.taxDeductible), // Ensure boolean
-        isRecurring: Boolean(data.isRecurring), // Ensure boolean
+        description: enhancedDescription,
+        taxDeductible: Boolean(data.taxDeductible),
         receiptUrl: receiptUrl
       };
       
