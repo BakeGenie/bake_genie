@@ -156,8 +156,21 @@ export default function DataImportExport() {
     }
     
     if (importType === "expenses") {
-      // Navigate to the specialized expenses importer
-      setLocation("/expenses-import");
+      // Ask user which expense format they want to import
+      toast({
+        title: "Select Import Format",
+        description: "Would you like to use the specialized Bake Diary format importer?",
+        action: (
+          <div className="flex gap-2 mt-2">
+            <Button variant="default" onClick={() => setLocation("/expenses-import-bake-diary")}>
+              Bake Diary Format
+            </Button>
+            <Button variant="outline" onClick={() => setLocation("/expenses-import")}>
+              Standard Format
+            </Button>
+          </div>
+        )
+      });
       return;
     }
     
