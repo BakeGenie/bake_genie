@@ -31,16 +31,20 @@ class ImportService {
       
       // Make sure each record has the userId field and required fields
       const suppliesToInsert = data.map(supply => {
-        // Create a properly formatted supply record
+        // Create a properly formatted supply record with proper type handling
         return {
           userId,
           name: supply.name || '',
           supplier: supply.supplier || '',
           category: supply.category || '',
-          price: supply.price || null,
+          price: supply.price !== null && supply.price !== undefined && supply.price !== '' ? supply.price : null,
           description: supply.description || '',
-          quantity: supply.quantity || 0,
-          reorder_level: supply.reorder_level || 5 // Use the exact field name that matches database
+          quantity: (supply.quantity !== null && supply.quantity !== undefined && supply.quantity !== '') 
+            ? parseInt(supply.quantity, 10) || 0 
+            : 0,
+          reorder_level: (supply.reorder_level !== null && supply.reorder_level !== undefined && supply.reorder_level !== '') 
+            ? parseInt(supply.reorder_level, 10) || 5 
+            : 5
         };
       });
       
