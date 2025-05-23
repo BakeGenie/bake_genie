@@ -23,12 +23,18 @@ export interface Settings {
   receivePaymentReminders?: boolean;
   receiveMarketingEmails?: boolean;
   receiveProductUpdates?: boolean;
-  // Email templates
+  // Email templates - camelCase version
   quoteEmailTemplate?: string;
   invoiceEmailTemplate?: string;
   paymentReminderTemplate?: string;
   paymentReceiptTemplate?: string;
   enquiryMessageTemplate?: string;
+  // Email templates - snake_case version for database compatibility
+  quote_email_template?: string;
+  invoice_email_template?: string;
+  payment_reminder_template?: string;
+  payment_receipt_template?: string;
+  enquiry_message_template?: string;
   // Business details for invoices and orders
   businessName?: string;
   businessEmail?: string;

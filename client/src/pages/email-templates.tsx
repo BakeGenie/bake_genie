@@ -119,7 +119,8 @@ export default function EmailTemplates() {
     mutationFn: async (data: any) => {
       setIsLoading(true);
       try {
-        // Using apiRequest from lib/queryClient 
+        // Using direct fetch for better control over the API request
+        console.log('Saving templates with data:', data);
         const response = await fetch('/api/settings', {
           method: 'PATCH',
           headers: {
@@ -159,7 +160,7 @@ export default function EmailTemplates() {
   });
 
   const handleSaveChanges = () => {
-    // Create a properly typed object to mutate
+    // Create object using the snake_case field names that match the database column names
     const templateData: any = {
       quote_email_template: quoteTemplate,
       invoice_email_template: invoiceTemplate, 
@@ -168,6 +169,7 @@ export default function EmailTemplates() {
       enquiry_message_template: enquiryMessageTemplate
     };
     
+    console.log('Saving email templates:', templateData);
     saveTemplatesMutation.mutate(templateData);
   };
 
