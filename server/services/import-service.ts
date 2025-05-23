@@ -19,6 +19,42 @@ import { eq } from 'drizzle-orm';
 class ImportService {
   
   /**
+   * Import contacts directly from JSON data
+   */
+  async importContactsFromJson(data: any[], userId: number) {
+    try {
+      console.log(`Importing ${data.length} contacts from JSON for user ${userId}`);
+      
+      if (data.length === 0) {
+        return { success: false, message: 'No records provided' };
+      }
+      
+      // Make sure each record has the userId field
+      const contactsToInsert = data.map(contact => ({
+        ...contact,
+        userId
+      }));
+      
+      console.log(`Prepared ${contactsToInsert.length} contacts for insert`);
+      
+      // Insert contacts into database
+      const result = await db.insert(contacts).values(contactsToInsert);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${contactsToInsert.length} contacts`,
+        data: { imported: contactsToInsert.length }
+      };
+    } catch (error) {
+      console.error('Error importing contacts from JSON:', error);
+      return {
+        success: false,
+        message: `Error importing contacts: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
    * Import contacts from CSV file
    */
   async importContacts(filePath: string, userId: number, mappings: Record<string, string> = {}) {

@@ -53,6 +53,53 @@ const upload = multer({
 
 export const registerDataImportRoutes = (router: Router) => {
   /**
+   * @route POST /api/data/import/json
+   * @desc Import data directly from JSON
+   * @access Private
+   */
+  router.post('/api/data/import/json', async (req: Request, res: Response) => {
+    try {
+      console.log('Received JSON import request');
+      
+      // Get user ID from session
+      const userId = req.session?.user?.id || 1; // Fallback to default user if not authenticated
+      
+      // Get import type and data from request body
+      const { type, data } = req.body;
+      
+      if (!type || !data || !Array.isArray(data)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Invalid request format. Type and data array are required.' 
+        });
+      }
+      
+      console.log(`Received ${data.length} ${type} records for import`);
+      
+      let result;
+      
+      // Handle different import types
+      if (type === 'contacts') {
+        // Import contacts directly from the parsed data
+        result = await importService.importContactsFromJson(data, userId);
+      } else {
+        return res.status(400).json({ 
+          success: false, 
+          error: `Unsupported import type for JSON import: ${type}` 
+        });
+      }
+      
+      return res.json(result);
+    } catch (error) {
+      console.error('Error during JSON import:', error);
+      return res.status(500).json({
+        success: false,
+        error: `Error importing data: ${error instanceof Error ? error.message : String(error)}`
+      });
+    }
+  });
+
+  /**
    * @route POST /api/data/import
    * @desc Import data from CSV file
    * @access Private
