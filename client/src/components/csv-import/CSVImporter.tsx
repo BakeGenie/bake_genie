@@ -236,7 +236,7 @@ export default function CSVImporter({
     // Validate required fields
     const missingRequiredFields = fieldMappings
       .filter(field => field.required)
-      .filter(field => !columnMapping[field.dbField]);
+      .filter(field => !columnMapping[field.dbField] || columnMapping[field.dbField] === '_none_');
     
     if (missingRequiredFields.length > 0) {
       const missingFieldNames = missingRequiredFields
