@@ -120,13 +120,12 @@ export default function BakeDiaryImport() {
         })
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to import contacts');
-      }
-      
       const result = await response.json();
       console.log('Import response:', result);
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || result.message || 'Failed to import contacts');
+      }
       
       setProgress(100);
       
