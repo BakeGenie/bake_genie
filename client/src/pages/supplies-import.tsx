@@ -43,7 +43,7 @@ function parseCSV(csvText: string) {
 }
 
 export default function SuppliesImport() {
-  const [setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -118,11 +118,18 @@ export default function SuppliesImport() {
         for (const [dbField, csvField] of Object.entries(mappings)) {
           // Make sure we're using the right data types
           if (dbField === 'price') {
-            // Convert to numeric
-            mappedItem[dbField] = item[csvField] ? parseFloat(String(item[csvField]).trim()) : null;
+            // Convert to numeric, handle currency symbols
+            if (item[csvField]) {
+              // Remove currency symbols, quotes and other non-numeric chars except decimal point
+              const numericString = String(item[csvField]).replace(/[^0-9.]/g, '');
+              mappedItem[dbField] = numericString ? parseFloat(numericString) : null;
+            } else {
+              mappedItem[dbField] = null;
+            }
           } else {
-            // Use strings for other fields
-            mappedItem[dbField] = item[csvField] ? String(item[csvField]).trim() : '';
+            // Use strings for other fields, remove any extra quotes
+            const cleanValue = item[csvField] ? String(item[csvField]).replace(/^"|"$/g, '').trim() : '';
+            mappedItem[dbField] = cleanValue;
           }
         }
         return mappedItem;
@@ -170,7 +177,7 @@ export default function SuppliesImport() {
       
       // Redirect to supplies page after successful import
       setTimeout(() => {
-        setLocation('/data');
+        window.location.href = '/data';
       }, 1500);
       
     } catch (error) {
@@ -192,7 +199,7 @@ export default function SuppliesImport() {
       <Button 
         variant="ghost" 
         className="mb-4"
-        onClick={() => setLocation('/data')}
+        onClick={() => window.location.href = '/data'}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Data Management
