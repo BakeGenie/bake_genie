@@ -56,7 +56,7 @@ import ExpensesImport from "./pages/expenses-import";
 import ExpensesImportCustom from "./pages/expenses-import-custom";
 import ExpensesImportBakeDiary from "./pages/expenses-import-bake-diary";
 import IngredientsImport from "./pages/ingredients-import";
-import OrdersImport from "./pages/orders-import";
+
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import EmailTemplates from "./pages/email-templates";
@@ -70,6 +70,7 @@ import SquarePaymentProvider from "./pages/payment-settings/square";
 import TippingSettings from "./pages/payment-settings/tipping";
 import PaymentSuccess from "./pages/payment-success";
 import TryTrial from "./pages/try-trial";
+import QuotesImport from "./pages/quotes-import";
 import OrderItemsImport from "./pages/order-items-import";
 
 // Import ProtectedRoute component
@@ -321,6 +322,11 @@ function Router() {
         <Route path="/order-items-import">
           <ProtectedRoute>
             <OrderItemsImport />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/quotes-import">
+          <ProtectedRoute>
+            <QuotesImport />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">
