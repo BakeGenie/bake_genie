@@ -333,14 +333,14 @@ router.post('/api/order-items/import', async (req, res) => {
             INSERT INTO order_items (
               order_id, description, quantity, price, 
               created_at, serving, labour, hours, 
-              overhead, cost_price, sell_price, contact_item, recipes, number
+              overhead, cost_price, sell_price, contact_item, recipes, number, name
             ) VALUES (
               ${orderDbId},
-              '${description.replace(/'/g, "''")}',
+              '${description ? description.replace(/'/g, "''") : "Imported Item"}',
               1,
               '${cleanedSellPrice}',
               '${processedCreatedAt}',
-              '${cleanedServing}',
+              '${cleanedServing || ""}',
               ${cleanedLabour || 0},
               ${cleanedHours || 0},
               ${cleanedOverhead || 0},
@@ -348,7 +348,8 @@ router.post('/api/order-items/import', async (req, res) => {
               '${cleanedSellPrice}',
               ${contactItem ? `'${contactItem.replace(/'/g, "''")}'` : 'NULL'},
               ${recipes ? `'${recipes.replace(/'/g, "''")}'` : 'NULL'},
-              '${safeOrderId}'
+              '${safeOrderId}',
+              '${description ? description.replace(/'/g, "''").substring(0, 30) : "Imported Item"}'
             )
             RETURNING id
           `;
