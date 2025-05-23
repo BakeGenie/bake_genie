@@ -57,15 +57,16 @@ export default function BakeDiaryImport() {
     formData.append('mappings', JSON.stringify(mappings));
     
     try {
+      console.log('Starting upload...');
       setProgress(30);
       
-      // Use fetch directly
+      // Use direct fetch instead of XMLHttpRequest
       const response = await fetch('/api/data/import', {
         method: 'POST',
-        body: formData,
+        body: formData
       });
       
-      setProgress(70);
+      setProgress(60);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -74,6 +75,7 @@ export default function BakeDiaryImport() {
       
       setProgress(100);
       
+      // Show success message
       toast({
         title: 'Import Successful',
         description: 'Your contacts have been imported successfully.'
@@ -84,12 +86,13 @@ export default function BakeDiaryImport() {
         setLocation('/contacts');
       }, 1500);
       
-    } catch (err) {
-      console.error('Import error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to import contacts');
+    } catch (error) {
+      console.error('Import error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to import contacts');
+      
       toast({
         title: 'Import Failed',
-        description: err instanceof Error ? err.message : 'Failed to import contacts',
+        description: error instanceof Error ? error.message : 'Failed to import contacts',
         variant: 'destructive'
       });
     } finally {

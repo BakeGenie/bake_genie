@@ -68,12 +68,10 @@ export const registerDataImportRoutes = (router: Router) => {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
       
+      // Get user ID from session
       const userId = req.session?.user?.id || 1; // Fallback to default user if not authenticated
 
       console.log(`File received: ${req.file.originalname}, size: ${req.file.size} bytes`);
-
-      // Get user ID from session
-      const userId = req.session.user?.id || 1;
       
       // Get import type and mappings from request body
       const importType = req.body.type;
