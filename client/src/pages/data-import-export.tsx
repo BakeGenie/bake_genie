@@ -22,8 +22,103 @@ export default function DataImportExport() {
   const [importError, setImportError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Specialized import handler for Bake Diary contacts
+  const handleContactsImport = async () => {
+    // Create a temporary hidden file input
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".csv";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+    
+    // Trigger a click event to open file dialog
+    fileInput.click();
+    
+    // Handle file selection
+    fileInput.onchange = async (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (!files || files.length === 0) {
+        document.body.removeChild(fileInput);
+        return;
+      }
+      
+      const selectedFile = files[0];
+      console.log("Selected file:", selectedFile.name);
+      
+      setIsImporting(true);
+      setImportProgress(10);
+      setImportError(null);
+      
+      // Create FormData to send file to server
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("type", "contacts");
+      
+      // Very specific mappings for the Bake Diary contacts CSV format
+      const mappings = {
+        "type": "Type",
+        "first_name": "First Name", 
+        "last_name": "Last Name",
+        "email": "Email",
+        "phone": "Number"
+      };
+      
+      formData.append("mappings", JSON.stringify(mappings));
+      formData.append("defaultsForMissing", "true");
+      
+      try {
+        setImportProgress(30);
+        
+        // Send the import request to the server
+        const response = await fetch("/api/data/import", {
+          method: "POST",
+          body: formData,
+        });
+        
+        setImportProgress(70);
+        
+        if (!response.ok) {
+          throw new Error(`Import failed with status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        setImportProgress(100);
+        
+        if (result.success) {
+          toast({
+            title: "Import successful",
+            description: `Your contacts have been imported`,
+          });
+        } else {
+          setImportError(result.message || "There were issues with your import");
+          toast({
+            title: "Import issues",
+            description: result.message || "There were issues with your import",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Import error:", error);
+        setImportError("There was an error importing your contacts");
+        toast({
+          title: "Import failed",
+          description: `There was an error importing your contacts`,
+          variant: "destructive",
+        });
+      } finally {
+        setIsImporting(false);
+        document.body.removeChild(fileInput);
+      }
+    };
+  };
+  
   // Generic import handler with field mappings for different import types
   const handleImport = async (importType: string) => {
+    // Special case for contacts which has a specific importer
+    if (importType === "contacts") {
+      return handleContactsImport();
+    }
+    
     // Create a temporary hidden file input
     const fileInput = document.createElement("input");
     fileInput.type = "file";
@@ -58,6 +153,7 @@ export default function DataImportExport() {
       // Add field mappings based on import type
       switch (importType) {
         case "contacts":
+          // This should never be reached as contacts have their own importer above
           mappings = {
             "first_name": "First Name", 
             "last_name": "Last Name",
@@ -304,7 +400,7 @@ export default function DataImportExport() {
                     <span>Importing data...</span>
                     <span>{importProgress}%</span>
                   </div>
-                  <Progress value={importProgress} className="bg-gray-700" indicatorClassName="bg-blue-500" />
+                  <Progress value={importProgress} className="bg-gray-700" />
                 </div>
               )}
 
