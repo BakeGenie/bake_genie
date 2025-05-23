@@ -131,15 +131,15 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
     const csvHeaders = Object.keys(firstRecord);
     console.log("CSV Headers found:", csvHeaders);
     
-    // Define possible header variations for each database field
+    // Exact mappings based on user's Bake Diary CSV format
     const headerMap = {
-      // Database field: possible CSV header variations
-      first_name: ['First Name', 'First_Name', 'FirstName', 'firstname', 'FIRST NAME', 'Forename', 'forename', 'Given Name', 'given_name'],
-      last_name: ['Last Name', 'Last_Name', 'LastName', 'lastname', 'LAST NAME', 'Surname', 'surname', 'Family Name', 'family_name'],
-      business_name: ['Business Name', 'Business_Name', 'Supplier Name', 'Company', 'Organization', 'CompanyName', 'company', 'business'],
-      email: ['Email', 'E-mail', 'E-Mail', 'EMAIL', 'email', 'EmailAddress', 'email_address', 'Contact Email'],
-      phone: ['Phone', 'Number', 'Phone Number', 'Mobile', 'Telephone', 'Contact Number', 'phone', 'PHONE', 'Tel'],
-      address: ['Address', 'Street Address', 'Location', 'address', 'Full Address']
+      // Database column : CSV header - direct mappings
+      type: ['Type'],
+      first_name: ['First Name'],
+      last_name: ['Last Name'],
+      email: ['Email'],
+      phone: ['Number'],
+      business_name: ['Supplier Name']
     };
     
     // Function to find the best matching header for a database field
