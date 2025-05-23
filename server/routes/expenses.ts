@@ -206,28 +206,83 @@ router.post("/", async (req: Request, res: Response) => {
       RETURNING *
     `;
     
-    // Insert values directly using the raw request data
-    // Special value handling for fields that need proper conversion
-    const vatValue = req.body.vat ? parseFloat(req.body.vat) : 0.00;
-    const totalIncTaxValue = req.body.totalIncTax ? parseFloat(req.body.totalIncTax) : 0.00;
+    // FINAL FIX: BRUTALLY DIRECT APPROACH
+    // Convert numeric fields directly with forced parsing
+    let vatValueNumeric = 0.00;
+    let totalIncTaxNumeric = 0.00;
     
-    console.log("VAT VALUE FOR DATABASE:", vatValue);
-    console.log("TOTAL INC TAX VALUE FOR DATABASE:", totalIncTaxValue);
+    try {
+      if (req.body.vat && req.body.vat !== '') {
+        vatValueNumeric = Number(req.body.vat);
+        console.log("Parsed VAT:", vatValueNumeric);
+      }
+    } catch (e) {
+      console.error("Error parsing VAT:", e);
+    }
     
-    const insertParams = [
+    try {
+      if (req.body.totalIncTax && req.body.totalIncTax !== '') {
+        totalIncTaxNumeric = Number(req.body.totalIncTax);
+        console.log("Parsed Total Inc Tax:", totalIncTaxNumeric);
+      }
+    } catch (e) {
+      console.error("Error parsing Total Inc Tax:", e);
+    }
+    
+    console.log("FINAL VALUES: VAT =", vatValueNumeric, "TOTAL_INC_TAX =", totalIncTaxNumeric);
+    
+    // Log all form values for full visibility
+    console.log("FORM VALUES RECEIVED:");
+    console.log("req.body.supplier =", req.body.supplier);
+    console.log("req.body.vat =", req.body.vat, "type =", typeof req.body.vat);
+    console.log("req.body.totalIncTax =", req.body.totalIncTax, "type =", typeof req.body.totalIncTax);
+    
+    // Execute raw SQL to ensure the values are inserted correctly
+    const rawSql = `
+      INSERT INTO expenses (
+        user_id, 
+        category, 
+        amount, 
+        date, 
+        description, 
+        supplier,
+        payment_source, 
+        vat, 
+        total_inc_tax, 
+        tax_deductible, 
+        is_recurring, 
+        receipt_url
+      ) 
+      VALUES (
+        $1, $2, $3, $4, $5, 
+        $6::text, 
+        $7::text, 
+        $8::numeric, 
+        $9::numeric, 
+        $10, $11, $12
+      )
+      RETURNING *
+    `;
+    
+    const rawValues = [
       userId,
-      req.body.category,
-      req.body.amount, 
+      req.body.category || '',
+      req.body.amount || 0, 
       new Date(req.body.date),
       req.body.description || '',
-      req.body.supplier || '', // Direct values from form with fallback
-      req.body.paymentSource || 'Cash',
-      vatValue, // Properly parsed numeric value
-      totalIncTaxValue, // Properly parsed numeric value
+      req.body.supplier || '', // EXPLICIT TEXT CAST
+      req.body.paymentSource || 'Cash', // EXPLICIT TEXT CAST
+      vatValueNumeric, // EXPLICIT NUMERIC CAST
+      totalIncTaxNumeric, // EXPLICIT NUMERIC CAST
       req.body.taxDeductible ? true : false,
       req.body.isRecurring ? true : false,
       req.body.receiptUrl || null
     ];
+    
+    console.log("RAW SQL VALUES:", rawValues);
+    
+    // Use connection directly to bypass any middleware/ORM issues
+    const result = await pool.query(rawSql, rawValues);
     
     console.log("SUPER SIMPLIFIED APPROACH PARAMS:", insertParams);
     
