@@ -114,14 +114,7 @@ router.post("/", async (req: Request, res: Response) => {
       date: new Date(req.body.date),
       description: req.body.description || null,
       taxDeductible: req.body.taxDeductible || false,
-      // Add receiptUrl if available
-      ...(req.body.receiptUrl && { receiptUrl: req.body.receiptUrl }),
-      // Add additional fields
-      supplier: req.body.supplier || null,
-      paymentSource: req.body.paymentSource || null,
-      vat: req.body.vat || null,
-      totalIncTax: req.body.totalIncTax || null,
-      isRecurring: req.body.isRecurring || false
+      receiptUrl: req.body.receiptUrl || null
     };
     
     // Insert the expense

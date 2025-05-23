@@ -172,7 +172,8 @@ const ExpensesPage = () => {
 
   // Create expense mutation
   const createExpenseMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof expenseSchema>) => {
+    mutationFn: async (data: any) => {
+      // Only include fields that exist in our database schema
       const response = await fetch("/api/expenses", {
         method: "POST",
         headers: {
@@ -183,12 +184,8 @@ const ExpensesPage = () => {
           amount: data.amount,
           date: data.date,
           description: data.description,
-          supplier: data.supplier,
-          paymentSource: data.paymentSource,
-          vat: data.vat,
-          totalIncTax: data.totalIncTax,
           taxDeductible: data.taxDeductible,
-          isRecurring: data.isRecurring
+          receiptUrl: data.receiptUrl
         }),
       });
       
@@ -320,20 +317,26 @@ const ExpensesPage = () => {
         receiptUrl = uploadResult.url;
       }
       
-      // Store additional metadata in description to make it compatible with our database schema
-      const additionalData = {
+      // Store additional info in the description field
+      let basicDescription = data.description || "";
+      
+      // Create metadata string for additional fields
+      const metaFields = {
         supplier: data.supplier || "",
         paymentSource: data.paymentSource || "",
-        vat: data.vat || "0",
-        totalIncTax: data.totalIncTax || "0",
-        isRecurring: data.isRecurring || false
+        vat: data.vat || "",
+        totalIncTax: data.totalIncTax || "",
+        isRecurring: Boolean(data.isRecurring)
       };
       
-      // Prepare a clean description with the original description + additional data
-      let enhancedDescription = data.description || "";
-      if (Object.values(additionalData).some(val => val)) {
-        enhancedDescription += enhancedDescription ? "\n\n" : "";
-        enhancedDescription += "Additional info: " + JSON.stringify(additionalData);
+      // Append metadata to description in a user-friendly format
+      if (Object.values(metaFields).some(v => v)) {
+        if (basicDescription) basicDescription += "\n\n";
+        basicDescription += `Payment: ${metaFields.paymentSource || "Not specified"}\n`;
+        basicDescription += `Supplier: ${metaFields.supplier || "Not specified"}\n`;
+        if (metaFields.vat) basicDescription += `VAT: ${metaFields.vat}\n`;
+        if (metaFields.totalIncTax) basicDescription += `Total (inc. tax): ${metaFields.totalIncTax}\n`;
+        if (metaFields.isRecurring) basicDescription += "This is a recurring expense\n";
       }
       
       // Create a clean object with only the fields supported by our database schema
@@ -341,7 +344,7 @@ const ExpensesPage = () => {
         category: data.category,
         amount: String(data.amount),
         date: data.date,
-        description: enhancedDescription,
+        description: basicDescription,
         taxDeductible: Boolean(data.taxDeductible),
         receiptUrl: receiptUrl
       };
