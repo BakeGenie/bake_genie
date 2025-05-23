@@ -1,715 +1,248 @@
-import { Router, Request as ExpressRequest, Response } from "express";
-import { db } from "../db";
-import { orders, quotes, orderItems, contacts, products, recipes, ingredients, tasks, enquiries, settings } from "@shared/schema";
-import * as fs from 'fs';
-import * as path from 'path';
-import multer from "multer";
-import { Session } from "express-session";
-import { isAuthenticated } from "../middleware/auth";
-
-// Define custom request type with session
-interface Request extends ExpressRequest {
-  session: Session & {
-    user?: {
-      id: number;
-      [key: string]: any;
-    };
-  };
-}
+import { Router, Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { isAuthenticated } from '../middleware/auth';
+import { importService } from '../services/import-service';
 
 // Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), "uploads");
-
-// Ensure uploads directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  },
+  filename: (req, file, cb) => {
+    // Set unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + extension);
+  }
 });
 
+// Initialize multer upload middleware
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
   fileFilter: (req, file, cb) => {
-    // Accept JSON and CSV files
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (ext === '.json' || ext === '.csv') {
+    // Allow CSV files only
+    if (path.extname(file.originalname).toLowerCase() === '.csv') {
       return cb(null, true);
     }
-    cb(new Error("Only JSON and CSV files are allowed"));
-  },
-});
-
-/**
- * Import Bake Diary Contacts CSV
- * This function specifically handles the Bake Diary contact format
- * CSV Format: Type, First Name, Last Name, Supplier Name, Email, Number, Allow Marketing, Website, Source
- */
-async function importBakeDiaryContacts(filePath: string, userId: number): Promise<any> {
-  // Import csv-parse for handling CSV files
-  const { parse } = await import('csv-parse/sync');
-  
-  try {
-    // Read file content
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    console.log("File content first 100 chars:", fileContent.substring(0, 100));
-    
-    // Parse CSV file - handle different formats by detecting delimiter from first line
-    const lines = fileContent.split('\n');
-    const firstLine = lines[0];
-    console.log("First line (headers):", firstLine);
-    
-    // Determine the delimiter by checking what's most common in the header row
-    const hasCommas = firstLine.includes(',');
-    const hasSemicolons = firstLine.includes(';');
-    const hasTabulations = firstLine.includes('\t');
-    
-    let delimiter = ','; // Default for Bake Diary CSVs
-    if (hasSemicolons) delimiter = ';';
-    if (hasTabulations) delimiter = '\t';
-    
-    console.log(`Using delimiter: "${delimiter}" for CSV parsing`);
-    
-    // Read database structure - log the contacts table structure
-    console.log("Database contacts table schema:", [
-      "user_id", "first_name", "last_name", "email", 
-      "phone", "business_name", "address", "notes"
-    ]);
-    
-    // Handle Bake Diary specific format which has space after commas in header
-    let processedContent = fileContent;
-    if (firstLine.includes(", ")) {
-      console.log("Detected Bake Diary format with spaces after commas in header");
-      // Fix the header line by removing spaces after commas, but preserve spaces within field names
-      const headerLine = lines[0].split(',').map(h => h.trim()).join(',');
-      const restOfFile = lines.slice(1).join('\n');
-      processedContent = headerLine + '\n' + restOfFile;
-      console.log("Processed header line:", headerLine);
-    }
-    
-    // Parse the CSV with the appropriate delimiter
-    const records = parse(processedContent, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true,
-      delimiter: delimiter,
-      relax_column_count: true
-    });
-    
-    console.log(`Found ${records.length} contacts in Bake Diary CSV`);
-    if (records.length > 0) {
-      console.log("First record keys:", Object.keys(records[0]));
-      console.log("Sample record:", JSON.stringify(records[0]));
-    } else {
-      console.log("No records found in the CSV file");
-      return {
-        success: false,
-        message: "No valid records found in the CSV file",
-        details: { imported: 0, skipped: 0, errors: 1, errorDetails: ["No valid records found in the CSV file"] }
-      };
-    }
-    
-    // Results tracking
-    const importResults = {
-      success: true,
-      imported: 0,
-      skipped: 0,
-      errors: 0,
-      errorDetails: [] as string[]
-    };
-    
-    // Get the headers from the first record
-    const firstRecord = records[0];
-    const csvHeaders = Object.keys(firstRecord);
-    
-    // Clean up headers by trimming whitespace (Bake Diary CSVs often have spaces after commas)
-    const cleanedHeaders = csvHeaders.map(header => header.trim());
-    console.log("CSV Headers found:", cleanedHeaders);
-    
-    // Exact mappings based on user's Bake Diary CSV format
-    const headerMap = {
-      // Database column : CSV header - direct mappings
-      type: ['Type'],
-      first_name: ['First Name'],
-      last_name: ['Last Name'],
-      email: ['Email'],
-      phone: ['Number'],
-      business_name: ['Supplier Name']
-    };
-    
-    // Function to find the best matching header for a database field with Bake Diary's format
-    function findHeaderMatch(headers: string[], databaseField: string): string | null {
-      const possibleMatches = headerMap[databaseField as keyof typeof headerMap] || [];
-      
-      // Try to find an exact match first
-      for (const match of possibleMatches) {
-        if (headers.includes(match)) {
-          console.log(`Found direct match for ${databaseField}: ${match}`);
-          return match;
-        }
-      }
-      
-      // Try case-insensitive and trimmed matching (Bake Diary may have spaces)
-      for (const header of headers) {
-        const trimmedHeader = header.trim();
-        for (const match of possibleMatches) {
-          // Try exact match with trimmed header
-          if (trimmedHeader === match) {
-            console.log(`Found trimmed match for ${databaseField}: ${header}`);
-            return header;
-          }
-          
-          // Try case-insensitive match with trimmed header
-          if (trimmedHeader.toLowerCase() === match.toLowerCase()) {
-            console.log(`Found case-insensitive match for ${databaseField}: ${header}`);
-            return header;
-          }
-        }
-      }
-      
-      console.log(`No match found for ${databaseField}`);
-      return null;
-    }
-    
-    // Create a mapping from database fields to the actual CSV headers
-    const fieldMapping: Record<string, string | null> = {
-      type: findHeaderMatch(csvHeaders, 'type'),
-      first_name: findHeaderMatch(csvHeaders, 'first_name'),
-      last_name: findHeaderMatch(csvHeaders, 'last_name'),
-      business_name: findHeaderMatch(csvHeaders, 'business_name'),
-      email: findHeaderMatch(csvHeaders, 'email'),
-      phone: findHeaderMatch(csvHeaders, 'phone')
-    };
-    
-    console.log("Field mapping between CSV and database:", fieldMapping);
-    
-    // Extract column names for mapping
-    const getFieldValue = (record: any, possibleNames: string[]) => {
-      for (const name of possibleNames) {
-        if (record[name] !== undefined) {
-          return record[name];
-        }
-      }
-      return '';
-    };
-    
-    // Process each contact
-    for (const record of records) {
-      try {
-        // Extract fields with multiple possible column names
-        const firstName = getFieldValue(record, ['First Name', 'First_Name', 'first_name', 'firstName', 'FIRST NAME']);
-        const lastName = getFieldValue(record, ['Last Name', 'Last_Name', 'last_name', 'lastName', 'LAST NAME']);
-        const email = getFieldValue(record, ['Email', 'email', 'EMAIL']);
-        const phone = getFieldValue(record, ['Number', 'Phone', 'phone', 'PHONE', 'Contact', 'contact', 'CONTACT', 'Mobile', 'mobile']);
-        const businessName = getFieldValue(record, ['Supplier Name', 'Business Name', 'Company', 'company', 'business_name', 'businessName']);
-        const type = getFieldValue(record, ['Type', 'type', 'Contact Type', 'contact_type']);
-        const allowMarketing = getFieldValue(record, ['Allow Marketing', 'allow_marketing', 'Marketing']);
-        const website = getFieldValue(record, ['Website', 'website', 'URL', 'url']);
-        const source = getFieldValue(record, ['Source', 'source', 'Lead Source', 'lead_source']);
-        
-        // Check if required fields exist
-        if (!firstName && !lastName && !email && !phone) {
-          console.log("Skipping empty record");
-          importResults.skipped++;
-          continue;
-        }
-        
-        // Our database schema has these fields:
-        // id, userId, firstName, lastName, email, phone, businessName, address, notes
-        const contactData = {
-          user_id: userId,
-          first_name: firstName ? firstName.trim() : '',
-          last_name: lastName ? lastName.trim() : '',
-          email: email ? email.trim() : '',
-          phone: phone ? phone.trim() : '',
-          business_name: businessName ? businessName.trim() : '',
-          notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}. Type: ${type || 'Customer'}. Allow Marketing: ${allowMarketing || 'No'}. Website: ${website || 'None'}. Source: ${source || 'Import'}.`
-        };
-        
-        console.log("Importing contact:", contactData.first_name, contactData.last_name);
-        
-        try {
-          // Use the db.execute method for direct query
-          const queryText = `
-            INSERT INTO contacts (user_id, first_name, last_name, email, phone, business_name, notes, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-            RETURNING id
-          `;
-          
-          const queryValues = [
-            contactData.user_id,
-            contactData.first_name,
-            contactData.last_name,
-            contactData.email,
-            contactData.phone,
-            contactData.business_name,
-            contactData.notes
-          ];
-          
-          // Use the database connection from our existing db object
-          const queryResult = await db.execute(queryText, queryValues);
-          
-          if (queryResult.rowCount > 0) {
-            importResults.imported++;
-          } else {
-            importResults.errors++;
-            importResults.errorDetails.push(`Failed to insert contact: ${contactData.first_name} ${contactData.last_name}`);
-          }
-        } catch (dbError) {
-          console.error("Database error:", dbError);
-          importResults.errors++;
-          importResults.errorDetails.push(`Database error with contact ${contactData.first_name} ${contactData.last_name}: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
-        }
-      } catch (error) {
-        console.error('Error importing contact:', error);
-        importResults.errors++;
-        importResults.errorDetails.push(`Error with contact ${record['First Name'] || ''} ${record['Last Name'] || ''}: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-    
-    return {
-      success: importResults.imported > 0,
-      message: `Successfully imported ${importResults.imported} contacts${importResults.skipped > 0 ? `, skipped ${importResults.skipped}` : ''}${importResults.errors > 0 ? `, with ${importResults.errors} errors` : ''}.`,
-      details: importResults
-    };
-    
-  } catch (error) {
-    console.error('Error parsing Bake Diary CSV:', error);
-    throw new Error(`Failed to import Bake Diary contacts: ${error instanceof Error ? error.message : String(error)}`);
+    cb(new Error('Only CSV files are allowed'));
   }
-}
+});
 
 export const registerDataImportRoutes = (router: Router) => {
   /**
    * @route POST /api/data/import
-   * @desc Import data from JSON or CSV
+   * @desc Import data from CSV file
    * @access Private
    */
-  router.post("/api/data/import", isAuthenticated, upload.single("file"), async (req: Request, res: Response) => {
+  router.post('/api/data/import', isAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
     try {
+      // Check if file exists
       if (!req.file) {
-        return res.status(400).json({ success: false, error: "No file uploaded" });
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
 
-      const userId = req.session.user!.id;
-      const filePath = req.file.path;
-      const fileExt = path.extname(req.file.originalname).toLowerCase();
-      const fileName = req.file.originalname.toLowerCase();
-
-      // Process based on file type
+      // Get user ID from session
+      const userId = req.session.user?.id || 1;
+      
+      // Get import type and mappings from request body
+      const importType = req.body.type;
+      let mappings = {};
+      
       try {
-        let result;
-        
-        // Special handling for Bake Diary contacts import
-        if (fileExt === '.csv' && (fileName.includes('bake diary contacts') || fileName.includes('contacts'))) {
-          console.log('Detected Bake Diary Contacts CSV');
-          result = await importBakeDiaryContacts(filePath, userId);
-          return res.json(result);
-        } else if (fileExt === '.json') {
-          result = await importJsonData(filePath, userId, req.body);
-          return res.json(result);
-        } else if (fileExt === '.csv') {
+        if (req.body.mappings) {
+          mappings = JSON.parse(req.body.mappings);
+        }
+      } catch (e) {
+        console.error('Error parsing mappings:', e);
+        return res.status(400).json({ success: false, error: 'Invalid mappings format' });
+      }
+      
+      const filePath = req.file.path;
+      console.log(`Processing import for ${importType} from ${filePath} with mappings:`, mappings);
+      
+      let result;
+      
+      // Call the appropriate import method based on the import type
+      switch (importType) {
+        case 'contacts':
+          result = await importService.importContacts(filePath, userId, mappings);
+          break;
+        case 'orders':
+          result = await importService.importOrders(filePath, userId, mappings);
+          break;
+        case 'order_items':
+          result = await importService.importOrderItems(filePath, userId, mappings);
+          break;
+        case 'quotes':
+          result = await importService.importQuotes(filePath, userId, mappings);
+          break;
+        case 'expenses':
+          result = await importService.importExpenses(filePath, userId, mappings);
+          break;
+        case 'ingredients':
+          result = await importService.importIngredients(filePath, userId, mappings);
+          break;
+        case 'recipes':
+          result = await importService.importRecipes(filePath, userId, mappings);
+          break;
+        case 'supplies':
+          result = await importService.importSupplies(filePath, userId, mappings);
+          break;
+        default:
           return res.status(400).json({ 
             success: false, 
-            error: "General CSV import not supported. Please use specific import endpoints for Bake Diary CSV imports." 
+            error: `Unsupported import type: ${importType}` 
           });
-        } else {
-          return res.status(400).json({ success: false, error: "Unsupported file type" });
-        }
-      } finally {
-        // Clean up: remove uploaded file after processing
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
       }
+      
+      // Clean up: delete uploaded file after processing
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      
+      return res.json(result);
     } catch (error) {
-      console.error("Error importing data:", error);
+      console.error('Error during import:', error);
+      
+      // Clean up: delete uploaded file if there was an error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
       return res.status(500).json({
         success: false,
         error: `Error importing data: ${error instanceof Error ? error.message : String(error)}`
       });
     }
   });
+  
+  /**
+   * @route GET /api/data/import/fields
+   * @desc Get available field mappings for different import types
+   * @access Private
+   */
+  router.get('/api/data/import/fields', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const importType = req.query.type as string;
+      
+      if (!importType) {
+        return res.status(400).json({ success: false, error: 'Import type is required' });
+      }
+      
+      // Define available fields for each import type
+      const fieldMappings: Record<string, string[]> = {
+        contacts: [
+          'first_name',
+          'last_name',
+          'email',
+          'phone',
+          'type',
+          'company',
+          'address',
+          'city',
+          'state',
+          'postal_code',
+          'country',
+          'notes'
+        ],
+        orders: [
+          'order_number',
+          'customer_name',
+          'order_date',
+          'delivery_date',
+          'status',
+          'total',
+          'balance_due',
+          'delivery_address',
+          'notes',
+          'payment_method'
+        ],
+        order_items: [
+          'order_id',
+          'product_name',
+          'quantity',
+          'unit_price',
+          'discount',
+          'notes'
+        ],
+        quotes: [
+          'quote_number',
+          'customer_name',
+          'event_date',
+          'created_date',
+          'status',
+          'total',
+          'notes',
+          'expiry_date'
+        ],
+        expenses: [
+          'date',
+          'category',
+          'amount',
+          'description',
+          'payment_source',
+          'supplier',
+          'vat',
+          'total_inc_tax',
+          'tax_deductible',
+          'is_recurring',
+          'receipt_url'
+        ],
+        ingredients: [
+          'name',
+          'category',
+          'unit',
+          'cost_per_unit',
+          'stock_level',
+          'reorder_point',
+          'supplier',
+          'notes'
+        ],
+        recipes: [
+          'name',
+          'category',
+          'description',
+          'serving_size',
+          'prep_time',
+          'cook_time',
+          'notes'
+        ],
+        supplies: [
+          'name',
+          'category',
+          'unit',
+          'cost_per_unit',
+          'stock_level',
+          'reorder_point',
+          'supplier',
+          'notes'
+        ]
+      };
+      
+      if (!fieldMappings[importType]) {
+        return res.status(400).json({ success: false, error: `Unknown import type: ${importType}` });
+      }
+      
+      return res.json({
+        success: true,
+        fields: fieldMappings[importType]
+      });
+    } catch (error) {
+      console.error('Error fetching field mappings:', error);
+      return res.status(500).json({
+        success: false,
+        error: `Error fetching field mappings: ${error instanceof Error ? error.message : String(error)}`
+      });
+    }
+  });
 };
-
-/**
- * Import data from JSON file
- */
-async function importJsonData(filePath: string, userId: number, options: any): Promise<any> {
-  try {
-    // Read and parse the JSON file
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    const importData = JSON.parse(fileContent);
-    
-    // Summary of imported data
-    const summary: Record<string, { imported: number, errors: number }> = {
-      contacts: { imported: 0, errors: 0 },
-      orders: { imported: 0, errors: 0 },
-      orderItems: { imported: 0, errors: 0 },
-      quotes: { imported: 0, errors: 0 },
-      products: { imported: 0, errors: 0 },
-      recipes: { imported: 0, errors: 0 },
-      ingredients: { imported: 0, errors: 0 },
-      tasks: { imported: 0, errors: 0 },
-      enquiries: { imported: 0, errors: 0 },
-      settings: { imported: 0, errors: 0 }
-    };
-    
-    // Option to replace existing data
-    const replaceExisting = options.replaceExisting === 'true';
-
-    // Import contacts if enabled
-    if (options.importContacts === 'true' && importData.contacts && Array.isArray(importData.contacts)) {
-      if (replaceExisting) {
-        await db.delete(contacts).where({ userId });
-        console.log(`Deleted existing contacts for user ${userId}`);
-      }
-      
-      for (const contact of importData.contacts) {
-        try {
-          const contactData = {
-            userId,
-            firstName: contact.firstName || '',
-            lastName: contact.lastName || '',
-            email: contact.email || '',
-            phone: contact.phone || '',
-            address: contact.address || '',
-            businessName: contact.businessName || '',
-            notes: contact.notes || '',
-          };
-          
-          await db.insert(contacts).values(contactData);
-          summary.contacts.imported++;
-        } catch (error) {
-          console.error('Error importing contact:', error);
-          summary.contacts.errors++;
-        }
-      }
-    }
-    
-    // Import orders if enabled
-    if (options.importOrders === 'true' && importData.orders && Array.isArray(importData.orders)) {
-      if (replaceExisting) {
-        // Delete associated orderItems first
-        const existingOrders = await db.select({ id: orders.id }).from(orders).where({ userId });
-        for (const order of existingOrders) {
-          await db.delete(orderItems).where({ orderId: order.id });
-        }
-        
-        await db.delete(orders).where({ userId });
-        console.log(`Deleted existing orders and order items for user ${userId}`);
-      }
-      
-      for (const order of importData.orders) {
-        try {
-          const orderData = {
-            userId,
-            contactId: order.contactId || null,
-            orderNumber: order.orderNumber || `ORD-${Date.now()}`,
-            title: order.title || '',
-            eventType: order.eventType || 'Other',
-            eventDate: order.eventDate ? new Date(order.eventDate) : new Date(),
-            status: order.status || 'Draft',
-            deliveryType: order.deliveryType || 'Pickup',
-            deliveryAddress: order.deliveryAddress || '',
-            deliveryFee: order.deliveryFee || '0',
-            deliveryTime: order.deliveryTime || null,
-            totalAmount: order.totalAmount || '0',
-            amountPaid: order.amountPaid || '0',
-            specialInstructions: order.specialInstructions || '',
-            taxRate: order.taxRate || '0',
-            notes: order.notes || '',
-          };
-          
-          const [newOrder] = await db.insert(orders).values(orderData).returning();
-          summary.orders.imported++;
-          
-          // If order items exist for this order, import them too
-          if (importData.orderItems && Array.isArray(importData.orderItems)) {
-            const items = importData.orderItems.filter((item: any) => item.orderId === order.id);
-            
-            for (const item of items) {
-              try {
-                const itemData = {
-                  orderId: newOrder.id,
-                  name: item.name || '',
-                  description: item.description || '',
-                  quantity: item.quantity || 1,
-                  price: item.price || '0',
-                };
-                
-                await db.insert(orderItems).values(itemData);
-                summary.orderItems.imported++;
-              } catch (error) {
-                console.error('Error importing order item:', error);
-                summary.orderItems.errors++;
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error importing order:', error);
-          summary.orders.errors++;
-        }
-      }
-    }
-    
-    // Import quotes if enabled
-    if (options.importOrders === 'true' && importData.quotes && Array.isArray(importData.quotes)) {
-      if (replaceExisting) {
-        await db.delete(quotes).where({ userId });
-        console.log(`Deleted existing quotes for user ${userId}`);
-      }
-      
-      for (const quote of importData.quotes) {
-        try {
-          const quoteData = {
-            userId,
-            contactId: quote.contactId || null,
-            quoteNumber: quote.quoteNumber || `QUO-${Date.now()}`,
-            title: quote.title || '',
-            eventType: quote.eventType || 'Other',
-            eventDate: quote.eventDate ? new Date(quote.eventDate) : new Date(),
-            status: quote.status || 'Draft',
-            deliveryType: quote.deliveryType || 'Pickup',
-            deliveryAddress: quote.deliveryAddress || '',
-            deliveryFee: quote.deliveryFee || '0',
-            totalAmount: quote.totalAmount || '0',
-            specialInstructions: quote.specialInstructions || '',
-            expiryDate: quote.expiryDate ? new Date(quote.expiryDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            taxRate: quote.taxRate || '0',
-            notes: quote.notes || '',
-          };
-          
-          await db.insert(quotes).values(quoteData);
-          summary.quotes.imported++;
-        } catch (error) {
-          console.error('Error importing quote:', error);
-          summary.quotes.errors++;
-        }
-      }
-    }
-    
-    // Import products if enabled
-    if (options.importProducts === 'true' && importData.products && Array.isArray(importData.products)) {
-      if (replaceExisting) {
-        await db.delete(products).where({ userId });
-        console.log(`Deleted existing products for user ${userId}`);
-      }
-      
-      for (const product of importData.products) {
-        try {
-          const productData = {
-            userId,
-            name: product.name || '',
-            description: product.description || '',
-            price: product.price || '0',
-            category: product.category || 'Other',
-            sku: product.sku || '',
-            active: product.active || true,
-            imageUrl: product.imageUrl || null,
-            productType: product.productType || 'standard',
-          };
-          
-          await db.insert(products).values(productData);
-          summary.products.imported++;
-        } catch (error) {
-          console.error('Error importing product:', error);
-          summary.products.errors++;
-        }
-      }
-    }
-    
-    // Import recipes if enabled
-    if (options.importRecipes === 'true' && importData.recipes && Array.isArray(importData.recipes)) {
-      if (replaceExisting) {
-        await db.delete(recipes).where({ userId });
-        console.log(`Deleted existing recipes for user ${userId}`);
-      }
-      
-      for (const recipe of importData.recipes) {
-        try {
-          const recipeData = {
-            userId,
-            name: recipe.name || '',
-            description: recipe.description || '',
-            category: recipe.category || 'Other',
-            prepTime: recipe.prepTime || '',
-            cookTime: recipe.cookTime || '',
-            yield: recipe.yield || '',
-            instructions: recipe.instructions || '',
-            notes: recipe.notes || '',
-            isPublic: recipe.isPublic || false,
-            imageUrl: recipe.imageUrl || null,
-          };
-          
-          await db.insert(recipes).values(recipeData);
-          summary.recipes.imported++;
-        } catch (error) {
-          console.error('Error importing recipe:', error);
-          summary.recipes.errors++;
-        }
-      }
-    }
-    
-    // Import ingredients if enabled
-    if (options.importRecipes === 'true' && importData.ingredients && Array.isArray(importData.ingredients)) {
-      if (replaceExisting) {
-        await db.delete(ingredients).where({ userId });
-        console.log(`Deleted existing ingredients for user ${userId}`);
-      }
-      
-      for (const ingredient of importData.ingredients) {
-        try {
-          const ingredientData = {
-            userId,
-            name: ingredient.name || '',
-            unit: ingredient.unit || '',
-            costPerUnit: ingredient.costPerUnit || '0',
-            category: ingredient.category || 'Other',
-            inStock: ingredient.inStock || false,
-            stockQuantity: ingredient.stockQuantity || '0',
-            supplier: ingredient.supplier || '',
-          };
-          
-          await db.insert(ingredients).values(ingredientData);
-          summary.ingredients.imported++;
-        } catch (error) {
-          console.error('Error importing ingredient:', error);
-          summary.ingredients.errors++;
-        }
-      }
-    }
-    
-    // Import tasks if enabled
-    if (options.importTasks === 'true' && importData.tasks && Array.isArray(importData.tasks)) {
-      if (replaceExisting) {
-        await db.delete(tasks).where({ userId });
-        console.log(`Deleted existing tasks for user ${userId}`);
-      }
-      
-      for (const task of importData.tasks) {
-        try {
-          const taskData = {
-            userId,
-            title: task.title || '',
-            description: task.description || '',
-            dueDate: task.dueDate ? new Date(task.dueDate) : null,
-            status: task.status || 'Todo',
-            priority: task.priority || 'Medium',
-            orderId: task.orderId || null,
-            reminderEnabled: task.reminderEnabled || false,
-            reminderDate: task.reminderDate ? new Date(task.reminderDate) : null,
-          };
-          
-          await db.insert(tasks).values(taskData);
-          summary.tasks.imported++;
-        } catch (error) {
-          console.error('Error importing task:', error);
-          summary.tasks.errors++;
-        }
-      }
-    }
-    
-    // Import enquiries if enabled
-    if (options.importEnquiries === 'true' && importData.enquiries && Array.isArray(importData.enquiries)) {
-      if (replaceExisting) {
-        await db.delete(enquiries).where({ userId });
-        console.log(`Deleted existing enquiries for user ${userId}`);
-      }
-      
-      for (const enquiry of importData.enquiries) {
-        try {
-          const enquiryData = {
-            userId,
-            name: enquiry.name || '',
-            email: enquiry.email || '',
-            phone: enquiry.phone || '',
-            message: enquiry.message || '',
-            eventType: enquiry.eventType || 'Other',
-            eventDate: enquiry.eventDate ? new Date(enquiry.eventDate) : null,
-            status: enquiry.status || 'New',
-            followUpDate: enquiry.followUpDate ? new Date(enquiry.followUpDate) : null,
-            notes: enquiry.notes || '',
-          };
-          
-          await db.insert(enquiries).values(enquiryData);
-          summary.enquiries.imported++;
-        } catch (error) {
-          console.error('Error importing enquiry:', error);
-          summary.enquiries.errors++;
-        }
-      }
-    }
-    
-    // Import settings if enabled
-    if (options.importSettings === 'true' && importData.settings && Array.isArray(importData.settings)) {
-      if (replaceExisting) {
-        await db.delete(settings).where({ userId });
-        console.log(`Deleted existing settings for user ${userId}`);
-      }
-      
-      for (const setting of importData.settings) {
-        try {
-          const settingData = {
-            userId,
-            currency: setting.currency || 'USD',
-            weekStart: setting.weekStart || 'Sunday',
-            dateFormat: setting.dateFormat || 'MM/DD/YYYY',
-            timeFormat: setting.timeFormat || '12h',
-            businessName: setting.businessName || '',
-            businessEmail: setting.businessEmail || '',
-            businessPhone: setting.businessPhone || '',
-            businessAddress: setting.businessAddress || '',
-            businessLogo: setting.businessLogo || null,
-            invoicePrefix: setting.invoicePrefix || 'INV-',
-            taxRate: setting.taxRate || '0',
-            emailSignature: setting.emailSignature || '',
-            emailTemplateOrder: setting.emailTemplateOrder || '',
-            emailTemplateQuote: setting.emailTemplateQuote || '',
-            emailTemplateInvoice: setting.emailTemplateInvoice || '',
-          };
-          
-          await db.insert(settings).values(settingData);
-          summary.settings.imported++;
-        } catch (error) {
-          console.error('Error importing setting:', error);
-          summary.settings.errors++;
-        }
-      }
-    }
-    
-    // Cleanup temporary file
-    try {
-      fs.unlinkSync(filePath);
-    } catch (err) {
-      console.error('Error deleting temporary file:', err);
-    }
-    
-    return {
-      success: true,
-      message: "Data import completed",
-      result: {
-        summary
-      }
-    };
-  } catch (error) {
-    console.error('Error importing JSON data:', error);
-    
-    // Cleanup temporary file
-    try {
-      fs.unlinkSync(filePath);
-    } catch (err) {
-      console.error('Error deleting temporary file:', err);
-    }
-    
-    throw error;
-  }
-}

@@ -265,255 +265,233 @@ export default function DataImportExport() {
   };
 
   return (
-    <div className="container mx-auto py-10 max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Data Management</h1>
-          <p className="text-muted-foreground">
-            Import data or export backups
-          </p>
+    <div className="bg-[#171923] min-h-screen text-white">
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Data Management</h1>
+            <p className="text-gray-400">
+              Import data or export backups
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setLocation("/dashboard")} className="text-white border-gray-600 hover:bg-gray-800">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
         </div>
-        <Button variant="outline" onClick={() => setLocation("/dashboard")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-      </div>
 
-      <Tabs defaultValue="import" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="import" className="text-base py-3">
-            <Upload className="mr-2 h-4 w-4" />
-            Import Data
-          </TabsTrigger>
-          <TabsTrigger value="export" className="text-base py-3">
-            <Download className="mr-2 h-4 w-4" />
-            Export Data
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="import" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-[#202330]">
+            <TabsTrigger value="import" className="text-base py-3 data-[state=active]:bg-[#2D3748] data-[state=active]:text-white">
+              <Upload className="mr-2 h-4 w-4" />
+              Import Data
+            </TabsTrigger>
+            <TabsTrigger value="export" className="text-base py-3 data-[state=active]:bg-[#2D3748] data-[state=active]:text-white">
+              <Download className="mr-2 h-4 w-4" />
+              Export Data
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="import">
-          <div className="space-y-6">
+          <TabsContent value="import">
             <div>
-              <h2 className="text-2xl font-semibold flex items-center gap-2 mb-2">
-                <Upload className="h-5 w-5" />
-                Import Data
-              </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-gray-400 mb-2">
                 Choose the type of data you want to import
               </p>
-            </div>
-
-            {isImporting && (
-              <div className="mb-6 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Importing data...</span>
-                  <span>{importProgress}%</span>
+              
+              {isImporting && (
+                <div className="my-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Importing data...</span>
+                    <span>{importProgress}%</span>
+                  </div>
+                  <Progress value={importProgress} className="bg-gray-700" indicatorClassName="bg-blue-500" />
                 </div>
-                <Progress value={importProgress} />
-              </div>
-            )}
+              )}
 
-            {importError && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Import issues</AlertTitle>
-                <AlertDescription>
-                  {importError}
-                </AlertDescription>
-              </Alert>
-            )}
+              {importError && (
+                <Alert variant="destructive" className="mb-6 bg-[#7f1d1d] border border-[#b91c1c] text-white">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Import issues</AlertTitle>
+                  <AlertDescription>
+                    {importError}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Select Import Type</h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("contacts")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Contacts</h4>
-                        <p className="text-sm text-muted-foreground">Import your contacts from Bake Diary</p>
-                      </div>
+              <div className="mt-4">
+                <h3 className="font-semibold text-lg text-white mb-4">Select Import Type</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("contacts")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <Users className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("orders")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Order List</h4>
-                        <p className="text-sm text-muted-foreground">Import your orders from Bake Diary</p>
-                      </div>
+                    <div>
+                      <h4 className="font-medium text-white">Import Contacts</h4>
+                      <p className="text-sm text-gray-400">Import your contacts from Bake Diary</p>
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("order_items")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Order Items</h4>
-                        <p className="text-sm text-muted-foreground">Import detailed order items</p>
-                      </div>
+                  </div>
+                  
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("orders")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h4 className="font-medium text-white">Import Order List</h4>
+                      <p className="text-sm text-gray-400">Import your orders from Bake Diary</p>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("order_items")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white">Import Order Items</h4>
+                      <p className="text-sm text-gray-400">Import detailed order items</p>
+                    </div>
+                  </div>
 
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("quotes")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Quote List</h4>
-                        <p className="text-sm text-muted-foreground">Import your quotes from Bake Diary</p>
-                      </div>
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("quotes")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h4 className="font-medium text-white">Import Quote List</h4>
+                      <p className="text-sm text-gray-400">Import your quotes from Bake Diary</p>
+                    </div>
+                  </div>
 
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("expenses")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Expenses</h4>
-                        <p className="text-sm text-muted-foreground">Import your expense data</p>
-                      </div>
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("expenses")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h4 className="font-medium text-white">Import Expenses</h4>
+                      <p className="text-sm text-gray-400">Import your expense data</p>
+                    </div>
+                  </div>
 
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("ingredients")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Ingredients</h4>
-                        <p className="text-sm text-muted-foreground">Import your ingredients data</p>
-                      </div>
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("ingredients")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h4 className="font-medium text-white">Import Ingredients</h4>
+                      <p className="text-sm text-gray-400">Import your ingredients data</p>
+                    </div>
+                  </div>
 
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("recipes")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Recipes</h4>
-                        <p className="text-sm text-muted-foreground">Import your recipe data</p>
-                      </div>
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("recipes")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h4 className="font-medium text-white">Import Recipes</h4>
+                      <p className="text-sm text-gray-400">Import your recipe data</p>
+                    </div>
+                  </div>
 
-                <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleImport("supplies")}>
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Import Supplies</h4>
-                        <p className="text-sm text-muted-foreground">Import your supplies data</p>
-                      </div>
+                  <div 
+                    className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                    onClick={() => handleImport("supplies")}
+                  >
+                    <div className="bg-blue-900/30 p-2 rounded-full">
+                      <FileText className="h-5 w-5 text-blue-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h4 className="font-medium text-white">Import Supplies</h4>
+                      <p className="text-sm text-gray-400">Import your supplies data</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="export">
-          <div className="space-y-6">
+          <TabsContent value="export">
             <div>
-              <h2 className="text-2xl font-semibold flex items-center gap-2 mb-2">
-                <Download className="h-5 w-5" />
-                Export Data
-              </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-gray-400 mb-6">
                 Download your data for backup or transfer to another system
               </p>
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("all")}>
-                <CardContent className="p-0">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Download className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Export All Data</h4>
-                      <p className="text-sm text-muted-foreground">Complete backup of your account</p>
-                    </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div 
+                  className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                  onClick={() => handleExport("all")}
+                >
+                  <div className="bg-blue-900/30 p-2 rounded-full">
+                    <Download className="h-5 w-5 text-blue-400" />
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("contacts")}>
-                <CardContent className="p-0">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Export Contacts</h4>
-                      <p className="text-sm text-muted-foreground">Export all contacts as CSV</p>
-                    </div>
+                  <div>
+                    <h4 className="font-medium text-white">Export All Data</h4>
+                    <p className="text-sm text-gray-400">Complete backup of your account</p>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("orders")}>
-                <CardContent className="p-0">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Export Orders</h4>
-                      <p className="text-sm text-muted-foreground">Export all orders as CSV</p>
-                    </div>
+                </div>
+                
+                <div 
+                  className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                  onClick={() => handleExport("contacts")}
+                >
+                  <div className="bg-blue-900/30 p-2 rounded-full">
+                    <Users className="h-5 w-5 text-blue-400" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h4 className="font-medium text-white">Export Contacts</h4>
+                    <p className="text-sm text-gray-400">Export all contacts as CSV</p>
+                  </div>
+                </div>
+                
+                <div 
+                  className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                  onClick={() => handleExport("orders")}
+                >
+                  <div className="bg-blue-900/30 p-2 rounded-full">
+                    <FileText className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-white">Export Orders</h4>
+                    <p className="text-sm text-gray-400">Export all orders as CSV</p>
+                  </div>
+                </div>
 
-              <Card className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => handleExport("finance")}>
-                <CardContent className="p-0">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <FileText className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Export Financial Data</h4>
-                      <p className="text-sm text-muted-foreground">Export expenses and income</p>
-                    </div>
+                <div 
+                  className="border border-gray-700 rounded-md p-4 cursor-pointer hover:bg-gray-800 flex items-center gap-3"
+                  onClick={() => handleExport("finance")}
+                >
+                  <div className="bg-blue-900/30 p-2 rounded-full">
+                    <FileText className="h-5 w-5 text-blue-400" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h4 className="font-medium text-white">Export Financial Data</h4>
+                    <p className="text-sm text-gray-400">Export expenses and income</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

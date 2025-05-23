@@ -1,537 +1,528 @@
-import { db } from "../db";
-import { orders, quotes, orderItems, contacts } from "@shared/schema";
-import * as fs from 'fs';
-import * as path from 'path';
-import { eq, sql } from "drizzle-orm";
-import { parse } from 'csv-parse';
-import { promisify } from 'util';
-
-// Interface for import results
-interface ImportResult {
-  success: boolean;
-  message: string;
-  processedRows: number;
-  skippedRows: number;
-  errors?: string[];
-}
+import fs from 'fs';
+import { parse } from 'csv-parse/sync';
+import { db } from '../db';
+import {
+  contacts,
+  orders,
+  orderItems,
+  quotes,
+  expenses,
+  ingredients,
+  recipes,
+  supplies
+} from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 /**
- * Service for importing data from Bake Diary CSV files
+ * Generic CSV import service
  */
-export class ImportService {
+class ImportService {
   
   /**
-   * Process a CSV file and return records
+   * Import contacts from CSV file
    */
-  private async parseCSV(filePath: string): Promise<any[]> {
-    // Read the file content
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    
-    // Check for Bake Diary format which may have quotes around fields
-    const hasQuotes = fileContent.includes('","');
-    
-    return new Promise((resolve, reject) => {
-      const results: any[] = [];
+  async importContacts(filePath: string, userId: number, mappings: Record<string, string> = {}) {
+    try {
+      console.log(`Importing contacts from ${filePath} for user ${userId} with mappings:`, mappings);
       
-      fs.createReadStream(filePath)
-        .pipe(parse({
-          columns: true,
-          trim: true,
-          skip_empty_lines: true,
-          relax_quotes: true,        // Allow quotes in fields
-          relax_column_count: true,  // Allow inconsistent column counts
-          delimiter: ',',            // Use comma as delimiter
-        }))
-        .on('data', (data) => {
-          // Clean up data by removing any extra quotes
-          const cleanedRecord: Record<string, any> = {};
-          for (const [key, value] of Object.entries(data)) {
-            if (typeof value === 'string') {
-              // Remove surrounding quotes if present
-              cleanedRecord[key] = value.replace(/^"(.*)"$/, '$1');
-            } else {
-              cleanedRecord[key] = value;
-            }
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      console.log(`Found ${records.length} records in CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          // If CSV field exists in record, use its value, otherwise use the default value
+          if (csvField && record[csvField] !== undefined) {
+            mappedRecord[dbField] = record[csvField];
+          } else if (csvField === '') {
+            // If mapping is an empty string, use an empty string as default
+            mappedRecord[dbField] = '';
           }
-          results.push(cleanedRecord);
-        })
-        .on('error', (error) => reject(error))
-        .on('end', () => {
-          console.log(`Parsed ${results.length} records from CSV`);
-          if (results.length > 0) {
-            console.log("Sample record keys:", Object.keys(results[0]).join(", "));
-          }
-          resolve(results);
         });
-    });
-  }
-  
-  /**
-   * Import order list from CSV
-   */
-  async importOrderList(filePath: string, userId: number): Promise<ImportResult> {
-    try {
-      // Parse the CSV file
-      const records = await this.parseCSV(filePath);
+        
+        return mappedRecord;
+      });
       
-      console.log(`Processing ${records.length} order records`);
+      console.log(`Mapped ${mappedRecords.length} records for insert`);
       
-      let processedRows = 0;
-      let skippedRows = 0;
-      const errors: string[] = [];
-      
-      // Process each record
-      for (const record of records) {
-        try {
-          // Skip total rows or empty records
-          if (record["Order Number"] === "Total" || !record["Order Number"]) {
-            skippedRows++;
-            continue;
-          }
-          
-          // Extract contact details
-          const contactName = record.Contact?.trim() || '';
-          
-          // Allow orders with missing contact name by using a placeholder - we can always update later
-          const hasContactInfo = contactName || record["Contact Email"];
-          
-          // Split contact name into first/last name (best effort)
-          let firstName = '';
-          let lastName = '';
-          
-          if (contactName) {
-            const nameParts = contactName.split(' ');
-            firstName = nameParts[0] || '';
-            lastName = nameParts.slice(1).join(' ') || '';
-          } else {
-            // Use placeholder if no contact name
-            firstName = 'Unknown';
-            lastName = 'Customer';
-          }
-          
-          // Get or create contact
-          let contactId;
-          const contactEmail = record["Contact Email"] || '';
-          
-          // Try to find existing contact
-          let existingContactResults;
-          if (contactEmail) {
-            existingContactResults = await db.select().from(contacts).where(
-              sql`${contacts.email} = ${contactEmail} AND ${contacts.userId} = ${userId}`
-            );
-          } else if (firstName && lastName) {
-            existingContactResults = await db.select().from(contacts).where(
-              sql`${contacts.firstName} = ${firstName} AND ${contacts.lastName} = ${lastName} AND ${contacts.userId} = ${userId}`
-            );
-          } else {
-            existingContactResults = []
-          }
-          
-          if (existingContactResults.length > 0) {
-            contactId = existingContactResults[0].id;
-          } else {
-            // Create new contact
-            const [newContact] = await db.insert(contacts).values({
-              userId,
-              firstName,
-              lastName,
-              email: contactEmail,
-              phone: '',
-              address: '',
-              notes: 'Imported from Bake Diary'
-            }).returning();
-            
-            contactId = newContact.id;
-          }
-          
-          // Parse event date
-          let eventDate: Date;
-          try {
-            const dateString = record["Event Date"];
-            if (dateString) {
-              if (dateString.includes('-')) {
-                // YYYY-MM-DD format
-                eventDate = new Date(dateString);
-              } else if (dateString.includes('/')) {
-                // MM/DD/YYYY format
-                const parts = dateString.split('/');
-                if (parts.length === 3) {
-                  const [month, day, yearPart] = parts;
-                  // Extract year from format like "2025"
-                  const year = yearPart.split(' ')[0];
-                  eventDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-                } else {
-                  eventDate = new Date();
-                }
-              } else {
-                eventDate = new Date();
-              }
-            } else {
-              eventDate = new Date();
-            }
-          } catch (err) {
-            console.error('Date parsing error:', err);
-            eventDate = new Date();
-          }
-          
-          // Map order status with exact Bake Diary field names
-          const statusMapping: Record<string, string> = {
-            '': 'Quote',
-            'Booked': 'Confirmed',
-            'Paid': 'Paid',
-            'Delivered': 'Delivered',
-            'Cancelled': 'Cancelled'
-          };
-          
-          // Use "Status" which is the exact field name in Bake Diary CSV
-          const status = statusMapping[record.Status || ''] || 'Quote';
-          
-          // Parse amounts
-          const orderTotal = parseFloat(record["Order Total"] || '0');
-          const amountOutstanding = parseFloat(record["Amount Outstanding"] || '0');
-          const amountPaid = orderTotal - amountOutstanding;
-          const deliveryAmount = parseFloat(record["Delivery Amount"] || '0');
-          const orderNumber = parseInt(record["Order Number"], 10);
-          
-          // Check if order already exists
-          const existingOrderResults = await db.select().from(orders).where(
-            sql`${orders.orderNumber} = ${orderNumber.toString()} AND ${orders.userId} = ${userId}`
-          );
-          
-          if (existingOrderResults.length > 0) {
-            errors.push(`Order #${orderNumber} already exists, skipping`);
-            skippedRows++;
-            continue;
-          }
-          
-          // Format eventDate as a string to avoid type issues 
-          const formattedEventDate = eventDate.toISOString().split('T')[0];
-          
-          // Create order with exact Bake Diary field mappings
-          const [newOrder] = await db.insert(orders).values({
-            userId,
-            contactId,
-            orderNumber: orderNumber.toString(),
-            theme: record.Theme || '',
-            eventType: record["Event Type"] || 'Other',
-            eventDate: formattedEventDate, // Use formatted string date
-            status,
-            deliveryType: deliveryAmount > 0 ? 'Delivery' : 'Pickup',
-            deliveryDetails: '',
-            setupFee: deliveryAmount.toString(),
-            total: orderTotal.toString(),
-            taxRate: '0',
-            notes: `Imported from Bake Diary - Order #${orderNumber}`,
-          }).returning();
-          
-          processedRows++;
-        } catch (err) {
-          console.error('Error processing order record:', err);
-          errors.push(`Error processing order: ${record["Order Number"] || 'Unknown'} - ${err}`);
-          skippedRows++;
-        }
-      }
-      
-      // Cleanup temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
+      // Insert contacts into database
+      const result = await db.insert(contacts).values(mappedRecords);
       
       return {
-        success: processedRows > 0,
-        message: `Successfully imported ${processedRows} orders${skippedRows > 0 ? ` (${skippedRows} skipped)` : ''}`,
-        processedRows,
-        skippedRows,
-        errors: errors.length > 0 ? errors : undefined
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} contacts`,
+        data: { imported: mappedRecords.length }
       };
     } catch (error) {
-      console.error('Order import error:', error);
-      // Cleanup temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
-      
+      console.error('Error importing contacts:', error);
       return {
         success: false,
-        message: `Import failed: ${error}`,
-        processedRows: 0,
-        skippedRows: 0,
-        errors: [`Import failed: ${error}`]
+        message: `Error importing contacts: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
   
   /**
-   * Import quote list from CSV
+   * Import orders from CSV file
    */
-  async importQuoteList(filePath: string, userId: number): Promise<ImportResult> {
+  async importOrders(filePath: string, userId: number, mappings: Record<string, string> = {}) {
     try {
-      // Parse the CSV file
-      const records = await this.parseCSV(filePath);
+      console.log(`Importing orders from ${filePath} for user ${userId}`);
       
-      console.log(`Processing ${records.length} quote records`);
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       
-      let processedRows = 0;
-      let skippedRows = 0;
-      const errors: string[] = [];
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
       
-      // Process each record
-      for (const record of records) {
-        try {
-          // Skip total rows or empty records
-          if (record["Order Number"] === "Total" || !record["Order Number"]) {
-            skippedRows++;
-            continue;
-          }
-          
-          // Extract contact details
-          const contactName = record.Contact?.trim() || '';
-          if (!contactName) {
-            errors.push(`Missing contact name for quote ${record["Order Number"]}`);
-            skippedRows++;
-            continue;
-          }
-          
-          // Split contact name into first/last name (best effort)
-          const nameParts = contactName.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          // Get or create contact
-          let contactId;
-          
-          // Try to find existing contact
-          const existingContactResults = await db.select().from(contacts).where(
-            sql`${contacts.firstName} = ${firstName} AND ${contacts.lastName} = ${lastName} AND ${contacts.userId} = ${userId}`
-          );
-          
-          if (existingContactResults.length > 0) {
-            contactId = existingContactResults[0].id;
-          } else {
-            // Create new contact
-            const [newContact] = await db.insert(contacts).values({
-              userId,
-              firstName,
-              lastName,
-              email: '',
-              phone: '',
-              businessName: '', // Using businessName instead of company to match schema
-              address: '',
-              notes: 'Imported from Bake Diary'
-            }).returning();
-            
-            contactId = newContact.id;
-          }
-          
-          // Parse event date
-          let eventDate: Date;
-          try {
-            const dateString = record["Event Date"];
-            if (dateString) {
-              if (dateString.includes('-')) {
-                // YYYY-MM-DD format
-                eventDate = new Date(dateString);
-              } else if (dateString.includes('/')) {
-                // MM/DD/YYYY format
-                const parts = dateString.split('/');
-                if (parts.length === 3) {
-                  const [month, day, yearPart] = parts;
-                  // Extract year from format like "2025"
-                  const year = yearPart.split(' ')[0];
-                  eventDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-                } else {
-                  eventDate = new Date();
-                }
-              } else {
-                eventDate = new Date();
-              }
+      console.log(`Found ${records.length} records in orders CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            // Handle date fields
+            if (dbField === 'orderDate' || dbField === 'deliveryDate') {
+              mappedRecord[dbField] = new Date(record[csvField]);
             } else {
-              eventDate = new Date();
+              mappedRecord[dbField] = record[csvField];
             }
-          } catch (err) {
-            console.error('Date parsing error:', err);
-            eventDate = new Date();
+          } else if (csvField === '') {
+            // If mapping is an empty string, use an empty string as default
+            mappedRecord[dbField] = '';
           }
-          
-          // Parse amounts
-          const quoteTotal = record["Order Total"] ? parseFloat(record["Order Total"]) : 0;
-          const quoteNumber = parseInt(record["Order Number"], 10);
-          
-          // Check if quote already exists
-          const existingQuoteResults = await db.select().from(quotes).where(
-            sql`${quotes.quoteNumber} = ${quoteNumber.toString()} AND ${quotes.userId} = ${userId}`
-          );
-          
-          if (existingQuoteResults.length > 0) {
-            errors.push(`Quote #${quoteNumber} already exists, skipping`);
-            skippedRows++;
-            continue;
-          }
-          
-          // Create quote - remove 'theme' field which doesn't exist in our schema
-          const [newQuote] = await db.insert(quotes).values({
-            userId,
-            contactId,
-            quoteNumber: quoteNumber.toString(),
-            eventType: record["Event Type"] || 'Other',
-            eventDate,
-            status: 'Draft', // Default status for quotes
-            deliveryType: 'Pickup', // Default to pickup
-            deliveryDetails: '',
-            discount: '0',
-            discountType: '%',
-            setupFee: '0',
-            total: quoteTotal.toString(),
-            // Store theme in notes field instead
-            notes: `${record.Theme || record.Notes || ''}\nImported from Bake Diary`,
-            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            taxRate: '0',
-            imageUrls: [],
-          }).returning();
-          
-          processedRows++;
-        } catch (err) {
-          console.error('Error processing quote record:', err);
-          errors.push(`Error processing quote: ${record["Order Number"] || 'Unknown'} - ${err}`);
-          skippedRows++;
-        }
-      }
+        });
+        
+        return mappedRecord;
+      });
       
-      // Cleanup temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
+      // Insert orders into database
+      const result = await db.insert(orders).values(mappedRecords);
       
       return {
-        success: processedRows > 0,
-        message: `Successfully imported ${processedRows} quotes${skippedRows > 0 ? ` (${skippedRows} skipped)` : ''}`,
-        processedRows,
-        skippedRows,
-        errors: errors.length > 0 ? errors : undefined
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} orders`,
+        data: { imported: mappedRecords.length }
       };
     } catch (error) {
-      console.error('Quote import error:', error);
-      // Cleanup temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
-      
+      console.error('Error importing orders:', error);
       return {
         success: false,
-        message: `Import failed: ${error}`,
-        processedRows: 0,
-        skippedRows: 0,
-        errors: [`Import failed: ${error}`]
+        message: `Error importing orders: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
   
   /**
-   * Import order items from CSV
+   * Import order items from CSV file
    */
-  async importOrderItems(filePath: string, userId: number): Promise<ImportResult> {
+  async importOrderItems(filePath: string, userId: number, mappings: Record<string, string> = {}) {
     try {
-      // Parse the CSV file
-      const records = await this.parseCSV(filePath);
+      console.log(`Importing order items from ${filePath} for user ${userId}`);
       
-      console.log(`Processing ${records.length} order item records`);
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
       
-      let processedRows = 0;
-      let skippedRows = 0;
-      const errors: string[] = [];
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
       
-      // Process each record
-      for (const record of records) {
-        try {
-          // Skip total rows or empty records
-          if (record.Date === 'Total' || !record["Order Number"]) {
-            skippedRows++;
-            continue;
-          }
-          
-          const orderNumber = parseInt(record["Order Number"], 10);
-          
-          // Find the order
-          const existingOrderResults = await db.select().from(orders).where(
-            sql`${orders.orderNumber} = ${orderNumber.toString()} AND ${orders.userId} = ${userId}`
-          );
-          
-          if (existingOrderResults.length === 0) {
-            errors.push(`Order #${orderNumber} not found for item ${record.Item || 'Unknown'}`);
-            skippedRows++;
-            continue;
-          }
-          
-          const orderId = existingOrderResults[0].id;
-          
-          // Parse values
-          const itemName = record.Item || '';
-          const details = record.Details || '';
-          let price = 0;
-          
-          // Handle different price field names 
-          if (record["Sell Price (excl VAT)"]) {
-            price = parseFloat(record["Sell Price (excl VAT)"]);
-          } else if (record["Sell Price"]) {
-            price = parseFloat(record["Sell Price"]);
-          }
-          
-          const quantity = parseInt(record.Servings || '1', 10);
-          
-          // Create order item
-          await db.insert(orderItems).values({
-            orderId,
-            name: itemName,
-            description: details,
-            quantity: quantity,
-            price: price.toString(),
-          });
-          
-          processedRows++;
-        } catch (err) {
-          console.error('Error processing order item record:', err);
-          errors.push(`Error processing item: ${record.Item || 'Unknown'} - ${err}`);
-          skippedRows++;
-        }
+      console.log(`Found ${records.length} records in order items CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
       }
       
-      // Cleanup temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            // Convert numeric fields
+            if (dbField === 'quantity' || dbField === 'unitPrice') {
+              mappedRecord[dbField] = parseFloat(record[csvField]);
+            } else {
+              mappedRecord[dbField] = record[csvField];
+            }
+          } else if (csvField === '') {
+            // If mapping is an empty string, use an empty string as default
+            mappedRecord[dbField] = '';
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Insert order items into database
+      const result = await db.insert(orderItems).values(mappedRecords);
       
       return {
-        success: processedRows > 0,
-        message: `Successfully imported ${processedRows} order items${skippedRows > 0 ? ` (${skippedRows} skipped)` : ''}`,
-        processedRows,
-        skippedRows,
-        errors: errors.length > 0 ? errors : undefined
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} order items`,
+        data: { imported: mappedRecords.length }
       };
     } catch (error) {
-      console.error('Order items import error:', error);
-      // Cleanup temporary file
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error('Error deleting temporary file:', err);
-      }
-      
+      console.error('Error importing order items:', error);
       return {
         success: false,
-        message: `Import failed: ${error}`,
-        processedRows: 0,
-        skippedRows: 0,
-        errors: [`Import failed: ${error}`]
+        message: `Error importing order items: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  
+  /**
+   * Import quotes from CSV file
+   */
+  async importQuotes(filePath: string, userId: number, mappings: Record<string, string> = {}) {
+    try {
+      console.log(`Importing quotes from ${filePath} for user ${userId}`);
+      
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      console.log(`Found ${records.length} records in quotes CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            // Handle date fields
+            if (dbField === 'eventDate' || dbField === 'createdDate' || dbField === 'expiryDate') {
+              mappedRecord[dbField] = new Date(record[csvField]);
+            } else {
+              mappedRecord[dbField] = record[csvField];
+            }
+          } else if (csvField === '') {
+            // If mapping is an empty string, use an empty string as default
+            mappedRecord[dbField] = '';
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Insert quotes into database
+      const result = await db.insert(quotes).values(mappedRecords);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} quotes`,
+        data: { imported: mappedRecords.length }
+      };
+    } catch (error) {
+      console.error('Error importing quotes:', error);
+      return {
+        success: false,
+        message: `Error importing quotes: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  
+  /**
+   * Import expenses from CSV file
+   */
+  async importExpenses(filePath: string, userId: number, mappings: Record<string, string> = {}) {
+    try {
+      console.log(`Importing expenses from ${filePath} for user ${userId}`);
+      
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      console.log(`Found ${records.length} records in expenses CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            if (dbField === 'date') {
+              mappedRecord[dbField] = new Date(record[csvField]);
+            } else if (dbField === 'taxDeductible' || dbField === 'isRecurring') {
+              // Convert string 'true'/'false' to boolean
+              mappedRecord[dbField] = record[csvField].toLowerCase() === 'true';
+            } else {
+              mappedRecord[dbField] = record[csvField];
+            }
+          } else if (csvField === '') {
+            // If mapping is an empty string, use a default value
+            if (dbField === 'taxDeductible' || dbField === 'isRecurring') {
+              mappedRecord[dbField] = false;
+            } else {
+              mappedRecord[dbField] = '';
+            }
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Insert expenses into database
+      const result = await db.insert(expenses).values(mappedRecords);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} expenses`,
+        data: { imported: mappedRecords.length }
+      };
+    } catch (error) {
+      console.error('Error importing expenses:', error);
+      return {
+        success: false,
+        message: `Error importing expenses: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  
+  /**
+   * Import ingredients from CSV file
+   */
+  async importIngredients(filePath: string, userId: number, mappings: Record<string, string> = {}) {
+    try {
+      console.log(`Importing ingredients from ${filePath} for user ${userId}`);
+      
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      console.log(`Found ${records.length} records in ingredients CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            if (dbField === 'costPerUnit' || dbField === 'stockLevel' || dbField === 'reorderPoint') {
+              mappedRecord[dbField] = parseFloat(record[csvField]);
+            } else {
+              mappedRecord[dbField] = record[csvField];
+            }
+          } else if (csvField === '') {
+            // If mapping is an empty string, use a default value
+            if (dbField === 'costPerUnit' || dbField === 'stockLevel' || dbField === 'reorderPoint') {
+              mappedRecord[dbField] = 0;
+            } else {
+              mappedRecord[dbField] = '';
+            }
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Insert ingredients into database
+      const result = await db.insert(ingredients).values(mappedRecords);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} ingredients`,
+        data: { imported: mappedRecords.length }
+      };
+    } catch (error) {
+      console.error('Error importing ingredients:', error);
+      return {
+        success: false,
+        message: `Error importing ingredients: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  
+  /**
+   * Import recipes from CSV file
+   */
+  async importRecipes(filePath: string, userId: number, mappings: Record<string, string> = {}) {
+    try {
+      console.log(`Importing recipes from ${filePath} for user ${userId}`);
+      
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      console.log(`Found ${records.length} records in recipes CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            if (dbField === 'prepTime' || dbField === 'cookTime') {
+              mappedRecord[dbField] = parseInt(record[csvField]);
+            } else {
+              mappedRecord[dbField] = record[csvField];
+            }
+          } else if (csvField === '') {
+            // If mapping is an empty string, use a default value
+            if (dbField === 'prepTime' || dbField === 'cookTime') {
+              mappedRecord[dbField] = 0;
+            } else {
+              mappedRecord[dbField] = '';
+            }
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Insert recipes into database
+      const result = await db.insert(recipes).values(mappedRecords);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} recipes`,
+        data: { imported: mappedRecords.length }
+      };
+    } catch (error) {
+      console.error('Error importing recipes:', error);
+      return {
+        success: false,
+        message: `Error importing recipes: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  
+  /**
+   * Import supplies from CSV file
+   */
+  async importSupplies(filePath: string, userId: number, mappings: Record<string, string> = {}) {
+    try {
+      console.log(`Importing supplies from ${filePath} for user ${userId}`);
+      
+      // Read file content
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      console.log(`Found ${records.length} records in supplies CSV file`);
+      
+      if (records.length === 0) {
+        return { success: false, message: 'No records found in CSV file' };
+      }
+      
+      // Map CSV fields to database fields
+      const mappedRecords = records.map((record: any) => {
+        const mappedRecord: Record<string, any> = { userId };
+        
+        // Map fields using provided mappings
+        Object.entries(mappings).forEach(([dbField, csvField]) => {
+          if (csvField && record[csvField] !== undefined) {
+            if (dbField === 'costPerUnit' || dbField === 'stockLevel' || dbField === 'reorderPoint') {
+              mappedRecord[dbField] = parseFloat(record[csvField]);
+            } else {
+              mappedRecord[dbField] = record[csvField];
+            }
+          } else if (csvField === '') {
+            // If mapping is an empty string, use a default value
+            if (dbField === 'costPerUnit' || dbField === 'stockLevel' || dbField === 'reorderPoint') {
+              mappedRecord[dbField] = 0;
+            } else {
+              mappedRecord[dbField] = '';
+            }
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Insert supplies into database
+      const result = await db.insert(supplies).values(mappedRecords);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${mappedRecords.length} supplies`,
+        data: { imported: mappedRecords.length }
+      };
+    } catch (error) {
+      console.error('Error importing supplies:', error);
+      return {
+        success: false,
+        message: `Error importing supplies: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
