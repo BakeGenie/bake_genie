@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../db';
+import { pool } from '../db'; // Use the raw connection pool instead of the Drizzle instance
 
 const router = Router();
 
@@ -48,11 +48,15 @@ router.post('/api/quotes/import', async (req, res) => {
       successDetails: [] as any[],
     };
     
-    // Process each record individually without a transaction to simplify
+    // Process each record individually
     for (let index = 0; index < records.length; index++) {
       const record = records[index];
+      const client = await pool.connect();
       
       try {
+        // Start transaction
+        await client.query('BEGIN');
+        
         // Generate quote information
         const quoteNumber = columnMapping.quote_number && record[columnMapping.quote_number] 
           ? String(record[columnMapping.quote_number]) 
@@ -66,43 +70,52 @@ router.post('/api/quotes/import', async (req, res) => {
         const status = columnMapping.status ? record[columnMapping.status] : 'Draft';
         const notes = columnMapping.notes ? record[columnMapping.notes] : '';
         
-        // Insert directly into the quotes table using a simpler approach
-        const query = `
-          INSERT INTO quotes (
-            user_id, quote_number, event_type, status, price, description, 
-            notes, created_at, updated_at
-          ) VALUES (
-            ${userId}, 
-            '${quoteNumber}', 
-            '${eventType || ''}', 
-            '${status}', 
-            ${price}, 
-            '${description.replace(/'/g, "''")}', 
-            '${notes.replace(/'/g, "''")}', 
-            NOW(), NOW()
-          ) RETURNING id
-        `;
+        // Insert directly into the quotes table
+        const quoteInsertQuery = {
+          text: `
+            INSERT INTO quotes (
+              user_id, quote_number, event_type, status, price, description, 
+              notes, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+            RETURNING id
+          `,
+          values: [
+            userId, 
+            quoteNumber, 
+            eventType || '', 
+            status, 
+            price, 
+            description, 
+            notes
+          ]
+        };
         
-        // Execute the query
-        const result = await db.execute(query);
+        // Execute quote insert
+        const quoteResult = await client.query(quoteInsertQuery);
         
-        if (result && result.rows && result.rows.length > 0) {
-          const quoteId = result.rows[0].id;
+        if (quoteResult.rows.length > 0) {
+          const quoteId = quoteResult.rows[0].id;
           
           // Insert a quote item
-          const itemQuery = `
-            INSERT INTO quote_items (
-              quote_id, name, price, quantity, created_at, updated_at
-            ) VALUES (
-              ${quoteId}, 
+          const itemInsertQuery = {
+            text: `
+              INSERT INTO quote_items (
+                quote_id, name, price, quantity, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, NOW(), NOW())
+            `,
+            values: [
+              quoteId, 
               'Imported Item', 
-              ${price}, 
-              1, 
-              NOW(), NOW()
-            )
-          `;
+              price, 
+              1
+            ]
+          };
           
-          await db.execute(itemQuery);
+          // Execute item insert
+          await client.query(itemInsertQuery);
+          
+          // Commit transaction
+          await client.query('COMMIT');
           
           results.successCount++;
           results.successDetails.push({
@@ -112,14 +125,20 @@ router.post('/api/quotes/import', async (req, res) => {
             status,
             price
           });
+        } else {
+          await client.query('ROLLBACK');
+          throw new Error('Failed to insert quote record');
         }
       } catch (error: any) {
+        await client.query('ROLLBACK');
         console.error(`Error importing row ${index + 1}:`, error);
         results.errorCount++;
         results.errors.push({
           row: index + 1,
           message: error.message || 'Unknown error occurred while processing this row',
         });
+      } finally {
+        client.release();
       }
     }
     
