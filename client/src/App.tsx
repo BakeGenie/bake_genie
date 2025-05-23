@@ -71,7 +71,7 @@ import SquarePaymentProvider from "./pages/payment-settings/square";
 import TippingSettings from "./pages/payment-settings/tipping";
 import PaymentSuccess from "./pages/payment-success";
 import TryTrial from "./pages/try-trial";
-import QuoteImport from "./pages/quote-import";
+import QuotesImport from "./pages/quotes-import";
 import OrderItemsImport from "./pages/order-items-import";
 
 // Import ProtectedRoute component
@@ -327,7 +327,7 @@ function Router() {
         </Route>
         <Route path="/quotes-import">
           <ProtectedRoute>
-            <QuoteImport />
+            <QuotesImport />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">
