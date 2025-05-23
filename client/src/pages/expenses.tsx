@@ -285,12 +285,59 @@ const ExpensesPage = () => {
     },
   });
 
+  // Function to upload and preview file
+  const uploadAndPreviewFile = async (file: File) => {
+    try {
+      setSelectedFile(file);
+      setReceiptFileName(file.name);
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('receipt', file);
+      
+      console.log("Uploading file:", file.name);
+      
+      // Upload file immediately
+      const uploadResponse = await fetch('/api/upload/receipt', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload receipt');
+      }
+      
+      // Process the server response
+      const uploadResult = await uploadResponse.json();
+      if (uploadResult.success) {
+        const receiptUrl = uploadResult.url;
+        console.log("Receipt uploaded successfully:", receiptUrl);
+        
+        // Update form with the URL for immediate preview
+        expenseForm.setValue('receiptUrl', receiptUrl);
+        
+        toast({
+          title: "Receipt uploaded",
+          description: "Receipt was successfully uploaded and is ready to view.",
+        });
+      } else {
+        throw new Error(uploadResult.error || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Error uploading receipt:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was a problem uploading your receipt. You can try again or continue without a receipt.",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement> | { target: { files: FileList } }) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      setSelectedFile(files[0]);
-      setReceiptFileName(files[0].name);
+      uploadAndPreviewFile(files[0]);
     }
   };
   
@@ -315,22 +362,26 @@ const ExpensesPage = () => {
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileChange({ target: { files: e.dataTransfer.files } } as any);
+      uploadAndPreviewFile(e.dataTransfer.files[0]);
     }
   };
   
   // Function to handle expense submission
   const onSubmitExpense = async (data: z.infer<typeof expenseSchema>) => {
     try {
-      // If there's a file to upload, handle it first
-      let receiptUrl = null;
+      // Get receipt URL from the form's value, which should have been set during file selection
+      let receiptUrl = data.receiptUrl;
       
-      if (selectedFile) {
+      // For backward compatibility or if immediate upload didn't work
+      if (selectedFile && !receiptUrl) {
+        toast({
+          title: "Processing receipt",
+          description: "Uploading your receipt before saving the expense...",
+        });
+        
         // Create a FormData object to send the file
         const formData = new FormData();
         formData.append('receipt', selectedFile);
-        
-        console.log("Uploading file:", selectedFile.name);
         
         try {
           // Upload the file
@@ -340,37 +391,28 @@ const ExpensesPage = () => {
           });
           
           if (!uploadResponse.ok) {
-            console.error("Error uploading receipt:", await uploadResponse.text());
             throw new Error('Failed to upload receipt');
           }
           
-          try {
-            // Parse the JSON response
-            const uploadResult = await uploadResponse.json();
-            if (uploadResult.success) {
-              receiptUrl = uploadResult.url;
-              console.log("Receipt uploaded successfully:", receiptUrl);
-            } else {
-              throw new Error(uploadResult.error || "Upload failed");
-            }
-          } catch (parseError) {
-            console.error("Error parsing response:", parseError);
-            // If there's an error parsing JSON but the upload was successful,
-            // we'll continue with the expense submission without a receipt
-            toast({
-              title: "Note",
-              description: "Receipt was uploaded but couldn't process the server response. Expense will be saved without receipt attachment.",
-            });
+          // Parse the JSON response
+          const uploadResult = await uploadResponse.json();
+          if (uploadResult.success) {
+            receiptUrl = uploadResult.url;
+            console.log("Receipt uploaded successfully:", receiptUrl);
+          } else {
+            throw new Error(uploadResult.error || "Upload failed");
           }
         } catch (error) {
-          const uploadError = error as Error;
-          console.error("Receipt upload error:", uploadError.message || "Unknown error");
+          console.error("Receipt upload error:", error);
           toast({
             title: "Upload warning",
             description: "Your expense will be saved, but the receipt upload had an issue.",
             variant: "destructive"
           });
         }
+      } else if (editingExpenseId && !receiptUrl) {
+        // When editing, if the receipt is removed, ensure we pass null
+        receiptUrl = null;
       }
       
       // Store additional info in the description field
