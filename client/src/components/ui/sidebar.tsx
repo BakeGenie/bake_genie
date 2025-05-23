@@ -209,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
               <path d="M16 16v7" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
               <path d="M8 7.5a8 5 0 0116 0v2" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <span className="ml-2 text-xl font-semibold text-sidebar-foreground">BakeGenie</span>
+            <span className="ml-2 text-xl font-semibold text-white">BakeGenie</span>
           </div>
           <button
             onClick={onClose}
