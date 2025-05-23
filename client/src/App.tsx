@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SettingsProvider } from "./contexts/settings-context";
 import { FeaturesProvider } from "./contexts/features-context";
 import { AuthProvider } from "./contexts/AuthContext";
+import { TrialProvider } from "./contexts/TrialContext";
 import NotFound from "@/pages/not-found";
 import AppLayout from "./layouts/app-layout";
 import Login from "./pages/login";

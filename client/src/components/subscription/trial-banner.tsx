@@ -19,12 +19,12 @@ const TrialBanner: React.FC = () => {
     return null; // Don't show anything while loading
   }
 
-  // If user already has an active subscription, don't show the banner
+  // If user already has an active subscription, don't show the banner at all
   if (trialData?.hasActiveSubscription && !trialData?.isInTrial) {
     return null;
   }
 
-  // If the trial has ended, show prompt to subscribe
+  // If the trial has ended, show prompt to subscribe and prevent navigation to other pages
   if (trialData?.trialEnded) {
     return (
       <div className="bg-destructive/10 text-destructive rounded-md p-4 mb-6">
