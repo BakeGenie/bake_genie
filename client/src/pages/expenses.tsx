@@ -186,7 +186,12 @@ const ExpensesPage = () => {
           amount: String(data.amount),
           date: data.date,
           description: data.description || "",
+          supplier: data.supplier || "",
+          paymentSource: data.paymentSource || "Cash",
+          vat: data.vat || "0.00",
+          totalIncTax: data.totalIncTax || "0.00",
           taxDeductible: Boolean(data.taxDeductible),
+          isRecurring: Boolean(data.isRecurring),
           receiptUrl: data.receiptUrl
         }),
       });
@@ -226,7 +231,14 @@ const ExpensesPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify({
+          ...updateData,
+          supplier: updateData.supplier || "",
+          paymentSource: updateData.paymentSource || "Cash",
+          vat: updateData.vat || "0.00",
+          totalIncTax: updateData.totalIncTax || "0.00",
+          isRecurring: Boolean(updateData.isRecurring)
+        }),
       });
       
       if (!response.ok) {
