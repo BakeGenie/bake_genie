@@ -27,6 +27,7 @@ import orderItemsImportRouter from "./routes/order-items-import";
 import ordersImportHandler from "./routes/orders-import-handler";
 import orderItemsImportHandler from "./routes/order-items-import-handler";
 import quotesImportHandler from "./routes/quotes-import-handler";
+import quotesImport from "./routes/quotes/import";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
 import { registerExportRoutes } from "./routes/export";
@@ -191,6 +192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(ordersImportHandler);
   app.use(orderItemsImportHandler);
   app.use(quotesImportHandler);
+  
+  // Register new CSV import API for quotes
+  app.use('/api/quotes/import', quotesImport);
 
   // use storage to perform CRUD operations on the storage interface
   // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
