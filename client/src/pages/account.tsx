@@ -424,24 +424,97 @@ const Account = () => {
                 Manage your subscription and payment details
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div 
-                className="flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => navigate("/manage-subscription")}
-              >
+            <CardContent className="space-y-6">
+              {/* Subscription Status */}
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="bg-primary/10 p-2 rounded-full">
+                  <div className="bg-primary/10 p-2 rounded-md">
                     <CreditCardIcon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Manage your subscription</p>
-                    <p className="text-sm text-muted-foreground">View plan details, update payment method, billing history</p>
+                    <p className="text-sm text-muted-foreground">Your Plan</p>
+                    <p className="font-medium">Professional Plan</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center">
                   <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">Active</span>
-                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                 </div>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Plan Details */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium mb-2">Plan Details</h3>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Price</span>
+                      <span className="font-medium">$20.00/month</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Next billing</span>
+                      <span className="font-medium">Jun 21, 2025</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Billing cycle</span>
+                      <span className="font-medium">Monthly</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Payment Method */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium mb-2">Payment Method</h3>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Visa •••• 4242</p>
+                        <p className="text-xs text-muted-foreground">Expires 12/2024</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      toast({
+                        title: "Update Payment Method",
+                        description: "Payment method update dialog would open here."
+                      });
+                    }}>
+                      Change
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Billing History */}
+              <div>
+                <h3 className="text-sm font-medium mb-3">Billing History</h3>
+                <div className="text-center py-4 text-sm text-muted-foreground bg-muted/30 rounded-md">
+                  <p>No billing history available yet.</p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => {
+                  toast({
+                    title: "Change Plan",
+                    description: "Plan change dialog would open here."
+                  });
+                }}>
+                  Change Plan
+                </Button>
+                <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => {
+                  toast({
+                    title: "Cancel Subscription",
+                    description: "Are you sure you want to cancel your subscription?",
+                    variant: "destructive"
+                  });
+                }}>
+                  Cancel Subscription
+                </Button>
               </div>
             </CardContent>
           </Card>
