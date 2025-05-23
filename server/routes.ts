@@ -9,7 +9,6 @@ import { router as invoicesRoutes } from "./routes/invoices";
 import { router as sampleInvoiceRoutes } from "./routes/sample-invoice";
 import { router as paymentRemindersRoutes } from "./routes/payment-reminders";
 import { router as reportRoutes } from "./routes/reports";
-import { router as dashboardRouter } from "./routes/dashboard";
 import { router as settingsRouter } from "./routes/settings";
 import { router as taxRatesRouter } from "./routes/tax-rates";
 import { router as featuresRouter } from "./routes/features";
@@ -81,9 +80,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register reports routes
   app.use('/api/reports', reportRoutes);
-  
-  // Register dashboard routes
-  app.use('/api/dashboard', dashboardRouter);
   
   // Register settings routes
   app.use('/api/settings', settingsRouter);
