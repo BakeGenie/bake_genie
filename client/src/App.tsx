@@ -243,6 +243,11 @@ function Router() {
             <ManageSubscription />
           </ProtectedRoute>
         </Route>
+        <Route path="/account/subscription">
+          <ProtectedRoute>
+            <ManageSubscription />
+          </ProtectedRoute>
+        </Route>
         <Route path="/cancel-subscription">
           <ProtectedRoute>
             <CancelSubscription />
