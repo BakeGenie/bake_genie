@@ -417,107 +417,119 @@ const Account = () => {
         
         {/* Billing Tab */}
         <TabsContent value="billing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription</CardTitle>
-              <CardDescription>
-                Manage your subscription and payment details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Subscription Status */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-primary/10 p-2 rounded-md">
-                    <CreditCardIcon className="h-5 w-5 text-primary" />
+          <div className="space-y-4">
+            {/* Current Plan Card */}
+            <Card className="overflow-hidden border-none shadow-sm">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-6 py-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-primary/90 text-white p-2 rounded-full">
+                      <CreditCardIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Professional Plan</h3>
+                      <p className="text-sm text-muted-foreground">$20.00 per month</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Your Plan</p>
-                    <p className="font-medium">Professional Plan</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">Active</span>
+                  <span className="text-xs font-medium px-3 py-1 rounded-full bg-green-500/20 text-green-700 border border-green-500/50">Active</span>
                 </div>
               </div>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Plan Details */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium mb-2">Plan Details</h3>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Price</span>
-                      <span className="font-medium">$20.00/month</span>
-                    </div>
+              <CardContent className="p-6">
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <p className="text-sm font-medium">Plan summary</p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs text-primary font-medium"
+                      onClick={() => {
+                        toast({
+                          title: "Change Plan",
+                          description: "Plan change dialog would open here."
+                        });
+                      }}
+                    >
+                      Change plan
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Next billing</span>
-                      <span className="font-medium">Jun 21, 2025</span>
+                      <span>Jun 21, 2025</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Billing cycle</span>
-                      <span className="font-medium">Monthly</span>
+                      <span>Monthly</span>
                     </div>
                   </div>
                 </div>
-                
-                {/* Payment Method */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium mb-2">Payment Method</h3>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">Visa •••• 4242</p>
-                        <p className="text-xs text-muted-foreground">Expires 12/2024</p>
-                      </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Method Card */}
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Payment method</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-muted p-2 rounded-md">
+                      <CreditCardIcon className="h-4 w-4" />
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => {
+                    <div>
+                      <p className="font-medium text-sm">Visa •••• 4242</p>
+                      <p className="text-xs text-muted-foreground">Expires 12/2024</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-primary"
+                    onClick={() => {
                       toast({
                         title: "Update Payment Method",
                         description: "Payment method update dialog would open here."
                       });
-                    }}>
-                      Change
-                    </Button>
+                    }}
+                  >
+                    Update
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Billing History Card */}
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Billing history</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center items-center py-8 bg-muted/20 rounded-md">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">No billing history available yet</p>
                   </div>
                 </div>
-              </div>
-              
-              <Separator />
-              
-              {/* Billing History */}
-              <div>
-                <h3 className="text-sm font-medium mb-3">Billing History</h3>
-                <div className="text-center py-4 text-sm text-muted-foreground bg-muted/30 rounded-md">
-                  <p>No billing history available yet.</p>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => {
-                  toast({
-                    title: "Change Plan",
-                    description: "Plan change dialog would open here."
-                  });
-                }}>
-                  Change Plan
-                </Button>
-                <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => {
+              </CardContent>
+            </Card>
+
+            {/* Cancel Subscription */}
+            <div className="pt-2">
+              <Button 
+                variant="outline" 
+                className="text-muted-foreground hover:text-destructive border-gray-200"
+                onClick={() => {
                   toast({
                     title: "Cancel Subscription",
                     description: "Are you sure you want to cancel your subscription?",
                     variant: "destructive"
                   });
-                }}>
-                  Cancel Subscription
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                }}
+              >
+                Cancel subscription
+              </Button>
+            </div>
+          </div>
         </TabsContent>
         
         {/* Notifications Tab */}
