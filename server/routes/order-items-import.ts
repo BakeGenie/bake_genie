@@ -188,7 +188,7 @@ router.post('/api/order-items/import', async (req, res) => {
                       number
                     ) VALUES (
                       ${userId}, 
-                      ${defaultContactId || 'NULL'}, 
+                      ${defaultContactId || 1}, 
                       '${safeOrderId}',
                       'Imported Order', 
                       'Other', 
