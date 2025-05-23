@@ -216,11 +216,11 @@ router.post('/api/orders/import', async (req, res) => {
               '${totalAmount || "0.00"}',
               '${totalAmount || "0.00"}',
               ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
-              ${profit ? profit : 'NULL'}, 
-              ${subTotalAmount ? subTotalAmount : 'NULL'}, 
-              ${discountAmount ? discountAmount : 'NULL'}, 
+              ${profit ? parseFloat(profit.toString()).toFixed(2) : 'NULL'}, 
+              ${subTotalAmount ? parseFloat(subTotalAmount.toString()).toFixed(2) : 'NULL'}, 
+              ${discountAmount ? parseFloat(discountAmount.toString()).toFixed(2) : 'NULL'}, 
               '${taxRate || "0.00"}',
-              ${deliveryAmount ? deliveryAmount : 'NULL'}
+              ${deliveryAmount ? parseFloat(deliveryAmount.toString()).toFixed(2) : 'NULL'}
             )
             RETURNING id
           `;
