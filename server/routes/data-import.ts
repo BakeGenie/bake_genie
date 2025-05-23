@@ -63,16 +63,40 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
     console.log("File content first 100 chars:", fileContent.substring(0, 100));
     
     // Parse CSV file - handle different formats by detecting delimiter from first line
-    const firstLine = fileContent.split('\n')[0];
+    const lines = fileContent.split('\n');
+    const firstLine = lines[0];
+    console.log("First line (headers):", firstLine);
+    
+    // Determine the delimiter by checking what's most common in the header row
     const hasCommas = firstLine.includes(',');
     const hasSemicolons = firstLine.includes(';');
+    const hasTabulations = firstLine.includes('\t');
     
-    // Determine the delimiter based on what's in the file
-    const delimiter = hasSemicolons ? ';' : ',';
+    let delimiter = ','; // Default for Bake Diary CSVs
+    if (hasSemicolons) delimiter = ';';
+    if (hasTabulations) delimiter = '\t';
+    
     console.log(`Using delimiter: "${delimiter}" for CSV parsing`);
     
+    // Read database structure - log the contacts table structure
+    console.log("Database contacts table schema:", [
+      "user_id", "first_name", "last_name", "email", 
+      "phone", "business_name", "address", "notes"
+    ]);
+    
+    // Handle Bake Diary specific format which has space after commas in header
+    let processedContent = fileContent;
+    if (firstLine.includes(", ")) {
+      console.log("Detected Bake Diary format with spaces after commas in header");
+      // Fix the header line by removing spaces after commas, but preserve spaces within field names
+      const headerLine = lines[0].split(',').map(h => h.trim()).join(',');
+      const restOfFile = lines.slice(1).join('\n');
+      processedContent = headerLine + '\n' + restOfFile;
+      console.log("Processed header line:", headerLine);
+    }
+    
     // Parse the CSV with the appropriate delimiter
-    const records = parse(fileContent, {
+    const records = parse(processedContent, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
@@ -102,18 +126,58 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
       errorDetails: [] as string[]
     };
     
-    // Check if we have the expected columns
+    // Get the headers from the first record
     const firstRecord = records[0];
-    const hasExpectedFormat = firstRecord['First Name'] !== undefined || 
-                              firstRecord['First_Name'] !== undefined || 
-                              firstRecord['first_name'] !== undefined || 
-                              firstRecord['firstName'] !== undefined;
+    const csvHeaders = Object.keys(firstRecord);
+    console.log("CSV Headers found:", csvHeaders);
     
-    if (!hasExpectedFormat) {
-      // Try to guess column names if they don't match expected format
-      console.log("CSV doesn't have expected column names, attempting to identify columns...");
-      console.log("Available columns:", Object.keys(firstRecord));
+    // Define possible header variations for each database field
+    const headerMap = {
+      // Database field: possible CSV header variations
+      first_name: ['First Name', 'First_Name', 'FirstName', 'firstname', 'FIRST NAME', 'Forename', 'forename', 'Given Name', 'given_name'],
+      last_name: ['Last Name', 'Last_Name', 'LastName', 'lastname', 'LAST NAME', 'Surname', 'surname', 'Family Name', 'family_name'],
+      business_name: ['Business Name', 'Business_Name', 'Supplier Name', 'Company', 'Organization', 'CompanyName', 'company', 'business'],
+      email: ['Email', 'E-mail', 'E-Mail', 'EMAIL', 'email', 'EmailAddress', 'email_address', 'Contact Email'],
+      phone: ['Phone', 'Number', 'Phone Number', 'Mobile', 'Telephone', 'Contact Number', 'phone', 'PHONE', 'Tel'],
+      address: ['Address', 'Street Address', 'Location', 'address', 'Full Address']
+    };
+    
+    // Function to find the best matching header for a database field
+    function findHeaderMatch(headers: string[], databaseField: string): string | null {
+      const possibleMatches = headerMap[databaseField as keyof typeof headerMap] || [];
+      
+      // Try to find an exact match first
+      for (const match of possibleMatches) {
+        if (headers.includes(match)) {
+          console.log(`Found direct match for ${databaseField}: ${match}`);
+          return match;
+        }
+      }
+      
+      // Try case-insensitive matching
+      for (const header of headers) {
+        for (const match of possibleMatches) {
+          if (header.toLowerCase() === match.toLowerCase()) {
+            console.log(`Found case-insensitive match for ${databaseField}: ${header}`);
+            return header;
+          }
+        }
+      }
+      
+      return null;
     }
+    
+    // Create a mapping from database fields to the actual CSV headers
+    const fieldMapping: Record<string, string | null> = {
+      first_name: findHeaderMatch(csvHeaders, 'first_name'),
+      last_name: findHeaderMatch(csvHeaders, 'last_name'),
+      business_name: findHeaderMatch(csvHeaders, 'business_name'),
+      email: findHeaderMatch(csvHeaders, 'email'),
+      phone: findHeaderMatch(csvHeaders, 'phone'),
+      address: findHeaderMatch(csvHeaders, 'address')
+    };
+    
+    console.log("Field mapping between CSV and database:", fieldMapping);
     
     // Extract column names for mapping
     const getFieldValue = (record: any, possibleNames: string[]) => {
@@ -150,11 +214,11 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
         // id, userId, firstName, lastName, email, phone, businessName, address, notes
         const contactData = {
           user_id: userId,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          business_name: businessName.trim(),
+          first_name: firstName ? firstName.trim() : '',
+          last_name: lastName ? lastName.trim() : '',
+          email: email ? email.trim() : '',
+          phone: phone ? phone.trim() : '',
+          business_name: businessName ? businessName.trim() : '',
           notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}. Type: ${type || 'Customer'}. Allow Marketing: ${allowMarketing || 'No'}. Website: ${website || 'None'}. Source: ${source || 'Import'}.`
         };
         
