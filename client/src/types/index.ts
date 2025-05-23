@@ -75,3 +75,22 @@ export interface Task {
   completedAt?: string;
   createdAt: string;
 }
+
+export interface RevenueData {
+  month: string;
+  revenue: number;
+}
+
+export interface OrderTypeData {
+  type: string;
+  count: number;
+}
+
+export interface DashboardStats {
+  totalOrders: number;
+  totalRevenue: number;
+  upcomingOrders: number;
+  pendingTasks: number;
+  monthlyRevenue: RevenueData[];
+  ordersByType: OrderTypeData[];
+}
