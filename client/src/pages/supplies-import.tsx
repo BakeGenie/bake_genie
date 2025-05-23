@@ -139,6 +139,12 @@ export default function SuppliesImport() {
       setProgress(50);
       
       // Send data directly to API without file upload - use the special fixed endpoint
+      // Log the exact data being sent
+      console.log('Sending the following data to the server:', {
+        type: 'supplies',
+        data: mappedData
+      });
+      
       const response = await fetch('/api/data-fixed/import/json', {
         method: 'POST',
         headers: {
