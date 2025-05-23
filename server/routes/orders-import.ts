@@ -191,8 +191,8 @@ router.post('/api/orders/import', async (req, res) => {
           const insertQuery = `
             INSERT INTO orders (
               user_id, contact_id, order_number, event_type, event_date, 
-              status, delivery_fee, delivery_time, total_amount, 
-              theme, profit, sub_total_amount, discount_amount, 
+              status, delivery_type, delivery_fee, delivery_time, total_amount, 
+              amount_paid, theme, profit, sub_total_amount, discount_amount, 
               tax_rate, delivery_amount, created_at, updated_at
             ) VALUES (
               ${userId}, 
@@ -201,15 +201,17 @@ router.post('/api/orders/import', async (req, res) => {
               '${eventType.replace(/'/g, "''")}',
               ${eventDate ? `'${eventDate}'` : 'NULL'},
               '${status.replace(/'/g, "''")}',
+              'Pickup', -- Default delivery type
               '${deliveryFee}',
               '${deliveryTime.replace(/'/g, "''")}',
               '${totalAmount}',
+              '${totalAmount}', -- Set amount paid equal to total amount for completed orders
               ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
-              ${profit ? profit : 'NULL'},
-              ${subTotalAmount ? subTotalAmount : 'NULL'},
-              ${discountAmount ? discountAmount : 'NULL'},
+              ${profit || 0}, -- Use 0 if profit is null
+              ${subTotalAmount || 0}, -- Use 0 if subtotal is null
+              ${discountAmount || 0}, -- Use 0 if discount is null
               '${taxRate}',
-              ${deliveryAmount ? deliveryAmount : 'NULL'},
+              ${deliveryAmount || 0}, -- Use 0 if delivery amount is null
               '${createdAt}',
               '${createdAt}'
             )
