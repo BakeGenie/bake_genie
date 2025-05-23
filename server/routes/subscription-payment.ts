@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import Stripe from "stripe";
 import { db } from "../db";
-import { paymentMethods } from "@shared/schema";
+import { paymentMethods, userSubscriptions, subscriptionPlans } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 // Create a router
@@ -249,18 +249,31 @@ router.get("/status", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
     
-    // In a real implementation, we would:
-    // 1. Get the user's subscription ID from the database
-    // 2. Fetch subscription status from Stripe
-
     console.log(`Fetching subscription status for user ${userId}`);
     
-    // For this implementation, check if the user has recently cancelled
+    // Check if there's a subscription in the database
+    const [userSubscription] = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, Number(userId)));
+    
+    if (userSubscription) {
+      console.log(`Found subscription in database for user ${userId}:`, userSubscription);
+      
+      return res.json({
+        status: userSubscription.status,
+        currentPeriodEnd: userSubscription.currentPeriodEnd,
+        cancelAtPeriodEnd: userSubscription.cancelAtPeriodEnd,
+        plan: userSubscription.planName || "Monthly", // Default to Monthly if not set
+        price: userSubscription.price || 20.00        // Default price if not set
+      });
+    }
+    
+    // If no subscription in database, fall back to session data
     // We'll store cancelled subscriptions in the session temporarily
     const session = req.session as any;
     const isCancelled = session?.subscriptionCancelled === true;
     
-    console.log(`User ${userId} subscription cancelled status: ${isCancelled}`);
+    console.log(`No subscription in database. User ${userId} subscription cancelled status: ${isCancelled}`);
     
     res.json({
       status: isCancelled ? 'cancelled' : 'active',
