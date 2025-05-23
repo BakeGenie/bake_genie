@@ -1,37 +1,52 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type ThemeType = 'light' | 'dark' | 'blue' | 'purple' | 'green' | 'red';
+type ThemeType = 'light' | 'dark' | 'blue' | 'green' | 'purple' | 'red';
 
 interface ThemeContextType {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({
+  theme: 'light',
+  setTheme: () => {},
+});
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<ThemeType>(() => {
-    // Try to get theme from localStorage, default to 'light'
-    const savedTheme = localStorage.getItem('bakeDiaryTheme') as ThemeType;
-    return savedTheme || 'light';
-  });
+export function useTheme() {
+  return useContext(ThemeContext);
+}
 
+interface ThemeProviderProps {
+  children: React.ReactNode;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  // Initialize theme from localStorage or default to 'light'
+  const [theme, setTheme] = useState<ThemeType>('light');
+  
+  // Load theme from localStorage on mount
   useEffect(() => {
-    // Save theme preference to localStorage
-    localStorage.setItem('bakeDiaryTheme', theme);
-    
-    // Remove all theme classes first
-    document.documentElement.classList.remove(
-      'theme-light', 
-      'theme-dark', 
-      'theme-blue', 
-      'theme-purple', 
-      'theme-green', 
-      'theme-red'
-    );
-    
-    // Add the selected theme class
-    document.documentElement.classList.add(`theme-${theme}`);
+    try {
+      const savedTheme = localStorage.getItem('theme') as ThemeType;
+      if (savedTheme && ['light', 'dark', 'blue', 'green', 'purple', 'red'].includes(savedTheme)) {
+        setTheme(savedTheme);
+      }
+    } catch (e) {
+      console.error('Failed to load theme from localStorage', e);
+    }
+  }, []);
+
+  // Update theme in localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('theme', theme);
+      
+      // Update document body with theme class
+      document.body.className = '';
+      document.body.classList.add(`theme-${theme}`);
+    } catch (e) {
+      console.error('Failed to save theme to localStorage', e);
+    }
   }, [theme]);
 
   return (
@@ -39,12 +54,4 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
     </ThemeContext.Provider>
   );
-};
-
-export const useTheme = (): ThemeContextType => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
+}
