@@ -60,21 +60,41 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
   try {
     // Read file content
     const fileContent = fs.readFileSync(filePath, 'utf8');
+    console.log("File content first 100 chars:", fileContent.substring(0, 100));
     
-    // Parse CSV file - skip header row (first row)
+    // Parse CSV file - handle different formats by detecting delimiter from first line
+    const firstLine = fileContent.split('\n')[0];
+    const hasCommas = firstLine.includes(',');
+    const hasSemicolons = firstLine.includes(';');
+    
+    // Determine the delimiter based on what's in the file
+    const delimiter = hasSemicolons ? ';' : ',';
+    console.log(`Using delimiter: "${delimiter}" for CSV parsing`);
+    
+    // Parse the CSV with the appropriate delimiter
     const records = parse(fileContent, {
       columns: true,
       skip_empty_lines: true,
       trim: true,
-      // Handle CSV column names with spaces and keep original header names
+      delimiter: delimiter,
       relax_column_count: true
     });
     
     console.log(`Found ${records.length} contacts in Bake Diary CSV`);
-    console.log("Sample record:", JSON.stringify(records[0]));
+    if (records.length > 0) {
+      console.log("First record keys:", Object.keys(records[0]));
+      console.log("Sample record:", JSON.stringify(records[0]));
+    } else {
+      console.log("No records found in the CSV file");
+      return {
+        success: false,
+        message: "No valid records found in the CSV file",
+        details: { imported: 0, skipped: 0, errors: 1, errorDetails: ["No valid records found in the CSV file"] }
+      };
+    }
     
     // Results tracking
-    const result = {
+    const importResults = {
       success: true,
       imported: 0,
       skipped: 0,
@@ -82,13 +102,47 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
       errorDetails: [] as string[]
     };
     
+    // Check if we have the expected columns
+    const firstRecord = records[0];
+    const hasExpectedFormat = firstRecord['First Name'] !== undefined || 
+                              firstRecord['First_Name'] !== undefined || 
+                              firstRecord['first_name'] !== undefined || 
+                              firstRecord['firstName'] !== undefined;
+    
+    if (!hasExpectedFormat) {
+      // Try to guess column names if they don't match expected format
+      console.log("CSV doesn't have expected column names, attempting to identify columns...");
+      console.log("Available columns:", Object.keys(firstRecord));
+    }
+    
+    // Extract column names for mapping
+    const getFieldValue = (record: any, possibleNames: string[]) => {
+      for (const name of possibleNames) {
+        if (record[name] !== undefined) {
+          return record[name];
+        }
+      }
+      return '';
+    };
+    
     // Process each contact
     for (const record of records) {
       try {
+        // Extract fields with multiple possible column names
+        const firstName = getFieldValue(record, ['First Name', 'First_Name', 'first_name', 'firstName', 'FIRST NAME']);
+        const lastName = getFieldValue(record, ['Last Name', 'Last_Name', 'last_name', 'lastName', 'LAST NAME']);
+        const email = getFieldValue(record, ['Email', 'email', 'EMAIL']);
+        const phone = getFieldValue(record, ['Number', 'Phone', 'phone', 'PHONE', 'Contact', 'contact', 'CONTACT', 'Mobile', 'mobile']);
+        const businessName = getFieldValue(record, ['Supplier Name', 'Business Name', 'Company', 'company', 'business_name', 'businessName']);
+        const type = getFieldValue(record, ['Type', 'type', 'Contact Type', 'contact_type']);
+        const allowMarketing = getFieldValue(record, ['Allow Marketing', 'allow_marketing', 'Marketing']);
+        const website = getFieldValue(record, ['Website', 'website', 'URL', 'url']);
+        const source = getFieldValue(record, ['Source', 'source', 'Lead Source', 'lead_source']);
+        
         // Check if required fields exist
-        if (!record['First Name'] && !record['Last Name'] && !record['Email'] && !record['Number']) {
+        if (!firstName && !lastName && !email && !phone) {
           console.log("Skipping empty record");
-          result.skipped++;
+          importResults.skipped++;
           continue;
         }
         
@@ -96,53 +150,59 @@ async function importBakeDiaryContacts(filePath: string, userId: number): Promis
         // id, userId, firstName, lastName, email, phone, businessName, address, notes
         const contactData = {
           user_id: userId,
-          first_name: record['First Name']?.trim() || '',
-          last_name: record['Last Name']?.trim() || '',
-          email: record['Email']?.trim() || '',
-          phone: record['Number']?.trim() || '',
-          business_name: record['Supplier Name']?.trim() || '',
-          notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}. Type: ${record['Type'] || 'Customer'}. Allow Marketing: ${record['Allow Marketing'] || 'No'}. Website: ${record['Website'] || 'None'}. Source: ${record['Source'] || 'Import'}.`
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          business_name: businessName.trim(),
+          notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}. Type: ${type || 'Customer'}. Allow Marketing: ${allowMarketing || 'No'}. Website: ${website || 'None'}. Source: ${source || 'Import'}.`
         };
         
         console.log("Importing contact:", contactData.first_name, contactData.last_name);
         
-        // Insert contact into database using raw SQL to ensure correct column names
-        const query = `
-          INSERT INTO contacts (user_id, first_name, last_name, email, phone, business_name, notes, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-          RETURNING id
-        `;
-        
-        const values = [
-          contactData.user_id,
-          contactData.first_name,
-          contactData.last_name,
-          contactData.email,
-          contactData.phone,
-          contactData.business_name,
-          contactData.notes
-        ];
-        
-        const client = await db.client();
-        const queryResult = await client.query(query, values);
-        
-        if (queryResult.rowCount > 0) {
-          result.imported++;
-        } else {
-          result.errors++;
-          result.errorDetails.push(`Failed to insert contact: ${contactData.first_name} ${contactData.last_name}`);
+        try {
+          // Use the db.execute method for direct query
+          const queryText = `
+            INSERT INTO contacts (user_id, first_name, last_name, email, phone, business_name, notes, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            RETURNING id
+          `;
+          
+          const queryValues = [
+            contactData.user_id,
+            contactData.first_name,
+            contactData.last_name,
+            contactData.email,
+            contactData.phone,
+            contactData.business_name,
+            contactData.notes
+          ];
+          
+          // Use the database connection from our existing db object
+          const queryResult = await db.execute(queryText, queryValues);
+          
+          if (queryResult.rowCount > 0) {
+            importResults.imported++;
+          } else {
+            importResults.errors++;
+            importResults.errorDetails.push(`Failed to insert contact: ${contactData.first_name} ${contactData.last_name}`);
+          }
+        } catch (dbError) {
+          console.error("Database error:", dbError);
+          importResults.errors++;
+          importResults.errorDetails.push(`Database error with contact ${contactData.first_name} ${contactData.last_name}: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
         }
       } catch (error) {
         console.error('Error importing contact:', error);
-        result.errors++;
-        result.errorDetails.push(`Error with contact ${record['First Name']} ${record['Last Name']}: ${error instanceof Error ? error.message : String(error)}`);
+        importResults.errors++;
+        importResults.errorDetails.push(`Error with contact ${record['First Name'] || ''} ${record['Last Name'] || ''}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
     
     return {
-      success: result.imported > 0,
-      message: `Successfully imported ${result.imported} contacts${result.skipped > 0 ? `, skipped ${result.skipped}` : ''}${result.errors > 0 ? `, with ${result.errors} errors` : ''}.`,
-      details: result
+      success: importResults.imported > 0,
+      message: `Successfully imported ${importResults.imported} contacts${importResults.skipped > 0 ? `, skipped ${importResults.skipped}` : ''}${importResults.errors > 0 ? `, with ${importResults.errors} errors` : ''}.`,
+      details: importResults
     };
     
   } catch (error) {
