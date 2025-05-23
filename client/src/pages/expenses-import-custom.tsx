@@ -1,10 +1,9 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, FileUp, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -14,429 +13,465 @@ import { apiRequest } from '@/lib/queryClient';
 
 // Helper function to parse CSV content properly
 function parseCSV(content: string) {
-  const rows = content.split('\n').filter(line => line.trim());
+  const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length === 0) return { headers: [], rows: [] };
   
-  if (rows.length < 2) {
-    throw new Error('CSV must have at least a header row and one data row');
-  }
+  // Get headers from the first line
+  const headers = parseCSVLine(lines[0]);
   
-  // Parse headers
-  const headers = parseCSVLine(rows[0]);
-  
-  // Process data rows
-  const data = [];
-  for (let i = 1; i < rows.length; i++) {
-    const values = parseCSVLine(rows[i]);
-    
-    // Skip rows that don't have enough values
-    if (values.length < 3) continue;
-    
+  // Parse data rows
+  const rows = lines.slice(1).map(line => {
+    const values = parseCSVLine(line);
     const row: Record<string, string> = {};
+    
+    // Create an object with header keys and row values
     headers.forEach((header, index) => {
-      if (index < values.length) {
-        row[header] = values[index];
-      } else {
-        row[header] = '';
-      }
+      row[header] = values[index] || '';
     });
     
-    data.push(row);
-  }
+    return row;
+  });
   
-  return { headers, data };
+  return { headers, rows };
 }
 
-// Helper function to parse a single CSV line properly handling quotes
-function parseCSVLine(line: string) {
-  const values: string[] = [];
-  let inQuote = false;
+// Parse a single CSV line handling quoted values
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let inQuotes = false;
   let currentValue = '';
   
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
+    const nextChar = i + 1 < line.length ? line[i + 1] : null;
     
     if (char === '"') {
-      inQuote = !inQuote;
-    } 
-    else if (char === ',' && !inQuote) {
-      values.push(currentValue.trim());
+      if (inQuotes && nextChar === '"') {
+        // Double quotes inside quotes
+        currentValue += '"';
+        i++; // Skip the next quote
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // End of value
+      result.push(currentValue);
       currentValue = '';
-    } 
-    else {
+    } else {
+      // Regular character
       currentValue += char;
     }
   }
   
   // Add the last value
-  values.push(currentValue.trim());
-  return values;
+  result.push(currentValue);
+  
+  return result;
 }
 
-// Handle Bake Diary date format
+// Special function to handle Bake Diary date format
 function formatBakeDiaryDate(dateStr: string): string {
-  if (!dateStr) return new Date().toISOString().split('T')[0];
+  if (!dateStr) return '';
   
-  // Remove quotes if present
-  dateStr = dateStr.replace(/^"|"$/g, '').trim();
-  
-  // Handle format "DD MMM YYYY" (like "11 Jan 2025")
-  const dateParts = dateStr.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
-  if (dateParts) {
-    const day = parseInt(dateParts[1]).toString().padStart(2, '0');
-    const month = dateParts[2].toLowerCase();
-    const year = dateParts[3];
-    
-    // Map month names to numbers
-    const monthMap: Record<string, string> = {
-      'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 
-      'may': '05', 'jun': '06', 'jul': '07', 'aug': '08', 
-      'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
-    };
-    
-    if (monthMap[month]) {
-      return `${year}-${monthMap[month]}-${day}`;
-    }
+  // Try different date formats (DD/MM/YYYY, MM/DD/YYYY, etc.)
+  const dateParts = dateStr.split('/');
+  if (dateParts.length === 3) {
+    // Assuming DD/MM/YYYY format used by Bake Diary
+    const [day, month, year] = dateParts;
+    // Create ISO format YYYY-MM-DD
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
   
-  // Try direct Date object parsing as a fallback
-  try {
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
-    }
-  } catch (err) {
-    console.log(`Error parsing date: ${dateStr}`);
+  // If that fails, try direct parsing
+  const date = new Date(dateStr);
+  if (!isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
   }
   
-  return new Date().toISOString().split('T')[0];
+  // Return original if all parsing fails
+  return dateStr;
 }
 
-// Format number to remove currency symbols and commas
+// Format number to remove currency symbols and handle different formats
 function formatNumber(value: string): string {
-  return value.replace(/^"|"$/g, '').replace(/[^0-9.]/g, '') || '0';
+  if (!value) return '';
+  
+  // Remove currency symbols, commas, and other non-numeric characters except decimal point
+  return value.replace(/[^0-9.-]/g, '');
 }
 
 type ImportState = 'idle' | 'reading' | 'previewing' | 'processing' | 'success' | 'error';
 
-const ExpensesImportCustom: React.FC = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
+const ExpensesImportCustom = () => {
+  const [, setLocation] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [state, setState] = useState<ImportState>('idle');
-  const [file, setFile] = useState<File | null>(null);
+  const [csvData, setCsvData] = useState<{ headers: string[], rows: Record<string, string>[] }>();
+  const [importState, setImportState] = useState<ImportState>('idle');
   const [progress, setProgress] = useState(0);
-  const [csvData, setCsvData] = useState<{ headers: string[], data: any[] } | null>(null);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [successCount, setSuccessCount] = useState(0);
+  const [errorCount, setErrorCount] = useState(0);
+  const [errorDetails, setErrorDetails] = useState<any[]>([]);
   const [importedItems, setImportedItems] = useState<any[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Special field mapping for Bake Diary format
+  const fieldMapping: Record<string, string> = {
+    'Date': 'date',
+    'Description': 'description',
+    'Category': 'category',
+    'Vendor': 'supplier', // Map Vendor to supplier field
+    'Payment': 'paymentSource', // Map Payment to paymentSource field
+    'VAT': 'vat',
+    'Amount': 'amount',
+    'Amount (Incl VAT)': 'amount' // Handle the actual format in Bake Diary CSV
+  };
   
   // Handle file selection
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setFile(event.target.files[0]);
-      setState('reading');
-      setErrors([]);
-      
-      const reader = new FileReader();
-      
-      reader.onprogress = (e) => {
-        if (e.lengthComputable) {
-          setProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-      
-      reader.onload = (e) => {
-        try {
-          const content = e.target?.result as string;
-          const parsedData = parseCSV(content);
-          
-          // Validate headers for Bake Diary format
-          if (
-            parsedData.headers.includes('Date') &&
-            parsedData.headers.includes('Description') &&
-            parsedData.headers.includes('Amount (Incl VAT)')
-          ) {
-            console.log('Detected BakeDiary format');
-            console.log('CSV headers:', parsedData.headers);
-            if (parsedData.data.length > 0) {
-              console.log('First row:', parsedData.data[0]);
-              console.log('Total rows:', parsedData.data.length);
-            }
-            setCsvData(parsedData);
-            setState('previewing');
-          } else {
-            setErrors(['Invalid CSV format: Missing required headers (Date, Description, Amount (Incl VAT))']);
-            setState('error');
-          }
-        } catch (err: any) {
-          setErrors([`Error parsing CSV: ${err.message}`]);
-          setState('error');
-        }
-      };
-      
-      reader.onerror = () => {
-        setErrors(['Error reading file']);
-        setState('error');
-      };
-      
-      reader.readAsText(event.target.files[0]);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      readFile(file);
     }
   };
   
-  // Handle import button click
+  // Read the file contents
+  const readFile = (file: File) => {
+    setImportState('reading');
+    setError(null);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsedData = parseCSV(content);
+        setCsvData(parsedData);
+        setImportState('previewing');
+      } catch (err: any) {
+        setError(`Error parsing CSV file: ${err.message}`);
+        setImportState('error');
+      }
+    };
+    
+    reader.onerror = () => {
+      setError('Failed to read the file');
+      setImportState('error');
+    };
+    
+    reader.readAsText(file);
+  };
+  
+  // Import the data to the server
   const handleImport = async () => {
-    if (!csvData || csvData.data.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'No data to import',
-        variant: 'destructive',
-      });
+    if (!csvData || !csvData.rows.length) {
+      setError('No data to import');
       return;
     }
     
-    setState('processing');
+    setImportState('processing');
     setProgress(0);
-    setErrors([]);
+    setError(null);
+    setSuccessCount(0);
+    setErrorCount(0);
+    setErrorDetails([]);
     setImportedItems([]);
     
-    try {
-      // Process data directly here (client-side)
-      const expenses = [];
-      const newErrors = [];
+    // Map CSV data to expense objects
+    const expenses = csvData.rows.map(row => {
+      // Map fields from CSV to database fields using our mapping
+      const expense: Record<string, any> = {};
       
-      for (let i = 0; i < csvData.data.length; i++) {
-        const row = csvData.data[i];
-        setProgress(Math.round((i / csvData.data.length) * 100));
+      Object.entries(fieldMapping).forEach(([csvField, dbField]) => {
+        if (row[csvField] !== undefined) {
+          // Apply special formatting based on field type
+          if (csvField === 'Date') {
+            expense[dbField] = formatBakeDiaryDate(row[csvField]);
+          } else if (csvField === 'Amount' || csvField === 'VAT') {
+            expense[dbField] = formatNumber(row[csvField]);
+          } else {
+            expense[dbField] = row[csvField];
+          }
+        }
+      });
+      
+      // Set defaults for any missing fields
+      expense.taxDeductible = true;
+      expense.totalIncTax = expense.amount;
+      
+      return expense;
+    });
+    
+    try {
+      // Process expenses in batches for reliability
+      const batchSize = 50;
+      const totalBatches = Math.ceil(expenses.length / batchSize);
+      
+      for (let i = 0; i < expenses.length; i += batchSize) {
+        const batch = expenses.slice(i, i + batchSize);
         
-        try {
-          // Extract and validate fields
-          const dateText = row['Date'] || '';
-          const description = row['Description'] || '';
-          const amount = formatNumber(row['Amount (Incl VAT)'] || '0');
+        // Update progress
+        const currentProgress = Math.round(((i + batch.length) / expenses.length) * 100);
+        setProgress(currentProgress);
+        
+        // Send batch to server
+        const response = await apiRequest('POST', '/api/expenses/batch', {
+          items: batch
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setSuccessCount(prev => prev + result.inserted);
+          setErrorCount(prev => prev + result.errors);
           
-          if (!dateText || !description || !amount || amount === '0') {
-            newErrors.push(`Row ${i + 2}: Missing required fields (Date, Description, or Amount)`);
-            continue;
+          if (result.errorDetails && result.errorDetails.length > 0) {
+            setErrorDetails(prev => [...prev, ...result.errorDetails]);
           }
           
-          // Convert date format
-          const formattedDate = formatBakeDiaryDate(dateText);
-          
-          // Create complete expense object with proper field mapping
-          const expense = {
-            date: formattedDate,
-            description,
-            category: row['Category'] || '',
-            supplier: row['Vendor'] || '',
-            payment_source: row['Payment'] || '',
-            vat: formatNumber(row['VAT'] || '0'),
-            amount,
-            total_inc_tax: amount
-          };
-          
-          expenses.push(expense);
-        } catch (err: any) {
-          newErrors.push(`Row ${i + 2}: ${err.message}`);
+          if (result.successDetails && result.successDetails.length > 0) {
+            setImportedItems(prev => [...prev, ...result.successDetails]);
+          }
+        } else {
+          throw new Error(result.error || 'Import failed');
         }
       }
       
-      if (expenses.length === 0) {
-        throw new Error('No valid expenses found to import');
-      }
-      
-      setErrors(newErrors);
-      
-      // Send data to server
-      const response = await apiRequest('POST', '/api/expenses/batch', { expenses });
-      const result = await response.json();
-      
-      if (result.success) {
-        setImportedItems(result.expenses || []);
-        setState('success');
-        toast({
-          title: 'Success',
-          description: `Successfully imported ${result.expenses.length} expenses`,
-        });
-      } else {
-        throw new Error(result.message || 'Failed to import expenses');
-      }
+      setImportState('success');
+      setProgress(100);
     } catch (err: any) {
-      console.error('Error importing expenses:', err);
-      setErrors(prev => [...prev, `Import error: ${err.message}`]);
-      setState('error');
-      toast({
-        title: 'Import Failed',
-        description: err.message,
-        variant: 'destructive',
-      });
+      setError(`Import failed: ${err.message}`);
+      setImportState('error');
     }
   };
   
-  // Handle triggering file input click
-  const triggerFileSelect = () => {
+  // Trigger file browser
+  const handleSelectFile = () => {
+    fileInputRef.current?.click();
+  };
+  
+  // Return to expenses page
+  const handleDone = () => {
+    setLocation('/expenses');
+  };
+  
+  // Reset the import process
+  const handleReset = () => {
+    setImportState('idle');
+    setSelectedFile(null);
+    setCsvData(undefined);
+    setError(null);
+    setProgress(0);
+    setSuccessCount(0);
+    setErrorCount(0);
+    setErrorDetails([]);
+    setImportedItems([]);
+    
+    // Clear file input
     if (fileInputRef.current) {
-      fileInputRef.current.click();
+      fileInputRef.current.value = '';
     }
-  };
-  
-  // Render the preview table
-  const renderPreview = () => {
-    if (!csvData || csvData.data.length === 0) return null;
-    
-    return (
-      <div className="mt-4 border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {csvData.headers.map((header, index) => (
-                <TableHead key={index}>{header}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {csvData.data.slice(0, 5).map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
-                {csvData.headers.map((header, colIndex) => (
-                  <TableCell key={colIndex}>{row[header]}</TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {csvData.data.length > 5 && (
-          <div className="p-2 text-center text-sm text-gray-500">
-            Showing 5 of {csvData.data.length} rows
-          </div>
-        )}
-      </div>
-    );
-  };
-  
-  // Render errors
-  const renderErrors = () => {
-    if (errors.length === 0) return null;
-    
-    return (
-      <Alert variant="destructive" className="mt-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Errors</AlertTitle>
-        <AlertDescription>
-          {errors.length > 10 ? (
-            <div>
-              <p className="mb-2">{errors.length} errors found:</p>
-              <ul className="ml-6 list-disc">
-                {errors.slice(0, 10).map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-                <li>...and {errors.length - 10} more</li>
-              </ul>
-            </div>
-          ) : (
-            <ul className="ml-6 list-disc">
-              {errors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          )}
-        </AlertDescription>
-      </Alert>
-    );
   };
   
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-10">
       <Card>
         <CardHeader>
-          <CardTitle>Import Expenses (Bake Diary Format)</CardTitle>
+          <CardTitle>Import Bake Diary Expenses</CardTitle>
           <CardDescription>
-            Import your expenses from a CSV file exported from Bake Diary
+            Import expense data from Bake Diary CSV export files.
+            This special importer understands Bake Diary column names and formats.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="csvFile">Select CSV File</Label>
-              <div className="flex space-x-2">
-                <Input
-                  id="csvFile"
-                  type="file"
-                  accept=".csv"
-                  ref={fileInputRef}
-                  className="hidden"
-                  onChange={handleFileSelect}
-                  disabled={state === 'processing'}
-                />
-                <Button
-                  onClick={triggerFileSelect}
-                  disabled={state === 'processing'}
-                  className="flex items-center"
+          <div className="space-y-6">
+            {/* File Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="csv-file">Select CSV File</Label>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleSelectFile}
+                  disabled={importState === 'processing'}
                 >
                   <FileUp className="mr-2 h-4 w-4" />
                   Select File
                 </Button>
-                {file && <Badge variant="outline">{file.name}</Badge>}
+                {selectedFile && (
+                  <span className="text-sm text-muted-foreground">
+                    {selectedFile.name}
+                  </span>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </div>
             </div>
             
-            {(state === 'reading' || state === 'processing') && (
+            {/* Error display */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Processing progress */}
+            {importState === 'processing' && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{state === 'reading' ? 'Reading file...' : 'Processing data...'}</span>
-                  <span>{progress}%</span>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Importing...</span>
+                  <span className="text-sm text-muted-foreground">{progress}%</span>
                 </div>
                 <Progress value={progress} />
               </div>
             )}
             
-            {state === 'previewing' && csvData && (
-              <>
-                <Alert>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertTitle>File Loaded Successfully</AlertTitle>
-                  <AlertDescription>
-                    {csvData.data.length} records found. Preview the first 5 rows below.
-                  </AlertDescription>
-                </Alert>
-                {renderPreview()}
-              </>
-            )}
-            
-            {renderErrors()}
-            
-            {state === 'success' && (
-              <Alert className="bg-green-50 border-green-200">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <AlertTitle className="text-green-700">Import Successful!</AlertTitle>
-                <AlertDescription className="text-green-700">
-                  Successfully imported {importedItems.length} expenses.
+            {/* Success state */}
+            {importState === 'success' && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Import Complete</AlertTitle>
+                <AlertDescription>
+                  Successfully imported {successCount} expense records.
+                  {errorCount > 0 && ` Failed to import ${errorCount} records.`}
                 </AlertDescription>
               </Alert>
             )}
+            
+            {/* Data preview */}
+            {importState === 'previewing' && csvData && csvData.rows.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Preview</h3>
+                <div className="border rounded-md overflow-x-auto max-h-96">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {csvData.headers.map((header, index) => (
+                          <TableHead key={index}>
+                            {header}
+                            {Object.keys(fieldMapping).includes(header) && (
+                              <Badge variant="outline" className="ml-2">
+                                → {fieldMapping[header]}
+                              </Badge>
+                            )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {csvData.rows.slice(0, 10).map((row, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                          {csvData.headers.map((header, cellIndex) => (
+                            <TableCell key={cellIndex}>{row[header]}</TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {csvData.rows.length > 10 && (
+                  <p className="text-sm text-muted-foreground">
+                    Showing 10 of {csvData.rows.length} rows
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Results tabs */}
+            {importState === 'success' && (
+              <Tabs defaultValue="imported">
+                <TabsList>
+                  <TabsTrigger value="imported">
+                    Imported Items ({successCount})
+                  </TabsTrigger>
+                  <TabsTrigger value="errors" disabled={errorCount === 0}>
+                    Errors ({errorCount})
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="imported" className="max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Supplier</TableHead>
+                        <TableHead>Payment</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importedItems.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.date}</TableCell>
+                          <TableCell>{item.description}</TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell>{item.amount}</TableCell>
+                          <TableCell>{item.supplier}</TableCell>
+                          <TableCell>{item.paymentSource}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+                <TabsContent value="errors" className="max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Error</TableHead>
+                        <TableHead>Item</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {errorDetails.map((detail, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{detail.error}</TableCell>
+                          <TableCell>
+                            <pre className="text-xs overflow-x-auto">
+                              {JSON.stringify(detail.item, null, 2)}
+                            </pre>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+              </Tabs>
+            )}
+            
+            {/* Action buttons */}
+            <div className="flex justify-end gap-2">
+              {importState === 'idle' || importState === 'reading' ? (
+                <Button variant="outline" onClick={handleDone}>
+                  Cancel
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={handleReset}>
+                  Reset
+                </Button>
+              )}
+              
+              {importState === 'previewing' && (
+                <Button onClick={handleImport}>
+                  Import
+                </Button>
+              )}
+              
+              {importState === 'success' && (
+                <Button onClick={handleDone}>
+                  Done
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => navigate('/expenses')}>
-            Cancel
-          </Button>
-          
-          {state === 'previewing' && (
-            <Button onClick={handleImport} disabled={!csvData || csvData.data.length === 0}>
-              Import {csvData?.data.length || 0} Expenses
-            </Button>
-          )}
-          
-          {state === 'success' && (
-            <Button onClick={() => navigate('/expenses')}>
-              View Expenses
-            </Button>
-          )}
-          
-          {state === 'error' && (
-            <Button variant="outline" onClick={() => setState('idle')}>
-              Try Again
-            </Button>
-          )}
-        </CardFooter>
       </Card>
     </div>
   );
