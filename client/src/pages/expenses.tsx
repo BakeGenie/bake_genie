@@ -681,12 +681,12 @@ const ExpensesPage = () => {
         }}
       >
         <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="text-xl mb-4">
+          <DialogTitle className="text-xl">
             {editingExpenseId ? 'Edit Expense' : 'Add Expense'}
           </DialogTitle>
-          <div id="expense-form-description" className="sr-only">
+          <DialogDescription>
             Fill out the form to {editingExpenseId ? 'update your' : 'add a new'} expense
-          </div>
+          </DialogDescription>
           <Form {...expenseForm}>
             <form onSubmit={expenseForm.handleSubmit(onSubmitExpense)} className="space-y-4">
               <FormField
@@ -927,20 +927,47 @@ const ExpensesPage = () => {
                         <p className="font-medium text-green-600">{receiptFileName}</p>
                         <p className="text-xs mt-1 text-gray-500">Existing receipt. Click to view or replace.</p>
                         {expenseForm.getValues().receiptUrl && (
-                          <a 
-                            href={expenseForm.getValues().receiptUrl as string} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="mt-2 text-sm text-blue-500 hover:text-blue-700 flex items-center"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                              <polyline points="15 3 21 3 21 9"></polyline>
-                              <line x1="10" y1="14" x2="21" y2="3"></line>
-                            </svg>
-                            View Receipt
-                          </a>
+                          <>
+                            <div className="mt-3 mb-2 border rounded-md overflow-hidden max-w-[200px] mx-auto">
+                              {expenseForm.getValues().receiptUrl?.toLowerCase().endsWith('.pdf') ? (
+                                <div className="bg-red-50 p-4 text-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-red-500 mb-2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <path d="M9 15h6"></path>
+                                    <path d="M9 11h6"></path>
+                                  </svg>
+                                  <span className="text-xs font-medium">PDF Document</span>
+                                </div>
+                              ) : (
+                                <img 
+                                  src={expenseForm.getValues().receiptUrl as string} 
+                                  alt="Receipt"
+                                  className="w-full h-auto object-contain bg-white"
+                                  style={{ maxHeight: '150px' }}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.onerror = null;
+                                    target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M9 9h6v6H9z"></path><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>';
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <a 
+                              href={expenseForm.getValues().receiptUrl as string} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="mt-2 text-sm text-blue-500 hover:text-blue-700 flex items-center justify-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                              </svg>
+                              View Full Receipt
+                            </a>
+                          </>
                         )}
                         <button 
                           type="button"
@@ -1029,6 +1056,10 @@ const ExpensesPage = () => {
       {/* Delete Confirmation Dialog */}
       <Dialog open={confirmDeleteDialogOpen} onOpenChange={setConfirmDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
+          <DialogTitle>Delete Expense</DialogTitle>
+          <DialogDescription>
+            This action cannot be undone. This will permanently remove the expense from your records.
+          </DialogDescription>
           <div className="p-6 text-center">
             <svg 
               className="mx-auto mb-4 text-red-500 w-12 h-12" 
