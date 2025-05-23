@@ -29,7 +29,8 @@ import ingredientsRouter from "./routes/ingredients";
 import suppliesRouter from "./routes/supplies";
 import usersRouter from "./routes/users";
 import recipesRouter from "./routes/recipes";
-import expensesRouter from "./routes/expenses";
+// Use our new direct implementation for expenses that properly handles all fields
+import expensesRouter from "./routes/expenses-direct";
 import expensesImportRouter from "./routes/expenses-import";
 import incomeRouter from "./routes/income";
 import mileageRouter from "./routes/mileage";
