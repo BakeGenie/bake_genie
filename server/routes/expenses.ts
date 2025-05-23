@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { expenses, income, type InsertExpense, type InsertIncome } from "@shared/schema";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 
@@ -109,10 +109,17 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
     
-    // Use direct SQL instead of Drizzle ORM to ensure all fields are properly saved
-    console.log("Raw request body:", JSON.stringify(req.body, null, 2));
+    // Log the raw request to debug
+    console.log("Raw expense request body:", JSON.stringify(req.body, null, 2));
     
-    // Prepare SQL values properly to avoid any ORM translation issues
+    // Debug: Explicitly check fields we're having trouble with 
+    console.log("Supplier:", req.body.supplier);
+    console.log("Payment Source:", req.body.paymentSource);
+    console.log("VAT:", req.body.vat);
+    console.log("Total Inc Tax:", req.body.totalIncTax);
+    
+    // Use direct SQL with explicit column handling
+    // NOTE: Using a very raw approach without any ORM to ensure fields are saved directly
     const sql = `
       INSERT INTO expenses (
         user_id, 
@@ -128,11 +135,28 @@ router.post("/", async (req: Request, res: Response) => {
         is_recurring, 
         receipt_url
       ) 
-      VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-      )
-      RETURNING *
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING id, user_id, category, amount, date, description, 
+                supplier, payment_source, vat, total_inc_tax, 
+                tax_deductible, is_recurring, receipt_url, created_at
     `;
+    
+    // Assign default values for fields we've been having issues with
+    const supplierValue = req.body.supplier === undefined ? "" : 
+                          req.body.supplier === null ? "" : 
+                          req.body.supplier.toString();
+                          
+    const paymentSourceValue = req.body.paymentSource === undefined ? "Cash" : 
+                              req.body.paymentSource === null ? "Cash" : 
+                              req.body.paymentSource.toString();
+                              
+    const vatValue = req.body.vat === undefined ? "0.00" : 
+                     req.body.vat === null ? "0.00" : 
+                     req.body.vat.toString();
+                     
+    const totalIncTaxValue = req.body.totalIncTax === undefined ? "0.00" : 
+                             req.body.totalIncTax === null ? "0.00" : 
+                             req.body.totalIncTax.toString();
     
     const values = [
       userId,
@@ -140,19 +164,23 @@ router.post("/", async (req: Request, res: Response) => {
       req.body.amount.toString(),
       new Date(req.body.date),
       req.body.description || null,
-      req.body.supplier || "", // Empty string if not provided
-      req.body.paymentSource || "Cash", // Default to 'Cash' if not provided
-      req.body.vat ? req.body.vat.toString() : "0.00", // Default to 0 if not provided
-      req.body.totalIncTax ? req.body.totalIncTax.toString() : "0.00", // Default to 0 if not provided
+      supplierValue,
+      paymentSourceValue, 
+      vatValue,
+      totalIncTaxValue,
       req.body.taxDeductible || false,
       req.body.isRecurring || false,
       req.body.receiptUrl || null
     ];
     
+    console.log("Final SQL values:", JSON.stringify(values, null, 2));
+    
     console.log("SQL Values:", JSON.stringify(values, null, 2));
     
     // Execute the SQL directly
-    const result = await db.execute(sql, values);
+    // Problem: Let's try a different approach with direct pg pool query
+    // This bypasses any potential ORM issues completely by using direct database connection
+    const result = await pool.query(sql, values);
     const newExpense = result.rows[0];
     
     return res.status(201).json(newExpense);
