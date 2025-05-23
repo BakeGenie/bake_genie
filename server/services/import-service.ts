@@ -29,11 +29,24 @@ class ImportService {
         return { success: false, message: 'No records provided' };
       }
       
-      // Make sure each record has the userId field
-      const contactsToInsert = data.map(contact => ({
-        ...contact,
-        userId
-      }));
+      // Make sure each record has the userId field and required fields
+      const contactsToInsert = data.map(contact => {
+        // Add notes field to indicate source
+        const notes = contact.notes || 'Imported from Bake Diary';
+        
+        // Create a properly formatted contact record
+        return {
+          userId,
+          firstName: contact.firstName || '',
+          lastName: contact.lastName || '',
+          email: contact.email || '',
+          phone: contact.phone || '',
+          businessName: contact.businessName || '',
+          address: contact.address || '',
+          notes,
+          type: contact.type || ''
+        };
+      });
       
       console.log(`Prepared ${contactsToInsert.length} contacts for insert`);
       

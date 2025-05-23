@@ -102,6 +102,10 @@ export default function BakeDiaryImport() {
           // Make sure we're only using strings
           mappedItem[dbField] = item[csvField] ? String(item[csvField]).trim() : '';
         }
+        // Add type field with lowercase value
+        if (mappedItem.type) {
+          mappedItem.type = mappedItem.type.toLowerCase();
+        }
         return mappedItem;
       });
       
