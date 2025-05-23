@@ -5,6 +5,70 @@ import { eq } from "drizzle-orm";
 
 export const router = Router();
 
+// Specialized route just for email templates to avoid date issues
+router.patch("/templates", async (req: Request, res: Response) => {
+  // For demo purposes, assume user ID 1 
+  const userId = 1;
+  try {
+    const { 
+      quoteEmailTemplate, 
+      invoiceEmailTemplate, 
+      paymentReminderTemplate, 
+      paymentReceiptTemplate, 
+      enquiryMessageTemplate 
+    } = req.body;
+    
+    // Create a clean update with just the template fields
+    const updateData: Record<string, any> = {};
+    
+    // Only add defined fields to avoid null overwrites
+    if (quoteEmailTemplate !== undefined) {
+      updateData.quote_email_template = quoteEmailTemplate;
+    }
+    if (invoiceEmailTemplate !== undefined) {
+      updateData.invoice_email_template = invoiceEmailTemplate;
+    }
+    if (paymentReminderTemplate !== undefined) {
+      updateData.payment_reminder_template = paymentReminderTemplate;
+    }
+    if (paymentReceiptTemplate !== undefined) {
+      updateData.payment_receipt_template = paymentReceiptTemplate;
+    }
+    if (enquiryMessageTemplate !== undefined) {
+      updateData.enquiry_message_template = enquiryMessageTemplate;
+    }
+    
+    // Execute SQL directly to avoid ORM date conversion issues
+    console.log("Updating templates with:", updateData);
+    
+    // Build SQL dynamically based on the fields to update
+    const fieldUpdates = Object.entries(updateData)
+      .map(([field, value]) => `${field} = '${value?.replace(/'/g, "''")}'`)
+      .join(", ");
+    
+    if (!fieldUpdates) {
+      return res.status(400).json({ error: "No template data provided" });
+    }
+    
+    const sql = `
+      UPDATE settings 
+      SET ${fieldUpdates}, updated_at = NOW() 
+      WHERE user_id = ${userId} 
+      RETURNING *;
+    `;
+    
+    const result = await db.execute(sql);
+    
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Error updating email templates:", error);
+    return res.status(500).json({ 
+      error: "Failed to update email templates", 
+      details: error instanceof Error ? error.message : String(error) 
+    });
+  }
+});
+
 /**
  * Get settings for the current user
  */

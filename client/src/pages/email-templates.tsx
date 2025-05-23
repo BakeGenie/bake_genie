@@ -170,7 +170,37 @@ export default function EmailTemplates() {
     };
     
     console.log('Saving email templates:', templateData);
-    saveTemplatesMutation.mutate(templateData);
+    
+    // Use direct fetch to the specialized endpoint to avoid ORM date issues
+    fetch('/api/settings/templates', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(templateData),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Templates saved successfully:', data);
+        toast({
+          title: "Templates Saved",
+          description: "Your email templates have been saved successfully.",
+          variant: "success",
+        });
+      })
+      .catch(error => {
+        console.error('Error saving templates:', error);
+        toast({
+          title: "Error",
+          description: "There was a problem saving your email templates. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
 
   return (
