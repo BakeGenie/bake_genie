@@ -157,7 +157,7 @@ export default function DataImportExport() {
     
     if (importType === "quotes") {
       // Navigate to the specialized quotes importer
-      setLocation("/quote-import");
+      setLocation("/quotes-import");
       return;
     }
     
