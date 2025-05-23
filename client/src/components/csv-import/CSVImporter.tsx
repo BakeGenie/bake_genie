@@ -15,6 +15,7 @@ interface FieldMapping {
   dbField: string;
   displayName: string;
   required?: boolean;
+  alternativeNames?: string[];
 }
 
 interface CSVImporterProps {
@@ -111,16 +112,36 @@ export default function CSVImporter({
             const dbFieldLower = field.dbField.toLowerCase().replace(/_/g, ' ');
             const displayNameLower = field.displayName.toLowerCase();
             
+            // Create an array of all possible field name matches
+            const possibleMatches = [dbFieldLower, displayNameLower];
+            
+            // Add alternative names if provided
+            if (field.alternativeNames && field.alternativeNames.length > 0) {
+              field.alternativeNames.forEach(altName => {
+                possibleMatches.push(altName.toLowerCase());
+              });
+            }
+            
             csvHeaders.forEach(header => {
               const headerLower = header.toLowerCase();
               
-              if (
-                headerLower === dbFieldLower ||
-                headerLower === displayNameLower ||
-                headerLower.includes(dbFieldLower) ||
-                headerLower.includes(displayNameLower)
-              ) {
+              // Check for exact matches first
+              if (possibleMatches.includes(headerLower)) {
                 newMapping[field.dbField] = header;
+                return;
+              }
+              
+              // Then check for partial matches if we don't have an exact match yet
+              if (!newMapping[field.dbField]) {
+                for (const possibleMatch of possibleMatches) {
+                  if (
+                    headerLower.includes(possibleMatch) || 
+                    possibleMatch.includes(headerLower)
+                  ) {
+                    newMapping[field.dbField] = header;
+                    return;
+                  }
+                }
               }
             });
           });

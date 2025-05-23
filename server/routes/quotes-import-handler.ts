@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { quotes, quoteItems, contacts } from '@shared/schema';
+import { contacts } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { pool } from '../db';
 
 const router = Router();
 
@@ -56,7 +57,7 @@ router.post('/api/quotes/import', async (req, res) => {
         const quoteNumber = getMappedValue(record, columnMapping, 'quote_number');
         const eventType = getMappedValue(record, columnMapping, 'event_type') || 'Other';
         const eventDate = getMappedValue(record, columnMapping, 'event_date');
-        const totalAmount = getMappedValue(record, columnMapping, 'price');
+        const totalAmount = getMappedValue(record, columnMapping, 'total_amount');
         const quoteStatus = getMappedValue(record, columnMapping, 'status') || 'Draft';
         const expiryDate = getMappedValue(record, columnMapping, 'expiry_date');
         const notes = getMappedValue(record, columnMapping, 'notes');
@@ -68,34 +69,36 @@ router.post('/api/quotes/import', async (req, res) => {
         }
 
         // Create direct SQL query to insert quote with the correct field names
-        const insertQuery = `
-          INSERT INTO quotes (
-            user_id, quote_number, contact_id, event_type, event_date, 
-            status, theme, delivery_type, total_amount, notes, 
-            expiry_date, created_at, updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-          ) RETURNING *
-        `;
-        
-        const insertedQuote = await db.execute(insertQuery, [
-          userId, 
-          quoteNumber, 
-          contactId,
-          eventType || 'Other',
-          eventDate ? new Date(eventDate) : new Date(),
-          quoteStatus || 'Draft',
-          description || null,
-          'Pickup', // Default to Pickup if not specified
-          totalAmount || '0.00',
-          notes,
-          expiryDate ? new Date(expiryDate) : null,
-          new Date(),
-          new Date()
-        ]);
-          .returning();
-
-        results.successCount++;
+        const client = await pool.connect();
+        try {
+          const insertResult = await client.query(
+            `INSERT INTO quotes (
+              user_id, quote_number, contact_id, event_type, event_date, 
+              status, theme, delivery_type, total_amount, notes, 
+              expiry_date, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+            RETURNING id`,
+            [
+              userId, 
+              quoteNumber, 
+              contactId,
+              eventType || 'Other',
+              eventDate ? new Date(eventDate) : new Date(),
+              quoteStatus || 'Draft',
+              description || null,
+              'Pickup', // Default to Pickup if not specified
+              totalAmount || '0.00',
+              notes,
+              expiryDate ? new Date(expiryDate) : null,
+              new Date(),
+              new Date()
+            ]
+          );
+          
+          results.successCount++;
+        } finally {
+          client.release();
+        }
       } catch (error: any) {
         console.error(`Error processing row ${i + 1}:`, error);
         results.errorCount++;

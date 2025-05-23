@@ -17,15 +17,15 @@ export default function QuoteImport() {
   
   // Field mappings for quote imports
   const quoteFields = [
-    { dbField: 'quote_number', displayName: 'Quote Number', required: true },
-    { dbField: 'contact_name', displayName: 'Customer Name' },
-    { dbField: 'event_date', displayName: 'Event Date' },
-    { dbField: 'event_type', displayName: 'Event Type' },
-    { dbField: 'description', displayName: 'Description/Theme' },
-    { dbField: 'total_amount', displayName: 'Total Amount' },
-    { dbField: 'status', displayName: 'Status' },
-    { dbField: 'expiry_date', displayName: 'Expiry Date' },
-    { dbField: 'notes', displayName: 'Notes' },
+    { dbField: 'quote_number', displayName: 'Quote Number', required: true, alternativeNames: ['Order Number'] },
+    { dbField: 'contact_name', displayName: 'Customer Name', alternativeNames: ['Contact', 'Customer'] },
+    { dbField: 'event_date', displayName: 'Event Date', alternativeNames: ['Date'] },
+    { dbField: 'event_type', displayName: 'Event Type', alternativeNames: ['Type'] },
+    { dbField: 'description', displayName: 'Description/Theme', alternativeNames: ['Theme', 'Description'] },
+    { dbField: 'total_amount', displayName: 'Total Amount', alternativeNames: ['Order Total', 'Total', 'Amount'] },
+    { dbField: 'status', displayName: 'Status', alternativeNames: ['Quote Status'] },
+    { dbField: 'expiry_date', displayName: 'Expiry Date', alternativeNames: ['Expiry'] },
+    { dbField: 'notes', displayName: 'Notes', alternativeNames: ['Comments'] },
   ];
 
   const handleImportComplete = (result: any) => {
