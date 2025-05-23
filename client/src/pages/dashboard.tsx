@@ -163,7 +163,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="col-span-1 md:col-span-2">
+        <Card className="col-span-1 md:col-span-1">
           <CardHeader>
             <CardTitle>Orders by Type</CardTitle>
             <CardDescription>
@@ -186,6 +186,37 @@ const Dashboard = () => {
                   <Bar 
                     dataKey="count" 
                     fill="hsl(var(--chart-1))" 
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-1 md:col-span-1">
+          <CardHeader>
+            <CardTitle>Quotes by Type</CardTitle>
+            <CardDescription>
+              Distribution of quotes by event type
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={stats?.quotesByType || []} 
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  layout="vertical"
+                >
+                  <XAxis type="number" />
+                  <YAxis dataKey="type" type="category" width={100} />
+                  <Tooltip 
+                    formatter={(value) => [value, 'Quotes']}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill="hsl(var(--purple-500))" 
                     radius={[0, 4, 4, 0]}
                   />
                 </BarChart>
