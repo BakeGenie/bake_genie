@@ -181,10 +181,10 @@ const ExpensesPage = () => {
         },
         body: JSON.stringify({
           category: data.category,
-          amount: data.amount,
+          amount: String(data.amount),
           date: data.date,
-          description: data.description,
-          taxDeductible: data.taxDeductible,
+          description: data.description || "",
+          taxDeductible: Boolean(data.taxDeductible),
           receiptUrl: data.receiptUrl
         }),
       });
@@ -303,18 +303,31 @@ const ExpensesPage = () => {
         const formData = new FormData();
         formData.append('receipt', selectedFile);
         
-        // Upload the file
-        const uploadResponse = await fetch('/api/upload/receipt', {
-          method: 'POST',
-          body: formData,
-        });
+        console.log("Uploading file:", selectedFile.name);
         
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload receipt');
+        try {
+          // Upload the file
+          const uploadResponse = await fetch('/api/upload/receipt', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (!uploadResponse.ok) {
+            console.error("Error uploading receipt:", await uploadResponse.text());
+            throw new Error('Failed to upload receipt');
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          receiptUrl = uploadResult.url;
+          console.log("Receipt uploaded successfully:", receiptUrl);
+        } catch (uploadError) {
+          console.error("Receipt upload error:", uploadError);
+          toast({
+            title: "Upload error",
+            description: "Could not upload receipt. Your expense will be saved without a receipt.",
+            variant: "destructive"
+          });
         }
-        
-        const uploadResult = await uploadResponse.json();
-        receiptUrl = uploadResult.url;
       }
       
       // Store additional info in the description field
@@ -802,7 +815,7 @@ const ExpensesPage = () => {
                   <input
                     id="receipt-upload"
                     type="file"
-                    accept="image/jpeg,image/png,image/jpg,application/pdf"
+                    accept=".jpg,.jpeg,.png,.pdf"
                     className="hidden"
                     onChange={handleFileChange}
                   />
@@ -839,16 +852,20 @@ const ExpensesPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setOpenExpenseDialog(false)}
+                  onClick={() => {
+                    setOpenExpenseDialog(false);
+                    setSelectedFile(null);
+                    setReceiptFileName('');
+                  }}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={createExpenseMutation.isPending}
-                  className="bg-blue-500 hover:bg-blue-600"
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  {createExpenseMutation.isPending ? "Saving..." : "Add Expense"}
+                  {createExpenseMutation.isPending ? "Saving..." : editingExpenseId ? "Update Expense" : "Add Expense"}
                 </Button>
               </div>
             </form>
