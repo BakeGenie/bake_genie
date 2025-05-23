@@ -2,10 +2,10 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSignIcon, FileTextIcon, Clock4Icon, ClipboardCheckIcon, BarChartIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { DashboardStats } from "@/types";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { Link } from "wouter";
 import SidebarCalendar from "@/components/calendar/sidebar-calendar";
+import { DashboardStats } from "@/types/dashboard";
 
 const Dashboard = () => {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
@@ -48,7 +48,7 @@ const Dashboard = () => {
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -58,6 +58,20 @@ const Dashboard = () => {
             <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
             <p className="text-xs text-muted-foreground">
               Including cancelled orders
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Quotes</CardTitle>
+            <FileTextIcon className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalQuotes || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              <Link href="/quotes">
+                <span className="text-primary-500 hover:underline cursor-pointer">Active: {stats?.activeQuotes || 0}</span>
+              </Link>
             </p>
           </CardContent>
         </Card>
