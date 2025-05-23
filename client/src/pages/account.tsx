@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHeader from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
+import UpdatePaymentMethodDialog from "@/components/payment/update-payment-method-dialog";
 import {
   UserIcon,
   Building2Icon,
@@ -63,6 +65,22 @@ const Account = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = React.useState("profile");
+  const [isUpdatePaymentDialogOpen, setIsUpdatePaymentDialogOpen] = useState(false);
+  
+  // Fetch payment method data
+  const { data: paymentMethodData, refetch: refetchPaymentMethod } = useQuery({
+    queryKey: ['/api/subscription/payment-method'],
+    retry: false,
+  });
+  
+  // Handle payment method update
+  const handlePaymentMethodUpdated = () => {
+    refetchPaymentMethod();
+    toast({
+      title: "Payment Method Updated",
+      description: "Your payment information has been successfully updated."
+    });
+  };
 
   // Profile form
   const profileForm = useForm<ProfileFormValues>({
@@ -128,6 +146,13 @@ const Account = () => {
 
   return (
     <div className="p-6">
+      {/* Payment Method Update Dialog */}
+      <UpdatePaymentMethodDialog
+        open={isUpdatePaymentDialogOpen}
+        onOpenChange={setIsUpdatePaymentDialogOpen}
+        onSuccess={handlePaymentMethodUpdated}
+      />
+      
       <PageHeader title="Account Settings" />
 
       <Tabs
@@ -486,12 +511,7 @@ const Account = () => {
                     variant="ghost" 
                     size="sm" 
                     className="text-primary"
-                    onClick={() => {
-                      toast({
-                        title: "Update Payment Method",
-                        description: "Payment method update dialog would open here."
-                      });
-                    }}
+                    onClick={() => setIsUpdatePaymentDialogOpen(true)}
                   >
                     Update
                   </Button>
