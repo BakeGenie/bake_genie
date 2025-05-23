@@ -1,7 +1,5 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { quotes, contacts } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -50,123 +48,79 @@ router.post('/api/quotes/import', async (req, res) => {
       successDetails: [] as any[],
     };
     
-    // Use a single transaction for all imports
-    try {
-      // Start transaction
-      await db.execute('BEGIN');
+    // Process each record individually without a transaction to simplify
+    for (let index = 0; index < records.length; index++) {
+      const record = records[index];
       
-      // Process each record
-      for (let index = 0; index < records.length; index++) {
-        const record = records[index];
+      try {
+        // Generate quote information
+        const quoteNumber = columnMapping.quote_number && record[columnMapping.quote_number] 
+          ? String(record[columnMapping.quote_number]) 
+          : `QT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          
+        const contactName = columnMapping.contact_name ? record[columnMapping.contact_name] : null;
+        const eventDate = columnMapping.event_date ? parseDate(record[columnMapping.event_date]) : null;
+        const eventType = columnMapping.event_type ? record[columnMapping.event_type] : null;
+        const description = columnMapping.description ? record[columnMapping.description] : '';
+        const price = columnMapping.price ? parseCurrency(record[columnMapping.price]) : 0;
+        const status = columnMapping.status ? record[columnMapping.status] : 'Draft';
+        const notes = columnMapping.notes ? record[columnMapping.notes] : '';
         
-        try {
-          // Map CSV columns to database fields based on user selection
-          const rowNum = index + 1; // 1-based for error messages
+        // Insert directly into the quotes table using a simpler approach
+        const query = `
+          INSERT INTO quotes (
+            user_id, quote_number, event_type, status, price, description, 
+            notes, created_at, updated_at
+          ) VALUES (
+            ${userId}, 
+            '${quoteNumber}', 
+            '${eventType || ''}', 
+            '${status}', 
+            ${price}, 
+            '${description.replace(/'/g, "''")}', 
+            '${notes.replace(/'/g, "''")}', 
+            NOW(), NOW()
+          ) RETURNING id
+        `;
+        
+        // Execute the query
+        const result = await db.execute(query);
+        
+        if (result && result.rows && result.rows.length > 0) {
+          const quoteId = result.rows[0].id;
           
-          // Get required fields with fallbacks
-          const quoteNumber = columnMapping.quote_number && record[columnMapping.quote_number] 
-            ? String(record[columnMapping.quote_number]) 
-            : `QT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-            
-          const contactName = columnMapping.contact_name ? record[columnMapping.contact_name] : null;
-          const eventDate = columnMapping.event_date ? parseDate(record[columnMapping.event_date]) : null;
-          const eventType = columnMapping.event_type ? record[columnMapping.event_type] : null;
-          const description = columnMapping.description ? record[columnMapping.description] : '';
-          const price = columnMapping.price ? parseCurrency(record[columnMapping.price]) : 0;
-          const status = columnMapping.status ? record[columnMapping.status] : 'Draft';
-          const notes = columnMapping.notes ? record[columnMapping.notes] : '';
-          const expiryDate = columnMapping.expiry_date ? parseDate(record[columnMapping.expiry_date]) : null;
-          
-          // Find or create contact if name is provided
-          let contactId = null;
-          if (contactName) {
-            // Look for existing contact
-            const [existingContact] = await db.execute(
-              `SELECT id FROM contacts WHERE LOWER(first_name || ' ' || last_name) = LOWER($1) AND user_id = $2 LIMIT 1`,
-              [contactName, userId]
-            );
-            
-            if (existingContact) {
-              contactId = existingContact.id;
-            } else {
-              // Split name into first and last name
-              const nameParts = contactName.trim().split(' ');
-              const firstName = nameParts[0] || '';
-              const lastName = nameParts.slice(1).join(' ') || '';
-              
-              // Create new contact
-              const [newContact] = await db.execute(
-                `INSERT INTO contacts (user_id, first_name, last_name, created_at, updated_at) 
-                VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id`,
-                [userId, firstName, lastName]
-              );
-              
-              contactId = newContact.id;
-            }
-          }
-          
-          // Generate quote SQL - using direct SQL to avoid ORM issues
-          const sql = `
-            INSERT INTO quotes (
-              quote_number, user_id, contact_id, event_date, event_type, 
-              status, price, description, notes, expiry_date, created_at, updated_at
+          // Insert a quote item
+          const itemQuery = `
+            INSERT INTO quote_items (
+              quote_id, name, price, quantity, created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
+              ${quoteId}, 
+              'Imported Item', 
+              ${price}, 
+              1, 
+              NOW(), NOW()
             )
-            ON CONFLICT (quote_number) DO UPDATE SET
-              contact_id = $3,
-              event_date = $4,
-              event_type = $5,
-              status = $6,
-              price = $7,
-              description = $8,
-              notes = $9,
-              expiry_date = $10,
-              updated_at = NOW()
-            RETURNING id
           `;
           
-          const [insertedQuote] = await db.execute(sql, [
-            quoteNumber,
-            userId,
-            contactId,
-            eventDate,
-            eventType,
-            status,
-            price,
-            description,
-            notes,
-            expiryDate
-          ]);
+          await db.execute(itemQuery);
           
           results.successCount++;
           results.successDetails.push({
-            id: insertedQuote.id,
+            quoteId,
             quoteNumber,
-            contactName,
-            eventDate,
             eventType,
             status,
             price
           });
-          
-        } catch (error: any) {
-          console.error(`Error importing row ${index + 1}:`, error);
-          results.errorCount++;
-          results.errors.push({
-            row: index + 1,
-            message: error.message || 'Unknown error occurred while processing this row',
-          });
         }
+      } catch (error: any) {
+        console.error(`Error importing row ${index + 1}:`, error);
+        results.errorCount++;
+        results.errors.push({
+          row: index + 1,
+          message: error.message || 'Unknown error occurred while processing this row',
+        });
       }
-      
-      // Commit transaction
-      await db.execute('COMMIT');
-      
-    } catch (error) {
-      // Rollback on error
-      await db.execute('ROLLBACK');
-      throw error;
     }
     
     // Generate response message
