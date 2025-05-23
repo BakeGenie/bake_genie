@@ -87,9 +87,10 @@ const Account = () => {
   const queryClient = useQueryClient();
   
   // Fetch user profile data
-  const { data: userData, isLoading: isUserLoading } = useQuery({
+  const { data: userData, isLoading: isUserLoading, refetch: refetchUserData } = useQuery({
     queryKey: ['/api/users/current'],
     retry: 1,
+    staleTime: 0, // Don't cache the data
   });
   
   // Fetch notification preferences
@@ -205,9 +206,10 @@ const Account = () => {
       console.log("Submitting profile data:", data);
       return await apiRequest('PATCH', '/api/users/profile', data);
     },
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       console.log("Profile update success response:", response);
-      queryClient.invalidateQueries({ queryKey: ['/api/users/current'] });
+      // Force a refresh of user data
+      await refetchUserData();
       toast({
         title: "Profile Updated",
         description: "Your profile information has been successfully saved.",
