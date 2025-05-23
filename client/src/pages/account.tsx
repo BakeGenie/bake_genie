@@ -320,6 +320,7 @@ const Account = () => {
       />
       
       <PageHeader title="Account Settings" />
+      <TrialBanner />
 
       <Tabs
         defaultValue="profile"

@@ -39,7 +39,7 @@ const TrialBanner: React.FC = () => {
             </div>
             <div className="mt-4">
               <Button 
-                onClick={() => navigate('/plans')}
+                onClick={() => setLocation('/plans')}
                 className="bg-destructive hover:bg-destructive/90 text-white"
               >
                 Subscribe Now
@@ -81,7 +81,7 @@ const TrialBanner: React.FC = () => {
             {isLowDays && (
               <div className="mt-4">
                 <Button 
-                  onClick={() => navigate('/plans')}
+                  onClick={() => setLocation('/plans')}
                   variant="default"
                   size="sm"
                 >
@@ -109,7 +109,7 @@ const TrialBanner: React.FC = () => {
           </div>
           <div className="mt-4">
             <Button 
-              onClick={() => navigate('/start-trial')}
+              onClick={() => setLocation('/start-trial')}
               variant="default"
               size="sm"
             >
