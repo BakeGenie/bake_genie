@@ -118,6 +118,7 @@ const ExpensesPage = () => {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(format(currentDate, 'MMM'));
   const [selectedYear, setSelectedYear] = useState(format(currentDate, 'yyyy'));
+  const [isDragging, setIsDragging] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [openExpenseDialog, setOpenExpenseDialog] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
@@ -284,11 +285,36 @@ const ExpensesPage = () => {
   });
 
   // Handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement> | { target: { files: FileList } }) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       setSelectedFile(files[0]);
       setReceiptFileName(files[0].name);
+    }
+  };
+  
+  // Handle drag over event
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  
+  // Handle drag leave event
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  
+  // Handle drop event
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange({ target: { files: e.dataTransfer.files } } as any);
     }
   };
   
