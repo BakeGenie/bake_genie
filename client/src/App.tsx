@@ -70,6 +70,7 @@ import SquarePaymentProvider from "./pages/payment-settings/square";
 import TippingSettings from "./pages/payment-settings/tipping";
 import PaymentSuccess from "./pages/payment-success";
 import TryTrial from "./pages/try-trial";
+import OrderItemsImport from "./pages/order-items-import";
 
 // Import ProtectedRoute component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -315,6 +316,11 @@ function Router() {
         <Route path="/orders-import">
           <ProtectedRoute>
             <OrdersImport />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/order-items-import">
+          <ProtectedRoute>
+            <OrderItemsImport />
           </ProtectedRoute>
         </Route>
         <Route path="/integrations">
