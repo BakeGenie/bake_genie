@@ -16,7 +16,7 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 const router = express.Router();
 
 // Get trial status
-router.get('/trial/status', async (req, res) => {
+router.get('/trial/status', async (req: any, res) => {
   try {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -102,13 +102,14 @@ router.get('/trial/status', async (req, res) => {
 });
 
 // Start a trial
-router.post('/trial/start', async (req, res) => {
+router.post('/trial/start', async (req: any, res) => {
   try {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const userId = req.user.id;
+    console.log(`Starting trial for user ID: ${userId}`);
     
     // Check if user is eligible for a trial
     const existingSubscriptions = await db
@@ -116,25 +117,41 @@ router.post('/trial/start', async (req, res) => {
       .from(userSubscriptions)
       .where(eq(userSubscriptions.userId, userId));
     
+    console.log(`Found ${existingSubscriptions.length} existing subscriptions`);
+    
     const hadTrialBefore = existingSubscriptions.some(sub => 
       sub.trialStart !== null && sub.trialEnd !== null
     );
     
     if (hadTrialBefore) {
+      console.log(`User has already used trial`);
       return res.status(400).json({ 
         error: 'You have already used your free trial period',
         hadTrialBefore: true 
       });
     }
     
-    // Get the standard plan to associate with the trial
-    const [standardPlan] = await db
+    // Get the standard plan to associate with the trial (or create one if it doesn't exist)
+    let [standardPlan] = await db
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.name, 'Standard'));
     
     if (!standardPlan) {
-      return res.status(500).json({ error: 'No standard plan found' });
+      console.log(`No standard plan found, creating one`);
+      [standardPlan] = await db
+        .insert(subscriptionPlans)
+        .values({
+          name: 'Standard',
+          description: 'Standard plan with all features',
+          price: '29.99',
+          interval: 'monthly',
+          features: ['All features included'],
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
     }
     
     // Calculate trial period (30 days)
@@ -142,19 +159,25 @@ router.post('/trial/start', async (req, res) => {
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + 30);
     
+    console.log(`Creating trial subscription: start=${trialStart.toISOString()}, end=${trialEnd.toISOString()}`);
+    
     // Create a trial subscription record
     const [subscription] = await db
       .insert(userSubscriptions)
       .values({
         userId,
         planId: standardPlan.id,
+        planName: standardPlan.name,
         status: 'trialing',
         trialStart,
         trialEnd,
+        isTrialUsed: true,
         createdAt: new Date(),
         updatedAt: new Date()
       })
       .returning();
+    
+    console.log(`Trial started successfully: ${JSON.stringify(subscription)}`);
     
     res.json({
       success: true,
