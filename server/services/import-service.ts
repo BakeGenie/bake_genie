@@ -24,6 +24,12 @@ export class ImportService {
    * Process a CSV file and return records
    */
   private async parseCSV(filePath: string): Promise<any[]> {
+    // Read the file content
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    
+    // Check for Bake Diary format which may have quotes around fields
+    const hasQuotes = fileContent.includes('","');
+    
     return new Promise((resolve, reject) => {
       const results: any[] = [];
       
@@ -31,11 +37,32 @@ export class ImportService {
         .pipe(parse({
           columns: true,
           trim: true,
-          skip_empty_lines: true
+          skip_empty_lines: true,
+          relax_quotes: true,        // Allow quotes in fields
+          relax_column_count: true,  // Allow inconsistent column counts
+          delimiter: ',',            // Use comma as delimiter
         }))
-        .on('data', (data) => results.push(data))
+        .on('data', (data) => {
+          // Clean up data by removing any extra quotes
+          const cleanedRecord: Record<string, any> = {};
+          for (const [key, value] of Object.entries(data)) {
+            if (typeof value === 'string') {
+              // Remove surrounding quotes if present
+              cleanedRecord[key] = value.replace(/^"(.*)"$/, '$1');
+            } else {
+              cleanedRecord[key] = value;
+            }
+          }
+          results.push(cleanedRecord);
+        })
         .on('error', (error) => reject(error))
-        .on('end', () => resolve(results));
+        .on('end', () => {
+          console.log(`Parsed ${results.length} records from CSV`);
+          if (results.length > 0) {
+            console.log("Sample record keys:", Object.keys(results[0]).join(", "));
+          }
+          resolve(results);
+        });
     });
   }
   
@@ -64,16 +91,23 @@ export class ImportService {
           
           // Extract contact details
           const contactName = record.Contact?.trim() || '';
-          if (!contactName) {
-            errors.push(`Missing contact name for order ${record["Order Number"]}`);
-            skippedRows++;
-            continue;
-          }
+          
+          // Allow orders with missing contact name by using a placeholder - we can always update later
+          const hasContactInfo = contactName || record["Contact Email"];
           
           // Split contact name into first/last name (best effort)
-          const nameParts = contactName.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
+          let firstName = '';
+          let lastName = '';
+          
+          if (contactName) {
+            const nameParts = contactName.split(' ');
+            firstName = nameParts[0] || '';
+            lastName = nameParts.slice(1).join(' ') || '';
+          } else {
+            // Use placeholder if no contact name
+            firstName = 'Unknown';
+            lastName = 'Customer';
+          }
           
           // Get or create contact
           let contactId;
@@ -85,10 +119,12 @@ export class ImportService {
             existingContactResults = await db.select().from(contacts).where(
               sql`${contacts.email} = ${contactEmail} AND ${contacts.userId} = ${userId}`
             );
-          } else {
+          } else if (firstName && lastName) {
             existingContactResults = await db.select().from(contacts).where(
               sql`${contacts.firstName} = ${firstName} AND ${contacts.lastName} = ${lastName} AND ${contacts.userId} = ${userId}`
             );
+          } else {
+            existingContactResults = []
           }
           
           if (existingContactResults.length > 0) {
