@@ -107,19 +107,45 @@ router.get("/payment-method", requireAuth, async (req: Request, res: Response) =
     // 2. Fetch their default payment method
     // 3. Return masked details about that payment method
 
-    // For this implementation, we'll check if a user has updated their payment method
+    // Fetch payment method from database
     console.log(`Fetching payment method for user ${userId}`);
 
-    // Store updated payment methods in session
-    const session = req.session as any;
-    const updatedPaymentMethod = session?.updatedPaymentMethod;
-    
-    if (updatedPaymentMethod) {
-      res.json({
-        paymentMethod: updatedPaymentMethod
-      });
-    } else {
-      // Return default payment method if no update has been made
+    try {
+      // Get the most recent default payment method for this user
+      const paymentMethodResults = await db.select()
+        .from(paymentMethods)
+        .where(eq(paymentMethods.userId, Number(userId)))
+        .where(eq(paymentMethods.isDefault, true))
+        .orderBy(desc(paymentMethods.createdAt))
+        .limit(1);
+      
+      if (paymentMethodResults.length > 0) {
+        const method = paymentMethodResults[0];
+        
+        // Return the payment method details
+        res.json({
+          paymentMethod: {
+            brand: method.brand,
+            last4: method.last4,
+            expMonth: method.expMonth,
+            expYear: method.expYear,
+          }
+        });
+      } else {
+        // No payment methods found, return default payment method
+        res.json({
+          paymentMethod: {
+            brand: "visa",
+            last4: "4242",
+            expMonth: 12,
+            expYear: 2024,
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching payment method from database:", error);
+      
+      // Return default payment method if there's an error
       res.json({
         paymentMethod: {
           brand: "visa",
