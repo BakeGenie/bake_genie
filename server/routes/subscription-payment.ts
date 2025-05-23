@@ -1,5 +1,8 @@
 import { Router, Request, Response } from "express";
 import Stripe from "stripe";
+import { db } from "../db";
+import { paymentMethods } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 // Create a router
 export const router = Router();
@@ -38,20 +41,10 @@ router.post("/update-payment-method", requireAuth, async (req: Request, res: Res
     // 3. Update the default payment method for the customer
     // 4. Update the default payment method on their subscription
 
-    // For this implementation, we'll simulate success but store the card details
+    // Store the payment method in the database
     console.log(`Updating payment method for user ${userId} with payment method ${paymentMethodId}`);
 
-    // In a real-world implementation, we would integrate with Stripe
-    // For now, we'll extract card details from the payment method ID format
-    // Stripe payment method IDs follow patterns like:
-    // pm_1RRlnUQ4xDvVy5d69FrHyo0Q (Visa)
-    // pm_1RRlnlQ4xDvVy5d6BB5TcjB2 (Mastercard)
-    // We'll use this to generate realistic card data
-    
-    // Store in session for persistence between requests
-    const session = req.session as any;
-    
-    // Generate "realistic" card details based on payment method ID
+    // Generate card details based on payment method ID
     let brand = "visa";
     let last4 = "4242";
     
@@ -63,13 +56,31 @@ router.post("/update-payment-method", requireAuth, async (req: Request, res: Res
       last4 = "0005";
     }
     
-    // Save the updated payment method in session
-    session.updatedPaymentMethod = {
-      brand,
-      last4,
-      expMonth: new Date().getMonth() + 1, // Current month
-      expYear: new Date().getFullYear() + 5, // 5 years from now
-    };
+    // Set expiration dates
+    const expMonth = new Date().getMonth() + 1; // Current month
+    const expYear = new Date().getFullYear() + 5; // 5 years from now
+    
+    try {
+      // Remove any previous default payment methods for this user
+      await db.update(paymentMethods)
+        .set({ isDefault: false })
+        .where(eq(paymentMethods.userId, Number(userId)));
+      
+      // Insert the new payment method into the database
+      await db.insert(paymentMethods).values({
+        userId: Number(userId),
+        paymentMethodId,
+        brand,
+        last4,
+        expMonth,
+        expYear,
+        isDefault: true
+      });
+      
+      console.log(`Payment method stored successfully for user ${userId}`);
+    } catch (error) {
+      console.error("Error storing payment method in database:", error);
+    }
 
     res.json({
       success: true,

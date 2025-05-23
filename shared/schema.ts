@@ -392,6 +392,19 @@ export const taxRates = pgTable("tax_rates", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Payment Methods table
+export const paymentMethods = pgTable("payment_methods", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  paymentMethodId: text("payment_method_id").notNull(),
+  brand: text("brand").notNull(),
+  last4: text("last4").notNull(),
+  expMonth: integer("exp_month").notNull(),
+  expYear: integer("exp_year").notNull(),
+  isDefault: boolean("is_default").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define insert schemas using drizzle-zod
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertContactSchema = createInsertSchema(contacts).omit({ id: true, createdAt: true });
