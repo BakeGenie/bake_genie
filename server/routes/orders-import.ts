@@ -69,11 +69,12 @@ router.post('/api/orders/import', async (req, res) => {
           // For numeric fields, convert to strings for TEXT fields or capped values for NUMERIC fields
           // Handle the difference between TEXT fields and NUMERIC fields in our DB schema
           
-          // For TEXT fields (handles floating points properly)
+          // For TEXT fields (monetary values that need to be stored as string in the database)
           const cleanTextNumber = (val) => {
             if (val === null || val === undefined) return "0.00";
             const str = val.toString().replace(/[^0-9.-]/g, '');
-            return parseFloat(str) || 0;
+            const number = parseFloat(str) || 0;
+            return number.toString();
           };
           
           // For NUMERIC(2,0) fields (must be integers less than 100)
@@ -229,11 +230,11 @@ router.post('/api/orders/import', async (req, res) => {
               '${totalAmount || "0.00"}',
               '${totalAmount || "0.00"}',
               ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
-              ${profit < 100 ? profit : 99}, 
-              ${subTotalAmount < 100 ? subTotalAmount : 99}, 
-              ${discountAmount < 100 ? discountAmount : 99}, 
+              ${Math.min(99, Math.floor(profit || 0))}, 
+              ${Math.min(99, Math.floor(subTotalAmount || 0))}, 
+              ${Math.min(99, Math.floor(discountAmount || 0))}, 
               '${taxRate || "0.00"}',
-              ${deliveryAmount < 100 ? deliveryAmount : 99}
+              ${Math.min(99, Math.floor(deliveryAmount || 0))}
             )
             RETURNING id
           `;
