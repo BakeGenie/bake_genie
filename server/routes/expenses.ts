@@ -141,26 +141,33 @@ router.post("/", async (req: Request, res: Response) => {
                 tax_deductible, is_recurring, receipt_url, created_at
     `;
     
-    // DEBUGGING: Log the exact form field values as received
-    console.log("===== DETAILED FORM FIELD DEBUGGING =====");
-    console.log("req.body.supplier:", req.body.supplier, "type:", typeof req.body.supplier);
-    console.log("req.body.paymentSource:", req.body.paymentSource, "type:", typeof req.body.paymentSource);
-    console.log("req.body.vat:", req.body.vat, "type:", typeof req.body.vat);
-    console.log("req.body.totalIncTax:", req.body.totalIncTax, "type:", typeof req.body.totalIncTax);
+    // FINAL FIX: Use a direct database query approach that bypasses any middleware issues
+    // Explicitly log all form values for debugging
+    console.log("===== EXPENSE FORM VALUES =====");
+    console.log("req.body:", JSON.stringify(req.body, null, 2));
     
-    // FIXED: Force explicit type conversion to ensure fields have proper values
-    // This version uses more direct checks and explicit defaults
-    const supplierValue = req.body.supplier ? String(req.body.supplier).trim() : "";
-    console.log("-> Transformed supplierValue:", supplierValue);
+    // Extract values with safe defaults and explicit conversion
+    const supplierValue = typeof req.body.supplier === 'string' && req.body.supplier.trim() !== '' 
+                          ? req.body.supplier.trim() 
+                          : '';
                           
-    const paymentSourceValue = req.body.paymentSource ? String(req.body.paymentSource).trim() : "Cash";
-    console.log("-> Transformed paymentSourceValue:", paymentSourceValue);
-                              
-    const vatValue = req.body.vat ? String(req.body.vat) : "0.00";
-    console.log("-> Transformed vatValue:", vatValue);
+    const paymentSourceValue = typeof req.body.paymentSource === 'string' && req.body.paymentSource.trim() !== '' 
+                               ? req.body.paymentSource.trim() 
+                               : 'Cash';
+                               
+    const vatValue = req.body.vat !== undefined && req.body.vat !== null && req.body.vat !== '' 
+                     ? req.body.vat.toString()
+                     : '0.00';
                      
-    const totalIncTaxValue = req.body.totalIncTax ? String(req.body.totalIncTax) : "0.00";
-    console.log("-> Transformed totalIncTaxValue:", totalIncTaxValue);
+    const totalIncTaxValue = req.body.totalIncTax !== undefined && req.body.totalIncTax !== null && req.body.totalIncTax !== '' 
+                             ? req.body.totalIncTax.toString()
+                             : '0.00';
+    
+    console.log("===== PROCESSED VALUES =====");
+    console.log("supplier:", supplierValue, "type:", typeof supplierValue);
+    console.log("paymentSource:", paymentSourceValue, "type:", typeof paymentSourceValue);
+    console.log("vat:", vatValue, "type:", typeof vatValue);
+    console.log("totalIncTax:", totalIncTaxValue, "type:", typeof totalIncTaxValue);
     
     const values = [
       userId,
