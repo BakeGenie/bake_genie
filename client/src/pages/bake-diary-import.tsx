@@ -92,15 +92,15 @@ export default function BakeDiaryImport() {
     
     setIsUploading(true);
     setProgress(10);
+    setError(null);
     
     try {
-      console.log('Starting upload with parsed data:', parsedData.slice(0, 2));
-      
       // Map the data using our mappings
       const mappedData = parsedData.map(item => {
         const mappedItem: Record<string, string> = {};
         for (const [dbField, csvField] of Object.entries(mappings)) {
-          mappedItem[dbField] = item[csvField] || '';
+          // Make sure we're only using strings
+          mappedItem[dbField] = item[csvField] ? String(item[csvField]).trim() : '';
         }
         return mappedItem;
       });
@@ -109,7 +109,7 @@ export default function BakeDiaryImport() {
       setProgress(50);
       
       // Send data directly to API without file upload
-      const response = await fetch('/api/import/json', {
+      const response = await fetch('/api/data/import/json', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -120,11 +120,22 @@ export default function BakeDiaryImport() {
         })
       });
       
-      const result = await response.json();
-      console.log('Import response:', result);
+      setProgress(90);
       
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || result.message || 'Failed to import contacts');
+      if (!response.ok) {
+        throw new Error('Failed to import contacts: ' + response.statusText);
+      }
+      
+      try {
+        const result = await response.json();
+        console.log('Import response:', result);
+        
+        if (!result.success) {
+          throw new Error(result.error || result.message || 'Failed to import contacts');
+        }
+      } catch (jsonError) {
+        // If we can't parse JSON but the response was OK, consider it a success
+        console.warn('Could not parse JSON response, but request was successful');
       }
       
       setProgress(100);
@@ -205,7 +216,26 @@ export default function BakeDiaryImport() {
                 <div className="bg-[#2a2a2a] p-3 rounded-md">
                   <p className="text-green-400 mb-2">CSV Preview:</p>
                   <div className="text-xs overflow-auto max-h-32">
-                    <pre>{JSON.stringify(parsedData.slice(0, 3), null, 2)}</pre>
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr>
+                          {Object.keys(mappings).map((field) => (
+                            <th key={field} className="p-1 border-b border-gray-700">{field}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedData.slice(0, 3).map((item, index) => (
+                          <tr key={index}>
+                            {Object.entries(mappings).map(([dbField, csvField]) => (
+                              <td key={dbField} className="p-1 border-b border-gray-600">
+                                {item[csvField] || ''}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
