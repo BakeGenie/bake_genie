@@ -187,6 +187,14 @@ router.post('/api/orders/import', async (req, res) => {
           
           console.log(`Inserting order: ${orderNumber}, Event Type: ${eventType}, Total Amount: ${totalAmount}`);
           
+          // Make sure we have valid values for required date field
+          if (!eventDate) {
+            // If no event date is provided, use a future date as fallback
+            eventDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 7 days from now
+          }
+          
+          console.log(`Using event date: ${eventDate} for order ${orderNumber}`);
+          
           // Use direct SQL insert approach with properly escaped strings
           const insertQuery = `
             INSERT INTO orders (
@@ -198,20 +206,20 @@ router.post('/api/orders/import', async (req, res) => {
               ${userId}, 
               ${contactId},
               '${orderNumber.replace(/'/g, "''")}',
-              '${eventType.replace(/'/g, "''")}',
-              ${eventDate ? `'${eventDate}'` : 'NULL'},
-              '${status.replace(/'/g, "''")}',
-              'Pickup', -- Default delivery type
-              '${deliveryFee}',
-              '${deliveryTime.replace(/'/g, "''")}',
-              '${totalAmount}',
-              '${totalAmount}', -- Set amount paid equal to total amount for completed orders
+              '${eventType.replace(/'/g, "''") || "Other"}',
+              '${eventDate}',
+              '${status.replace(/'/g, "''") || "Quote"}',
+              'Pickup',
+              '${deliveryFee || "0.00"}',
+              '${deliveryTime ? deliveryTime.replace(/'/g, "''") : ""}',
+              '${totalAmount || "0.00"}',
+              '${totalAmount || "0.00"}',
               ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
-              ${profit || 0}, -- Use 0 if profit is null
-              ${subTotalAmount || 0}, -- Use 0 if subtotal is null
-              ${discountAmount || 0}, -- Use 0 if discount is null
-              '${taxRate}',
-              ${deliveryAmount || 0}, -- Use 0 if delivery amount is null
+              ${profit || 0},
+              ${subTotalAmount || 0},
+              ${discountAmount || 0},
+              '${taxRate || "0.00"}',
+              ${deliveryAmount || 0},
               '${createdAt}',
               '${createdAt}'
             )
