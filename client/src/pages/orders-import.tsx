@@ -199,30 +199,53 @@ const OrdersImport = () => {
           // Send batch to server
           console.log(`Sending batch ${Math.floor(i/batchSize) + 1} of ${totalBatches}:`, batch);
           
-          // Clean data before sending to ensure no HTML or special characters cause issues
+          // Clean data thoroughly before sending to ensure no HTML or special characters cause issues
           const cleanBatch = batch.map(item => {
             const cleaned = {};
             Object.keys(item).forEach(key => {
               let value = item[key];
-              // Ensure string values
+              // Ensure string values are properly sanitized
               if (typeof value === 'string') {
-                // Remove any escape sequences or extra quotes that might cause issues
-                value = value.replace(/\\"/g, '"').replace(/^"+|"+$/g, '');
+                // Remove HTML tags, DOCTYPE declarations, escape sequences, and normalize quotes
+                value = value
+                  .replace(/<[^>]*>|<!DOCTYPE[^>]*>/g, '')
+                  .replace(/\\"/g, '"')
+                  .replace(/^"+|"+$/g, '')
+                  .trim();
               }
               cleaned[key] = value;
             });
             return cleaned;
           });
           
-          // Add detailed error tracking
-          console.log("Sending to API:", JSON.stringify(cleanBatch));
+          // Let's use a different approach - convert directly to required format
+          const simplifiedBatch = cleanBatch.map(order => ({
+            order_number: order.orderNumber || '',
+            event_type: order.eventType || '',
+            event_date: order.eventDate || null,
+            theme: order.theme || null,
+            status: order.status || 'Quote',
+            total_amount: parseFloat(order.totalAmount || '0') || 0,
+            delivery_fee: parseFloat(order.deliveryFee || '0') || 0,
+            delivery_time: order.deliveryTime || '',
+            profit: parseFloat(order.profit || '0') || 0,
+            sub_total_amount: parseFloat(order.subTotalAmount || '0') || 0,
+            discount_amount: parseFloat(order.discountAmount || '0') || 0,
+            tax_rate: parseFloat(order.taxRate || '0') || 0,
+            delivery_amount: parseFloat(order.deliveryAmount || '0') || 0,
+            user_id: 1, // Default user ID
+            contact_id: parseInt(order.contactId || '1') || 1 // Default contact ID
+          }));
+          
+          // Add detailed error tracking with simplified data
+          console.log("Sending to API:", JSON.stringify(simplifiedBatch));
           
           const response = await fetch('/api/orders/import', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ items: cleanBatch }),
+            body: JSON.stringify({ items: simplifiedBatch }),
             credentials: 'include'
           });
           

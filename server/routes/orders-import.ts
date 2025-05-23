@@ -55,32 +55,39 @@ router.post('/api/orders/import', async (req, res) => {
       
       const userId = req.session?.userId || 1; // Default to 1 for development
       
+      console.log("Processing items with format:", items[0]);
+      
       for (const item of items) {
         try {
-          // Ensure proper data types and handle escaping
-          // Remove all quotes from string values, handling both JSON-quoted strings and regular strings
-          const orderNumber = (item.orderNumber || '').replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '');
-          const eventType = (item.eventType || '').replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '');
-          const theme = item.theme ? item.theme.replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '') : null;
-          const status = (item.status || 'Quote').replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '');
-          const deliveryTime = item.deliveryTime ? item.deliveryTime.replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '') : '';
+          // Get item fields using snake_case (from frontend transformation) or camelCase (from original CSV)
+          const orderNumber = item.order_number || item.orderNumber || '';
+          const eventType = item.event_type || item.eventType || '';
+          const theme = item.theme || null;
+          const status = item.status || 'Quote';
+          const deliveryTime = item.delivery_time || item.deliveryTime || '';
           
-          // For numeric fields, convert to floats and handle any format issues
-          // Handle nested quotes from JSON stringification
-          const totalAmount = parseFloat(item.totalAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const deliveryFee = parseFloat(item.deliveryFee?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const profit = parseFloat(item.profit?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const subTotalAmount = parseFloat(item.subTotalAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const discountAmount = parseFloat(item.discountAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const taxRate = parseFloat(item.taxRate?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
-          const deliveryAmount = parseFloat(item.deliveryAmount?.toString().replace(/^"\\+"|\\"|\\/g, '').replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          // For numeric fields, convert to floats reliably
+          const cleanNumber = (val) => {
+            if (val === null || val === undefined) return 0;
+            const str = val.toString().replace(/[^0-9.-]/g, '');
+            return parseFloat(str) || 0;
+          };
+          
+          const totalAmount = cleanNumber(item.total_amount || item.totalAmount);
+          const deliveryFee = cleanNumber(item.delivery_fee || item.deliveryFee);
+          const profit = cleanNumber(item.profit);
+          const subTotalAmount = cleanNumber(item.sub_total_amount || item.subTotalAmount);
+          const discountAmount = cleanNumber(item.discount_amount || item.discountAmount);
+          const taxRate = cleanNumber(item.tax_rate || item.taxRate);
+          const deliveryAmount = cleanNumber(item.delivery_amount || item.deliveryAmount);
           
           // Handle dates - important to format correctly for the database
           let eventDate = null;
-          if (item.eventDate) {
+          const dateValue = item.event_date || item.eventDate;
+          if (dateValue) {
             try {
               // Try to parse the date with extra quote removal for JSON escaped values
-              const cleanDate = item.eventDate.toString()
+              const cleanDate = dateValue.toString()
                 .replace(/^"\\+"|\\"|\\/g, '')
                 .replace(/"/g, '')
                 .trim();
@@ -170,7 +177,13 @@ router.post('/api/orders/import', async (req, res) => {
           // For contact ID, we need to handle the relationship
           // For simplicity, we'll use a default contact ID (1) if not specified
           // In a real application, you might want to look up the contact by email/name
-          const contactId = parseInt(item.contactId?.toString().replace(/"/g, '') || '1') || 1;
+          const contactId = parseInt(
+            (item.contact_id || item.contactId || '1')
+              .toString()
+              .replace(/"/g, '')
+          ) || 1;
+          
+          console.log(`Using contact ID: ${contactId} for order ${orderNumber}`);
           
           console.log(`Inserting order: ${orderNumber}, Event Type: ${eventType}, Total Amount: ${totalAmount}`);
           
