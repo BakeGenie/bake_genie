@@ -85,13 +85,20 @@ router.post('/api/quotes/import', async (req, res) => {
           }
         }
         
-        // Insert into quotes table with contact_id and required fields
+        // Calculate default expiry date (30 days from now)
+        const today = new Date();
+        const defaultExpiryDate = new Date(today);
+        defaultExpiryDate.setDate(today.getDate() + 30);
+        const expiryDate = defaultExpiryDate.toISOString().split('T')[0];
+
+        // Insert into quotes table with contact_id and all required fields
         const quoteInsertQuery = {
           text: `
             INSERT INTO quotes (
               user_id, contact_id, quote_number, event_type, status, total_amount, 
-              event_date, notes, created_at, updated_at, delivery_type, delivery_fee
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW(), $9, $10)
+              event_date, notes, created_at, updated_at, delivery_type, delivery_fee,
+              expiry_date, tax_rate, special_instructions
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW(), $9, $10, $11, $12, $13)
             RETURNING id
           `,
           values: [
@@ -103,8 +110,11 @@ router.post('/api/quotes/import', async (req, res) => {
             amount,
             eventDate,
             notes,
-            'Pickup', // Default delivery type
-            '0.00'    // Default delivery fee
+            'Pickup',     // Default delivery type
+            '0.00',       // Default delivery fee
+            expiryDate,   // Default expiry date (30 days from now)
+            '0.00',       // Default tax rate
+            ''            // Default special instructions
           ]
         };
         
