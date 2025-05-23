@@ -17,7 +17,7 @@ import {
   eventTypes
 } from '@shared/schema';
 
-// Types for the CSV data from Bake Diary
+// Types for the CSV data from BakeGenie
 interface BakeDiaryOrder {
   'Order Number': string;
   'Order Date': string;
