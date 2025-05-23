@@ -183,27 +183,54 @@ router.get('/notification-preferences', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Get or create notification preferences
-    let [preferences] = await db.select()
-      .from(userNotificationPreferences)
-      .where(eq(userNotificationPreferences.userId, Number(req.session.userId)));
+    // Get notification preferences
+    const preferencesResult = await pool.query(`
+      SELECT * FROM user_notification_preferences
+      WHERE user_id = $1
+    `, [Number(req.session.userId)]);
+    
+    let preferences = preferencesResult.rows[0];
 
     if (!preferences) {
       // Create default preferences if they don't exist
-      [preferences] = await db.insert(userNotificationPreferences)
-        .values({
-          userId: Number(req.session.userId),
-          orderUpdates: true,
-          upcomingEvents: true,
-          newEnquiries: true,
-          marketingTips: false,
-          smsOrderConfirmations: false,
-          smsDeliveryReminders: false
-        })
-        .returning();
+      const insertResult = await pool.query(`
+        INSERT INTO user_notification_preferences (
+          user_id, 
+          order_updates, 
+          upcoming_events, 
+          new_enquiries, 
+          marketing_tips, 
+          sms_order_confirmations, 
+          sms_delivery_reminders
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `, [
+        Number(req.session.userId),
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ]);
+      
+      preferences = insertResult.rows[0];
     }
+    
+    // Transform from snake_case to camelCase for frontend compatibility
+    const preferencesForClient = {
+      id: preferences.id,
+      userId: preferences.user_id,
+      orderUpdates: preferences.order_updates,
+      upcomingEvents: preferences.upcoming_events,
+      newEnquiries: preferences.new_enquiries,
+      marketingTips: preferences.marketing_tips,
+      smsOrderConfirmations: preferences.sms_order_confirmations,
+      smsDeliveryReminders: preferences.sms_delivery_reminders
+    };
 
-    res.json(preferences);
+    res.json(preferencesForClient);
   } catch (error: any) {
     console.error('Error fetching notification preferences:', error);
     res.status(500).json({ error: 'Failed to fetch notification preferences', message: error.message });
@@ -227,42 +254,80 @@ router.patch('/notification-preferences', async (req: Request, res: Response) =>
     } = req.body;
 
     // Check if preferences exist
-    const [existingPrefs] = await db.select()
-      .from(userNotificationPreferences)
-      .where(eq(userNotificationPreferences.userId, Number(req.session.userId)));
-
+    const existingPrefsResult = await pool.query(`
+      SELECT * FROM user_notification_preferences
+      WHERE user_id = $1
+    `, [Number(req.session.userId)]);
+    
+    const existingPrefs = existingPrefsResult.rows[0];
     let updatedPreferences;
 
     if (existingPrefs) {
       // Update existing preferences
-      [updatedPreferences] = await db.update(userNotificationPreferences)
-        .set({
-          orderUpdates,
-          upcomingEvents,
-          newEnquiries,
-          marketingTips,
-          smsOrderConfirmations,
-          smsDeliveryReminders,
-          updatedAt: new Date()
-        })
-        .where(eq(userNotificationPreferences.userId, Number(req.session.userId)))
-        .returning();
+      const updateResult = await pool.query(`
+        UPDATE user_notification_preferences
+        SET 
+          order_updates = $1,
+          upcoming_events = $2,
+          new_enquiries = $3,
+          marketing_tips = $4,
+          sms_order_confirmations = $5,
+          sms_delivery_reminders = $6,
+          updated_at = $7
+        WHERE user_id = $8
+        RETURNING *
+      `, [
+        orderUpdates,
+        upcomingEvents,
+        newEnquiries,
+        marketingTips,
+        smsOrderConfirmations,
+        smsDeliveryReminders,
+        new Date(),
+        Number(req.session.userId)
+      ]);
+      
+      updatedPreferences = updateResult.rows[0];
     } else {
-      // Create new preferences
-      [updatedPreferences] = await db.insert(userNotificationPreferences)
-        .values({
-          userId: Number(req.session.userId),
-          orderUpdates,
-          upcomingEvents,
-          newEnquiries,
-          marketingTips,
-          smsOrderConfirmations,
-          smsDeliveryReminders
-        })
-        .returning();
+      // Create new preferences if they don't exist
+      const insertResult = await pool.query(`
+        INSERT INTO user_notification_preferences (
+          user_id, 
+          order_updates, 
+          upcoming_events, 
+          new_enquiries, 
+          marketing_tips, 
+          sms_order_confirmations, 
+          sms_delivery_reminders
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `, [
+        Number(req.session.userId),
+        orderUpdates,
+        upcomingEvents,
+        newEnquiries,
+        marketingTips,
+        smsOrderConfirmations,
+        smsDeliveryReminders
+      ]);
+      
+      updatedPreferences = insertResult.rows[0];
     }
+    
+    // Transform from snake_case to camelCase for frontend compatibility
+    const preferencesForClient = {
+      id: updatedPreferences.id,
+      userId: updatedPreferences.user_id,
+      orderUpdates: updatedPreferences.order_updates,
+      upcomingEvents: updatedPreferences.upcoming_events,
+      newEnquiries: updatedPreferences.new_enquiries,
+      marketingTips: updatedPreferences.marketing_tips,
+      smsOrderConfirmations: updatedPreferences.sms_order_confirmations,
+      smsDeliveryReminders: updatedPreferences.sms_delivery_reminders
+    };
 
-    res.json(updatedPreferences);
+    res.json(preferencesForClient);
   } catch (error: any) {
     console.error('Error updating notification preferences:', error);
     res.status(500).json({ error: 'Failed to update notification preferences', message: error.message });
