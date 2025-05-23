@@ -109,7 +109,7 @@ export default function BakeDiaryImport() {
       setProgress(50);
       
       // Send data directly to API without file upload
-      const response = await fetch('/api/data/import/json', {
+      const response = await fetch('/api/import/json', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

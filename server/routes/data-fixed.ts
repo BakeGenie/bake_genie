@@ -258,21 +258,35 @@ router.post("/import", async (req: Request, res: Response) => {
 router.post("/import/json", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.userId || 1;
-    const data = req.body;
+    const { type, data } = req.body;
     
-    if (!data) {
-      return res.status(400).json({ success: false, error: "No data provided" });
+    if (!type || !data || !Array.isArray(data)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid request format. Type and data array are required.' 
+      });
     }
     
-    // Import the data
-    await importService.importData(data, userId);
+    console.log(`Received ${data.length} ${type} records for import in data-fixed.ts route`);
     
-    return res.json({ success: true });
+    let result;
+    
+    // Handle different import types
+    if (type === 'contacts') {
+      // Import contacts directly from the parsed data
+      result = await importService.importContactsFromJson(data, userId);
+      return res.json(result);
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Unsupported import type for JSON import: ${type}` 
+      });
+    }
   } catch (error) {
     console.error("Import error:", error);
     return res.status(500).json({ 
       success: false, 
-      error: "Failed to import data" 
+      error: `Failed to import data: ${error instanceof Error ? error.message : String(error)}` 
     });
   }
 });
