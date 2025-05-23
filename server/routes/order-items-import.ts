@@ -93,40 +93,96 @@ router.post('/api/order-items/import', async (req, res) => {
             throw new Error("Order ID is required for order items");
           }
           
-          // Check if the referenced order exists
-          const findOrderQuery = `SELECT id FROM orders WHERE order_number = '${orderId}'`;
-          const orderResult = await db.execute(findOrderQuery);
+          // Check if the referenced order exists - try different ways to find the order
+          // First try with order_number field
+          let findOrderQuery = `SELECT id FROM orders WHERE order_number = '${orderId}'`;
+          let orderResult = await db.execute(findOrderQuery);
+          
+          // If not found, try with the number field directly
+          if (!orderResult?.[0]?.rows?.length) {
+            findOrderQuery = `SELECT id FROM orders WHERE number = '${orderId}'`;
+            orderResult = await db.execute(findOrderQuery);
+          }
+          
+          // If still not found, try with the id field (if the order_id is numeric)
+          if (!orderResult?.[0]?.rows?.length && !isNaN(Number(orderId))) {
+            findOrderQuery = `SELECT id FROM orders WHERE id = ${Number(orderId)}`;
+            orderResult = await db.execute(findOrderQuery);
+          }
           
           let orderDbId;
           if (orderResult && orderResult[0] && orderResult[0].rows && orderResult[0].rows.length > 0) {
             orderDbId = orderResult[0].rows[0].id;
             console.log(`Found order ID ${orderDbId} for order number ${orderId}`);
           } else {
-            console.warn(`Order with number ${orderId} not found, skipping item`);
-            errors.push({
-              item,
-              error: `Order number ${orderId} not found in the database`
-            });
-            errorCount++;
-            continue;
+            // If order not found, let's create a placeholder order to ensure the item gets imported
+            try {
+              const createOrderQuery = `
+                INSERT INTO orders (
+                  user_id, contact_id, order_number, number, status, 
+                  event_date, order_date, subtotal, delivery_amount, 
+                  discount_amount, tax_amount, total_amount, payment_method, 
+                  payment_status, delivery_method, notes, event_type, created_at, updated_at
+                ) VALUES (
+                  1, 1, '${orderId}', '${orderId}', 'pending', 
+                  '${new Date().toISOString()}', '${new Date().toISOString()}', '0.00', '0.00',
+                  '0.00', '0.00', '0.00', 'card',
+                  'unpaid', 'pickup', 'Auto-created from order items import', 'Other', 
+                  '${new Date().toISOString()}', '${new Date().toISOString()}'
+                )
+                RETURNING id
+              `;
+              
+              const createResult = await db.execute(createOrderQuery);
+              if (createResult?.[0]?.rows?.[0]?.id) {
+                orderDbId = createResult[0].rows[0].id;
+                console.log(`Created placeholder order ${orderDbId} for order number ${orderId}`);
+              } else {
+                console.warn(`Order with number ${orderId} not found and couldn't create a placeholder order`);
+                errors.push({
+                  item,
+                  error: `Order number ${orderId} not found in the database and couldn't create a placeholder`
+                });
+                errorCount++;
+                continue;
+              }
+            } catch (createErr) {
+              console.warn(`Failed to create placeholder order for ${orderId}: ${createErr.message}`);
+              errors.push({
+                item,
+                error: `Order number ${orderId} not found in the database`
+              });
+              errorCount++;
+              continue;
+            }
           }
           
           // Process date
           let processedCreatedAt;
           try {
-            if (typeof createdAt === 'string' && createdAt.includes('/')) {
-              // Handle MM/DD/YYYY or DD/MM/YYYY format
-              const parts = createdAt.split('/');
-              if (parts.length === 3) {
-                // Assume MM/DD/YYYY format
-                processedCreatedAt = new Date(
-                  parseInt(parts[2]),
-                  parseInt(parts[0]) - 1,
-                  parseInt(parts[1])
-                ).toISOString();
+            if (typeof createdAt === 'string') {
+              if (createdAt.includes('/')) {
+                // Handle MM/DD/YYYY or DD/MM/YYYY format
+                const parts = createdAt.split('/');
+                if (parts.length === 3) {
+                  // Assume MM/DD/YYYY format
+                  processedCreatedAt = new Date(
+                    parseInt(parts[2]),
+                    parseInt(parts[0]) - 1,
+                    parseInt(parts[1])
+                  ).toISOString();
+                }
+              } 
+              // Handle format like "19 May 2025"
+              else if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(createdAt)) {
+                processedCreatedAt = new Date(createdAt).toISOString();
+              }
+              // Default format
+              else {
+                processedCreatedAt = new Date(createdAt).toISOString();
               }
             } else {
-              processedCreatedAt = new Date(createdAt).toISOString();
+              processedCreatedAt = new Date().toISOString();
             }
           } catch (dateError) {
             console.error(`Failed to parse created at date: ${createdAt}`, dateError);
