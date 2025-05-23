@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,11 +15,38 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
-// Helper function to parse CSV data
+// Helper function to parse CSV lines properly handling quotes
+function parseCSVLine(line: string) {
+  const values = [];
+  let inQuote = false;
+  let currentValue = '';
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuote = !inQuote;
+    } 
+    else if (char === ',' && !inQuote) {
+      values.push(currentValue.trim());
+      currentValue = '';
+    } 
+    else {
+      currentValue += char;
+    }
+  }
+  
+  // Add the last value
+  values.push(currentValue.trim());
+  return values;
+}
+
+// Improved CSV parser that handles quoted values and different formats
 function parseCSV(csvText: string) {
   // Split the content into lines
-  const lines = csvText.split("\n");
+  const lines = csvText.split("\n").filter(line => line.trim());
   if (lines.length < 2) {
     throw new Error("CSV file does not have enough lines");
   }
@@ -32,20 +59,22 @@ function parseCSV(csvText: string) {
   for (let i = 0; i < Math.min(3, lines.length); i++) {
     if (lines[i].includes("Bake Diary") || lines[i].includes("BakeDiary")) {
       isBakeDiaryFormat = true;
+      headerLineIndex = 2; // Headers on 3rd line
       break;
     }
   }
   
-  // Determine header position based on format
-  if (isBakeDiaryFormat) {
-    // BakeDiary format - headers could be on the 3rd line (index 2)
-    headerLineIndex = 2;
-    console.log("Detected BakeDiary format with headers on line 3");
-  } else {
-    // Standard CSV - headers are typically on the first line (index 0)
-    headerLineIndex = 0;
-    console.log("Using standard CSV format with headers on line 1");
+  // Also check if headers contain BakeDiary specific columns
+  const firstLine = parseCSVLine(lines[0]);
+  if (firstLine.includes('Amount (Incl VAT)') || 
+      (firstLine.includes('Vendor') && firstLine.includes('VAT'))) {
+    isBakeDiaryFormat = true;
+    headerLineIndex = 0; // Headers are actually on first line
   }
+  
+  console.log(isBakeDiaryFormat ? 
+    "Detected BakeDiary format" : 
+    "Using standard CSV format");
   
   // Make sure header line exists
   if (headerLineIndex >= lines.length) {
@@ -58,7 +87,7 @@ function parseCSV(csvText: string) {
     throw new Error("CSV format error: header line is empty");
   }
   
-  const headers = headerLine.split(",").map(header => header.trim());
+  const headers = parseCSVLine(headerLine);
   
   // Parse data rows
   const data = [];
@@ -67,7 +96,7 @@ function parseCSV(csvText: string) {
   for (let i = dataStartIndex; i < lines.length; i++) {
     if (!lines[i].trim()) continue; // Skip empty lines
 
-    const values = lines[i].split(",");
+    const values = parseCSVLine(lines[i]);
     
     // Skip if there aren't enough values
     if (values.length < 3) continue;
@@ -75,12 +104,16 @@ function parseCSV(csvText: string) {
     const row: Record<string, string> = {};
 
     headers.forEach((header, index) => {
-      // Handle quoted values
-      let value = values[index] ? values[index].trim() : "";
-      if (value.startsWith('"') && value.endsWith('"')) {
-        value = value.substring(1, value.length - 1);
+      if (index < values.length) {
+        // Handle quoted values
+        let value = values[index];
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.substring(1, value.length - 1);
+        }
+        row[header.trim()] = value;
+      } else {
+        row[header.trim()] = ''; // Empty value for missing columns
       }
-      row[header] = value;
     });
 
     data.push(row);
@@ -99,14 +132,49 @@ export default function ExpensesImport() {
   const [importError, setImportError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [importedItems, setImportedItems] = useState(0);
+  const [parsedData, setParsedData] = useState<any[] | null>(null);
+  const [headers, setHeaders] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Expense field mappings for the database
+  const mappings = {
+    "date": "Date",
+    "description": "Description",
+    "supplier": "Vendor",
+    "category": "Category",
+    "payment_source": "Payment",
+    "vat": "VAT",
+    "amount": "Amount (Incl VAT)",
+    "total_inc_tax": "Amount (Incl VAT)"
+  };
 
   // Function to handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
       setImportError(null);
       setImportSuccess(false);
+      setParsedData(null);
+      setHeaders([]);
+      
+      // Read and parse the file
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = event.target?.result as string;
+          const { headers, data } = parseCSV(content);
+          setParsedData(data);
+          setHeaders(headers);
+          console.log("CSV headers:", headers);
+          console.log("First row:", data[0]);
+          console.log("Total rows:", data.length);
+        } catch (error) {
+          console.error("CSV parsing error:", error);
+          setImportError("Invalid CSV format. Please check your file and try again.");
+        }
+      };
+      reader.readAsText(selectedFile);
     }
   };
 
@@ -129,27 +197,6 @@ export default function ExpensesImport() {
     setImportError(null);
 
     try {
-      // Read file contents
-      const fileText = await file.text();
-      console.log("File name:", file.name);
-      console.log("File size:", file.size);
-      console.log("File preview (first 200 chars):", fileText.substring(0, 200));
-      
-      // Parse CSV data to validate format
-      try {
-        const parsed = parseCSV(fileText);
-        console.log("CSV headers:", parsed.headers);
-        console.log("CSV first row:", parsed.data[0]);
-        console.log("Total rows:", parsed.data.length);
-      } catch (error) {
-        console.error("CSV parsing error:", error);
-        setImportError("Invalid CSV format. Make sure your file has headers on line 3 and data starts on line 4.");
-        setImporting(false);
-        return;
-      }
-
-      setProgress(30);
-
       // Create a FormData object to send the file
       const formData = new FormData();
       formData.append("file", file);
@@ -165,15 +212,19 @@ export default function ExpensesImport() {
 
       if (result.success) {
         setImportSuccess(true);
-        setImportedItems(result.expenses.length);
+        setImportedItems(result.expenses?.length || 0);
         toast({
           title: "Import successful",
-          description: `Successfully imported ${result.expenses.length} expenses.`,
-          variant: "success",
+          description: `Successfully imported ${result.expenses?.length || 0} expenses.`,
         });
 
         // Invalidate expenses queries to refresh data
         queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+        
+        // Redirect back to expenses page after 1.5 seconds
+        setTimeout(() => {
+          setLocation('/expenses');
+        }, 1500);
       } else {
         setImportError(result.message || "Failed to import expenses");
         toast({
@@ -196,6 +247,27 @@ export default function ExpensesImport() {
     }
   };
 
+  // Get column headers to display based on the actual CSV file
+  const getDisplayHeaders = () => {
+    // If we have headers from the file, use them
+    if (headers.length > 0) {
+      // Filter to important columns only to avoid overcrowding
+      const importantFields = [
+        'Date', 'Description', 'Category', 'Amount', 'Amount (Incl VAT)', 
+        'Vendor', 'Supplier', 'Payment', 'VAT'
+      ];
+      
+      return headers.filter(header => 
+        importantFields.some(field => 
+          header.includes(field) || field.includes(header)
+        )
+      );
+    }
+    
+    // Fallback to our default mappings
+    return Object.values(mappings);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-6">
@@ -210,52 +282,54 @@ export default function ExpensesImport() {
         <h1 className="text-2xl font-bold">Import Expenses</h1>
       </div>
 
-      <Card className="mb-8">
+      <Card className="mb-8 bg-[#1c1c1c] border-[#333333] text-white">
         <CardHeader>
           <CardTitle>Import Expenses from CSV</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-gray-400">
             Upload a CSV file with expense data to import into your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer" onClick={handleSelectFile}>
+            <div className="flex flex-col space-y-4">
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".csv"
                 className="hidden"
                 onChange={handleFileChange}
-                ref={fileInputRef}
               />
               
-              {!file ? (
-                <div className="flex flex-col items-center">
-                  <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                  <p className="text-lg font-medium">Click to select a CSV file</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    or drag and drop your file here
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <FileText className="h-10 w-10 text-primary mb-2" />
-                  <p className="text-lg font-medium break-all">{file.name}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {(file.size / 1024).toFixed(2)} KB
-                  </p>
-                </div>
-              )}
-            </div>
-
+              <div className="flex justify-between items-center">
+                <Button 
+                  type="button"
+                  onClick={handleSelectFile}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {file ? 'Change File' : 'Select File'}
+                </Button>
+                
+                {file && (
+                  <span className="text-sm text-gray-400">
+                    {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                  </span>
+                )}
+              </div>
+            
             {importing && (
               <div className="space-y-2">
-                <p className="text-sm text-gray-500">Importing expenses...</p>
-                <Progress value={progress} className="h-2" />
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>Importing expenses...</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-1" />
               </div>
             )}
 
             {importSuccess && (
-              <Alert variant="success" className="bg-green-50 border-green-200">
+              <Alert variant="success" className="bg-green-900 border-green-700 text-white">
                 <CheckCircle className="h-4 w-4" />
                 <AlertTitle>Import successful</AlertTitle>
                 <AlertDescription>
@@ -265,27 +339,60 @@ export default function ExpensesImport() {
             )}
 
             {importError && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="bg-red-900 border-red-700 text-white">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Import failed</AlertTitle>
                 <AlertDescription>{importError}</AlertDescription>
               </Alert>
             )}
 
-            <div className="bg-muted p-4 rounded-md">
-              <h3 className="font-medium mb-2">CSV Format Instructions</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                Your CSV file should have the following format:
+            {parsedData && parsedData.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-lg font-medium mb-2">Data Preview</h3>
+                <div className="border border-gray-700 rounded overflow-auto max-h-60">
+                  <Table className="text-white">
+                    <TableHeader>
+                      <TableRow className="bg-gray-800 hover:bg-gray-800">
+                        {getDisplayHeaders().map((header) => (
+                          <TableHead key={header} className="text-gray-300">
+                            {header}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedData.slice(0, 5).map((row, i) => (
+                        <TableRow key={i} className="border-gray-700 hover:bg-gray-800">
+                          {getDisplayHeaders().map((header) => (
+                            <TableCell key={`${i}-${header}`}>
+                              {row[header] || ''}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                <div className="text-xs text-gray-400 mt-2">
+                  Showing {Math.min(5, parsedData.length)} of {parsedData.length} rows
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gray-800 p-4 rounded-md">
+              <h3 className="font-medium mb-2 text-gray-300">CSV Format Instructions</h3>
+              <p className="text-sm text-gray-400 mb-2">
+                Your CSV file should follow the Bake Diary format:
               </p>
-              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                <li>Headers should be on line 3</li>
-                <li>Data should start on line 4</li>
-                <li>Column headers can include: Date, Description, Category, Amount, Supplier/Vendor, Payment/Payment Source, VAT, Total Inc Tax, Tax Deductible, Is Recurring</li>
-                <li>Date format should be YYYY-MM-DD</li>
+              <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
+                <li>Headers should be on line 1 (standard CSV) or line 3 (Bake Diary export)</li>
+                <li>Standard headers: Date, Description, Vendor, Category, Payment, VAT, Amount (Incl VAT)</li>
+                <li>Date format can be "DD MMM YYYY" (like "11 Jan 2025")</li>
                 <li>Amount values can include currency symbols ($, £, €)</li>
-                <li>Boolean fields (Tax Deductible, Is Recurring) can be "Yes"/"No" or "True"/"False"</li>
               </ul>
             </div>
+          </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
@@ -297,7 +404,8 @@ export default function ExpensesImport() {
           </Button>
           <Button
             onClick={handleImport}
-            disabled={!file || importing}
+            disabled={!file || importing || !parsedData}
+            className="bg-green-600 hover:bg-green-700"
           >
             {importing ? "Importing..." : "Import Expenses"}
           </Button>
