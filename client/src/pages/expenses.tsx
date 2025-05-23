@@ -444,28 +444,79 @@ const ExpensesPage = () => {
         receiptUrl = null;
       }
       
-      // Just use the description field as-is, no metadata needed
-      const basicDescription = data.description || "";
+      // Description field without metadata
+      const description = data.description || "";
       
-      // Create a clean object with all fields supported by our database schema
-      const expenseData = {
-        category: data.category,
-        amount: String(data.amount),
-        date: data.date,
-        description: basicDescription,
-        supplier: data.supplier || "",
-        paymentSource: data.paymentSource,
-        vat: data.vat || "0.00",
-        totalIncTax: data.totalIncTax || "0.00",
-        taxDeductible: Boolean(data.taxDeductible),
-        isRecurring: Boolean(data.isRecurring),
-        receiptUrl: receiptUrl
-      };
-      
+      // If editing an expense, use the update mutation
       if (editingExpenseId) {
-        updateExpenseMutation.mutate({ ...expenseData, id: editingExpenseId });
+        // Direct API call to ensure all fields are sent properly
+        const response = await fetch(`/api/expenses/${editingExpenseId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category: data.category,
+            amount: String(data.amount),
+            date: data.date,
+            description: description,
+            supplier: data.supplier || "",
+            paymentSource: data.paymentSource || "Cash",
+            vat: data.vat || "0.00",
+            totalIncTax: data.totalIncTax || "0.00",
+            taxDeductible: Boolean(data.taxDeductible),
+            isRecurring: Boolean(data.isRecurring),
+            receiptUrl: receiptUrl
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to update expense");
+        }
+        
+        toast({
+          title: "Expense updated",
+          description: "Your expense has been successfully updated.",
+        });
+        setOpenExpenseDialog(false);
+        setEditingExpenseId(null);
+        expenseForm.reset();
+        queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       } else {
-        createExpenseMutation.mutate(expenseData);
+        // Create a new expense
+        const response = await fetch("/api/expenses", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category: data.category,
+            amount: String(data.amount),
+            date: data.date,
+            description: description,
+            supplier: data.supplier || "",
+            paymentSource: data.paymentSource || "Cash",
+            vat: data.vat || "0.00",
+            totalIncTax: data.totalIncTax || "0.00",
+            taxDeductible: Boolean(data.taxDeductible),
+            isRecurring: Boolean(data.isRecurring),
+            receiptUrl: receiptUrl
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to add expense");
+        }
+        
+        toast({
+          title: "Expense added",
+          description: "Your expense has been successfully recorded.",
+        });
+        setOpenExpenseDialog(false);
+        expenseForm.reset();
+        queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
       }
       
       // Reset file selection
