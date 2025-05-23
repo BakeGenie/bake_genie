@@ -301,49 +301,44 @@ router.post("/cancel", requireAuth, async (req: Request, res: Response) => {
 
     console.log(`Cancelling subscription for user ${userId}. Immediate: ${cancelImmediately}`);
 
-    // In a real implementation, we would:
-    // 1. Get the user's subscription ID from the database
-    // 2. Call Stripe's API to cancel the subscription
-    // 3. Update the subscription status in our database
+    // Check if a subscription exists in the database
+    const [userSubscription] = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, Number(userId)));
 
-    /*
-    // Get user's subscription ID from your database
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId)
-    });
-
-    if (!user || !user.stripeSubscriptionId) {
-      return res.status(404).json({ error: "Subscription not found" });
-    }
-
-    // Cancel the subscription with Stripe
-    await stripe.subscriptions.update(user.stripeSubscriptionId, {
-      cancel_at_period_end: !cancelImmediately,
-    });
-
-    // If cancelling immediately, update the status in our database
-    if (cancelImmediately) {
-      await db.update(users)
-        .set({ 
-          stripeSubscriptionId: null,
-          subscriptionStatus: 'cancelled'
-        })
-        .where(eq(users.id, userId));
-    } else {
-      await db.update(users)
-        .set({ 
-          subscriptionStatus: 'cancelling'
-        })
-        .where(eq(users.id, userId));
-    }
-    */
-
-    // For this implementation, we'll simulate success by storing in session
-    // Make sure it's defined
+    // Store cancellation state in session for legacy support
     const session = req.session as any;
     if (session) {
-      // Store cancellation state in session
       session.subscriptionCancelled = true;
+    }
+
+    if (userSubscription) {
+      console.log(`Found subscription in database for user ${userId}. Updating status.`);
+      
+      // Update the subscription in the database
+      await db.update(userSubscriptions)
+        .set({ 
+          status: cancelImmediately ? 'cancelled' : 'cancelling',
+          cancelAtPeriodEnd: !cancelImmediately,
+          updatedAt: new Date()
+        })
+        .where(eq(userSubscriptions.id, userSubscription.id));
+      
+      console.log(`Updated subscription status in database to ${cancelImmediately ? 'cancelled' : 'cancelling'}`);
+    } else {
+      console.log(`No subscription found in database for user ${userId}. Creating a record.`);
+      
+      // Create a subscription record to track the cancelled status
+      await db.insert(userSubscriptions)
+        .values({
+          userId: Number(userId),
+          status: cancelImmediately ? 'cancelled' : 'cancelling',
+          cancelAtPeriodEnd: !cancelImmediately,
+          planName: 'Monthly', // Default plan name
+          price: '20.00',      // Default price
+        });
+      
+      console.log(`Created new subscription record with cancelled status`);
     }
 
     res.json({
@@ -369,29 +364,129 @@ router.post("/reactivate", requireAuth, async (req: Request, res: Response) => {
 
     console.log(`Reactivating subscription for user ${userId}`);
 
-    // In a real implementation, we would:
-    // 1. Check if the user had a previous subscription
-    // 2. Create a new subscription through Stripe
-    // 3. Update the user's subscription data in our database
-
-    // For this implementation, we'll simulate success by clearing the cancelled flag
+    // Check if a subscription exists in the database
+    const [userSubscription] = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, Number(userId)));
+    
+    // For legacy support, clear the cancelled flag in session
     const session = req.session as any;
     if (session) {
-      // Remove the cancelled flag
       session.subscriptionCancelled = false;
     }
 
-    res.json({
-      success: true,
-      message: "Subscription reactivated successfully",
-      status: "active",
-      plan: "Monthly",
-      price: 20.00
-    });
+    if (userSubscription) {
+      console.log(`Found subscription in database for user ${userId}. Reactivating.`);
+      
+      // Update the subscription status in the database
+      await db.update(userSubscriptions)
+        .set({ 
+          status: 'active',
+          cancelAtPeriodEnd: false,
+          updatedAt: new Date()
+        })
+        .where(eq(userSubscriptions.id, userSubscription.id));
+      
+      console.log(`Updated subscription status in database to active`);
+      
+      res.json({
+        success: true,
+        message: "Subscription reactivated successfully",
+        status: "active",
+        plan: userSubscription.planName || "Monthly",
+        price: userSubscription.price || 20.00
+      });
+    } else {
+      console.log(`No subscription found in database for user ${userId}. Creating a new record.`);
+      
+      // Create a new subscription record
+      await db.insert(userSubscriptions)
+        .values({
+          userId: Number(userId),
+          status: 'active',
+          planName: 'Monthly',
+          price: '20.00',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        });
+      
+      console.log(`Created new active subscription record`);
+      
+      res.json({
+        success: true,
+        message: "Subscription reactivated successfully",
+        status: "active",
+        plan: "Monthly",
+        price: 20.00
+      });
+    }
   } catch (error: any) {
     console.error("Error reactivating subscription:", error);
     res.status(500).json({
       error: "Failed to reactivate subscription",
+      message: error.message || "An unknown error occurred",
+    });
+  }
+});
+
+/**
+ * Change subscription plan
+ */
+router.post("/change-plan", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    const { plan, price } = req.body;
+    
+    if (!plan || !price) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "Plan and price are required",
+      });
+    }
+    
+    console.log(`Changing subscription plan for user ${userId} to ${plan} at $${price}`);
+    
+    // Check if user already has a subscription in the database
+    const [existingSubscription] = await db.select()
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.userId, Number(userId)));
+    
+    if (existingSubscription) {
+      // Update existing subscription
+      await db.update(userSubscriptions)
+        .set({ 
+          planName: plan,
+          price: price.toString(),
+          status: 'active', // Ensure it's active when changing plans
+          updatedAt: new Date(),
+        })
+        .where(eq(userSubscriptions.id, existingSubscription.id));
+      
+      console.log(`Updated existing subscription to ${plan}`);
+    } else {
+      // Create a new subscription record
+      await db.insert(userSubscriptions)
+        .values({
+          userId: Number(userId),
+          status: 'active',
+          planName: plan,
+          price: price.toString(),
+          cancelAtPeriodEnd: false,
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        });
+      
+      console.log(`Created new subscription with plan ${plan}`);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Successfully changed to ${plan} plan`,
+      plan,
+      price
+    });
+  } catch (error: any) {
+    console.error("Error changing subscription plan:", error);
+    res.status(500).json({
+      error: "Failed to change subscription plan",
       message: error.message || "An unknown error occurred",
     });
   }
