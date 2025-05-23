@@ -22,6 +22,7 @@ import orderLogsRouter from "./routes/order-logs";
 import bakeDiaryImportRouter from "./routes/bake-diary-import";
 import ingredientsImportRouter from "./routes/ingredients-import";
 import ordersImportRouter from "./routes/orders-import";
+import quotesImportRouter from "./routes/quotes-import";
 import orderItemsImportRouter from "./routes/order-items-import";
 import { Router } from "express";
 import { registerImportRoutes } from "./routes/import";
@@ -176,6 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register orders import routes
   app.use(ordersImportRouter);
+  
+  // Register quotes import routes
+  app.use(quotesImportRouter);
   
   // Register order items import routes
   app.use(orderItemsImportRouter);
