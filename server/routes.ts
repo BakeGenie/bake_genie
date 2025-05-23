@@ -35,7 +35,7 @@ import orderNotesRouter from "./routes/order-notes";
 import scheduledPaymentsRouter from "./routes/scheduled-payments";
 import paymentsRouter from "./routes/payments";
 import { router as subscriptionPaymentRouter } from "./routes/subscription-payment";
-import subscriptionTrialRouter from "./routes/subscription-trial";
+import subscriptionTrialRouter from "./routes/subscription-trial-fixed";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register our direct routes first
