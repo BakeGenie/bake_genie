@@ -136,10 +136,16 @@ export default function DataImportExport() {
   
   // Generic import handler with field mappings for different import types
   const handleImport = async (importType: string) => {
-    // Special case for contacts which has a specific importer
+    // Special cases for importers with dedicated pages
     if (importType === "contacts") {
       // Navigate to the specialized Bake Diary contacts importer
       setLocation("/bake-diary-import");
+      return;
+    }
+    
+    if (importType === "supplies") {
+      // Navigate to the specialized supplies importer
+      setLocation("/supplies-import");
       return;
     }
     

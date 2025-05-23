@@ -19,6 +19,51 @@ import { eq } from 'drizzle-orm';
 class ImportService {
   
   /**
+   * Import supplies directly from JSON data
+   */
+  async importSuppliesFromJson(data: any[], userId: number) {
+    try {
+      console.log(`Importing ${data.length} supplies from JSON for user ${userId}`);
+      
+      if (data.length === 0) {
+        return { success: false, message: 'No records provided' };
+      }
+      
+      // Make sure each record has the userId field and required fields
+      const suppliesToInsert = data.map(supply => {
+        // Create a properly formatted supply record
+        return {
+          userId,
+          name: supply.name || '',
+          supplier: supply.supplier || '',
+          category: supply.category || '',
+          price: supply.price || null,
+          description: supply.description || '',
+          quantity: supply.quantity || 0,
+          reorderLevel: supply.reorderLevel || 5
+        };
+      });
+      
+      console.log(`Prepared ${suppliesToInsert.length} supplies for insert`);
+      
+      // Insert supplies into database
+      const result = await db.insert(supplies).values(suppliesToInsert);
+      
+      return {
+        success: true,
+        message: `Successfully imported ${suppliesToInsert.length} supplies`,
+        data: { imported: suppliesToInsert.length }
+      };
+    } catch (error) {
+      console.error('Error importing supplies from JSON:', error);
+      return {
+        success: false,
+        message: `Error importing supplies: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  
+  /**
    * Import contacts directly from JSON data
    */
   async importContactsFromJson(data: any[], userId: number) {

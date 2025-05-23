@@ -50,6 +50,7 @@ import DataImportExport from "./pages/data-import-export";
 import Import from "./pages/import";
 import ContactsImport from "./pages/contacts-import";
 import BakeDiaryImport from "./pages/bake-diary-import";
+import SuppliesImport from "./pages/supplies-import";
 import Integrations from "./pages/integrations";
 import Settings from "./pages/settings";
 import EmailTemplates from "./pages/email-templates";

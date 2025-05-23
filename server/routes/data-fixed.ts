@@ -280,6 +280,10 @@ router.post("/import/json", async (req: Request, res: Response) => {
       // Import contacts directly from the parsed data
       result = await importService.importContactsFromJson(data, userId);
       return res.json(result);
+    } else if (type === 'supplies') {
+      // Import supplies directly from the parsed data
+      result = await importService.importSuppliesFromJson(data, userId);
+      return res.json(result);
     } else {
       return res.status(400).json({ 
         success: false, 
