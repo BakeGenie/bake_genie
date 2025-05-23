@@ -81,6 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register reports routes
   app.use('/api/reports', reportRoutes);
   
+  // Register dashboard routes
+  app.use('/api/dashboard', dashboardRouter);
+  
   // Register settings routes
   app.use('/api/settings', settingsRouter);
   
