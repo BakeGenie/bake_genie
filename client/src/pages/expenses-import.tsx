@@ -131,11 +131,18 @@ export default function ExpensesImport() {
     try {
       // Read file contents
       const fileText = await file.text();
+      console.log("File name:", file.name);
+      console.log("File size:", file.size);
+      console.log("File preview (first 200 chars):", fileText.substring(0, 200));
       
       // Parse CSV data to validate format
       try {
-        parseCSV(fileText);
+        const parsed = parseCSV(fileText);
+        console.log("CSV headers:", parsed.headers);
+        console.log("CSV first row:", parsed.data[0]);
+        console.log("Total rows:", parsed.data.length);
       } catch (error) {
+        console.error("CSV parsing error:", error);
         setImportError("Invalid CSV format. Make sure your file has headers on line 3 and data starts on line 4.");
         setImporting(false);
         return;
