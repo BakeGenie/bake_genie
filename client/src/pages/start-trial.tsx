@@ -16,7 +16,7 @@ const StartTrialPage: React.FC = () => {
 
   const trialMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/subscription/trial/create-trial-subscription', {});
+      return apiRequest('POST', '/api/subscription/trial/start', {});
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscription/trial/status'] });

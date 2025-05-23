@@ -1,121 +1,172 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { db } from '../db';
-import { subscriptionPlans, userSubscriptions } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql, and, desc } from 'drizzle-orm';
+import { userSubscriptions, subscriptionPlans } from '@shared/schema';
 import Stripe from 'stripe';
 
+// Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+  console.warn('Stripe secret key not found in environment variables');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16'
+}) : null;
 
-export const router = Router();
+const router = express.Router();
 
-// Create a simple trial subscription without requiring payment upfront
-router.post('/create-trial-subscription', async (req: Request, res: Response) => {
+// Get trial status
+router.get('/trial/status', async (req, res) => {
   try {
-    if (!req.session?.userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const userId = Number(req.session.userId);
-
-    // Check if user already has an active subscription
-    const [existingSubscription] = await db.select()
+    const userId = req.user.id;
+    
+    // Check if user has an active subscription
+    const subscriptions = await db
+      .select()
       .from(userSubscriptions)
-      .where(eq(userSubscriptions.userId, userId));
-
-    if (existingSubscription) {
-      return res.status(400).json({ 
-        error: 'User already has a subscription', 
-        message: 'You already have a subscription or trial.' 
+      .where(eq(userSubscriptions.userId, userId))
+      .orderBy(desc(userSubscriptions.createdAt));
+    
+    const activeSubscription = subscriptions.find(sub => 
+      sub.status === 'active' || sub.status === 'trialing'
+    );
+    
+    // If user has an active paid subscription, return that info
+    if (activeSubscription && activeSubscription.status === 'active') {
+      return res.json({
+        isInTrial: false,
+        trialEnded: false,
+        hasActiveSubscription: true,
+        daysLeft: 0,
+        subscriptionId: activeSubscription.id,
+        currentPeriodEnd: activeSubscription.currentPeriodEnd
       });
     }
-
-    // Get default plan (we'll just use ID 1 for now as the default plan)
-    const defaultPlanId = 1;
     
-    // Calculate trial period dates
-    const now = new Date();
-    const trialStart = now;
-    const trialEnd = new Date(now);
-    trialEnd.setDate(trialEnd.getDate() + 30); // 30-day trial
+    // If user is currently in trial
+    if (activeSubscription && activeSubscription.status === 'trialing') {
+      const currentDate = new Date();
+      const trialEndDate = new Date(activeSubscription.trialEnd || '');
+      
+      // Calculate days left in trial
+      const timeDiff = trialEndDate.getTime() - currentDate.getTime();
+      const daysLeft = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+      
+      return res.json({
+        isInTrial: true,
+        trialEnded: daysLeft === 0,
+        hasActiveSubscription: false,
+        daysLeft,
+        trialStartDate: activeSubscription.trialStart,
+        trialEndDate: activeSubscription.trialEnd
+      });
+    }
     
-    console.log(`Creating trial for user ${userId} from ${trialStart} to ${trialEnd}`);
-
-    // Create a trial record in the database
-    const [userSubscription] = await db.insert(userSubscriptions)
-      .values({
-        userId,
-        planId: defaultPlanId,
-        status: 'trialing',
-        currentPeriodStart: trialStart,
-        currentPeriodEnd: trialEnd,
-        cancelAtPeriodEnd: false,
-        trialStart: trialStart,
-        trialEnd: trialEnd,
-        createdAt: new Date(),
-      })
-      .returning();
-
-    console.log(`Trial created successfully: ${JSON.stringify(userSubscription)}`);
-
-    res.json({
-      success: true,
-      subscription: userSubscription
+    // Check if user had a trial before
+    const previousTrial = subscriptions.find(sub => 
+      sub.trialStart !== null && sub.trialEnd !== null
+    );
+    
+    // If user had a trial before and it ended
+    if (previousTrial) {
+      const currentDate = new Date();
+      const trialEndDate = new Date(previousTrial.trialEnd || '');
+      
+      if (currentDate > trialEndDate) {
+        return res.json({
+          isInTrial: false,
+          trialEnded: true,
+          hasActiveSubscription: false,
+          daysLeft: 0
+        });
+      }
+    }
+    
+    // User never had a trial
+    return res.json({
+      isInTrial: false,
+      trialEnded: false,
+      hasActiveSubscription: false,
+      daysLeft: 30, // Default trial length
+      eligibleForTrial: true
     });
-  } catch (error: any) {
-    console.error('Error creating trial subscription:', error);
-    res.status(500).json({ error: 'Failed to create trial subscription', message: error.message });
+    
+  } catch (error) {
+    console.error('Error getting trial status:', error);
+    res.status(500).json({ error: 'Failed to get trial status' });
   }
 });
 
-// Check trial status endpoint
-router.get('/trial-status', async (req: Request, res: Response) => {
+// Start a trial
+router.post('/trial/start', async (req, res) => {
   try {
-    if (!req.session?.userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const userId = Number(req.session.userId);
-
-    // Get user's subscription
-    const [subscription] = await db.select()
+    const userId = req.user.id;
+    
+    // Check if user is eligible for a trial
+    const existingSubscriptions = await db
+      .select()
       .from(userSubscriptions)
-      .where(eq(userSubscriptions.userId, userId))
-      .where(eq(userSubscriptions.status, 'active'))
-      .orderBy((subscriptions) => subscriptions.createdAt, 'desc');
-
-    if (!subscription) {
-      return res.json({ 
-        isInTrial: false,
-        trialEnded: false,
-        hasActiveSubscription: false
+      .where(eq(userSubscriptions.userId, userId));
+    
+    const hadTrialBefore = existingSubscriptions.some(sub => 
+      sub.trialStart !== null && sub.trialEnd !== null
+    );
+    
+    if (hadTrialBefore) {
+      return res.status(400).json({ 
+        error: 'You have already used your free trial period',
+        hadTrialBefore: true 
       });
     }
-
-    const now = new Date();
-    const trialEnd = subscription.trialEnd;
     
-    // Check if user is in trial period
-    const isInTrial = trialEnd ? now < trialEnd : false;
+    // Get the standard plan to associate with the trial
+    const [standardPlan] = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.name, 'Standard'));
     
-    // Check if trial has ended
-    const trialEnded = trialEnd ? now >= trialEnd : false;
-
+    if (!standardPlan) {
+      return res.status(500).json({ error: 'No standard plan found' });
+    }
+    
+    // Calculate trial period (30 days)
+    const trialStart = new Date();
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 30);
+    
+    // Create a trial subscription record
+    const [subscription] = await db
+      .insert(userSubscriptions)
+      .values({
+        userId,
+        planId: standardPlan.id,
+        status: 'trialing',
+        trialStart,
+        trialEnd,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
     res.json({
-      isInTrial,
-      trialEnded,
-      hasActiveSubscription: subscription.status === 'active',
-      daysLeft: isInTrial ? Math.ceil((trialEnd!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0,
+      success: true,
+      message: 'Trial started successfully',
+      trialEndDate: trialEnd,
+      daysLeft: 30,
       subscription
     });
-  } catch (error: any) {
-    console.error('Error checking trial status:', error);
-    res.status(500).json({ error: 'Failed to check trial status', message: error.message });
+    
+  } catch (error) {
+    console.error('Error starting trial:', error);
+    res.status(500).json({ error: 'Failed to start trial' });
   }
 });
 

@@ -40,21 +40,22 @@ export const TrialProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { data: trialData, isLoading } = useQuery({
     queryKey: ['/api/subscription/trial/status'],
     refetchInterval: 60 * 60 * 1000, // Refetch every hour
-    onSuccess: (data) => {
-      // If trial has ended and user is not on an allowed path, redirect to subscription page
-      if (data?.trialEnded && !data?.hasActiveSubscription) {
-        const isAllowedPath = ALLOWED_PATHS.some(path => 
-          location === path || 
-          location.startsWith(path + '/') || 
-          location === path + '?'
-        );
-        
-        if (!isAllowedPath) {
-          setLocation('/manage-subscription');
-        }
+  });
+  
+  // Effect to handle redirects based on trial status
+  React.useEffect(() => {
+    if (trialData?.trialEnded && !trialData?.hasActiveSubscription) {
+      const isAllowedPath = ALLOWED_PATHS.some(path => 
+        location === path || 
+        location.startsWith(path + '/') || 
+        location === path + '?'
+      );
+      
+      if (!isAllowedPath) {
+        setLocation('/manage-subscription');
       }
     }
-  });
+  }, [trialData, location, setLocation]);
 
   const value = {
     isLoading,

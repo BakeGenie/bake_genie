@@ -322,10 +322,12 @@ function App() {
       <AuthProvider>
         <SettingsProvider>
           <FeaturesProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Router />
-            </TooltipProvider>
+            <TrialProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Router />
+              </TooltipProvider>
+            </TrialProvider>
           </FeaturesProvider>
         </SettingsProvider>
       </AuthProvider>
