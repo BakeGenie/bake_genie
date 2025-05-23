@@ -48,6 +48,77 @@ const upload = multer({
   },
 });
 
+/**
+ * Import Bake Diary Contacts CSV
+ * This function specifically handles the Bake Diary contact format
+ * CSV Format: Type, First Name, Last Name, Supplier Name, Email, Number, Allow Marketing, Website, Source
+ */
+async function importBakeDiaryContacts(filePath: string, userId: number): Promise<any> {
+  // Import csv-parse for handling CSV files
+  const { parse } = await import('csv-parse/sync');
+  
+  try {
+    // Read file content
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    
+    // Parse CSV file - skip header row (first row)
+    const records = parse(fileContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true
+    });
+    
+    console.log(`Found ${records.length} contacts in Bake Diary CSV`);
+    
+    // Results tracking
+    const result = {
+      success: true,
+      imported: 0,
+      skipped: 0,
+      errors: 0,
+      errorDetails: [] as string[]
+    };
+    
+    // Process each contact
+    for (const record of records) {
+      try {
+        // Map CSV fields to contact schema
+        const contactData = {
+          userId,
+          type: record['Type']?.trim() || 'Customer',
+          firstName: record['First Name']?.trim() || '',
+          lastName: record['Last Name']?.trim() || '',
+          businessName: record['Supplier Name']?.trim() || '',
+          email: record['Email']?.trim() || '',
+          phone: record['Number']?.trim() || '',
+          allowMarketing: record['Allow Marketing']?.toLowerCase() === 'true',
+          website: record['Website']?.trim() || '',
+          source: record['Source']?.trim() || 'Imported',
+          notes: `Imported from Bake Diary on ${new Date().toLocaleDateString()}`,
+        };
+        
+        // Insert contact into database
+        await db.insert(contacts).values(contactData);
+        result.imported++;
+      } catch (error) {
+        console.error('Error importing contact:', error);
+        result.errors++;
+        result.errorDetails.push(`Error with contact ${record['First Name']} ${record['Last Name']}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    
+    return {
+      success: result.errors === 0,
+      message: `Successfully imported ${result.imported} contacts, skipped ${result.skipped}, with ${result.errors} errors.`,
+      details: result
+    };
+    
+  } catch (error) {
+    console.error('Error parsing Bake Diary CSV:', error);
+    throw new Error(`Failed to import Bake Diary contacts: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 export const registerDataImportRoutes = (router: Router) => {
   /**
    * @route POST /api/data/import
@@ -63,18 +134,33 @@ export const registerDataImportRoutes = (router: Router) => {
       const userId = req.session.user!.id;
       const filePath = req.file.path;
       const fileExt = path.extname(req.file.originalname).toLowerCase();
+      const fileName = req.file.originalname.toLowerCase();
 
       // Process based on file type
-      if (fileExt === '.json') {
-        const importResult = await importJsonData(filePath, userId, req.body);
-        return res.json(importResult);
-      } else if (fileExt === '.csv') {
-        return res.status(400).json({ 
-          success: false, 
-          error: "General CSV import not supported. Please use specific import endpoints for Bake Diary CSV imports." 
-        });
-      } else {
-        return res.status(400).json({ success: false, error: "Unsupported file type" });
+      try {
+        let result;
+        
+        // Special handling for Bake Diary contacts import
+        if (fileExt === '.csv' && (fileName.includes('bake diary contacts') || fileName.includes('contacts'))) {
+          console.log('Detected Bake Diary Contacts CSV');
+          result = await importBakeDiaryContacts(filePath, userId);
+          return res.json(result);
+        } else if (fileExt === '.json') {
+          result = await importJsonData(filePath, userId, req.body);
+          return res.json(result);
+        } else if (fileExt === '.csv') {
+          return res.status(400).json({ 
+            success: false, 
+            error: "General CSV import not supported. Please use specific import endpoints for Bake Diary CSV imports." 
+          });
+        } else {
+          return res.status(400).json({ success: false, error: "Unsupported file type" });
+        }
+      } finally {
+        // Clean up: remove uploaded file after processing
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
     } catch (error) {
       console.error("Error importing data:", error);
