@@ -75,36 +75,57 @@ router.patch('/profile', async (req: Request, res: Response) => {
     }
 
     console.log('Existing user found:', existingUser.id, existingUser.email);
-
-    // Update user profile
-    const [updatedUser] = await db.update(users)
-      .set({
-        firstName,
-        lastName,
-        email,
-        phone,
-        businessName,
-        address,
-        city,
-        state,
-        zip,
-        country,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, Number(req.session.userId)))
-      .returning({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        email: users.email,
-        phone: users.phone,
-        businessName: users.businessName,
-        address: users.address,
-        city: users.city,
-        state: users.state,
-        zip: users.zip,
-        country: users.country
-      });
+    
+    // Execute a raw SQL query to ensure we're updating the right columns
+    // This is a workaround to avoid schema mismatches
+    const result = await db.execute(`
+      UPDATE users
+      SET 
+        firstname = $1,
+        lastname = $2,
+        email = $3,
+        phone = $4,
+        businessname = $5,
+        address = $6,
+        city = $7,
+        state = $8,
+        zip = $9,
+        country = $10,
+        updated_at = NOW()
+      WHERE id = $11
+      RETURNING id, firstname, lastname, email, phone, businessname, address, city, state, zip, country
+    `, [
+      firstName,
+      lastName,
+      email,
+      phone || null,
+      businessName || null,
+      address || null,
+      city || null,
+      state || null,
+      zip || null,
+      country || null,
+      Number(req.session.userId)
+    ]);
+    
+    // Format the result to match expected shape
+    const updatedUser = result.rows[0] ? {
+      id: result.rows[0].id,
+      firstName: result.rows[0].firstname,
+      lastName: result.rows[0].lastname,
+      email: result.rows[0].email,
+      phone: result.rows[0].phone,
+      businessName: result.rows[0].businessname,
+      address: result.rows[0].address,
+      city: result.rows[0].city,
+      state: result.rows[0].state,
+      zip: result.rows[0].zip,
+      country: result.rows[0].country
+    } : null;
+    
+    if (!updatedUser) {
+      throw new Error('Failed to update user profile - no rows returned');
+    }
 
     console.log('User profile updated successfully:', updatedUser);
     res.json(updatedUser);
