@@ -33,14 +33,24 @@ router.post('/api/expenses/bake-diary/import', async (req, res) => {
       for (const item of items) {
         try {
           // Ensure proper data types and handle escaping
+          // Remove all quotes from string values
           const date = (item.date || new Date().toISOString().split('T')[0]).replace(/"/g, '');
           const category = (item.category || 'Other').replace(/"/g, '');
           const description = (item.description || '').replace(/"/g, '');
-          const amount = item.amount || '0';
+          
+          // For numeric fields, remove quotes and ensure they're plain numbers
+          let amount = item.amount || '0';
+          amount = amount.replace(/"/g, '');
+          
           const supplier = item.supplier ? item.supplier.replace(/"/g, '') : null;
           const paymentSource = item.paymentSource ? item.paymentSource.replace(/"/g, '') : null;
-          const vat = item.vat || '0';
-          const totalIncTax = item.totalIncTax || amount;
+          
+          // Clean the VAT and totalIncTax values
+          let vat = item.vat || '0';
+          vat = vat.replace(/"/g, '');
+          
+          let totalIncTax = item.totalIncTax || amount;
+          totalIncTax = totalIncTax.replace(/"/g, '');
           const createdAt = new Date().toISOString();
           
           console.log(`Inserting expense: ${description}, Date: ${date}, Category: ${category}, Amount: ${amount}`);
@@ -57,14 +67,14 @@ router.post('/api/expenses/bake-diary/import', async (req, res) => {
               '${date.replace(/'/g, "''")}', 
               '${category.replace(/'/g, "''")}', 
               '${description.replace(/'/g, "''")}',
-              '${amount}',
+              ${parseFloat(amount) || 0},
               TRUE,
               NULL,
               '${createdAt}',
               ${supplier ? `'${supplier.replace(/'/g, "''")}'` : 'NULL'},
               ${paymentSource ? `'${paymentSource.replace(/'/g, "''")}'` : 'NULL'},
-              '${vat}',
-              '${totalIncTax}',
+              ${parseFloat(vat) || 0},
+              ${parseFloat(totalIncTax) || 0},
               FALSE
             )
             RETURNING id

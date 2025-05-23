@@ -98,15 +98,16 @@ const ExpensesImportBakeDiary = () => {
         
         // Run a test import with a single record to verify API is working
         try {
+          // Properly clean values before sending to API
           const testItem = {
-            date: firstRow.Date || '',
-            description: firstRow.Description || '',
-            category: firstRow.Category || 'Other',
-            amount: firstRow["Amount"] || firstRow["Amount (Incl VAT)"] || '0',
-            supplier: firstRow.Vendor || null,
-            paymentSource: firstRow.Payment || null,
-            vat: firstRow.VAT || '0',
-            totalIncTax: firstRow["Amount (Incl VAT)"] || firstRow.Amount || '0'
+            date: firstRow.Date ? firstRow.Date.replace(/"/g, '') : '',
+            description: firstRow.Description ? firstRow.Description.replace(/"/g, '') : '',
+            category: firstRow.Category ? firstRow.Category.replace(/"/g, '') : 'Other',
+            amount: (firstRow["Amount"] || firstRow["Amount (Incl VAT)"] || '0').replace(/"/g, ''),
+            supplier: firstRow.Vendor ? firstRow.Vendor.replace(/"/g, '') : null,
+            paymentSource: firstRow.Payment ? firstRow.Payment.replace(/"/g, '') : null,
+            vat: (firstRow.VAT || '0').replace(/"/g, ''),
+            totalIncTax: (firstRow["Amount (Incl VAT)"] || firstRow.Amount || '0').replace(/"/g, '')
           };
           
           // Test the endpoint with a single item
@@ -161,20 +162,40 @@ const ExpensesImportBakeDiary = () => {
       setErrorCount(0);
       setErrorDetails([]);
       
-      // Map the data to match our database fields
+      // Map the data to match our database fields and clean all values
       const expenses = parsedData.map(row => {
         // Debug log each row being processed
         console.log("Processing row:", row);
         
+        // Remove quotes from all string and numeric values
+        const date = row.Date ? row.Date.replace(/"/g, '') : '';
+        const description = row.Description ? row.Description.replace(/"/g, '') : '';
+        const category = row.Category ? row.Category.replace(/"/g, '') : 'Other';
+        
+        // Handle different amount formats and ensure they're clean numbers
+        let amount = row["Amount"] || row["Amount (Incl VAT)"] || '0';
+        amount = amount.toString().replace(/"/g, '');
+        
+        const supplier = row.Vendor ? row.Vendor.replace(/"/g, '') : null;
+        const paymentSource = row.Payment ? row.Payment.replace(/"/g, '') : null;
+        
+        // Clean VAT value (crucial for import)
+        let vat = row.VAT || '0';
+        vat = vat.toString().replace(/"/g, '');
+        
+        // Clean total amount
+        let totalIncTax = row["Amount (Incl VAT)"] || row.Amount || '0';
+        totalIncTax = totalIncTax.toString().replace(/"/g, '');
+        
         return {
-          date: row.Date || '', // Keep original format, server will parse
-          description: row.Description || '',
-          category: row.Category || 'Other',
-          amount: row["Amount"] || row["Amount (Incl VAT)"] || '0', // Handle both formats
-          supplier: row.Vendor || null, // Map Vendor to supplier
-          paymentSource: row.Payment || null, // Map Payment to paymentSource
-          vat: row.VAT || null,
-          totalIncTax: row["Amount (Incl VAT)"] || row.Amount || '0', // Handle both formats
+          date,
+          description,
+          category,
+          amount,
+          supplier,
+          paymentSource,
+          vat,
+          totalIncTax
         };
       });
       
