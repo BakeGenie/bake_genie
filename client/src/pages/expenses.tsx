@@ -675,7 +675,32 @@ const ExpensesPage = () => {
                     
                     {/* Description */}
                     <div className="w-1/4 truncate">
-                      {expense.description || "No description"}
+                      {(() => {
+                        // Clean the description by removing metadata
+                        let cleanDescription = expense.description || "";
+                        
+                        // Remove metadata tags and content if present
+                        cleanDescription = cleanDescription.replace(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/g, '').trim();
+                        
+                        // If there's still a description, show it
+                        if (cleanDescription) {
+                          return cleanDescription;
+                        }
+                        
+                        // Try to extract supplier from metadata to display instead
+                        try {
+                          const metaMatch = expense.description?.match(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/);
+                          if (metaMatch && metaMatch[1]) {
+                            const metaData = JSON.parse(metaMatch[1]);
+                            if (metaData.supplier) {
+                              return metaData.supplier;
+                            }
+                          }
+                        } catch (e) {}
+                        
+                        // Default fallback
+                        return expense.category + " expense";
+                      })()}
                     </div>
                     
                     {/* Category */}
