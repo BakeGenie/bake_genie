@@ -199,9 +199,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       />
 
       {/* Sidebar */}
-      <aside className="md:relative fixed inset-y-0 left-0 z-50 md:z-auto flex flex-col w-64 bg-[#2A3846] text-white">
+      <aside className="md:relative fixed inset-y-0 left-0 z-50 md:z-auto flex flex-col w-64 bg-sidebar-background text-sidebar-foreground">
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-[#3A4956]">
+        <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
           <div className="flex items-center">
             <svg className="h-7 w-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Cake-like icon for BakeGenie */}
@@ -209,11 +209,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
               <path d="M16 16v7" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
               <path d="M8 7.5a8 5 0 0116 0v2" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <span className="ml-2 text-xl font-semibold text-white">BakeGenie</span>
+            <span className="ml-2 text-xl font-semibold text-sidebar-foreground">BakeGenie</span>
           </div>
           <button
             onClick={onClose}
-            className="ml-auto md:hidden text-white hover:text-gray-300"
+            className="ml-auto md:hidden text-sidebar-foreground hover:text-sidebar-foreground/70"
           >
             <XIcon className="h-5 w-5" />
           </button>
@@ -226,24 +226,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
               <li key={link.path}>
                 <Link href={link.path}>
                   <div
-                    className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer ${
+                    className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer hover:bg-sidebar-accent/20 transition-colors ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
-                        ? "bg-[#394B5F]"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
                         : ""
                     }`}
                   >
                     <div className="flex items-center">
-                      <span className="w-5 text-white">
+                      <span className="w-5 text-sidebar-foreground">
                         {link.icon}
                       </span>
-                      <span className="ml-3 text-white">{link.label}</span>
+                      <span className="ml-3 text-sidebar-foreground">{link.label}</span>
                     </div>
                     {link.badge !== undefined && link.badge > 0 ? (
-                      <Badge variant="secondary" className="text-xs bg-blue-500 hover:bg-blue-600 text-white">
+                      <Badge variant="secondary" className="text-xs bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground">
                         {link.badge}
                       </Badge>
                     ) : link.sublinks ? (
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
+                      <ChevronRight className="h-4 w-4 text-sidebar-foreground/60" />
                     ) : null}
                   </div>
                 </Link>
@@ -251,15 +251,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             ))}
             
             {/* Theme Toggle Button */}
-            <li className="mt-6 border-t border-[#3A4956] pt-2">
+            <li className="mt-6 border-t border-sidebar-border pt-2">
               <button 
                 onClick={() => {
                   setTheme(theme === "dark" ? "light" : "dark");
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent/20 transition-colors"
               >
                 <div className="flex items-center">
-                  <span className="w-5 text-white">
+                  <span className="w-5 text-sidebar-foreground">
                     {theme === "dark" ? (
                       <Sun className="h-5 w-5" />
                     ) : (
@@ -274,7 +274,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             </li>
             
             {/* Log Off Button as part of the navigation menu */}
-            <li className="border-t border-[#3A4956] pt-2">
+            <li className="border-t border-sidebar-border pt-2">
               <button 
                 onClick={async () => {
                   try {
@@ -293,10 +293,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
                     window.location.href = "/";
                   }
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-sidebar-foreground hover:bg-sidebar-accent/20 transition-colors"
               >
                 <div className="flex items-center">
-                  <span className="w-5 text-white">
+                  <span className="w-5 text-sidebar-foreground">
                     <LogOutIcon className="h-5 w-5" />
                   </span>
                   <span className="ml-3 font-medium">Log off</span>
