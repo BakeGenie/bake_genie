@@ -14,7 +14,12 @@ const TryTrial = () => {
   const { mutate: startTrial, isPending } = useMutation({
     mutationFn: async () => {
       const response = await apiRequest('POST', '/api/subscription/trial/start', {});
-      return response.json();
+      if (response.json) {
+        return response.json();
+      } else {
+        // If response is already parsed JSON
+        return response;
+      }
     },
     onSuccess: (data) => {
       if (data.success) {
