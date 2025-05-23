@@ -288,8 +288,13 @@ const ExpensesPage = () => {
   // Function to upload and preview file
   const uploadAndPreviewFile = async (file: File) => {
     try {
+      // Set the file for local state
       setSelectedFile(file);
       setReceiptFileName(file.name);
+      
+      // Create a local object URL for immediate preview without waiting for server upload
+      const localPreviewUrl = URL.createObjectURL(file);
+      expenseForm.setValue('receiptUrl', localPreviewUrl);
       
       // Create FormData for file upload
       const formData = new FormData();
@@ -297,14 +302,22 @@ const ExpensesPage = () => {
       
       console.log("Uploading file:", file.name);
       
-      // Upload file immediately
+      // Show loading toast
+      toast({
+        title: "Processing receipt",
+        description: "Uploading your receipt...",
+      });
+      
+      // Upload file to server
       const uploadResponse = await fetch('/api/upload/receipt', {
         method: 'POST',
         body: formData,
       });
       
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload receipt');
+        const errorText = await uploadResponse.text();
+        console.error("Upload response error:", errorText);
+        throw new Error(`Failed to upload receipt: ${errorText}`);
       }
       
       // Process the server response
@@ -313,23 +326,27 @@ const ExpensesPage = () => {
         const receiptUrl = uploadResult.url;
         console.log("Receipt uploaded successfully:", receiptUrl);
         
-        // Update form with the URL for immediate preview
+        // Replace the object URL with the actual server URL
+        URL.revokeObjectURL(localPreviewUrl);
         expenseForm.setValue('receiptUrl', receiptUrl);
         
         toast({
           title: "Receipt uploaded",
           description: "Receipt was successfully uploaded and is ready to view.",
         });
+        
+        return receiptUrl;
       } else {
         throw new Error(uploadResult.error || "Upload failed");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading receipt:", error);
       toast({
         title: "Upload failed",
-        description: "There was a problem uploading your receipt. You can try again or continue without a receipt.",
+        description: error.message || "There was a problem uploading your receipt. You can try again or continue without a receipt.",
         variant: "destructive"
       });
+      return null;
     }
   };
   
@@ -935,28 +952,57 @@ const ExpensesPage = () => {
                     {selectedFile ? (
                       <>
                         <div className="flex items-center justify-center bg-blue-50 text-blue-500 w-12 h-12 rounded-full mb-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                            <polyline points="13 2 13 9 20 9"></polyline>
-                          </svg>
+                          {selectedFile.type.includes('image') ? (
+                            <img 
+                              src={URL.createObjectURL(selectedFile)} 
+                              alt="Preview" 
+                              className="h-9 w-9 object-cover rounded"
+                              onLoad={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                URL.revokeObjectURL(target.src);
+                              }}
+                            />
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                              <polyline points="13 2 13 9 20 9"></polyline>
+                            </svg>
+                          )}
                         </div>
                         <p className="font-medium text-blue-600">{selectedFile.name}</p>
                         <p className="text-xs mt-1 text-gray-500">File selected. Click to change or drop a new file.</p>
-                        <button 
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedFile(null);
-                            setReceiptFileName('');
-                          }}
-                          className="mt-2 text-sm text-red-500 hover:text-red-700 flex items-center"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                          Remove file
-                        </button>
+                        <div className="mt-2 flex flex-col space-y-1">
+                          {selectedFile.type.includes('image') && (
+                            <div className="border rounded-md overflow-hidden max-w-[200px] mx-auto">
+                              <img 
+                                src={URL.createObjectURL(selectedFile)} 
+                                alt="Receipt Preview" 
+                                className="w-full h-auto object-contain bg-white"
+                                style={{ maxHeight: '120px' }}
+                                onLoad={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  URL.revokeObjectURL(target.src);
+                                }}
+                              />
+                            </div>
+                          )}
+                          <button 
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFile(null);
+                              setReceiptFileName('');
+                              expenseForm.setValue('receiptUrl', null);
+                            }}
+                            className="text-sm text-red-500 hover:text-red-700 flex items-center justify-center"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Remove file
+                          </button>
+                        </div>
                       </>
                     ) : receiptFileName && editingExpenseId ? (
                       <>

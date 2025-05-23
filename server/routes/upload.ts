@@ -71,24 +71,40 @@ router.post("/", upload.single("image"), async (req: Request, res: Response) => 
 router.post("/receipt", upload.single("receipt"), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No receipt file provided" });
+      return res.status(400).json({ 
+        success: false,
+        error: "No receipt file provided" 
+      });
     }
     
     // Get the saved file path and construct the URL
     const filename = req.file.filename;
     const receiptUrl = `/uploads/${filename}`;
     
+    // Verify file was created
+    const filePath = path.join(uploadsDir, filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(500).json({
+        success: false,
+        error: "File uploaded but not found in storage"
+      });
+    }
+    
+    console.log(`Successfully uploaded receipt: ${filename} (${req.file.size} bytes)`);
+    
     // Return the receipt URL
     return res.status(200).json({ 
       success: true,
       url: receiptUrl,
-      filename: filename
+      filename: filename,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype
     });
   } catch (error) {
     console.error("Error uploading receipt:", error);
     return res.status(500).json({ 
       success: false,
-      error: "Failed to upload receipt" 
+      error: error instanceof Error ? error.message : "Failed to upload receipt" 
     });
   }
 });
