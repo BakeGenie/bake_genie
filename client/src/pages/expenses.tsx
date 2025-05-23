@@ -335,12 +335,13 @@ const ExpensesPage = () => {
               throw new Error("Invalid response from server");
             }
           }
-        } catch (uploadError) {
-          console.error("Receipt upload error:", uploadError.message);
+        } catch (error) {
+          const uploadError = error as Error;
+          console.error("Receipt upload error:", uploadError.message || "Unknown error");
           toast({
             title: "Upload warning",
             description: "Your expense will be saved, but the receipt upload had an issue.",
-            variant: "warning"
+            variant: "destructive"
           });
         }
       }
@@ -348,7 +349,7 @@ const ExpensesPage = () => {
       // Store additional info in the description field
       let basicDescription = data.description || "";
       
-      // Create metadata string for additional fields
+      // Create metadata object for additional fields
       const metaFields = {
         supplier: data.supplier || "",
         paymentSource: data.paymentSource || "",
@@ -357,14 +358,12 @@ const ExpensesPage = () => {
         isRecurring: Boolean(data.isRecurring)
       };
       
-      // Append metadata to description in a user-friendly format
+      // Store the metadata as a hidden JSON string with a marker
       if (Object.values(metaFields).some(v => v)) {
-        if (basicDescription) basicDescription += "\n\n";
-        basicDescription += `Payment: ${metaFields.paymentSource || "Not specified"}\n`;
-        basicDescription += `Supplier: ${metaFields.supplier || "Not specified"}\n`;
-        if (metaFields.vat) basicDescription += `VAT: ${metaFields.vat}\n`;
-        if (metaFields.totalIncTax) basicDescription += `Total (inc. tax): ${metaFields.totalIncTax}\n`;
-        if (metaFields.isRecurring) basicDescription += "This is a recurring expense\n";
+        // Create a simplified string for humans to read, but hide the JSON data
+        const metaString = JSON.stringify(metaFields);
+        basicDescription = basicDescription.replace(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/, '');
+        basicDescription += (basicDescription ? '\n\n' : '') + `[META_DATA]${metaString}[/META_DATA]`;
       }
       
       // Create a clean object with only the fields supported by our database schema
@@ -541,10 +540,33 @@ const ExpensesPage = () => {
                     className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
                     onClick={() => {
                       // Open edit modal when row is clicked
-                      expenseForm.reset({
+                      const expenseData = {
                         ...expense,
                         date: new Date(expense.date)
-                      });
+                      };
+                      
+                      // Parse metadata from the description if it exists
+                      let description = expense.description || "";
+                      
+                      // Look for the metadata section (using dotAll workaround for compatibility)
+                      const metaMatch = description.match(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/);
+                      if (metaMatch && metaMatch[1]) {
+                        try {
+                          const metaData = JSON.parse(metaMatch[1]);
+                          expenseData.supplier = metaData.supplier || "";
+                          expenseData.paymentSource = metaData.paymentSource || "";
+                          expenseData.vat = metaData.vat || "";
+                          expenseData.totalIncTax = metaData.totalIncTax || "";
+                          expenseData.isRecurring = Boolean(metaData.isRecurring);
+                          
+                          // Clean the description
+                          expenseData.description = description.replace(/\[META_DATA\]([\s\S]*?)\[\/META_DATA\]/, '').trim();
+                        } catch (error) {
+                          console.error("Error parsing metadata:", error);
+                        }
+                      }
+                      
+                      expenseForm.reset(expenseData);
                       setEditingExpenseId(expense.id);
                       setOpenExpenseDialog(true);
                     }}
