@@ -282,8 +282,15 @@ router.post("/import/json", async (req: Request, res: Response) => {
       return res.json(result);
     } else if (type === 'supplies') {
       // Import supplies directly from the parsed data
-      result = await importService.importSuppliesFromJson(data, userId);
-      return res.json(result);
+      console.log('SUPPLIES IMPORT: About to import supplies with data sample:', data.slice(0, 2));
+      try {
+        result = await importService.importSuppliesFromJson(data, userId);
+        console.log('SUPPLIES IMPORT: Successfully imported data, result:', result);
+        return res.json(result);
+      } catch (err) {
+        console.error('SUPPLIES IMPORT: Error during import:', err);
+        throw err;
+      }
     } else {
       return res.status(400).json({ 
         success: false, 

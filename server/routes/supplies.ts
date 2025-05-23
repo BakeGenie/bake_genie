@@ -190,4 +190,72 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Direct SQL import route to bypass ORM issues
+router.post('/direct-import', async (req, res) => {
+  try {
+    const userId = req.session.userId || 1;
+    const { supplies: suppliesData } = req.body;
+    
+    if (!Array.isArray(suppliesData) || suppliesData.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid request format. Supply data array is required.' 
+      });
+    }
+    
+    console.log(`DIRECT IMPORT: Received ${suppliesData.length} supplies for import`);
+    
+    // Import each supply item directly using SQL to avoid ORM issues
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const supply of suppliesData) {
+      try {
+        // Ensure proper data types and defaults
+        const name = supply.name || '';
+        const supplier = supply.supplier || '';
+        const category = supply.category || '';
+        const price = typeof supply.price === 'number' ? supply.price : 0;
+        const description = supply.description || '';
+        const quantity = typeof supply.quantity === 'number' ? supply.quantity : (parseInt(supply.quantity) || 0);
+        const reorder_level = typeof supply.reorder_level === 'number' ? supply.reorder_level : (parseInt(supply.reorder_level) || 5);
+        
+        await db.execute(`
+          INSERT INTO supplies (
+            user_id, name, supplier, category, price, description, quantity, reorder_level
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8
+          )
+        `, [
+          userId,
+          name,
+          supplier,
+          category,
+          price,
+          description,
+          quantity,
+          reorder_level
+        ]);
+        
+        successCount++;
+      } catch (err) {
+        console.error(`DIRECT IMPORT: Failed to insert supply "${supply.name}":`, err);
+        errorCount++;
+      }
+    }
+    
+    return res.json({
+      success: true,
+      message: `Successfully imported ${successCount} supplies. ${errorCount > 0 ? `Failed to import ${errorCount} supplies.` : ''}`,
+      data: { imported: successCount, failed: errorCount }
+    });
+  } catch (error) {
+    console.error('DIRECT IMPORT: Error importing supplies:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: `Failed to import supplies: ${error instanceof Error ? error.message : String(error)}` 
+    });
+  }
+});
+
 export default router;

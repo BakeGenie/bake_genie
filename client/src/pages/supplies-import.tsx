@@ -125,9 +125,9 @@ export default function SuppliesImport() {
             if (item[csvField]) {
               // Remove currency symbols, quotes and other non-numeric chars except decimal point
               const numericString = String(item[csvField]).replace(/[^0-9.]/g, '');
-              mappedItem[dbField] = numericString ? parseFloat(numericString) : null;
+              mappedItem[dbField] = numericString ? parseFloat(numericString) : 0;
             } else {
-              mappedItem[dbField] = null;
+              mappedItem[dbField] = 0;
             }
           } else {
             // Use strings for other fields, remove any extra quotes
@@ -135,27 +135,28 @@ export default function SuppliesImport() {
             mappedItem[dbField] = cleanValue;
           }
         }
+        
+        // Set default values for any missing fields to ensure DB compatibility
+        mappedItem.quantity = mappedItem.quantity || 0;
+        mappedItem.reorder_level = mappedItem.reorder_level || 5;
+        mappedItem.description = mappedItem.description || '';
+        
         return mappedItem;
       });
       
       console.log('Mapped data sample:', mappedData.slice(0, 2));
       setProgress(50);
       
-      // Send data directly to API without file upload - use the special fixed endpoint
-      // Log the exact data being sent
-      console.log('Sending the following data to the server:', {
-        type: 'supplies',
-        data: mappedData
-      });
+      // Send data directly to a special direct-SQL API route to bypass ORM
+      console.log('Sending the following data to the server (total:', mappedData.length, 'records)');
       
-      const response = await fetch('/api/data-fixed/import/json', {
+      const response = await fetch('/api/supplies/direct-import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          type: 'supplies',
-          data: mappedData
+          supplies: mappedData
         })
       });
       
