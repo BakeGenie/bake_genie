@@ -330,17 +330,7 @@ export default function ManageSubscription() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="border-t pt-6 flex flex-col items-start">
-              <div className="flex justify-start gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleUpdatePaymentMethod}
-                >
-                  <CreditCardIcon className="h-4 w-4 mr-2" /> Update Payment Method
-                </Button>
-              </div>
-            </CardFooter>
+            {/* Removed duplicate footer with Update Payment Method button */}
           </Card>
         </div>
       </div>
