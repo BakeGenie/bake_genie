@@ -467,6 +467,9 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  trialStart: timestamp("trial_start"),       // When the trial period started
+  trialEnd: timestamp("trial_end"),           // When the trial period ends
+  isTrialUsed: boolean("is_trial_used").default(false), // Whether the user has used their trial
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
