@@ -71,6 +71,7 @@ const Account = () => {
   const { data: paymentMethodData, refetch: refetchPaymentMethod } = useQuery({
     queryKey: ['/api/subscription/payment-method'],
     retry: false,
+    staleTime: 0, // Don't use cached data
   });
   
   // Handle payment method update
