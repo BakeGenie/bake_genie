@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { users, userNotificationPreferences, userSessions } from '@shared/schema';
+import { pool } from '../db';
+import { userNotificationPreferences } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
@@ -13,8 +14,8 @@ router.get('/current', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Use a direct SQL query to avoid schema mapping issues
-    const result = await db.execute(`
+    // Use pool.query directly for more reliable execution 
+    const result = await pool.query(`
       SELECT 
         id, 
         username, 
@@ -69,20 +70,22 @@ router.patch('/profile', async (req: Request, res: Response) => {
     } = req.body;
 
     // Check if user exists before update
-    const [existingUser] = await db.select()
-      .from(users)
-      .where(eq(users.id, Number(req.session.userId)));
-
-    if (!existingUser) {
+    const userResult = await pool.query(
+      `SELECT * FROM users WHERE id = $1`,
+      [Number(req.session.userId)]
+    );
+    
+    if (userResult.rows.length === 0) {
       console.error('User not found for profile update:', req.session.userId);
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const existingUser = userResult.rows[0];
     console.log('Existing user found:', existingUser.id, existingUser.email);
     
     // Execute a raw SQL query to ensure we're updating the right columns
     // This is a workaround to avoid schema mismatches
-    const result = await db.execute(`
+    const result = await pool.query(`
       UPDATE users
       SET 
         first_name = $1,
@@ -137,13 +140,15 @@ router.post('/change-password', async (req: Request, res: Response) => {
     const { currentPassword, newPassword } = req.body;
 
     // Get current user
-    const [user] = await db.select()
-      .from(users)
-      .where(eq(users.id, Number(req.session.userId)));
+    const userResult = await pool.query(`
+      SELECT id, password FROM users WHERE id = $1
+    `, [Number(req.session.userId)]);
 
-    if (!user) {
+    if (userResult.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    const user = userResult.rows[0];
 
     // Verify current password
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
@@ -155,13 +160,14 @@ router.post('/change-password', async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await db.update(users)
-      .set({
-        password: hashedPassword,
-        lastPasswordUpdate: new Date(),
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, Number(req.session.userId)));
+    await pool.query(`
+      UPDATE users 
+      SET 
+        password = $1, 
+        last_password_update = $2,
+        updated_at = $3
+      WHERE id = $4
+    `, [hashedPassword, new Date(), new Date(), Number(req.session.userId)]);
 
     res.json({ message: 'Password updated successfully' });
   } catch (error: any) {
