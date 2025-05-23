@@ -199,10 +199,10 @@ async function ensureDefaultContact(userId: number): Promise<number> {
       return checkResult.rows[0].id;
     }
     
-    // Create default contact if none exists
+    // Create default contact if none exists (note: no updated_at column)
     const insertResult = await client.query(
-      `INSERT INTO contacts (user_id, first_name, last_name, created_at, updated_at) 
-       VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id`,
+      `INSERT INTO contacts (user_id, first_name, last_name, created_at) 
+       VALUES ($1, $2, $3, NOW()) RETURNING id`,
       [userId, 'Imported', 'Contact']
     );
     
@@ -237,10 +237,10 @@ async function findOrCreateContact(client: any, userId: number, contactName: str
     return checkResult.rows[0].id;
   }
   
-  // Create new contact
+  // Create new contact (note: no updated_at column)
   const insertQuery = {
-    text: `INSERT INTO contacts (user_id, first_name, last_name, created_at, updated_at)
-           VALUES ($1, $2, $3, NOW(), NOW()) RETURNING id`,
+    text: `INSERT INTO contacts (user_id, first_name, last_name, created_at)
+           VALUES ($1, $2, $3, NOW()) RETURNING id`,
     values: [userId, firstName, lastName]
   };
   
