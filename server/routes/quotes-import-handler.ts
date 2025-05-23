@@ -83,13 +83,13 @@ router.post('/api/quotes/import', async (req, res) => {
               quoteNumber, 
               contactId,
               eventType || 'Other',
-              eventDate ? new Date(eventDate) : new Date(),
+              eventDate ? parseDate(eventDate) : new Date(),
               quoteStatus || 'Draft',
               description || null,
               'Pickup', // Default to Pickup if not specified
               totalAmount || '0.00',
               notes,
-              expiryDate ? new Date(expiryDate) : null,
+              expiryDate ? parseDate(expiryDate) : null,
               new Date(),
               new Date()
             ]
@@ -129,6 +129,43 @@ function getMappedValue(record: any, columnMapping: Record<string, string>, fiel
     return null;
   }
   return record[csvField] || null;
+}
+
+// Helper function to parse date strings in various formats
+function parseDate(dateString: string): Date {
+  if (!dateString) return new Date();
+  
+  // Try to handle common date formats
+  
+  // Format: MM/DD/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(dateString)) {
+    const parts = dateString.split('/');
+    // Note: JavaScript months are 0-indexed
+    return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+  }
+  
+  // Format: YYYY-MM-DD
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(dateString)) {
+    return new Date(dateString);
+  }
+  
+  // Format with AM/PM: "5/19/2025 12:00:00 AM"
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+(AM|PM)$/.test(dateString)) {
+    // Remove the time part for simplicity
+    const datePart = dateString.split(' ')[0];
+    const parts = datePart.split('/');
+    return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+  }
+  
+  // Try standard parsing as fallback
+  const parsedDate = new Date(dateString);
+  if (!isNaN(parsedDate.getTime())) {
+    return parsedDate;
+  }
+  
+  // Return current date if all parsing attempts fail
+  console.warn(`Could not parse date: ${dateString}, using current date instead`);
+  return new Date();
 }
 
 export default router;
