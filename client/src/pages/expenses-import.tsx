@@ -230,7 +230,7 @@ export default function ExpensesImport() {
               <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                 <li>Headers should be on line 3</li>
                 <li>Data should start on line 4</li>
-                <li>Column headers should match the following: Date, Description, Category, Amount, Supplier, Payment Source, VAT, Total Inc Tax, Tax Deductible, Is Recurring</li>
+                <li>Column headers can include: Date, Description, Category, Amount, Supplier/Vendor, Payment/Payment Source, VAT, Total Inc Tax, Tax Deductible, Is Recurring</li>
                 <li>Date format should be YYYY-MM-DD</li>
                 <li>Amount values can include currency symbols ($, £, €)</li>
                 <li>Boolean fields (Tax Deductible, Is Recurring) can be "Yes"/"No" or "True"/"False"</li>

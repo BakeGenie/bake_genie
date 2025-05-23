@@ -51,18 +51,24 @@ router.post('/api/expenses-import', isAuthenticated, upload.single('file'), asyn
       columns: false 
     })[0].map((header: string) => header.trim());
 
-    // Process and map headers to database fields
+    // Process and map headers to database fields - handle both standard and BakeDiary formats
     const mappings = {
+      // Standard format
       'Date': 'date',
       'Description': 'description',
       'Category': 'category',
       'Amount': 'amount',
       'Supplier': 'supplier',
       'Payment Source': 'payment_source',
+      'Payment': 'payment_source',
       'VAT': 'vat',
       'Total Inc Tax': 'total_inc_tax',
       'Is Recurring': 'is_recurring',
-      'Tax Deductible': 'tax_deductible'
+      'Tax Deductible': 'tax_deductible',
+      
+      // BakeDiary format mappings
+      'Vendor': 'supplier',
+      'Amount (Incl VAT)': 'amount'
     };
 
     // Insert expenses into database
