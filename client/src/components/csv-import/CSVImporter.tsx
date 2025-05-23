@@ -150,86 +150,10 @@ export default function CSVImporter({
     }
   };
 
-  const handleUpload = async () => {
-    if (!file) {
-      toast({
-        title: 'No File Selected',
-        description: 'Please select a CSV file to upload.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    setError(null);
-
-    try {
-      // Read the file directly using FileReader
-      const fileText = await file.text();
-      
-      // Parse CSV using PapaParse
-      Papa.parse(fileText, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          // Handle successful parsing
-          const parsedData = results.data;
-          if (parsedData.length === 0) {
-            throw new Error('The CSV file is empty or improperly formatted.');
-          }
-
-          // Extract headers from first row
-          const firstRow = parsedData[0] as Record<string, any>;
-          const csvHeaders = Object.keys(firstRow);
-          
-          setHeaders(csvHeaders);
-          setPreviewData(parsedData.slice(0, 5)); // Show first 5 rows
-          setTotalRows(parsedData.length);
-          
-          // Try to automatically map columns based on header names
-          const newMapping = { ...initialMapping };
-          
-          fieldMappings.forEach(field => {
-            const dbFieldLower = field.dbField.toLowerCase().replace(/_/g, ' ');
-            const displayNameLower = field.displayName.toLowerCase();
-            
-            csvHeaders.forEach(header => {
-              const headerLower = header.toLowerCase();
-              
-              if (
-                headerLower === dbFieldLower ||
-                headerLower === displayNameLower ||
-                headerLower.includes(dbFieldLower) ||
-                headerLower.includes(displayNameLower)
-              ) {
-                newMapping[field.dbField] = header;
-              }
-            });
-          });
-          
-          setColumnMapping(newMapping);
-          setCurrentTab('preview');
-          
-          toast({
-            title: 'File Loaded',
-            description: `Successfully loaded ${parsedData.length} rows from ${file.name}.`,
-          });
-          setIsUploading(false);
-        },
-        error: (error) => {
-          throw new Error(`Failed to parse CSV: ${error.message}`);
-        }
-      });
-    } catch (err: any) {
-      console.error('Error processing file:', err);
-      setError(err.message || 'Failed to process file');
-      toast({
-        title: 'Upload Failed',
-        description: err.message || 'An error occurred while processing the file.',
-        variant: 'destructive',
-      });
-      setIsUploading(false);
-    }
+  // We no longer need the handleUpload function since we process the file immediately on selection
+  // This is just a placeholder in case we need to revert to the old behavior
+  const handleUpload = () => {
+    console.log('Upload button clicked - not used anymore as we process on file selection');
   };
 
   const handleImport = async () => {
