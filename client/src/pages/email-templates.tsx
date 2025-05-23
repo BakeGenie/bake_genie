@@ -183,7 +183,14 @@ export default function EmailTemplates() {
         if (!response.ok) {
           throw new Error(`Server returned ${response.status}`);
         }
-        return response.json();
+        // Check if the response has content before trying to parse as JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          return response.json();
+        } else {
+          // If not JSON or empty response, just return a success object
+          return { success: true };
+        }
       })
       .then(data => {
         console.log('Templates saved successfully:', data);

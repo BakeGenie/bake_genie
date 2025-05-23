@@ -59,26 +59,18 @@ router.patch("/templates", async (req: Request, res: Response) => {
       updateObject.enquiryMessageTemplate = enquiryMessageTemplate;
     }
     
-    // Execute SQL directly to avoid date issues
-    const result = await db.execute(`
-      UPDATE settings
-      SET 
-        quote_email_template = $1,
-        invoice_email_template = $2,
-        payment_reminder_template = $3,
-        payment_receipt_template = $4,
-        enquiry_message_template = $5,
-        updated_at = NOW()
-      WHERE user_id = $6
-      RETURNING *;
-    `, [
-      quoteEmailTemplate !== undefined ? quoteEmailTemplate : currentSettings.quoteEmailTemplate,
-      invoiceEmailTemplate !== undefined ? invoiceEmailTemplate : currentSettings.invoiceEmailTemplate,
-      paymentReminderTemplate !== undefined ? paymentReminderTemplate : currentSettings.paymentReminderTemplate,
-      paymentReceiptTemplate !== undefined ? paymentReceiptTemplate : currentSettings.paymentReceiptTemplate,
-      enquiryMessageTemplate !== undefined ? enquiryMessageTemplate : currentSettings.enquiryMessageTemplate,
-      userId
-    ]);
+    // Simple approach - update via DRIZZLE ORM with proper schema
+    const result = await db
+      .update(settings)
+      .set({
+        quote_email_template: quoteEmailTemplate,
+        invoice_email_template: invoiceEmailTemplate,
+        payment_reminder_template: paymentReminderTemplate,
+        payment_receipt_template: paymentReceiptTemplate,
+        enquiry_message_template: enquiryMessageTemplate,
+        updated_at: new Date()
+      })
+      .where(eq(settings.userId, userId));
     
     return res.json({ success: true, data: result });
   } catch (error) {
