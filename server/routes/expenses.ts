@@ -186,62 +186,55 @@ router.post("/", async (req: Request, res: Response) => {
     
     console.log("Final SQL values:", JSON.stringify(values, null, 2));
     
-    // EMERGENCY FIX: Skip the ORM entirely and use raw SQL with direct values
-    // This is the most reliable way to ensure field values are saved correctly
-    const directSql = `
-      INSERT INTO expenses (
-        user_id, 
-        category, 
-        amount, 
-        date, 
-        description, 
-        supplier,
-        payment_source, 
-        vat, 
-        total_inc_tax, 
-        tax_deductible, 
-        is_recurring, 
-        receipt_url
-      ) 
-      VALUES (
-        $1, 
-        $2, 
-        $3, 
-        $4, 
-        $5, 
-        $6, 
-        $7, 
-        $8, 
-        $9, 
-        $10, 
-        $11, 
-        $12
+    // FINAL SOLUTION: Use our custom database function that guarantees all values are properly saved
+    const fnSql = `
+      SELECT * FROM insert_expense(
+        $1, -- user_id
+        $2, -- category
+        $3, -- amount
+        $4, -- date
+        $5, -- description
+        $6, -- supplier
+        $7, -- payment_source
+        $8, -- vat
+        $9, -- total_inc_tax
+        $10, -- tax_deductible
+        $11, -- is_recurring
+        $12  -- receipt_url
       )
-      RETURNING *
     `;
     
-    console.log("FINAL VALUES - EMERGENCY FIX:");
+    // Log values for debugging
+    console.log("FINAL SOLUTION VALUES:");
     console.log("Supplier:", req.body.supplier || "");
     console.log("VAT:", req.body.vat || "0.00");
     console.log("Total Inc Tax:", req.body.totalIncTax || "0.00");
     
-    const directValues = [
+    // Prepare values with defaults to ensure nothing is NULL
+    const supplierValue = req.body.supplier && req.body.supplier.trim() ? req.body.supplier.trim() : "";
+    const paymentSourceValue = req.body.paymentSource && req.body.paymentSource.trim() ? req.body.paymentSource.trim() : "Cash";
+    const vatValue = isNaN(parseFloat(req.body.vat)) ? 0.00 : parseFloat(req.body.vat);
+    const totalIncTaxValue = isNaN(parseFloat(req.body.totalIncTax)) ? 0.00 : parseFloat(req.body.totalIncTax);
+    
+    const fnValues = [
       userId,
       req.body.category,
-      req.body.amount,
+      parseFloat(req.body.amount),
       new Date(req.body.date),
-      req.body.description || null,
-      req.body.supplier || "", // Force supplier
-      req.body.paymentSource || "Cash", // Force payment source
-      req.body.vat || "0.00", // Force VAT
-      req.body.totalIncTax || "0.00", // Force Total Inc Tax
+      req.body.description || "",
+      supplierValue,
+      paymentSourceValue,
+      vatValue,
+      totalIncTaxValue,
       Boolean(req.body.taxDeductible),
       Boolean(req.body.isRecurring),
       req.body.receiptUrl || null
     ];
     
+    console.log("Function parameter values:", fnValues);
+    
     // Execute using direct connection
-    const result = await pool.query(directSql, directValues);
+    const result = await pool.query(fnSql, fnValues);
     const newExpense = result.rows[0];
     
     return res.status(201).json(newExpense);
