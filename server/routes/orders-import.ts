@@ -1,0 +1,174 @@
+import { Router } from 'express';
+import { db } from '../db';
+
+const router = Router();
+
+// Direct import endpoint specifically for orders CSV format
+router.post('/api/orders/import', async (req, res) => {
+  try {
+    const { items } = req.body;
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No valid order items provided'
+      });
+    }
+    
+    console.log(`ORDERS IMPORT: Received ${items.length} orders for import`);
+    
+    // Import each order directly using SQL to avoid ORM issues
+    let successCount = 0;
+    let errorCount = 0;
+    const successes = [];
+    const errors = [];
+    
+    // Use a transaction for all inserts
+    try {
+      // Start transaction
+      await db.execute('BEGIN');
+      
+      const userId = req.session?.userId || 1; // Default to 1 for development
+      
+      for (const item of items) {
+        try {
+          // Ensure proper data types and handle escaping
+          // Remove all quotes from string values
+          const orderNumber = (item.orderNumber || '').replace(/"/g, '');
+          const eventType = (item.eventType || '').replace(/"/g, '');
+          const theme = item.theme ? item.theme.replace(/"/g, '') : null;
+          const status = (item.status || 'Quote').replace(/"/g, '');
+          const deliveryTime = item.deliveryTime ? item.deliveryTime.replace(/"/g, '') : '';
+          
+          // For numeric fields, convert to floats and handle any format issues
+          const totalAmount = parseFloat(item.totalAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const deliveryFee = parseFloat(item.deliveryFee?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const profit = parseFloat(item.profit?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const subTotalAmount = parseFloat(item.subTotalAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const discountAmount = parseFloat(item.discountAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const taxRate = parseFloat(item.taxRate?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          const deliveryAmount = parseFloat(item.deliveryAmount?.toString().replace(/"/g, '').replace(/[^0-9.-]/g, '') || '0') || 0;
+          
+          // Handle dates - important to format correctly for the database
+          let eventDate = null;
+          if (item.eventDate) {
+            try {
+              // Try to parse the date, but if it fails, use a default format
+              eventDate = new Date(item.eventDate.replace(/"/g, '')).toISOString();
+            } catch (dateError) {
+              console.error(`ORDERS IMPORT: Failed to parse event date: ${item.eventDate}`);
+              // Use current date as fallback
+              eventDate = new Date().toISOString();
+            }
+          }
+          
+          let createdAt = null;
+          if (item.createdAt) {
+            try {
+              // Try to parse the date, but if it fails, use current date
+              createdAt = new Date(item.createdAt.replace(/"/g, '')).toISOString();
+            } catch (dateError) {
+              console.error(`ORDERS IMPORT: Failed to parse created at date: ${item.createdAt}`);
+              createdAt = new Date().toISOString();
+            }
+          } else {
+            createdAt = new Date().toISOString();
+          }
+          
+          // For contact ID, we need to handle the relationship
+          // For simplicity, we'll use a default contact ID (1) if not specified
+          // In a real application, you might want to look up the contact by email/name
+          const contactId = parseInt(item.contactId?.toString().replace(/"/g, '') || '1') || 1;
+          
+          console.log(`Inserting order: ${orderNumber}, Event Type: ${eventType}, Total Amount: ${totalAmount}`);
+          
+          // Use direct SQL insert approach with properly escaped strings
+          const insertQuery = `
+            INSERT INTO orders (
+              user_id, contact_id, order_number, event_type, event_date, 
+              status, delivery_fee, delivery_time, total_amount, 
+              theme, profit, sub_total_amount, discount_amount, 
+              tax_rate, delivery_amount, created_at, updated_at
+            ) VALUES (
+              ${userId}, 
+              ${contactId},
+              '${orderNumber.replace(/'/g, "''")}',
+              '${eventType.replace(/'/g, "''")}',
+              ${eventDate ? `'${eventDate}'` : 'NULL'},
+              '${status.replace(/'/g, "''")}',
+              '${deliveryFee}',
+              '${deliveryTime.replace(/'/g, "''")}',
+              '${totalAmount}',
+              ${theme ? `'${theme.replace(/'/g, "''")}'` : 'NULL'},
+              ${profit ? profit : 'NULL'},
+              ${subTotalAmount ? subTotalAmount : 'NULL'},
+              ${discountAmount ? discountAmount : 'NULL'},
+              '${taxRate}',
+              ${deliveryAmount ? deliveryAmount : 'NULL'},
+              '${createdAt}',
+              '${createdAt}'
+            )
+            RETURNING id
+          `;
+          
+          const result = await db.execute(insertQuery);
+          
+          if (result && result[0] && result[0].rows && result[0].rows[0]) {
+            const insertedId = result[0].rows[0].id;
+            successes.push({
+              ...item,
+              id: insertedId,
+              success: true
+            });
+            successCount++;
+          } else {
+            // Insert worked but didn't return ID
+            successes.push({
+              ...item,
+              success: true
+            });
+            successCount++;
+          }
+        } catch (err) {
+          console.error(`ORDERS IMPORT: Failed to insert order:`, err);
+          errors.push({
+            item,
+            error: err instanceof Error ? err.message : String(err)
+          });
+          errorCount++;
+        }
+      }
+      
+      // Commit transaction
+      await db.execute('COMMIT');
+      
+    } catch (txnError) {
+      // Rollback on error
+      await db.execute('ROLLBACK');
+      throw txnError;
+    }
+    
+    const result = {
+      success: true,
+      inserted: successCount,
+      errors: errorCount,
+      errorDetails: errors,
+      successDetails: successes,
+      message: `Successfully imported ${successCount} orders. ${errorCount > 0 ? `Failed to import ${errorCount} orders.` : ''}`
+    };
+    
+    console.log("Orders import complete with result:", result);
+    
+    // Respond with a plain text message to avoid JSON parsing issues
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify(result));
+  } catch (error) {
+    console.error('ORDERS IMPORT: Error importing orders:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: `Failed to import orders: ${error instanceof Error ? error.message : String(error)}` 
+    });
+  }
+});
+
+export default router;
