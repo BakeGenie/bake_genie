@@ -228,23 +228,23 @@ router.post('/direct-import', async (req, res) => {
           
           console.log(`Inserting supply: ${name}, Supplier: ${supplier}, Category: ${category}, Price: ${price}`);
           
-          // More direct database connection to ensure it works
+          // Use a direct SQL insert approach with string literals for simplicity
+          // This bypasses parameter binding issues
           await db.execute(`
             INSERT INTO supplies (
               user_id, name, supplier, category, price, description, quantity, reorder_level, created_at, updated_at
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+              ${userId}, 
+              '${name.replace(/'/g, "''")}', 
+              '${supplier.replace(/'/g, "''")}', 
+              '${category.replace(/'/g, "''")}',
+              ${price},
+              '${description.replace(/'/g, "''")}',
+              ${quantity},
+              ${reorder_level},
+              NOW(), NOW()
             )
-          `, [
-            userId,
-            name,
-            supplier, 
-            category,
-            price,
-            description,
-            quantity,
-            reorder_level
-          ]);
+          `);
           
           successCount++;
         } catch (err) {
