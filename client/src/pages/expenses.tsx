@@ -312,24 +312,35 @@ const ExpensesPage = () => {
             body: formData,
           });
           
+          // Get the response text first
+          const responseText = await uploadResponse.text();
+          
           if (!uploadResponse.ok) {
-            console.error("Error uploading receipt:", await uploadResponse.text());
+            console.error("Error uploading receipt:", responseText);
             throw new Error('Failed to upload receipt');
           }
           
-          const uploadResult = await uploadResponse.json();
-          if (uploadResult.success) {
-            receiptUrl = uploadResult.url;
-          } else {
-            throw new Error(uploadResult.error || "Upload failed");
+          // Parse the JSON response if there is text
+          if (responseText) {
+            try {
+              const uploadResult = JSON.parse(responseText);
+              if (uploadResult.success) {
+                receiptUrl = uploadResult.url;
+                console.log("Receipt uploaded successfully:", receiptUrl);
+              } else {
+                throw new Error(uploadResult.error || "Upload failed");
+              }
+            } catch (parseError) {
+              console.error("Error parsing response:", parseError);
+              throw new Error("Invalid response from server");
+            }
           }
-          console.log("Receipt uploaded successfully:", receiptUrl);
         } catch (uploadError) {
-          console.error("Receipt upload error:", uploadError);
+          console.error("Receipt upload error:", uploadError.message);
           toast({
-            title: "Upload error",
-            description: "Could not upload receipt. Your expense will be saved without a receipt.",
-            variant: "destructive"
+            title: "Upload warning",
+            description: "Your expense will be saved, but the receipt upload had an issue.",
+            variant: "warning"
           });
         }
       }
