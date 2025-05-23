@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { CardElement, Elements, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { apiRequest } from "@/lib/queryClient";
+// Using native fetch instead of apiRequest
+// import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCardIcon, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -82,8 +83,12 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
       }
 
       // Send the payment method to the server
-      const response = await apiRequest("POST", "/api/subscription/update-payment-method", {
-        paymentMethodId: paymentMethod.id
+      const response = await fetch("/api/subscription/update-payment-method", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ paymentMethodId: paymentMethod.id })
       });
 
       if (!response.ok) {
@@ -171,14 +176,20 @@ const UpdatePaymentMethodForm: React.FC<UpdatePaymentMethodFormProps> = ({ onSuc
 interface UpdatePaymentMethodDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 export const UpdatePaymentMethodDialog: React.FC<UpdatePaymentMethodDialogProps> = ({ 
   open, 
-  onOpenChange 
+  onOpenChange,
+  onSuccess
 }) => {
   const handleSuccess = () => {
     onOpenChange(false);
+    // Call the external success handler if provided
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   const handleCancel = () => {
@@ -195,15 +206,27 @@ export const UpdatePaymentMethodDialog: React.FC<UpdatePaymentMethodDialogProps>
           </DialogDescription>
         </DialogHeader>
 
+        {stripePromise ? (
         <Elements stripe={stripePromise}>
           <UpdatePaymentMethodForm 
             onSuccess={handleSuccess} 
             onCancel={handleCancel} 
           />
         </Elements>
+      ) : (
+        <div className="p-4 text-center space-y-4">
+          <Alert>
+            <AlertDescription>
+              Stripe payment system is not configured. Please check your environment settings.
+            </AlertDescription>
+          </Alert>
+          <Button onClick={handleCancel}>Close</Button>
+        </div>
+      )}
       </DialogContent>
     </Dialog>
   );
 };
 
+// Default export of the component
 export default UpdatePaymentMethodDialog;

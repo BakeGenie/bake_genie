@@ -142,7 +142,8 @@ export default function ManageSubscription() {
       {/* Update Payment Method Dialog */}
       <UpdatePaymentMethodDialog 
         open={isUpdatePaymentDialogOpen} 
-        onOpenChange={setIsUpdatePaymentDialogOpen} 
+        onOpenChange={setIsUpdatePaymentDialogOpen}
+        onSuccess={handlePaymentMethodUpdated}
       />
       
       {/* Cancel Subscription Dialog */}
