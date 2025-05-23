@@ -67,6 +67,8 @@ export default function QuotesImport() {
     reader.readAsText(files[0]);
   };
   
+  const [errorDetails, setErrorDetails] = useState<any[]>([]);
+  
   const handleSubmit = async () => {
     if (!parsedData || parsedData.length === 0) {
       setError('No data to import. Please select a valid CSV file first.');
@@ -75,6 +77,7 @@ export default function QuotesImport() {
     
     setIsSubmitting(true);
     setError(null);
+    setErrorDetails([]);
     
     try {
       // Create a mapping between CSV columns and database fields
@@ -106,6 +109,8 @@ export default function QuotesImport() {
         }
       });
       
+      console.log('Column mapping:', columnMapping);
+      
       // Send the data to the server
       const response = await fetch('/api/quotes/import', {
         method: 'POST',
@@ -119,10 +124,6 @@ export default function QuotesImport() {
         })
       });
       
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-      
       const result = await response.json();
       
       if (result.success) {
@@ -134,7 +135,12 @@ export default function QuotesImport() {
         // Optional: Redirect back to data management after successful import
         setTimeout(() => setLocation('/data'), 1500);
       } else {
-        setError(result.message || 'Failed to import quotes.');
+        setError(result.message || 'Failed to import quotes');
+        
+        // Store detailed error information if available
+        if (result.errors && Array.isArray(result.errors)) {
+          setErrorDetails(result.errors);
+        }
       }
     } catch (err) {
       console.error('Import error:', err);
@@ -199,6 +205,17 @@ export default function QuotesImport() {
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>
                       {error}
+                      
+                      {errorDetails.length > 0 && (
+                        <div className="mt-2">
+                          <div className="font-semibold">Error Details:</div>
+                          <ul className="list-disc pl-5 text-sm mt-1 space-y-1">
+                            {errorDetails.map((err, i) => (
+                              <li key={i}>Row {err.row}: {err.message}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
