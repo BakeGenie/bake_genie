@@ -173,11 +173,32 @@ export default function ManageSubscription() {
                 Manage your subscription and payment details
               </CardDescription>
             </div>
-            <div className="flex items-center">
-              <span className={`inline-block w-2 h-2 ${subscriptionStatus.color} rounded-full mr-2`}></span>
-              <span className={`${subscriptionStatus.textClass} font-medium`}>
-                {subscriptionStatus.text}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center">
+                <span className={`inline-block w-2 h-2 ${subscriptionStatus.color} rounded-full mr-2`}></span>
+                <span className={`${subscriptionStatus.textClass} font-medium`}>
+                  {subscriptionStatus.text}
+                </span>
+              </div>
+              {isSubscriptionActive ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-destructive h-8"
+                  onClick={handleCancelSubscription}
+                >
+                  Cancel
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="text-primary h-8"
+                  onClick={handleChangePlan}
+                >
+                  Reactivate
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
