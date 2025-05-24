@@ -36,6 +36,8 @@ const Orders = () => {
     queryKey: ["/api/orders"],
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache the data
   });
 
   // Transform backend data to frontend format and filter to current month
@@ -71,6 +73,7 @@ const Orders = () => {
       try {
         const orderDate = new Date(order.eventDate);
         const isCurrentMonth = orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+        console.log(`Order ${order.id}: date=${order.eventDate}, parsed=${orderDate.toISOString()}, month=${orderDate.getMonth()}, year=${orderDate.getFullYear()}, current month=${currentMonth}, current year=${currentYear}, matches=${isCurrentMonth}`);
         return isCurrentMonth;
       } catch (error) {
         console.warn("Invalid date found:", order.eventDate, "for order:", order.id);
@@ -97,7 +100,7 @@ const Orders = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/orders", {
+      const response = await fetch("/api/orders-direct", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,7 +112,12 @@ const Orders = () => {
         throw new Error("Failed to create order");
       }
 
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      const result = await response.json();
+      console.log("Order created successfully:", result);
+
+      // Force refresh the orders data
+      await queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/orders"] });
 
       toast({
         title: "Order created",
