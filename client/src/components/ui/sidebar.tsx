@@ -201,15 +201,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       {/* Sidebar */}
       <aside className="md:relative fixed inset-y-0 left-0 z-50 md:z-auto flex flex-col w-64 bg-sidebar-background text-sidebar-foreground">
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
+        <div className="flex items-center h-16 px-4 border-b border-white/20">
           <div className="flex items-center sidebar-brand">
-            <svg className="h-8 w-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg className="h-8 w-8 sidebar-brand" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Cake-like icon for BakeGenie */}
-              <path d="M9 8c6-3 12 3 7 8 m-5 0c-6-5 0-11 7-8" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M16 16v7" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M8 7.5a8 5 0 0116 0v2" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M9 8c6-3 12 3 7 8 m-5 0c-6-5 0-11 7-8" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
+              <path d="M16 16v7" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
+              <path d="M8 7.5a8 5 0 0116 0v2" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
             </svg>
-            <span className="ml-2 text-xl font-bold sidebar-brand" style={{color: '#ffffff !important', fontWeight: '800'}}>BakeGenie</span>
+            <span className="ml-3 text-xl sidebar-brand" style={{color: '#ffffff', fontWeight: '900', fontSize: '1.25rem'}}>BakeGenie</span>
           </div>
           <button
             onClick={onClose}

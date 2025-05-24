@@ -106,6 +106,16 @@
   color: white !important;
 }
 
+.sidebar-brand span {
+  color: white !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+
+.sidebar-brand svg {
+  stroke: white !important;
+}
+
 /* Removing hover background */
 
 /* Badge styles */
