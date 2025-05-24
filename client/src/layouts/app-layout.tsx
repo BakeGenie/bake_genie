@@ -105,33 +105,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
         )}
 
-        {/* Desktop Header with BakeGenie logo */}
-        {!isMobile && (
-          <div className="h-16 flex items-center justify-between px-6 border-b border-white/20" style={{backgroundColor: '#00c4cc'}}>
-            <div className="flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-white mr-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.8 7.2c5.5-2.8 11.3 3 6 7.4 m-5.6 0c-5.5-4.4 0.5-10.2 6-7.4 M12 13v5"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M7 6.5a5 3 0 0110 0v2"
-                />
-              </svg>
-              <span className="text-2xl font-bold text-white">BakeGenie</span>
-            </div>
-          </div>
-        )}
+
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto" style={{backgroundColor: 'white'}}>
