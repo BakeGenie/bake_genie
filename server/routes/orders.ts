@@ -6,18 +6,54 @@ import { eq, and } from "drizzle-orm";
 const router = Router();
 
 /**
- * Get all orders for the current user
+ * Get all orders for the current user with contact information
  */
 router.get("/api/orders", async (req, res) => {
   try {
     // Get user ID from session
     const userId = req.session?.userId || 1;
 
-    // Use Drizzle ORM to get orders
+    // Use Drizzle ORM to get orders with contact information
     const result = await db
-      .select()
+      .select({
+        id: orders.id,
+        user_id: orders.userId,
+        contact_id: orders.contactId,
+        order_number: orders.orderNumber,
+        title: orders.title,
+        event_type: orders.eventType,
+        event_date: orders.eventDate,
+        status: orders.status,
+        delivery_type: orders.deliveryType,
+        delivery_address: orders.deliveryAddress,
+        delivery_fee: orders.deliveryFee,
+        delivery_time: orders.deliveryTime,
+        total_amount: orders.totalAmount,
+        amount_paid: orders.amountPaid,
+        special_instructions: orders.specialInstructions,
+        tax_rate: orders.taxRate,
+        notes: orders.notes,
+        created_at: orders.createdAt,
+        updated_at: orders.updatedAt,
+        theme: orders.theme,
+        profit: orders.profit,
+        sub_total_amount: orders.subTotalAmount,
+        discount_amount: orders.discountAmount,
+        delivery_amount: orders.deliveryAmount,
+        number: orders.number,
+        // Contact information
+        contact: {
+          id: contacts.id,
+          firstName: contacts.firstName,
+          lastName: contacts.lastName,
+          email: contacts.email,
+          phone: contacts.phone,
+        }
+      })
       .from(orders)
-      .where(eq(orders.userId, userId));
+      .leftJoin(contacts, eq(orders.contactId, contacts.id))
+      .where(eq(orders.userId, userId))
+      .orderBy(orders.eventDate);
 
     res.json(result);
   } catch (error) {
