@@ -13,26 +13,26 @@
   --card-foreground: 222.2 84% 4.9%;
   --border: 215 13.2% 85%;
   --input: 215 13.2% 85%;
-  --primary: 186 100% 40%;
+  --primary: 180 100% 40%;
   --primary-foreground: 0 0% 100%;
   --secondary: 60 4.8% 95.9%;
   --secondary-foreground: 24 9.8% 10%;
-  --accent: 186 100% 40%;
+  --accent: 180 100% 40%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
   --ring: 222.2 84% 4.9%;
   --radius: 0.5rem;
 
-  /* BakeGenie specific colors */
-  --sidebar-background: 186 100% 40%;
+  /* BakeGenie specific colors - exact #00c4cc */
+  --sidebar-background: 180 100% 40%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-primary: 186 100% 40%;
+  --sidebar-primary: 180 100% 40%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 186 100% 50%;
-  --sidebar-accent-foreground: 222.2 84% 4.9%;
-  --sidebar-border: 186 50% 55%;
-  --sidebar-ring: 186 100% 40%;
+  --sidebar-accent: 180 100% 40%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 180 100% 40%;
+  --sidebar-ring: 180 100% 40%;
   
   /* Chart colors */
   --chart-1: 186 100% 40%;
