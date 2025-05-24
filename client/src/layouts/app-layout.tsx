@@ -55,10 +55,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Mobile Header */}
         {isMobile && (
-          <div className="h-16 flex items-center px-4 border-b border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700">
+          <div className="h-16 flex items-center px-4 border-b border-white/20" style={{backgroundColor: '#00c4cc'}}>
             <button
               onClick={toggleMobileMenu}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100 focus:outline-none"
+              className="text-white hover:text-white/80 focus:outline-none"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
