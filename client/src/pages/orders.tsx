@@ -9,20 +9,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FilterIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { SearchIcon, PlusIcon, FilterIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import OrderForm from "@/components/order/order-form";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { format } from "date-fns";
-import OrderCalendar from "@/components/order/order-calendar";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday } from "date-fns";
 
 const Orders = () => {
   const [location, navigate] = useLocation();
@@ -33,33 +24,12 @@ const Orders = () => {
   const shouldOpenNew = searchParams.get("newOrder") === "true";
   const preselectedDate = searchParams.get("date");
 
-  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] =
-    React.useState(shouldOpenNew);
-  const [isFilterDialogOpen, setIsFilterDialogOpen] = React.useState(false);
+  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = React.useState(shouldOpenNew);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
+  const [currentDate, setCurrentDate] = React.useState(new Date());
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(
     preselectedDate ? new Date(preselectedDate) : null,
   );
-  
-  // Listen for the custom event from the calendar to open the new order modal
-  React.useEffect(() => {
-    const handleOpenNewOrderModal = (event: CustomEvent) => {
-      if (event.detail && event.detail.date) {
-        setSelectedDate(new Date(event.detail.date));
-      }
-      setIsNewOrderDialogOpen(true);
-    };
-
-    window.addEventListener('openNewOrderModal', handleOpenNewOrderModal as EventListener);
-    
-    return () => {
-      window.removeEventListener('openNewOrderModal', handleOpenNewOrderModal as EventListener);
-    };
-  }, []);
-
-  const [month, setMonth] = React.useState(new Date().getMonth() + 1);
-  const [year, setYear] = React.useState(new Date().getFullYear());
 
   // Fetch orders
   const { data: rawOrders = [], isLoading } = useQuery({
@@ -67,8 +37,6 @@ const Orders = () => {
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
-
-  console.log("Orders from API:", rawOrders);
 
   // Transform backend data to frontend format
   const orders = React.useMemo(() => {
@@ -93,78 +61,12 @@ const Orders = () => {
     }));
   }, [rawOrders]);
 
-  // States for filters
-  const [filterMode, setFilterMode] = React.useState("month"); // "all" or "month"
-  
-  // Filter orders based on current filter mode
-  const filteredOrders = React.useMemo(() => {
-    // First apply date filtering if in month mode
-    const dateFiltered = filterMode === "month" 
-      ? orders.filter((order: any) => {
-          if (!order.eventDate) return false;
-          
-          try {
-            const orderDate = new Date(order.eventDate);
-            // Check if the date is valid before comparing
-            if (isNaN(orderDate.getTime())) {
-              console.warn("Invalid date found:", order.eventDate, "for order:", order.id);
-              return false;
-            }
-            return (
-              orderDate.getMonth() + 1 === month && orderDate.getFullYear() === year
-            );
-          } catch (error) {
-            console.error("Error parsing date for order:", order.id, error);
-            return false;
-          }
-        })
-      : orders; // Show all orders if in "all" mode
-    
-    // Then sort the filtered results by date
-    return dateFiltered.sort((a: any, b: any) => {
-      try {
-        if (!a.eventDate || !b.eventDate) {
-          return 0;
-        }
-        return (
-          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-        );
-      } catch (error) {
-        return 0;
-      }
-    });
-  }, [orders, month, year, filterMode]);
-
-  const handleOrderClick = (order: any) => {
-    navigate(`/orders/${order.id}`);
-  };
-
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
   };
 
-  const getMonthName = (monthNum: number): string => {
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    return monthNames[monthNum - 1];
-  };
-
   const closeNewOrderDialog = () => {
     setIsNewOrderDialogOpen(false);
-
-    // Remove the query parameter from the URL
     if (shouldOpenNew) {
       navigate("/orders");
     }
@@ -174,7 +76,6 @@ const Orders = () => {
     setIsSubmitting(true);
 
     try {
-      // Submit the order
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -187,7 +88,6 @@ const Orders = () => {
         throw new Error("Failed to create order");
       }
 
-      // Invalidate the orders query to refetch the data
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
 
       toast({
@@ -195,7 +95,6 @@ const Orders = () => {
         description: "The order has been created successfully.",
       });
 
-      // Close the dialog
       closeNewOrderDialog();
     } catch (error) {
       console.error("Error creating order:", error);
@@ -209,448 +108,233 @@ const Orders = () => {
     }
   };
 
+  // Calendar logic
+  const today = new Date();
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const calendarDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // Get orders for calendar display
+  const getOrdersForDate = (date: Date) => {
+    return orders.filter(order => {
+      if (!order.eventDate) return false;
+      try {
+        const orderDate = new Date(order.eventDate);
+        return isSameDay(orderDate, date);
+      } catch {
+        return false;
+      }
+    });
+  };
+
+  const getStatusDot = (orders: any[]) => {
+    if (orders.length === 0) return null;
+    
+    const hasQuote = orders.some(o => o.status === 'Quote');
+    const hasPaid = orders.some(o => o.status === 'Paid');
+    const hasInProgress = orders.some(o => o.status === 'In Progress');
+    
+    if (hasPaid) return 'bg-green-500';
+    if (hasInProgress) return 'bg-blue-500';
+    if (hasQuote) return 'bg-orange-500';
+    return 'bg-gray-400';
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader
-        title="Orders & Quotes"
-        actions={
-          <>
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Simple Header */}
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-gray-900">Orders</h1>
+          
+          <div className="flex items-center space-x-3">
             <Button
-              onClick={() => setIsFilterDialogOpen(true)}
               variant="outline"
-              size="icon"
-              className="rounded-full h-10 w-10 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+              className="flex items-center space-x-2"
             >
-              <FilterIcon className="h-5 w-5" />
+              <SearchIcon className="h-4 w-4" />
+              <span>Search</span>
             </Button>
+            
             <Button 
               onClick={() => setIsNewOrderDialogOpen(true)}
-              className="rounded-full bg-blue-600 hover:bg-blue-700"
+              className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
             >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              New Order
+              <PlusIcon className="h-4 w-4" />
+              <span>New Order</span>
             </Button>
-          </>
-        }
-      />
-
-      {/* Tools and Views Selector */}
-      <div className="flex justify-between items-center mb-6 px-2">
-        <div className="flex items-center space-x-3">
-          {/* Search */}
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input 
-              placeholder="Search orders..." 
-              className="pl-9 w-64 rounded-full border-gray-200 focus-visible:ring-blue-500" 
-            />
           </div>
-          
-          {/* Filter Toggle */}
-          <div className="flex bg-gray-100 p-1 rounded-full">
-            <button
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                filterMode === "all" 
-                  ? "bg-white text-blue-600 shadow-sm" 
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-              onClick={() => setFilterMode("all")}
-            >
-              All Orders
-            </button>
-            <button
-              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                filterMode === "month" 
-                  ? "bg-white text-blue-600 shadow-sm" 
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-              onClick={() => setFilterMode("month")}
-            >
-              Current Month
-            </button>
-          </div>
-
-          {/* Month/Year Selector - Only visible when "month" filter is active */}
-          {filterMode === "month" && (
-            <div className="flex space-x-2">
-              <Select
-                value={month.toString()}
-                onValueChange={(value) => setMonth(parseInt(value))}
-              >
-                <SelectTrigger className="w-[150px] rounded-full border-gray-200">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent className="rounded-md shadow-lg">
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <SelectItem key={m} value={m.toString()}>
-                      {getMonthName(m)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={year.toString()}
-                onValueChange={(value) => setYear(parseInt(value))}
-              >
-                <SelectTrigger className="w-[120px] rounded-full border-gray-200">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent className="rounded-md shadow-lg">
-                  {Array.from({ length: 5 }, (_, i) => year - 2 + i).map((y) => (
-                    <SelectItem key={y} value={y.toString()}>
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
-
-        {/* Month/Year display - Only visible when "month" filter is active */}
-        {filterMode === "month" && (
-          <div className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
-            {getMonthName(month)} {year}
-          </div>
-        )}
-        
-        {/* Total Orders Count - Show when displaying all */}
-        {filterMode === "all" && (
-          <div className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
-            {orders.length} Total Orders
-          </div>
-        )}
       </div>
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 gap-6 flex-grow mx-2">
-        {/* Today's Date */}
-        <div className="mb-2 md:mb-0 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="text-sm text-gray-500 font-medium">Today's Date</div>
-          <div className="flex items-baseline mt-1">
-            <span className="text-5xl font-bold mr-3 text-blue-600">
-              {format(new Date(), "dd")}
-            </span>
-            <div className="flex flex-col">
-              <span className="text-xl font-medium">
-                {format(new Date(), "MMMM")}
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        <div className="bg-white rounded-lg shadow-sm border">
+          {/* Today's Date Section */}
+          <div className="p-6 border-b">
+            <div className="text-sm text-gray-500 font-medium mb-2">Today's Date</div>
+            <div className="flex items-baseline">
+              <span className="text-5xl font-bold text-gray-900 mr-3">
+                {format(today, "dd")}
               </span>
-              <span className="text-sm text-gray-500">
-                {format(new Date(), "EEEE")}
-              </span>
+              <div>
+                <div className="text-lg font-medium text-gray-700">
+                  {format(today, "MMMM")}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {format(today, "EEEE")}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        {/* Calendar and Date Section */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-5">
-            <div className="flex flex-row md:justify-between items-center mb-4">
-              {/* Month Selector */}
-              <div className="flex items-center space-x-3">
-                <button
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-150"
-                  onClick={() => {
-                    const newMonth = month === 1 ? 12 : month - 1;
-                    const newYear = month === 1 ? year - 1 : year;
-                    setMonth(newMonth);
-                    setYear(newYear);
-                  }}
+
+          {/* Calendar Section */}
+          <div className="p-6">
+            {/* Calendar Header */}
+            <div className="flex justify-between items-center mb-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+              </Button>
+              
+              <h2 className="text-lg font-semibold text-blue-600">
+                {format(currentDate, "MMMM yyyy")}
+              </h2>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+              >
+                <ChevronRightIcon className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="grid grid-cols-7 gap-1 mb-4">
+              {/* Day headers */}
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
+                <div
+                  key={index}
+                  className="h-8 flex items-center justify-center text-sm font-medium text-gray-500"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-600"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-                <div className="text-xl font-medium text-gray-800">
-                  {getMonthName(month)} {year}
+                  {day}
                 </div>
-                <button
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-150"
-                  onClick={() => {
-                    const newMonth = month === 12 ? 1 : month + 1;
-                    const newYear = month === 12 ? year + 1 : year;
-                    setMonth(newMonth);
-                    setYear(newYear);
-                  }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-600"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+              ))}
+              
+              {/* Calendar days */}
+              {calendarDays.map((date, index) => {
+                const dayOrders = getOrdersForDate(date);
+                const statusDot = getStatusDot(dayOrders);
+                const isCurrentDay = isToday(date);
+                
+                return (
+                  <div
+                    key={index}
+                    className={`h-12 flex flex-col items-center justify-center text-sm cursor-pointer rounded-lg hover:bg-gray-50 relative ${
+                      isCurrentDay ? 'bg-blue-600 text-white font-medium' : 'text-gray-700'
+                    }`}
+                    onClick={() => handleDateSelect(date)}
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
+                    <span>{format(date, "d")}</span>
+                    {statusDot && (
+                      <div className={`w-1.5 h-1.5 rounded-full ${statusDot} absolute bottom-1`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Order Period and Filter */}
+          <div className="px-6 py-4 border-t bg-gray-50 rounded-b-lg">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm font-medium text-gray-700">Order Period:</span>
+                <select className="border rounded px-3 py-1 text-sm">
+                  <option>May</option>
+                </select>
+                <select className="border rounded px-3 py-1 text-sm">
+                  <option>2025</option>
+                </select>
               </div>
               
-              {/* Legend */}
-              <div className="hidden md:flex items-center space-x-4 text-xs">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-red-500 mr-2"></div>
-                  <span>Quote</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-orange-400 mr-2"></div>
-                  <span>In Progress</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 mr-2"></div>
-                  <span>Completed</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Calendar Component */}
-            <OrderCalendar
-              orders={orders}
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              month={month}
-              year={year}
-            />
-          </div>
-        </div>
-
-        {/* Order List */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-gray-800">Orders</h3>
-            <div className="flex items-center space-x-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9 rounded-full px-4 border-gray-200"
-                onClick={() => setIsFilterDialogOpen(true)}
-              >
-                <FilterIcon className="h-4 w-4 mr-2 text-gray-500" />
-                <span>Filter</span>
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FilterIcon className="h-4 w-4" />
+                <span>Filter Orders</span>
               </Button>
             </div>
           </div>
-          <div className="flex-grow overflow-auto max-h-[500px]">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="animate-spin w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-              </div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-60 text-center p-6">
-                <div className="text-gray-300 mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900">
-                  No orders found
-                </h3>
-                <p className="text-gray-500 mt-2 max-w-sm">
-                  No orders found for {getMonthName(month)} {year}. Try
-                  adjusting your filters or create a new order.
-                </p>
-                <Button
-                  className="mt-6 rounded-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setIsNewOrderDialogOpen(true)}
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Create New Order
-                </Button>
+
+          {/* Orders List */}
+          <div className="border-t">
+            {orders.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No orders found for this period
               </div>
             ) : (
-              <ul className="divide-y divide-gray-100">
-                {filteredOrders.map((order: any) => {
-                  // Format the date
+              <div className="divide-y">
+                {orders.map((order: any) => {
                   const orderDate = new Date(order.eventDate);
-                  const formattedDate = format(orderDate, "dd MMM yyyy");
-
-                  // Format price
-                  const price = parseFloat(order.totalAmount || "0").toFixed(2);
-
-                  // Determine status style
-                  const isCancelled = order.status === "Cancelled";
-
+                  const formattedDate = format(orderDate, "EEE dd MMM yyyy");
+                  const price = parseFloat(order.total || '0').toFixed(2);
+                  const isPaid = order.status === 'Paid';
+                  
                   return (
-                    <li
+                    <div 
                       key={order.id}
-                      className={`p-4 hover:bg-gray-50 cursor-pointer ${isCancelled ? "bg-gray-100" : ""}`}
-                      onClick={() => handleOrderClick(order)}
+                      className="p-4 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigate(`/orders/${order.id}`)}
                     >
                       <div className="flex justify-between items-center">
-                        <div className="flex items-start space-x-2">
-                          {order.status === "Quote" && (
-                            <div className="mt-1.5">
-                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            </div>
-                          )}
-                          {order.status === "In Progress" && (
-                            <div className="mt-1.5">
-                              <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                            </div>
-                          )}
-
-                          <div>
-                            <div className="text-gray-500 text-xs">
-                              #{order.orderNumber} - {formattedDate}
-                            </div>
-                            <div className="text-blue-600 font-medium">
-                              {order.contact
-                                ? `${order.contact.firstName} ${order.contact.lastName}`
-                                : `Contact #${order.contactId}`}
-                              <span className="text-gray-500 font-normal ml-1">
-                                ({order.eventType})
-                              </span>
-                            </div>
-                            <div className="text-gray-700 text-sm mt-1 line-clamp-1">
-                              {order.notes || "No description available"}
-                            </div>
+                        <div>
+                          <div className="text-sm text-blue-600 font-medium">
+                            #{order.orderNumber} - {formattedDate}
+                          </div>
+                          <div className="text-lg font-medium text-gray-900">
+                            {order.contact?.firstName} {order.contact?.lastName} ({order.eventType})
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Slices for PD Day
                           </div>
                         </div>
-
-                        <div className="flex flex-col items-end">
-                          <div className="font-medium text-right">
+                        
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-gray-900">
                             $ {price}
                           </div>
-                          <div className="mt-1 flex space-x-1 items-center">
-                            <span
-                              className={
-                                isCancelled
-                                  ? "bg-gray-500 text-white text-xs px-2 py-0.5 rounded"
-                                  : order.status === "Paid"
-                                    ? "bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded"
-                                    : order.status === "Quote"
-                                      ? "bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded"
-                                      : "bg-orange-100 text-orange-800 text-xs px-2 py-0.5 rounded"
-                              }
-                            >
-                              {order.status}
-                            </span>
-                          </div>
-                          <div className="flex space-x-1 mt-2">
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                />
-                              </svg>
-                            </button>
+                          <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                            isPaid ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+                          }`}>
+                            {order.status}
                           </div>
                         </div>
                       </div>
-                    </li>
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* New Order Dialog */}
-      <Dialog
-        open={isNewOrderDialogOpen}
-        onOpenChange={setIsNewOrderDialogOpen}
-      >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-          <DialogTitle>New Order</DialogTitle>
+      <Dialog open={isNewOrderDialogOpen} onOpenChange={closeNewOrderDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle>Create New Order</DialogTitle>
           <DialogDescription>
-            Create a new order by filling out the form below.
+            Fill in the order details below to create a new order.
           </DialogDescription>
           <OrderForm
             onSubmit={handleNewOrderSubmit}
-            initialValues={
-              selectedDate
-                ? { eventDate: selectedDate, orderDate: new Date() }
-                : { eventDate: new Date() }
-            }
+            onCancel={closeNewOrderDialog}
+            isSubmitting={isSubmitting}
+            selectedDate={selectedDate}
           />
-        </DialogContent>
-      </Dialog>
-
-      {/* Filter Dialog */}
-      <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
-        <DialogContent>
-          <DialogTitle>Filter Orders</DialogTitle>
-          <DialogDescription>
-            Apply filters to narrow down the orders list.
-          </DialogDescription>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="quote">Quote</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Event Type</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="birthday">Birthday</SelectItem>
-                  <SelectItem value="wedding">Wedding</SelectItem>
-                  <SelectItem value="anniversary">Anniversary</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Delivery Type</label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select delivery type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pickup">Pickup</SelectItem>
-                  <SelectItem value="delivery">Delivery</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsFilterDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button>Apply Filters</Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>
