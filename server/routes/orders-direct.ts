@@ -29,6 +29,7 @@ router.get("/api/orders", async (req, res) => {
       ORDER BY o.event_date
     `, [userId]);
     
+    console.log("Orders query result sample:", result.rows[0]);
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching orders:", error);
