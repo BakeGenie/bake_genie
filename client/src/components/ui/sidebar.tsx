@@ -139,12 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       sublinks: true,
       featureId: "printables",
     },
-    {
-      path: "/tax-rates",
-      label: "Tax Rates",
-      icon: <PercentIcon className="w-5 h-5" />,
-      featureId: "tax-rates",
-    },
+
     {
       path: "/tools",
       label: "Tools",
