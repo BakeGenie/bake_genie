@@ -52,7 +52,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       />
 
       {/* Main Content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden" style={{backgroundColor: '#00c4cc'}}>
         {/* Mobile Header */}
         {isMobile && (
           <div className="h-16 flex items-center px-4 border-b border-white/20" style={{backgroundColor: '#00c4cc'}}>
@@ -134,7 +134,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 overflow-y-auto" style={{backgroundColor: 'white'}}>
           {routeContent}
         </main>
       </div>
