@@ -201,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
       {/* Sidebar */}
       <aside className="md:relative fixed inset-y-0 left-0 z-50 md:z-auto flex flex-col w-64 bg-sidebar-background text-sidebar-foreground">
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-white/20">
+        <div className="flex items-center h-16 px-4 border-b border-white/20" style={{backgroundColor: '#00c4cc'}}>
           <div className="flex items-center sidebar-brand">
             <svg className="h-8 w-8 sidebar-brand" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Cake-like icon for BakeGenie */}
