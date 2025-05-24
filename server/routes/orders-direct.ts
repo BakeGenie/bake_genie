@@ -5,18 +5,29 @@ import { sql } from "drizzle-orm";
 const router = Router();
 
 /**
- * Get all orders for the current user
+ * Get all orders for the current user with contact information
  */
 router.get("/api/orders", async (req, res) => {
   try {
     // Get user ID from session
     const userId = req.session?.userId || 1;
     
-    // Use direct SQL query to avoid schema issues
-    const result = await pool.query(
-      'SELECT * FROM orders WHERE user_id = $1',
-      [userId]
-    );
+    // Use direct SQL query with JOIN to include contact information
+    const result = await pool.query(`
+      SELECT 
+        o.*,
+        json_build_object(
+          'id', c.id,
+          'firstName', c.first_name,
+          'lastName', c.last_name,
+          'email', c.email,
+          'phone', c.phone
+        ) as contact
+      FROM orders o
+      LEFT JOIN contacts c ON o.contact_id = c.id
+      WHERE o.user_id = $1
+      ORDER BY o.event_date
+    `, [userId]);
     
     res.json(result.rows);
   } catch (error) {
