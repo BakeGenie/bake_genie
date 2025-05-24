@@ -97,6 +97,10 @@
   color: white !important;
 }
 
+.sidebar-link * {
+  color: white !important;
+}
+
 /* Ensure brand logo and text visibility */
 .sidebar-brand {
   color: white !important;
