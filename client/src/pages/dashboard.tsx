@@ -2,22 +2,28 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSignIcon, FileTextIcon, Clock4Icon, ClipboardCheckIcon, BarChartIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { DashboardStats } from "@/types";
+// import { DashboardStats } from "@/types";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { Link } from "wouter";
 import SidebarCalendar from "@/components/calendar/sidebar-calendar";
 
 const Dashboard = () => {
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
   });
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, index) => (
+      <div className="flex flex-col h-full">
+        {/* Header with cyan background */}
+        <div className="px-6 py-4" style={{backgroundColor: '#00c4cc'}}>
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        </div>
+        
+        {/* Main content */}
+        <div className="flex-1 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
             <Card key={index} className="animate-pulse">
               <CardHeader className="pb-2">
                 <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -39,13 +45,20 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+    <div className="flex flex-col h-full">
+      {/* Header with cyan background */}
+      <div className="px-6 py-4" style={{backgroundColor: '#00c4cc'}}>
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+      </div>
+      
+      {/* Main content */}
+      <div className="flex-1 p-6">
 
       {/* Quick Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -216,6 +229,7 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );
