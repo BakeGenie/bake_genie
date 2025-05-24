@@ -215,16 +215,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-3">
+        <nav className="flex-1 overflow-y-auto pt-2">
+          <ul>
             {links.map((link) => (
               <li key={link.path}>
                 <Link href={link.path}>
                   <div
-                    className={`sidebar-link flex items-center justify-between px-3 py-2.5 text-sm cursor-pointer transition-all duration-200 ${
+                    className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer transition-colors ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
                         ? "bg-cyan-600 text-white font-medium"
-                        : "text-white/90 hover:bg-cyan-600/70 hover:text-white"
+                        : "text-white hover:bg-cyan-600/70"
                     }`}
                   >
                     <div className="flex items-center">
