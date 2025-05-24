@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { router as dataRoutes } from "./routes/data-fixed";
 import { router as xeroRoutes } from "./routes/xero";
 import { router as uploadRoutes } from "./routes/upload";
@@ -52,6 +53,43 @@ import { router as subscriptionPaymentRouter } from "./routes/subscription-payme
 import subscriptionTrialRouter from "./routes/subscription-trial-fixed";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register orders route with customer information FIRST to take precedence
+  app.get('/api/orders', async (req: any, res: any) => {
+    try {
+      // Get user ID from session
+      const userId = req.session?.userId || 1;
+      
+      // Use direct SQL query with JOIN to include contact information
+      const result = await pool.query(`
+        SELECT 
+          o.*,
+          json_build_object(
+            'id', c.id,
+            'firstName', c.first_name,
+            'lastName', c.last_name,
+            'email', c.email,
+            'phone', c.phone
+          ) as contact
+        FROM orders o
+        LEFT JOIN contacts c ON o.contact_id = c.id
+        WHERE o.user_id = $1
+        ORDER BY o.event_date
+      `, [userId]);
+      
+      console.log("Orders query result sample with contact:", JSON.stringify(result.rows[0], null, 2));
+      
+      // Add headers to prevent caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch orders" });
+    }
+  });
+
   // Register our direct routes first
   await registerOrdersDirectRoutes(app);
   // put application routes here
@@ -104,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register integrations routes (for Stripe, Square, etc.)
   app.use('/api/integrations', integrationsRouter);
   
-  // Register orders routes
+  // Register orders routes - IMPORTANT: Direct routes must come first to take precedence
   app.use(ordersRouter);
   
   // Register order logs routes
