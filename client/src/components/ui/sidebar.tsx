@@ -215,34 +215,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto pt-2">
-          <ul>
+        <nav className="flex-1 overflow-y-auto py-4">
+          <ul className="space-y-1 px-3">
             {links.map((link) => (
               <li key={link.path}>
                 <Link href={link.path}>
                   <div
-                    className={`sidebar-link flex items-center justify-between px-4 py-3 text-sm cursor-pointer hover:bg-sidebar-accent/20 transition-colors ${
+                    className={`sidebar-link flex items-center justify-between px-3 py-2.5 text-sm cursor-pointer rounded-lg transition-all duration-200 ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "bg-sidebar-background text-white"
+                        ? "bg-white/20 text-white border-l-4 border-white shadow-sm"
+                        : "text-white/90 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <div className="flex items-center">
-                      <span className={`w-5 ${
+                      <span className={`w-5 h-5 flex-shrink-0 ${
                         currentPath === link.path || currentPath.startsWith(`${link.path}/`)
-                          ? "text-sidebar-accent-foreground"
-                          : "text-white"
+                          ? "text-white"
+                          : "text-white/80"
                       }`}>
                         {link.icon}
                       </span>
-                      <span className="ml-3 text-white font-medium">{link.label}</span>
+                      <span className="ml-3 font-medium">{link.label}</span>
                     </div>
                     {link.badge !== undefined && link.badge > 0 ? (
-                      <Badge variant="secondary" className="text-xs bg-sidebar-accent hover:bg-sidebar-accent/80 text-sidebar-accent-foreground">
+                      <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0 ml-2">
                         {link.badge}
                       </Badge>
                     ) : link.sublinks ? (
-                      <ChevronRight className="h-4 w-4 text-sidebar-foreground/60" />
+                      <ChevronRight className="h-4 w-4 text-white/60 ml-2" />
                     ) : null}
                   </div>
                 </Link>
@@ -250,12 +250,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
             ))}
             
             {/* Theme Toggle Button */}
-            <li className="mt-6 border-t border-sidebar-border pt-2">
+            <li className="mt-6 pt-4 border-t border-white/20">
               <button 
                 onClick={() => {
                   setTheme(theme === "dark" ? "light" : "dark");
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-sidebar-accent/20 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-white/90 hover:bg-white/10 hover:text-white rounded-lg transition-all duration-200"
               >
                 <div className="flex items-center">
                   <span className="w-5 text-white">
