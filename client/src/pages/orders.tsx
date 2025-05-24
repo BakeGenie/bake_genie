@@ -94,7 +94,7 @@ const Orders = () => {
   }, [rawOrders]);
 
   // States for filters
-  const [filterMode, setFilterMode] = React.useState("all"); // "all" or "month"
+  const [filterMode, setFilterMode] = React.useState("month"); // "all" or "month"
   
   // Filter orders based on current filter mode
   const filteredOrders = React.useMemo(() => {
