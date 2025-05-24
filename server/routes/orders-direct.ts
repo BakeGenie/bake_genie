@@ -29,7 +29,13 @@ router.get("/api/orders", async (req, res) => {
       ORDER BY o.event_date
     `, [userId]);
     
-    console.log("Orders query result sample:", result.rows[0]);
+    console.log("Orders query result sample:", JSON.stringify(result.rows[0], null, 2));
+    
+    // Add headers to prevent caching
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching orders:", error);
