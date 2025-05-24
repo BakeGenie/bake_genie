@@ -77,6 +77,7 @@ import OrderItemsImport from "./pages/order-items-import";
 
 // Import ProtectedRoute component
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import RedirectToDashboard from "./components/auth/RedirectToDashboard";
 
 function Router() {
   return (
@@ -85,7 +86,10 @@ function Router() {
         {/* Public routes - no authentication required */}
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
-        <Route path="/" component={LandingPage} />
+        <Route path="/">
+          <RedirectToDashboard />
+          <LandingPage />
+        </Route>
         <Route path="/enquiry-form" component={EnquiryForm} />
         <Route path="/start-trial" component={StartTrial} />
         <Route path="/try-trial" component={TryTrial} />
