@@ -249,60 +249,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
               </li>
             ))}
             
-            {/* Theme Toggle Button */}
-            <li className="mt-6 pt-4 border-t border-white/20">
-              <button 
-                onClick={() => {
-                  setTheme(theme === "dark" ? "light" : "dark");
-                }}
-                className="w-full flex items-center justify-between px-3 py-2.5 text-sm text-white/90 hover:bg-white/10 hover:text-white rounded-lg transition-all duration-200"
-              >
-                <div className="flex items-center">
-                  <span className="w-5 text-white">
-                    {theme === "dark" ? (
-                      <Sun className="h-5 w-5" />
-                    ) : (
-                      <Moon className="h-5 w-5" />
-                    )}
-                  </span>
-                  <span className="ml-3 font-medium">
-                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                  </span>
-                </div>
-              </button>
-            </li>
-            
-            {/* Log Off Button as part of the navigation menu */}
-            <li className="border-t border-sidebar-border pt-2">
-              <button 
-                onClick={async () => {
-                  try {
-                    // Perform a fetch to the logout endpoint
-                    const response = await fetch("/api/auth/logout");
-                    if (response.redirected) {
-                      // If the server responded with a redirect, follow it
-                      window.location.href = response.url;
-                    } else {
-                      // Otherwise, manually redirect to the home page
-                      window.location.href = "/";
-                    }
-                  } catch (error) {
-                    console.error("Logout error:", error);
-                    // Fallback to home page if there's an error
-                    window.location.href = "/";
-                  }
-                }}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-white hover:bg-sidebar-accent/20 transition-colors"
-              >
-                <div className="flex items-center">
-                  <span className="w-5 text-white">
-                    <LogOutIcon className="h-5 w-5" />
-                  </span>
-                  <span className="ml-3 font-medium">Log off</span>
-                </div>
-              </button>
-            </li>
           </ul>
+          
+          {/* Bottom Section with Logout */}
+          <div className="mt-auto border-t border-white/20 pt-2">
+            <button 
+              onClick={async () => {
+                try {
+                  window.location.href = "/api/logout";
+                } catch (error) {
+                  console.error("Logout error:", error);
+                  window.location.href = "/";
+                }
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm text-white hover:bg-cyan-600/70 transition-colors"
+            >
+              <LogOutIcon className="h-5 w-5" />
+              <span className="ml-3 font-medium">Log out</span>
+            </button>
+          </div>
         </nav>
       </aside>
     </>
