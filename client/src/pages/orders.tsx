@@ -38,9 +38,11 @@ const Orders = () => {
     refetchOnMount: true,
   });
 
-  // Transform backend data to frontend format
+  // Transform backend data to frontend format and filter to current month
   const orders = React.useMemo(() => {
-    return (Array.isArray(rawOrders) ? rawOrders : []).map((order: any) => ({
+    console.log("Raw orders from API:", rawOrders);
+    
+    const transformedOrders = (Array.isArray(rawOrders) ? rawOrders : []).map((order: any) => ({
       id: order.id,
       userId: order.user_id,
       contactId: order.contact_id,
@@ -59,7 +61,26 @@ const Orders = () => {
       contact: order.contact,
       items: order.items || [],
     }));
-  }, [rawOrders]);
+
+    // Filter to current month only
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    
+    const filteredOrders = transformedOrders.filter(order => {
+      if (!order.eventDate) return false;
+      try {
+        const orderDate = new Date(order.eventDate);
+        const isCurrentMonth = orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+        return isCurrentMonth;
+      } catch (error) {
+        console.warn("Invalid date found:", order.eventDate, "for order:", order.id);
+        return false;
+      }
+    });
+
+    console.log("Filtered orders for current month:", filteredOrders);
+    return filteredOrders;
+  }, [rawOrders, currentDate]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
