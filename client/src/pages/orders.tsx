@@ -352,9 +352,7 @@ const Orders = () => {
           </DialogDescription>
           <OrderForm
             onSubmit={handleNewOrderSubmit}
-            onCancel={closeNewOrderDialog}
-            isSubmitting={isSubmitting}
-            selectedDate={selectedDate}
+            initialValues={selectedDate ? { eventDate: selectedDate } : undefined}
           />
         </DialogContent>
       </Dialog>
