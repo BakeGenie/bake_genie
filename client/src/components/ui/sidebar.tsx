@@ -221,10 +221,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPath }) => {
               <li key={link.path}>
                 <Link href={link.path}>
                   <div
-                    className={`sidebar-link flex items-center justify-between px-3 py-2.5 text-sm cursor-pointer rounded-lg transition-all duration-200 ${
+                    className={`sidebar-link flex items-center justify-between px-3 py-2.5 text-sm cursor-pointer transition-all duration-200 ${
                       currentPath === link.path || currentPath.startsWith(`${link.path}/`)
-                        ? "bg-white/20 text-white border-l-4 border-white shadow-sm"
-                        : "text-white/90 hover:bg-white/10 hover:text-white"
+                        ? "bg-cyan-600 text-white font-medium"
+                        : "text-white/90 hover:bg-cyan-600/70 hover:text-white"
                     }`}
                   >
                     <div className="flex items-center">
